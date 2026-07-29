@@ -1,5 +1,6 @@
 import { CTextarea } from '../shared/CompositionInput'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Save, X, ChevronDown } from 'lucide-react'
 import { useProjectStore } from '../../stores/project'
 import { useWorldGroupStore } from '../../stores/world-group'
@@ -21,6 +22,7 @@ interface ProjectInfoPanelProps {
 }
 
 export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanelProps) {
+  const { t } = useTranslation('project')
   const { updateProject } = useProjectStore()
   const [form, setForm] = useState({
     name: project.name,
@@ -57,7 +59,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
   }
 
   const getGenreLabels = (genres: string[]) => {
-    if (!genres || genres.length === 0) return '选择流派…'
+    if (!genres || genres.length === 0) return t('info.genrePlaceholder')
     return genres
       .slice(0, 3)
       .map(v => GENRE_OPTIONS.find(o => o.value === v)?.label ?? v)
@@ -67,20 +69,20 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
   return (
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-text-primary">基本信息</h2>
+        <h2 className="text-xl font-bold text-text-primary">{t('info.title')}</h2>
         <button
           onClick={handleSave}
           disabled={saving}
           className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 transition-colors text-sm font-medium"
         >
           <Save className="w-4 h-4" />
-          {saving ? '保存中...' : '保存'}
+          {saving ? t('info.saving') : t('info.save')}
         </button>
       </div>
 
       <div className="space-y-5">
         <div>
-          <label className="block text-sm text-text-secondary mb-1.5">项目名称</label>
+          <label className="block text-sm text-text-secondary mb-1.5">{t('info.nameLabel')}</label>
           <input
             type="text"
             value={form.name}
@@ -91,8 +93,8 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
 
         <div>
           <label className="block text-sm text-text-secondary mb-1.5">
-            流派
-            {form.genres.length > 0 && <span className="ml-1.5 text-accent text-xs">已选 {form.genres.length}</span>}
+            {t('info.genreLabel')}
+            {form.genres.length > 0 && <span className="ml-1.5 text-accent text-xs">{t('info.genreSelected', { count: form.genres.length })}</span>}
           </label>
           {/* 已选标签 */}
           {form.genres.length > 0 && (
@@ -149,7 +151,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
         </div>
 
         <div>
-          <label className="block text-sm text-text-secondary mb-1.5">简介</label>
+          <label className="block text-sm text-text-secondary mb-1.5">{t('info.synopsisLabel')}</label>
           <CTextarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -160,7 +162,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
 
         <div>
           <label className="block text-sm text-text-secondary mb-1.5">
-            目标字数：{(form.targetWordCount / 10000).toFixed(0)} 万字
+            {t('info.targetWords', { count: (form.targetWordCount / 10000).toFixed(0) })}
           </label>
           <input
             type="range"
@@ -178,10 +180,10 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
-                🌐 多世界模式
+                {t('info.multiWorld')}
               </div>
               <p className="text-xs text-text-muted mt-0.5">
-                适用于诸天流/无限流/快穿/修仙多界等题材，开启后可为每个世界创建独立的世界观、力量体系、地理和角色设定
+                {t('info.multiWorldDesc')}
               </p>
             </div>
             <button
@@ -210,8 +212,10 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
 
         <div className="pt-4 border-t border-border">
           <p className="text-text-muted text-xs">
-            创建于 {new Date(project.createdAt).toLocaleString('zh-CN')} ·
-            更新于 {new Date(project.updatedAt).toLocaleString('zh-CN')}
+            {t('info.timestamps', {
+              created: new Date(project.createdAt).toLocaleString('zh-CN'),
+              updated: new Date(project.updatedAt).toLocaleString('zh-CN'),
+            })}
           </p>
         </div>
       </div>

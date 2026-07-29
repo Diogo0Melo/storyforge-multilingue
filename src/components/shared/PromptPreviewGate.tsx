@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Eye, RotateCcw, Send } from 'lucide-react'
 import { estimateTokens } from '../../lib/ai/context-budget'
 import type { ChatMessage } from '../../lib/types'
@@ -10,10 +11,11 @@ interface Props {
   backLabel?: string
 }
 
-const ROLE_LABEL: Record<ChatMessage['role'], string> = {
-  system: 'System Prompt',
-  user: 'User Prompt',
-  assistant: 'Assistant 上文',
+type RoleKey = 'promptPreview.roleSystem' | 'promptPreview.roleUser' | 'promptPreview.roleAssistant'
+const ROLE_KEYS: Record<ChatMessage['role'], RoleKey> = {
+  system: 'promptPreview.roleSystem',
+  user: 'promptPreview.roleUser',
+  assistant: 'promptPreview.roleAssistant',
 }
 
 function cloneMessages(messages: ChatMessage[]): ChatMessage[] {
@@ -27,8 +29,10 @@ export default function PromptPreviewGate({
   messages,
   onBack,
   onConfirm,
-  backLabel = '返回生成依据',
+  backLabel,
 }: Props) {
+  const { t } = useTranslation('common')
+  const resolvedBackLabel = backLabel ?? t('promptPreview.back')
   const [draft, setDraft] = useState(() => cloneMessages(messages))
   useEffect(() => {
     setDraft(cloneMessages(messages))
@@ -55,15 +59,15 @@ export default function PromptPreviewGate({
         <div>
           <div className="flex items-center gap-2 text-xs font-medium text-text-primary">
             <Eye className="h-3.5 w-3.5 text-accent" />
-            最终发送内容
+            {t('promptPreview.finalContent')}
           </div>
           <p className="mt-1 text-[10px] leading-4 text-text-muted">
-            这里是模板、参数和作品上下文拼接后的真实消息。修改只影响本次调用，不写回模板或作品资料。
+            {t('promptPreview.description')}
           </p>
         </div>
         <span className="text-[10px] tabular-nums text-text-muted">
-          约 {draftTokens.toLocaleString()} tokens
-          {draftTokens !== originalTokens && `（原 ${originalTokens.toLocaleString()}）`}
+          {t('promptPreview.tokenCount', { count: draftTokens.toLocaleString() })}
+          {draftTokens !== originalTokens && ` ${t('promptPreview.tokenCountOriginal', { count: originalTokens.toLocaleString() })}`}
         </span>
       </div>
 
@@ -71,10 +75,10 @@ export default function PromptPreviewGate({
         {draft.map((message, index) => (
           <label key={`${message.role}-${index}`} className="block space-y-1">
             <span className="text-[10px] font-medium text-text-secondary">
-              {ROLE_LABEL[message.role]}
+              {t(ROLE_KEYS[message.role])}
             </span>
             <textarea
-              aria-label={`${ROLE_LABEL[message.role]} ${index + 1}`}
+              aria-label={`${t(ROLE_KEYS[message.role])} ${index + 1}`}
               value={message.content}
               onChange={event => updateContent(index, event.target.value)}
               rows={message.role === 'system' ? 8 : 14}
@@ -90,7 +94,7 @@ export default function PromptPreviewGate({
           onClick={() => setDraft(cloneMessages(messages))}
           className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary"
         >
-          <RotateCcw className="h-3 w-3" /> 还原拼接结果
+          <RotateCcw className="h-3 w-3" /> {t('promptPreview.reset')}
         </button>
         <div className="flex gap-2">
           <button
@@ -98,7 +102,7 @@ export default function PromptPreviewGate({
             onClick={onBack}
             className="rounded border border-border px-2.5 py-1 text-xs text-text-muted hover:text-text-primary"
           >
-            {backLabel}
+            {resolvedBackLabel}
           </button>
           <button
             type="button"
@@ -106,7 +110,7 @@ export default function PromptPreviewGate({
             onClick={() => onConfirm(cloneMessages(draft))}
             className="flex items-center gap-1 rounded bg-accent px-2.5 py-1 text-xs text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Send className="h-3 w-3" /> 发送本次版本
+            <Send className="h-3 w-3" /> {t('promptPreview.send')}
           </button>
         </div>
       </div>

@@ -9,6 +9,7 @@
  *  · 每条标注 chunk 来源
  */
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ChevronDown, ChevronRight, Loader2, Sparkles,
   Users2,
@@ -56,6 +57,7 @@ interface Props {
 }
 
 export default function AnalysisReportViewer({ reference, run, chunks, isHistorical }: Props) {
+  const { t } = useTranslation('project')
   const toast = useToast()
   const [view, setView] = useState<'merged' | 'chunks'>('merged')
   const [activeDim, setActiveDim] = useState<string | null>(null)
@@ -128,7 +130,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
         setSummaryJSON(summaryStr)
       }
     } catch (err) {
-      toast.error(`生成总结失败：${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('analysis.summaryFailed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
       setGeneratingSummary(false)
     }
@@ -140,7 +142,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
     setAggregatingChars(true)
     try {
       const craftTexts = collectCharacterCraftTexts(chunks)
-      if (craftTexts.length === 0) throw new Error('暂无人物塑造分析可供整理')
+      if (craftTexts.length === 0) throw new Error(t('analysis.noCharacterCraft'))
       const config = useAIConfigStore.getState().config
       const meta = { category: 'reference.characters', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } } as const
       const effectiveConfig = resolveRequestConfig(config, meta).config
@@ -154,12 +156,12 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
         { category: 'reference.characters', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } },
       )
       const characters = parseCharacterMergeOutput(output)
-      if (characters.length === 0) throw new Error('AI 未能解析出角色，请重试')
+      if (characters.length === 0) throw new Error(t('analysis.noCharactersParsed'))
       const next = JSON.stringify(characters)
       await updateReferenceAnalysisDerived(run.id, { mergedCharacters: next })
       setCharactersJSON(next)
     } catch (err) {
-      toast.error(`整理角色卡失败：${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('analysis.aggregateFailed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
       setAggregatingChars(false)
     }
@@ -170,9 +172,9 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
 
   return (
     <div className="space-y-4" ref={contentRef}>
-      {/* 顶部横向目录导航（原左侧竖栏移到上方，释放横向空间，便于阅读长分析内容） */}
+      {/* 顶部横向目录导航 */}
       <div className="sticky top-0 z-10 -mx-0.5 px-0.5 py-2 bg-bg-base/85 backdrop-blur-sm border-b border-border flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] text-text-muted uppercase tracking-wider mr-0.5">目录</span>
+        <span className="text-[10px] text-text-muted uppercase tracking-wider mr-0.5">{t('analysis.toc')}</span>
 
         {/* 总结区 */}
         {Object.keys(summaryMap).length > 0 && (
@@ -184,7 +186,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
             }}
             className="px-2 py-1 text-xs rounded-md border border-accent/30 hover:bg-accent/10 text-accent transition-colors whitespace-nowrap"
           >
-            📋 全书总结
+            📋 {t('analysis.summary')}
           </button>
         )}
 
@@ -198,7 +200,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
             }}
             className="px-2 py-1 text-xs rounded-md border border-purple-400/30 hover:bg-purple-500/10 text-purple-400 transition-colors whitespace-nowrap"
           >
-            👤 角色卡片{aiCharacters.length > 0 ? ` (${aiCharacters.length})` : ''}
+            👤 {t('analysis.charCards')}{aiCharacters.length > 0 ? ` (${aiCharacters.length})` : ''}
           </button>
         )}
 
@@ -226,7 +228,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
             view === 'chunks' ? 'bg-accent/10 text-accent border-accent/40' : 'border-border/60 hover:bg-bg-hover text-text-muted'
           }`}
         >
-          📦 按分块查看 ({merged.totalChunks})
+          📦 {t('analysis.chunksView')} ({merged.totalChunks})
         </button>
       </div>
 
@@ -241,7 +243,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
                 view === 'merged' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              合并视图
+              {t('analysis.mergedView')}
             </button>
             <button
               onClick={() => setView('chunks')}
@@ -249,7 +251,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
                 view === 'chunks' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              分块视图
+              {t('analysis.chunkView')}
             </button>
           </div>
 
@@ -262,7 +264,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
               {generatingSummary
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Sparkles className="w-3.5 h-3.5" />}
-              {generatingSummary ? '生成中…' : 'AI 全书总结'}
+              {generatingSummary ? t('analysis.generating') : t('analysis.aiSummary')}
             </button>
           )}
         </div>
@@ -275,9 +277,10 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
             hasCharacterCraft={hasCharacterCraft}
             onAggregate={handleAggregateCharacters}
             aggregating={aggregatingChars}
+            t={t}
           />
         ) : (
-          <ChunkListView chunks={chunks} isHistorical={isHistorical} />
+          <ChunkListView chunks={chunks} isHistorical={isHistorical} t={t} />
         )}
       </div>
     </div>
@@ -287,7 +290,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
 // ── 合并视图 ─────────────────────────────────────────────────
 
 function MergedView({
-  merged, summaryMap, aiCharacters, hasCharacterCraft, onAggregate, aggregating,
+  merged, summaryMap, aiCharacters, hasCharacterCraft, onAggregate, aggregating, t,
 }: {
   merged: MergedAnalysisResult
   summaryMap: Record<string, string>
@@ -295,6 +298,7 @@ function MergedView({
   hasCharacterCraft: boolean
   onAggregate: () => void
   aggregating: boolean
+  t: ReturnType<typeof useTranslation>['t']
 }) {
   const hasSummary = Object.keys(summaryMap).length > 0
 
@@ -305,7 +309,7 @@ function MergedView({
         <div id="section-summary" className="rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-3">
           <h3 className="text-sm font-semibold text-accent flex items-center gap-1.5">
             <Sparkles className="w-4 h-4" />
-            AI 全书总结
+            {t('analysis.aiSummaryTitle')}
           </h3>
           <div className="space-y-2">
             {merged.dimensions
@@ -330,7 +334,7 @@ function MergedView({
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-sm font-semibold text-purple-400 flex items-center gap-1.5">
               <Users2 className="w-4 h-4" />
-              角色分析（AI 聚合去重）
+              {t('analysis.charAnalysis')}
             </h3>
             {hasCharacterCraft && (
               <button
@@ -339,8 +343,8 @@ function MergedView({
                 className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-500/10 transition disabled:opacity-50"
               >
                 {aggregating
-                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 整理中…</>
-                  : <><Sparkles className="w-3.5 h-3.5" /> {aiCharacters.length > 0 ? '重新整理角色卡' : 'AI 整理角色卡'}</>}
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('analysis.aggregating')}</>
+                  : <><Sparkles className="w-3.5 h-3.5" /> {aiCharacters.length > 0 ? t('analysis.reaggregate') : t('analysis.aiAggregate')}</>}
               </button>
             )}
           </div>
@@ -352,7 +356,7 @@ function MergedView({
             </div>
           ) : (
             <p className="text-xs text-text-muted leading-relaxed rounded-lg border border-dashed border-purple-400/20 bg-bg-surface px-3 py-2.5">
-              点击「AI 整理角色卡」，让 AI 阅读所有分块的人物塑造分析，自动归并同一角色（含不同称呼）并去重，生成干净的角色清单。
+              {t('analysis.aggregateHelp')}
             </p>
           )}
         </div>
@@ -362,13 +366,13 @@ function MergedView({
       {merged.dimensions
         .filter(d => d.items.length > 0)
         .map(d => (
-          <DimensionSection key={d.dimension} dim={d} />
+          <DimensionSection key={d.dimension} dim={d} t={t} />
         ))}
     </div>
   )
 }
 
-function DimensionSection({ dim }: { dim: MergedDimension }) {
+function DimensionSection({ dim, t }: { dim: MergedDimension; t: ReturnType<typeof useTranslation>['t'] }) {
   const [expanded, setExpanded] = useState(true)
   const [showAll, setShowAll] = useState(false)
   const displayItems = showAll ? dim.items : dim.items.slice(0, 5)
@@ -384,7 +388,7 @@ function DimensionSection({ dim }: { dim: MergedDimension }) {
         <span className={`text-sm font-semibold ${DIM_COLORS[dim.dimension] || 'text-text-primary'}`}>
           {dim.label}
         </span>
-        <span className="text-xs text-text-muted ml-auto">{dim.items.length} 条</span>
+        <span className="text-xs text-text-muted ml-auto">{t('analysis.itemCount', { count: dim.items.length })}</span>
       </button>
 
       {expanded && (
@@ -402,7 +406,7 @@ function DimensionSection({ dim }: { dim: MergedDimension }) {
               onClick={() => setShowAll(true)}
               className="text-xs text-accent hover:underline"
             >
-              展开剩余 {dim.items.length - 5} 条…
+              {t('analysis.showMore', { count: dim.items.length - 5 })}
             </button>
           )}
           {showAll && hasMore && (
@@ -410,7 +414,7 @@ function DimensionSection({ dim }: { dim: MergedDimension }) {
               onClick={() => setShowAll(false)}
               className="text-xs text-text-muted hover:text-text-primary"
             >
-              收起
+              {t('analysis.collapse')}
             </button>
           )}
         </div>
@@ -453,7 +457,7 @@ function AICharacterCard({ card }: { card: AIMergedCharacter }) {
 
 // ── 分块视图 ─────────────────────────────────────────────────
 
-function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysis[]; isHistorical: boolean }) {
+function ChunkListView({ chunks, isHistorical, t }: { chunks: ReferenceChunkAnalysis[]; isHistorical: boolean; t: ReturnType<typeof useTranslation>['t'] }) {
   const sorted = useMemo(() => [...chunks].sort((a, b) => a.chunkIndex - b.chunkIndex), [chunks])
   const [selectedChunk, setSelectedChunk] = useState(0)
 
@@ -471,7 +475,7 @@ function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysi
     <div className="space-y-3">
       {/* 块选择器 */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">分块：</span>
+        <span className="text-xs text-text-muted">{t('analysis.chunkLabel')}</span>
         <div className="flex flex-wrap gap-1">
           {sorted.map((c, i) => (
             <button
@@ -483,7 +487,7 @@ function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysi
                   : 'bg-bg-elevated text-text-muted hover:text-text-secondary'
               }`}
             >
-              {c.label || `块 ${i + 1}`}
+              {c.label || t('analysis.chunkDefault', { index: i + 1 })}
             </button>
           ))}
         </div>
@@ -493,7 +497,7 @@ function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysi
       <div className="space-y-1">
         {visibleDimensions.map(dim => {
           const content = chunk[dim]
-          if (!content || content === '本块未涉及') return null
+          if (!content || content === t('analysis.notInvolved')) return null
 
           return (
             <div key={dim} className="border border-border/40 rounded-lg overflow-hidden">
@@ -513,7 +517,7 @@ function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysi
       {/* 精彩片段 */}
       {chunk.rawExcerpt && (
         <div className="border border-border/40 rounded-lg p-3">
-          <h4 className="text-xs font-medium text-text-muted mb-1.5">精彩片段引用</h4>
+          <h4 className="text-xs font-medium text-text-muted mb-1.5">{t('analysis.excerpts')}</h4>
           <div className="text-sm text-text-secondary italic leading-relaxed whitespace-pre-wrap">
             {chunk.rawExcerpt}
           </div>

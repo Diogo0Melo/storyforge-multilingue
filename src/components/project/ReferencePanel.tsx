@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Library, Upload } from 'lucide-react'
 import { useReferenceStore } from '../../stores/reference'
 import type { Project, Reference, ReferenceType } from '../../lib/types'
@@ -16,6 +17,7 @@ interface Props { project: Project }
 // ── 主面板 ─────────────────────────────────────────────────────────
 
 export default function ReferencePanel({ project }: Props) {
+  const { t } = useTranslation('project')
   const dialog = useDialog()
   const { references, loadAll, updateReference, deleteReference } = useReferenceStore()
   const [filter, setFilter] = useState<ReferenceType | 'all'>('all')
@@ -35,9 +37,9 @@ export default function ReferencePanel({ project }: Props) {
 
   const handleDelete = async (ref: Reference) => {
     const ok = await dialog.confirm({
-      title: `删除「${ref.title}」？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('reference.deleteTitle', { title: ref.title }),
+      message: t('reference.deleteMessage'),
+      confirmText: t('reference.deleteConfirm'),
       tone: 'danger',
     })
     if (!ok) return
@@ -52,12 +54,17 @@ export default function ReferencePanel({ project }: Props) {
         {/* 导入提示 */}
         <div className="bg-bg-elevated rounded-lg p-2.5 text-xs text-text-muted">
           <Upload className="w-3.5 h-3.5 inline mr-1 text-accent" />
-          通过侧边栏「导入」上传文档，解析后选择「导入项目参考」即可自动添加到此处。
+          {t('reference.importHint')}
         </div>
 
         {/* 筛选 tabs */}
         <div className="flex gap-1 bg-bg-elevated rounded-lg p-1">
-          {([['all', '全部', references.length], ['story', '故事', storyCount], ['style', '风格', styleCount], ['historical', '历史', references.filter(r => r.type === 'historical').length]] as const).map(
+          {([
+            ['all', t('reference.filterAll'), references.length],
+            ['story', t('reference.filterStory'), storyCount],
+            ['style', t('reference.filterStyle'), styleCount],
+            ['historical', t('reference.filterHistorical'), references.filter(r => r.type === 'historical').length],
+          ] as const).map(
             ([v, l, c]) => (
               <button
                 key={v}
@@ -72,7 +79,7 @@ export default function ReferencePanel({ project }: Props) {
 
         {importedCount > 0 && (
           <div className="text-[10px] text-text-muted px-1">
-            其中 {importedCount} 条来自导入解析
+            {t('reference.importCount', { count: importedCount })}
           </div>
         )}
 
@@ -81,7 +88,7 @@ export default function ReferencePanel({ project }: Props) {
           {displayed.length === 0 && (
             <div className="text-center text-text-muted text-sm py-8">
               <Library className="w-8 h-8 mx-auto mb-2 opacity-30" />
-              <p>暂无项目参考</p>
+              <p>{t('reference.empty')}</p>
             </div>
           )}
           {displayed.map((ref, i) => {
@@ -110,7 +117,7 @@ export default function ReferencePanel({ project }: Props) {
                     </span>
                     {hasImported && (
                       <span className="text-[10px] px-1 py-0.5 rounded border border-blue-400/30 text-blue-400 bg-blue-400/10">
-                        已导入
+                        {t('reference.imported')}
                       </span>
                     )}
                   </div>
@@ -137,12 +144,12 @@ export default function ReferencePanel({ project }: Props) {
         ) : (
           <div className="flex flex-col items-center justify-center h-64 text-text-muted text-sm gap-3">
             <Library className="w-12 h-12 opacity-20" />
-            <p>← 从左侧选择一条项目参考查看详情</p>
+            <p>{t('reference.selectHint')}</p>
             <div className="text-xs text-text-muted/60 text-center max-w-xs space-y-0.5">
-              <p>· <span className="text-accent">故事参考</span>：借鉴情节结构、世界观框架</p>
-              <p>· <span className="text-purple-400">风格参考</span>：借鉴文风、叙事节奏</p>
-              <p>· <span className="text-amber-500">历史资料</span>：考证历史背景、社会制度、日常生活细节</p>
-              <p>· <span className="text-blue-400">导入参考</span>：通过「导入」解析文档自动填充</p>
+              <p>· <span className="text-accent">{t('reference.descStory')}</span>：{t('reference.descStoryDetail')}</p>
+              <p>· <span className="text-purple-400">{t('reference.descStyle')}</span>：{t('reference.descStyleDetail')}</p>
+              <p>· <span className="text-amber-500">{t('reference.descHistorical')}</span>：{t('reference.descHistoricalDetail')}</p>
+              <p>· <span className="text-blue-400">{t('reference.descImport')}</span>：{t('reference.descImportDetail')}</p>
             </div>
           </div>
         )}

@@ -5,7 +5,7 @@ import ContentTypeBadge from '../../src/components/layout/ContentTypeBadge'
 import Sidebar from '../../src/components/layout/Sidebar'
 import {
   MODULE_CONTENT_TYPES,
-  NAV_TREE,
+  buildNavTree,
   getModuleContentType,
   type TreeNode,
 } from '../../src/components/layout/sidebar-tree'
@@ -37,7 +37,7 @@ function collectLeaves(nodes: TreeNode[]): Array<Extract<TreeNode, { kind: 'leaf
 
 describe('Phase 36 · 页面上游/下游内容标记', () => {
   it('所有导航叶子和 legacy 模块都从完整映射取得内容类型', () => {
-    const leaves = NAV_TREE.flatMap(section => [
+    const leaves = buildNavTree().flatMap(section => [
       ...(section.rootLeaf ? [section.rootLeaf] : []),
       ...collectLeaves(section.children ?? []),
     ])

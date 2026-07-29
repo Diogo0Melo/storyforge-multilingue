@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useTranslation } from 'react-i18next'
 import { Flame, Github, X, ChevronDown, ChevronRight, FolderOpen, Loader2 } from 'lucide-react'
 import { useProjectStore } from '../stores/project'
 import WelcomeGuide from '../components/guide/WelcomeGuide'
@@ -22,12 +23,7 @@ const GENRE_GROUPS = Array.from(
   }, new Map<string, typeof GENRE_OPTIONS[number][]>())
 )
 
-const STATUS_OPTIONS: { value: ProjectStatus; label: string }[] = [
-  { value: 'drafting',  label: '构思中' },
-  { value: 'ongoing',   label: '连载中' },
-  { value: 'paused',    label: '暂停' },
-  { value: 'completed', label: '已完结' },
-]
+const STATUS_VALUES: ProjectStatus[] = ['drafting', 'ongoing', 'paused', 'completed']
 
 const EMPTY_FORM = {
   name: '',
@@ -39,17 +35,18 @@ const EMPTY_FORM = {
 }
 
 // 取书名首字作为大字标识
-function getGlyph(name: string) {
-  return name.replace(/[《》【】「」\s]/g, '').charAt(0) || '书'
+function getGlyph(name: string, fallback: string) {
+  return name.replace(/[《》【】「」\s]/g, '').charAt(0) || fallback
 }
 
 // 获取字数友好展示
-function formatWords(words: number) {
-  if (words >= 10000) return `${(words / 10000).toFixed(1)} 万`
+function formatWords(words: number, unitWan: string) {
+  if (words >= 10000) return `${(words / 10000).toFixed(1)}${unitWan}`
   return `${words.toLocaleString()}`
 }
 
 export default function HomePage() {
+  const { t } = useTranslation('project')
   const navigate = useNavigate()
   const { projects, loading, loadProjects, createProject, deleteProject } = useProjectStore()
   const [showCreate, setShowCreate] = useState(false)
@@ -63,22 +60,22 @@ export default function HomePage() {
 
   // 从本地文件夹恢复：读回文件夹里所有 storyforge-*.json，各自导入成新项目（不覆盖现有）
   const handleRestoreFromFolder = async () => {
-    if (!isFSASupported()) { setRestoreMsg('当前浏览器不支持本地文件夹，请用 Chrome / Edge') ; return }
+    if (!isFSASupported()) { setRestoreMsg(t('home.restore.notSupported')) ; return }
     const h = await pickFolder()
     if (!h) return
-    setRestoring(true); setRestoreMsg('正在读取文件夹…')
+    setRestoring(true); setRestoreMsg(t('home.restore.reading'))
     try {
-      if (!(await ensureFolderPermission(h, false))) { setRestoreMsg('未获文件夹读取授权'); return }
+      if (!(await ensureFolderPermission(h, false))) { setRestoreMsg(t('home.restore.noPermission')); return }
       const files = await readStoryforgeBackups(h)
-      if (files.length === 0) { setRestoreMsg('该文件夹里没找到 storyforge 备份文件'); return }
+      if (files.length === 0) { setRestoreMsg(t('home.restore.noBackups')); return }
       let ok = 0
       for (const f of files) {
         try { await importProjectJSON(f.data); ok++ } catch (e) { console.error('[restore] 导入失败', f.name, e) }
       }
       await loadProjects()
-      setRestoreMsg(`已从本地文件夹恢复 ${ok}/${files.length} 个项目`)
+      setRestoreMsg(t('home.restore.success', { ok, total: files.length }))
     } catch (e) {
-      setRestoreMsg(`恢复失败：${(e as Error).message}`)
+      setRestoreMsg(t('home.restore.failed', { message: (e as Error).message }))
     } finally {
       setRestoring(false)
     }
@@ -122,7 +119,7 @@ export default function HomePage() {
   }
 
   const getGenreLabels = (genres: string[]) => {
-    if (!genres || genres.length === 0) return '未分类'
+    if (!genres || genres.length === 0) return t('home.uncategorized')
     return genres
       .slice(0, 3)
       .map(v => GENRE_OPTIONS.find(o => o.value === v)?.label ?? v)
@@ -149,18 +146,18 @@ export default function HomePage() {
               className="text-text-primary leading-none"
               style={{ fontFamily: 'var(--font-serif)', fontSize: 17, fontStyle: 'italic', letterSpacing: -0.3 }}
             >
-              storyforge
+              {t('home.brand')}
             </span>
             <span
               className="text-text-muted ml-2"
               style={{ fontSize: 10, letterSpacing: 2, textTransform: 'uppercase', fontStyle: 'normal', fontFamily: 'var(--font-sans)' }}
             >
-              故事熔炉
+              {t('home.brandSubtitle')}
             </span>
             <span
               className="ml-2 px-1.5 py-0.5 rounded text-text-muted bg-bg-hover/60"
               style={{ fontSize: 10, fontFamily: 'var(--font-mono, monospace)' }}
-              title="当前版本号（与 GitHub Releases / 更新日志对照即可知是否最新）"
+              title={t('home.versionTooltip')}
             >
               {APP_BUILD_ID}
             </span>
@@ -183,15 +180,15 @@ export default function HomePage() {
         {/* Hero */}
         <div className="mb-8">
           <div className="sec-eye mb-2">
-            {new Date().getFullYear()}年 · 我的书稿
+            {t('home.myBooks', { year: new Date().getFullYear() })}
           </div>
           <h1
             className="text-text-primary mb-3"
             style={{ fontFamily: 'var(--font-serif)', fontSize: 40, fontWeight: 400, letterSpacing: -0.6, lineHeight: 1.15 }}
           >
             {projects.length > 0
-              ? <>共有 <em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>{projects.length}</em> 部作品。</>
-              : <>开始<em style={{ fontStyle: 'italic', color: 'var(--accent)' }}>第一部</em>小说。</>
+              ? <span dangerouslySetInnerHTML={{ __html: t('home.projectCount', { count: projects.length }) }} />
+              : <span dangerouslySetInnerHTML={{ __html: t('home.startFirst') }} />
             }
           </h1>
           {/* 金色分隔线 */}
@@ -199,8 +196,8 @@ export default function HomePage() {
           <div className="flex items-center justify-between">
             <p className="text-text-secondary text-sm">
               {projects.length > 0
-                ? `${projects.length} 个项目 · 共 ${formatWords(totalWords)} 字`
-                : 'AI 辅助写作工具，从世界观到最终稿'
+                ? t('home.projectStats', { count: projects.length, words: formatWords(totalWords, t('home.unitWan')) })
+                : t('home.aiToolDesc')
               }
             </p>
             <div className="flex items-center gap-2">
@@ -208,18 +205,18 @@ export default function HomePage() {
                 <button
                   onClick={handleRestoreFromFolder}
                   disabled={restoring}
-                  title="从你之前绑定的本地文件夹里读回备份，导入成项目（不覆盖现有）"
+                  title={t('home.restoreTooltip')}
                   className="px-3 py-2 border border-border text-text-secondary rounded-lg hover:bg-bg-hover hover:text-text-primary transition-colors text-sm flex items-center gap-1.5 disabled:opacity-50"
                 >
                   {restoring ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />}
-                  从本地文件夹恢复
+                  {t('home.restoreButton')}
                 </button>
               )}
               <button
                 onClick={() => setShowCreate(true)}
                 className="px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover transition-colors text-sm font-medium flex items-center gap-1.5"
               >
-                + 新建项目
+                + {t('home.newProject')}
               </button>
             </div>
           </div>
@@ -231,7 +228,7 @@ export default function HomePage() {
         {/* ── 项目列表 ───────────────────────────────── */}
         <div>
           {loading ? (
-            <div className="py-16 text-center text-text-muted text-sm">加载中…</div>
+            <div className="py-16 text-center text-text-muted text-sm">{t('home.loading')}</div>
           ) : projects.length === 0 ? (
             <div
               className="py-16 text-center border border-dashed border-border rounded-xl cursor-pointer hover:border-accent/50 transition-colors group"
@@ -241,12 +238,12 @@ export default function HomePage() {
                    style={{ fontFamily: 'var(--font-serif)', fontSize: 40, fontWeight: 400, marginBottom: 8 }}>
                 ＋
               </div>
-              <p className="text-text-secondary text-sm">创建第一个项目</p>
+              <p className="text-text-secondary text-sm">{t('home.emptyPrompt')}</p>
             </div>
           ) : (
             <>
               {projects.map((project) => {
-                const glyph = getGlyph(project.name)
+                const glyph = getGlyph(project.name, t('home.glyphDefault'))
                 const genres = project.genres?.length ? project.genres : project.genre ? [project.genre] : ['other']
                 const isDeleting = deleteConfirm === project.id
                 return (
@@ -291,7 +288,7 @@ export default function HomePage() {
                         className="text-text-primary"
                         style={{ fontFamily: 'var(--font-mono)', fontSize: 15, fontFeatureSettings: '"tnum"' }}
                       >
-                        {formatWords(project.currentWordCount ?? 0)} 字
+                        {t('home.wordCount', { count: formatWords(project.currentWordCount ?? 0, t('home.unitWan')) })}
                       </div>
                       <div className="text-text-muted text-xs mt-0.5">
                         {new Date(project.updatedAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
@@ -306,9 +303,9 @@ export default function HomePage() {
                           ? 'bg-error/20 text-error opacity-100'
                           : 'opacity-0 group-hover:opacity-100 text-text-muted hover:text-error'
                       }`}
-                      title={isDeleting ? '再次点击确认删除' : '删除'}
+                      title={isDeleting ? t('home.deleteConfirm') : t('home.delete')}
                     >
-                      {isDeleting ? '确认' : '删除'}
+                      {isDeleting ? t('home.deleteConfirmButton') : t('home.delete')}
                     </button>
 
                     <ChevronRight className="w-4 h-4 text-text-muted opacity-0 group-hover:opacity-100 flex-shrink-0 transition-opacity" />
@@ -324,7 +321,7 @@ export default function HomePage() {
                 <div className="w-11 h-8 flex items-center justify-center border border-dashed border-border rounded group-hover:border-accent transition-colors" style={{ fontSize: 18 }}>
                   +
                 </div>
-                <span className="text-sm">新建项目</span>
+                <span className="text-sm">{t('home.newProject')}</span>
               </div>
             </>
           )}
@@ -346,7 +343,7 @@ export default function HomePage() {
                 className="text-text-primary"
                 style={{ fontFamily: 'var(--font-serif)', fontSize: 22, fontWeight: 400, letterSpacing: -0.3 }}
               >
-                新建项目
+                {t('home.modal.title')}
               </h3>
               <button onClick={() => setShowCreate(false)} className="p-1 text-text-muted hover:text-text-primary rounded">
                 <X className="w-4 h-4" />
@@ -356,13 +353,13 @@ export default function HomePage() {
             <div className="space-y-4">
               {/* 书名 */}
               <div>
-                <label className="block text-xs text-text-secondary mb-1.5">项目名称 *</label>
+                <label className="block text-xs text-text-secondary mb-1.5">{t('home.modal.nameLabel')}</label>
                 <input
                   type="text"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   onKeyDown={e => e.key === 'Enter' && handleCreate()}
-                  placeholder="如：《剑出山门》"
+                  placeholder={t('home.modal.namePlaceholder')}
                   className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors text-sm"
                   autoFocus
                 />
@@ -371,8 +368,8 @@ export default function HomePage() {
               {/* 流派（多选） */}
               <div>
                 <label className="block text-xs text-text-secondary mb-1.5">
-                  流派
-                  {form.genres.length > 0 && <span className="ml-1.5 text-accent">已选 {form.genres.length}</span>}
+                  {t('home.modal.genreLabel')}
+                  {form.genres.length > 0 && <span className="ml-1.5 text-accent">{t('home.modal.genreSelected', { count: form.genres.length })}</span>}
                 </label>
                 {form.genres.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-2">
@@ -393,7 +390,7 @@ export default function HomePage() {
                     onClick={() => setShowGenreDropdown(!showGenreDropdown)}
                     className="w-full flex items-center justify-between px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-secondary hover:border-accent/50 focus:outline-none transition-colors"
                   >
-                    <span>{form.genres.length > 0 ? getGenreLabels(form.genres) : '选择流派…'}</span>
+                    <span>{form.genres.length > 0 ? getGenreLabels(form.genres) : t('home.modal.genrePlaceholder')}</span>
                     <ChevronDown className={`w-4 h-4 transition-transform ${showGenreDropdown ? 'rotate-180' : ''}`} />
                   </button>
                   {showGenreDropdown && (
@@ -426,20 +423,20 @@ export default function HomePage() {
 
               {/* 写作状态 */}
               <div>
-                <label className="block text-xs text-text-secondary mb-1.5">写作状态</label>
+                <label className="block text-xs text-text-secondary mb-1.5">{t('home.modal.statusLabel')}</label>
                 <div className="flex gap-2 flex-wrap">
-                  {STATUS_OPTIONS.map(opt => (
+                  {STATUS_VALUES.map(val => (
                     <button
-                      key={opt.value}
+                      key={val}
                       type="button"
-                      onClick={() => setForm(f => ({ ...f, status: opt.value }))}
+                      onClick={() => setForm(f => ({ ...f, status: val }))}
                       className={`px-3 py-1.5 rounded-lg text-xs transition-colors border ${
-                        form.status === opt.value
+                        form.status === val
                           ? 'bg-accent/10 text-accent border-accent/40'
                           : 'border-border text-text-muted hover:border-border-hover'
                       }`}
                     >
-                      {opt.label}
+                      {t(`home.status.${val}`)}
                     </button>
                   ))}
                 </div>
@@ -447,11 +444,11 @@ export default function HomePage() {
 
               {/* 简介 */}
               <div>
-                <label className="block text-xs text-text-secondary mb-1.5">简介</label>
+                <label className="block text-xs text-text-secondary mb-1.5">{t('home.modal.synopsisLabel')}</label>
                 <textarea
                   value={form.description}
                   onChange={e => setForm({ ...form, description: e.target.value })}
-                  placeholder="一句话描述你的故事…"
+                  placeholder={t('home.modal.synopsisPlaceholder')}
                   rows={2}
                   className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-text-primary placeholder-text-muted focus:outline-none focus:border-accent transition-colors resize-none text-sm"
                 />
@@ -460,7 +457,7 @@ export default function HomePage() {
               {/* 目标字数 */}
               <div>
                 <label className="block text-xs text-text-secondary mb-1.5">
-                  目标字数：{(form.targetWordCount / 10000).toFixed(0)} 万字
+                  {t('home.modal.targetWords', { count: (form.targetWordCount / 10000).toFixed(0) })}
                 </label>
                 <input
                   type="range" min={100000} max={5000000} step={100000}
@@ -479,14 +476,14 @@ export default function HomePage() {
                 onClick={() => setShowCreate(false)}
                 className="px-4 py-2 text-text-secondary hover:text-text-primary rounded-lg hover:bg-bg-hover transition-colors text-sm"
               >
-                取消
+                {t('home.modal.cancel')}
               </button>
               <button
                 onClick={handleCreate}
                 disabled={!form.name.trim()}
                 className="px-5 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-medium text-sm"
               >
-                创建
+                {t('home.modal.create')}
               </button>
             </div>
           </div>

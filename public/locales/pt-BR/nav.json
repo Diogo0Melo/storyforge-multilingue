@@ -1,8 +1,94 @@
 {
   "info": "Informações da Obra",
-  "worldview": "Mundo",
-  "characters": "Personagens",
   "outline": "Estrutura",
   "chapters": "Capítulos",
-  "settings": "Configurações"
+  "section": {
+    "info": "Informações da Obra",
+    "worldview": "Biblioteca de Cenário",
+    "creation": "Área de Criação",
+    "experience": "Centro de Experiência",
+    "prompts": "Biblioteca de Prompts",
+    "settings": "Configurações"
+  },
+  "project": {
+    "overview": "Visão Geral",
+    "inspiration": "Inspiração Reversa",
+    "reference": "Referências do Projeto"
+  },
+  "worldview": {
+    "overview": "Visão Geral do Mundo",
+    "reality": "Realidade e Fantasia",
+    "origin": "Origem do Mundo",
+    "nature": "Ambiente Natural",
+    "humanity": "Ambiente Humano",
+    "timeline": "Linha do Tempo Histórica",
+    "map": "Mapa do Mundo"
+  },
+  "storyDesign": "Design da História",
+  "characters": {
+    "design": "Design de Personagens",
+    "generate": "Gerar Personagens",
+    "main": "Personagens Principais",
+    "minor": "Personagens Secundários",
+    "npc": "NPC",
+    "extras": "Figurantes",
+    "relations": "Rede de Relacionamentos"
+  },
+  "creation": {
+    "rules": "Regras de Criação",
+    "outline": "Estrutura",
+    "characterDriven": "Narrativa Orientada por Personagens",
+    "rag": "Biblioteca de Materiais e Busca",
+    "nodeMode": "Modo de Nós",
+    "timeline": "Linha da História",
+    "chapters": "Capítulos",
+    "foreshadow": "Pistas Narrativas",
+    "styleLearning": "Aprendizado de Estilo",
+    "locations": "Locais Importantes",
+    "state": "Tabela de Estado",
+    "inventory": "Inventário",
+    "facts": "Biblioteca de Fatos",
+    "storyTimeline": "Linha do Tempo da História",
+    "cultivation": "Progresso de Cultivo",
+    "sceneVerify": "Verificação de Cenas"
+  },
+  "experience": {
+    "runtime": "Execução Interativa"
+  },
+  "prompts": {
+    "library": "Biblioteca de Prompts"
+  },
+  "settings": {
+    "versionHistory": "Histórico de Versões",
+    "docImport": "Análise de Documentos",
+    "dataManagement": "Gerenciamento de Dados",
+    "usageStats": "Estatísticas de Uso",
+    "general": "Configurações"
+  },
+  "contentType": {
+    "upstream": "Cenário",
+    "upstreamDesc": "Conteúdo preenchido ou planejado que serve como base para a criação por IA.",
+    "writing": "Escrita",
+    "writingDesc": "Área de escrita e edição do texto do romance.",
+    "downstream": "Derivados",
+    "downstreamDesc": "Conteúdo extraído ou organizado do texto escrito, revisável pelo autor.",
+    "tool": "Ferramenta de IA",
+    "toolDesc": "Ferramentas auxiliares para gerar, reverter, analisar ou verificar conteúdo.",
+    "experience": "Experiência",
+    "experienceDesc": "Área de execução interativa, salvamento e eventos independentes do cânone da criação.",
+    "system": "Sistema",
+    "systemDesc": "Importação, exportação, versões, prompts e configurações do projeto."
+  },
+  "sidebar": {
+    "backHome": "Voltar ao Início",
+    "settings": "Configurações",
+    "version": "Versão Atual",
+    "expand": "Expandir Barra Lateral",
+    "collapse": "Recolher Barra Lateral"
+  },
+  "workspace": {
+    "loading": "Carregando...",
+    "panelLoading": "Carregando painel…",
+    "copilotLoading": "Carregando copiloto de IA…"
+  }
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo, lazy, Suspense } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router'
 import { useProjectStore } from '../stores/project'
 import { useWorldviewStore } from '../stores/worldview'
@@ -70,6 +71,7 @@ import { useLocationStore } from '../stores/location'
 import { useWorldGroupStore } from '../stores/world-group'
 
 export default function WorkspacePage() {
+  const { t } = useTranslation('nav')
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { loadProject, projects, currentProjectId } = useProjectStore()
@@ -162,7 +164,7 @@ export default function WorkspacePage() {
   if (loading || !project) {
     return (
       <div className="min-h-screen bg-bg-base flex items-center justify-center">
-        <span className="text-text-muted">加载中...</span>
+        <span className="text-text-muted">{t('workspace.loading')}</span>
       </div>
     )
   }
@@ -362,7 +364,7 @@ export default function WorkspacePage() {
         </div>
         <div className={`min-h-0 flex-1 overflow-y-auto ${isImmersiveModule ? '' : 'p-6'}`}>
           {/* Phase 3.5: 懒加载面板(地图类)加载时显示 fallback */}
-          <Suspense fallback={<div className="flex items-center justify-center h-64 text-text-muted text-sm">面板加载中…</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center h-64 text-text-muted text-sm">{t('workspace.panelLoading')}</div>}>
             {renderMainPanel()}
           </Suspense>
         </div>
@@ -378,7 +380,7 @@ export default function WorkspacePage() {
       {showCopilot && (
         <Suspense fallback={(
           <aside className="fixed inset-y-0 right-0 z-30 flex h-full w-[min(24rem,calc(100vw-3rem))] shrink-0 items-center justify-center border-l border-border bg-bg-surface text-xs text-text-muted shadow-xl lg:static lg:z-auto lg:w-[24rem] lg:shadow-none">
-            AI 对话副驾加载中…
+            {t('workspace.copilotLoading')}
           </aside>
         )}>
           <ChatCopilotPanel

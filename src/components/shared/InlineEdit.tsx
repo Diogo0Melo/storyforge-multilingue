@@ -5,6 +5,7 @@
  * 内置 IME 组合输入保护。
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { containTextareaWheel, parseCssPixels } from './textarea-scroll'
 
 /* ── InlineInput（单行） ────────────────────────────────────── */
@@ -19,6 +20,7 @@ export function InlineInput({
   prefix?: string
   suffix?: string
 }) {
+  const { t } = useTranslation('common')
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const composingRef = useRef(false)
@@ -57,7 +59,7 @@ export function InlineInput({
   if (!value) {
     return (
       <div onClick={() => setEditing(true)} className={`cursor-text min-h-[1.2em] ${className || ''} opacity-40`}>
-        {placeholder || '点击编辑…'}
+        {placeholder || t('inlineEdit.placeholder')}
       </div>
     )
   }
@@ -81,6 +83,7 @@ export function InlineTextarea({
   minRows?: number
   maxRows?: number
 }) {
+  const { t } = useTranslation('common')
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   const ref = useRef<HTMLTextAreaElement>(null)
@@ -133,7 +136,7 @@ export function InlineTextarea({
   if (!value) {
     return (
       <div onClick={() => setEditing(true)} className="text-sm text-text-muted/40 cursor-text py-0.5">
-        {placeholder || '点击编辑…'}
+        {placeholder || t('inlineEdit.placeholder')}
       </div>
     )
   }

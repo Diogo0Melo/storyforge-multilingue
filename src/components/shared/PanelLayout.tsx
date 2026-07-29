@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect, type ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PanelLeftClose, PanelLeft } from 'lucide-react'
 
 interface Props {
@@ -34,6 +35,7 @@ export default function PanelLayout({
   sidebarTitle,
   className = '',
 }: Props) {
+  const { t } = useTranslation('common')
   const [sidebarWidth, setSidebarWidth] = useState(defaultWidth)
   const [collapsed, setCollapsed] = useState(false)
   const [dragging, setDragging] = useState(false)
@@ -82,7 +84,7 @@ export default function PanelLayout({
             <button
               onClick={() => setCollapsed(true)}
               className="text-text-muted hover:text-text-primary ml-auto"
-              title="收起侧栏"
+              title={t('panelLayout.collapseSidebar')}
             >
               <PanelLeftClose className="w-4 h-4" />
             </button>
@@ -111,7 +113,7 @@ export default function PanelLayout({
             <button
               onClick={() => setCollapsed(false)}
               className="pointer-events-auto -ml-px inline-flex items-center gap-1.5 rounded-r-xl border border-l-0 border-border bg-bg-elevated/95 px-2.5 py-2 text-xs font-medium text-text-secondary shadow-theme-md backdrop-blur transition-colors hover:border-accent/60 hover:text-text-primary"
-              title="展开侧栏"
+              title={t('panelLayout.expandSidebar')}
             >
               <PanelLeft className="h-4 w-4" />
               {sidebarTitle && <span className="max-w-16 truncate">{sidebarTitle.replace(/^[^\p{L}\p{N}]+/u, '')}</span>}

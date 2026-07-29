@@ -1,6 +1,6 @@
 import { BookOpenCheck, DatabaseZap, Gamepad2, PenLine, Settings2, WandSparkles } from 'lucide-react'
 import {
-  MODULE_CONTENT_TYPE_DEFINITIONS,
+  getModuleContentTypeDefinitions,
   type ModuleContentType,
 } from './sidebar-tree'
 
@@ -35,7 +35,7 @@ export default function ContentTypeBadge({
   showDescription = false,
   className = '',
 }: Props) {
-  const definition = MODULE_CONTENT_TYPE_DEFINITIONS[contentType]
+  const definition = getModuleContentTypeDefinitions()[contentType]
   const Icon = TYPE_ICONS[contentType]
 
   if (compact) {

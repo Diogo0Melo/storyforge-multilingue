@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   BookMarked,
   ChevronDown,
@@ -17,24 +18,6 @@ import {
   REFERENCE_TYPE_CONFIG,
 } from './reference-view'
 
-const WORLDVIEW_LABELS: Record<string, string> = {
-  worldOrigin: '世界来源',
-  powerHierarchy: '力量体系',
-  worldStructure: '世界结构',
-  worldDimensions: '世界尺寸',
-  continentLayout: '大陆分布',
-  regionDimensions: '区域面积',
-  mountainsRivers: '山川河流',
-  climateByRegion: '分区域气候',
-  historyLine: '世界历史线',
-  worldEvents: '世界大事记',
-  races: '种族设定',
-  factionLayout: '势力分布',
-  politicsEconomyCulture: '政治/经济/文化',
-  internalConflicts: '矛盾冲突',
-  itemDesign: '道具设计',
-}
-
 type DetailTab = 'worldview' | 'characters' | 'outline' | 'deep-analysis' | 'info'
 
 interface Props {
@@ -45,6 +28,7 @@ interface Props {
 }
 
 export default function ReferenceDetailCard({ reference, referenceIndex, onUpdate, onDelete }: Props) {
+  const { t } = useTranslation('project')
   const data = reference.importedData
   const glyphColor = REFERENCE_GLYPH_COLORS[referenceIndex % REFERENCE_GLYPH_COLORS.length]
   const config = REFERENCE_TYPE_CONFIG[reference.type]
@@ -52,18 +36,37 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
   const characters = data?.characters || []
   const outline = data?.outline || []
 
+  const WORLDVIEW_LABELS: Record<string, string> = {
+    worldOrigin: t('refDetail.wv.worldOrigin'),
+    powerHierarchy: t('refDetail.wv.powerHierarchy'),
+    worldStructure: t('refDetail.wv.worldStructure'),
+    worldDimensions: t('refDetail.wv.worldDimensions'),
+    continentLayout: t('refDetail.wv.continentLayout'),
+    regionDimensions: t('refDetail.wv.regionDimensions'),
+    mountainsRivers: t('refDetail.wv.mountainsRivers'),
+    climateByRegion: t('refDetail.wv.climateByRegion'),
+    historyLine: t('refDetail.wv.historyLine'),
+    worldEvents: t('refDetail.wv.worldEvents'),
+    races: t('refDetail.wv.races'),
+    factionLayout: t('refDetail.wv.factionLayout'),
+    politicsEconomyCulture: t('refDetail.wv.politicsEconomyCulture'),
+    internalConflicts: t('refDetail.wv.internalConflicts'),
+    itemDesign: t('refDetail.wv.itemDesign'),
+  }
+
   const availableTabs = useMemo(() => {
     const tabs: { key: DetailTab; label: string; icon: React.ComponentType<{ className?: string }>; count?: number }[] = [
-      { key: 'deep-analysis', label: '作品分析', icon: Microscope },
+      { key: 'deep-analysis', label: t('refDetail.tabAnalysis'), icon: Microscope },
     ]
     if (data) {
-      if (worldviewEntries.length > 0) tabs.push({ key: 'worldview', label: '世界观', icon: Globe, count: worldviewEntries.length })
-      if (characters.length > 0) tabs.push({ key: 'characters', label: '角色', icon: Users2, count: characters.length })
-      if (outline.length > 0) tabs.push({ key: 'outline', label: '大纲', icon: ListTree, count: outline.length })
+      if (worldviewEntries.length > 0) tabs.push({ key: 'worldview', label: t('refDetail.tabWorldview'), icon: Globe, count: worldviewEntries.length })
+      if (characters.length > 0) tabs.push({ key: 'characters', label: t('refDetail.tabCharacters'), icon: Users2, count: characters.length })
+      if (outline.length > 0) tabs.push({ key: 'outline', label: t('refDetail.tabOutline'), icon: ListTree, count: outline.length })
     }
-    tabs.push({ key: 'info', label: '基本信息', icon: BookMarked })
+    tabs.push({ key: 'info', label: t('refDetail.tabInfo'), icon: BookMarked })
     return tabs
-  }, [characters.length, data, outline.length, worldviewEntries.length])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [characters.length, data, outline.length, worldviewEntries.length, t])
   const [activeTab, setActiveTab] = useState<DetailTab>(availableTabs[0]?.key || 'info')
 
   useEffect(() => {
@@ -81,19 +84,19 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
           <div className="flex items-center gap-1.5 text-xs mb-0.5">
             <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${config.color}`}>{config.label}</span>
             {data && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-400/30 text-blue-400 bg-blue-400/10">已导入</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-400/30 text-blue-400 bg-blue-400/10">{t('refDetail.imported')}</span>
             )}
           </div>
           <h3 className="text-xl font-bold font-serif text-text-primary">{reference.title}</h3>
           {reference.author && <p className="text-sm text-text-muted">{reference.author}</p>}
           {data?.sourceFilename && (
             <p className="text-[10px] text-text-muted mt-0.5">
-              来源文件：{data.sourceFilename}
-              {data.importedAt && ` · 导入于 ${new Date(data.importedAt).toLocaleString('zh-CN')}`}
+              {t('refDetail.sourceFile')}{data.sourceFilename}
+              {data.importedAt && ` · ${t('refDetail.importedAt')} ${new Date(data.importedAt).toLocaleString('zh-CN')}`}
             </p>
           )}
         </div>
-        <button onClick={onDelete} className="p-1.5 text-text-muted hover:text-error rounded transition-colors shrink-0" aria-label="删除项目参考">
+        <button onClick={onDelete} className="p-1.5 text-text-muted hover:text-error rounded transition-colors shrink-0" aria-label={t('refDetail.delete')}>
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
@@ -122,35 +125,35 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
       )}
 
       <div>
-        {activeTab === 'info' && <ReferenceInfoTab reference={reference} onUpdate={onUpdate} />}
-        {activeTab === 'worldview' && <ReferenceWorldviewTab entries={worldviewEntries} />}
-        {activeTab === 'characters' && <ReferenceCharactersTab characters={characters} />}
-        {activeTab === 'outline' && <ReferenceOutlineTab outline={outline} />}
+        {activeTab === 'info' && <ReferenceInfoTab reference={reference} onUpdate={onUpdate} t={t} />}
+        {activeTab === 'worldview' && <ReferenceWorldviewTab entries={worldviewEntries} WORLDVIEW_LABELS={WORLDVIEW_LABELS} />}
+        {activeTab === 'characters' && <ReferenceCharactersTab characters={characters} t={t} />}
+        {activeTab === 'outline' && <ReferenceOutlineTab outline={outline} t={t} />}
         {activeTab === 'deep-analysis' && <ReferenceDeepAnalysisTab reference={reference} />}
       </div>
     </div>
   )
 }
 
-function ReferenceInfoTab({ reference, onUpdate }: { reference: Reference; onUpdate: (data: Partial<Reference>) => void }) {
+function ReferenceInfoTab({ reference, onUpdate, t }: { reference: Reference; onUpdate: (data: Partial<Reference>) => void; t: ReturnType<typeof useTranslation>['t'] }) {
   return (
     <div className="space-y-0 divide-y divide-border/40">
-      <ReferenceInfoRow label="标题">
+      <ReferenceInfoRow label={t('refDetail.titleLabel')}>
         <InlineInput value={reference.title} onChange={value => onUpdate({ title: value })} className="text-sm font-medium text-text-primary" />
       </ReferenceInfoRow>
-      <ReferenceInfoRow label="作者">
-        <InlineInput value={reference.author} onChange={value => onUpdate({ author: value })} placeholder="点击填写作者…" className="text-sm text-text-primary" />
+      <ReferenceInfoRow label={t('refDetail.authorLabel')}>
+        <InlineInput value={reference.author} onChange={value => onUpdate({ author: value })} placeholder={t('refDetail.authorPlaceholder')} className="text-sm text-text-primary" />
       </ReferenceInfoRow>
-      <ReferenceInfoRow label="类型">
+      <ReferenceInfoRow label={t('refDetail.typeLabel')}>
         <select value={reference.type} onChange={event => onUpdate({ type: event.target.value as ReferenceType })}
-          aria-label="参考类型" className="bg-bg-elevated border border-border rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent">
-          <option value="story">故事参考</option>
-          <option value="style">风格参考</option>
-          <option value="historical">历史资料</option>
+          aria-label={t('refDetail.refTypeLabel')} className="bg-bg-elevated border border-border rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent">
+          <option value="story">{t('refDetail.typeStory')}</option>
+          <option value="style">{t('refDetail.typeStyle')}</option>
+          <option value="historical">{t('refDetail.typeHistorical')}</option>
         </select>
       </ReferenceInfoRow>
-      <ReferenceInfoRow label="参考要点">
-        <InlineTextarea value={reference.note} onChange={value => onUpdate({ note: value })} placeholder="记录你希望借鉴这部作品的哪些方面…" />
+      <ReferenceInfoRow label={t('refDetail.notesLabel')}>
+        <InlineTextarea value={reference.note} onChange={value => onUpdate({ note: value })} placeholder={t('refDetail.notesPlaceholder')} />
       </ReferenceInfoRow>
     </div>
   )
@@ -165,7 +168,7 @@ function ReferenceInfoRow({ label, children }: { label: string; children: React.
   )
 }
 
-function ReferenceWorldviewTab({ entries }: { entries: [string, string][] }) {
+function ReferenceWorldviewTab({ entries, WORLDVIEW_LABELS }: { entries: [string, string][]; WORLDVIEW_LABELS: Record<string, string> }) {
   return (
     <div className="space-y-0 divide-y divide-border/40">
       {entries.map(([key, value]) => (
@@ -178,17 +181,17 @@ function ReferenceWorldviewTab({ entries }: { entries: [string, string][] }) {
   )
 }
 
-function ReferenceCharactersTab({ characters }: { characters: Array<Record<string, unknown>> }) {
+function ReferenceCharactersTab({ characters, t }: { characters: Array<Record<string, unknown>>; t: ReturnType<typeof useTranslation>['t'] }) {
   const [expanded, setExpanded] = useState<number | null>(null)
   return (
     <div className="space-y-0.5">
       {characters.map((character, index) => {
-        const name = String(character.name || '未命名')
+        const name = String(character.name || t('refDetail.unnamed'))
         const role = String(character.role || '')
         const description = character.shortDescription ? String(character.shortDescription) : ''
         const details = [
-          ['外貌', character.appearance], ['性格', character.personality], ['背景', character.background],
-          ['动机', character.motivation], ['能力', character.abilities], ['关系', character.relationships], ['弧光', character.arc],
+          [t('refDetail.charAppearance'), character.appearance], [t('refDetail.charPersonality'), character.personality], [t('refDetail.charBackground'), character.background],
+          [t('refDetail.charMotivation'), character.motivation], [t('refDetail.charAbility'), character.abilities], [t('refDetail.charRelations'), character.relationships], [t('refDetail.charArc'), character.arc],
         ].filter(([, value]) => value && String(value).trim()) as [string, unknown][]
         const isExpanded = expanded === index
         return (
@@ -220,12 +223,12 @@ function ReferenceCharactersTab({ characters }: { characters: Array<Record<strin
   )
 }
 
-function ReferenceOutlineTab({ outline }: { outline: Array<Record<string, unknown>> }) {
-  return <div className="space-y-1">{outline.map((node, index) => <ReferenceOutlineNode key={index} node={node} depth={0} />)}</div>
+function ReferenceOutlineTab({ outline, t }: { outline: Array<Record<string, unknown>>; t: ReturnType<typeof useTranslation>['t'] }) {
+  return <div className="space-y-1">{outline.map((node, index) => <ReferenceOutlineNode key={index} node={node} depth={0} t={t} />)}</div>
 }
 
-function ReferenceOutlineNode({ node, depth }: { node: Record<string, unknown>; depth: number }) {
-  const title = String(node.title || '未命名')
+function ReferenceOutlineNode({ node, depth, t }: { node: Record<string, unknown>; depth: number; t: ReturnType<typeof useTranslation>['t'] }) {
+  const title = String(node.title || t('refDetail.unnamed'))
   const summary = node.summary ? String(node.summary) : ''
   const children = Array.isArray(node.children) ? node.children : []
   const [collapsed, setCollapsed] = useState(depth > 1)
@@ -240,7 +243,7 @@ function ReferenceOutlineNode({ node, depth }: { node: Record<string, unknown>; 
       </button>
       {summary && <p className="text-xs text-text-muted pl-8 pb-1">{summary}</p>}
       {!collapsed && children.map((child, index) => (
-        <ReferenceOutlineNode key={index} node={child as Record<string, unknown>} depth={depth + 1} />
+        <ReferenceOutlineNode key={index} node={child as Record<string, unknown>} depth={depth + 1} t={t} />
       ))}
     </div>
   )

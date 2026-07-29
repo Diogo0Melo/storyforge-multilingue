@@ -5,6 +5,7 @@
  */
 
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Lightbulb, Sparkles, Loader2, Download, Plus,
 } from 'lucide-react'
@@ -27,6 +28,7 @@ interface Props {
 }
 
 export default function InspirationPanel({ project }: Props) {
+  const { t } = useTranslation('project')
   const wgStore = useWorldGroupStore()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['worldview', 'storyCore', 'characters']))
   const [adoptedSections, setAdoptedSections] = useState<Set<string>>(new Set())
@@ -166,49 +168,49 @@ export default function InspirationPanel({ project }: Props) {
 
   // 导出反推结果为 Markdown 文件
   const handleExportResult = () => {
-    const lines: string[] = [`# ${project.name} — 灵感反推结果\n`]
-    if (inspiration.trim()) lines.push(`## 原始灵感\n${inspiration}\n`)
+    const lines: string[] = [`# ${project.name} — ${t('inspiration.exportTitle')}\n`]
+    if (inspiration.trim()) lines.push(`## ${t('inspiration.exportOriginal')}\n${inspiration}\n`)
     if (mwResult) {
       const sc = mwResult.storyCore
-      lines.push(`## 故事主线`)
-      if (sc.logline) lines.push(`- 一句话：${sc.logline}`)
-      if (sc.theme) lines.push(`- 主题：${sc.theme}`)
-      if (sc.centralConflict) lines.push(`- 核心冲突：${sc.centralConflict}`)
-      if (sc.mainPlot) lines.push(`- 主线：${sc.mainPlot}`)
+      lines.push(`## ${t('inspiration.exportStoryMain')}`)
+      if (sc.logline) lines.push(`- ${t('inspiration.exportLogline')}：${sc.logline}`)
+      if (sc.theme) lines.push(`- ${t('inspiration.exportTheme')}：${sc.theme}`)
+      if (sc.centralConflict) lines.push(`- ${t('inspiration.exportConflict')}：${sc.centralConflict}`)
+      if (sc.mainPlot) lines.push(`- ${t('inspiration.exportMainPlot')}：${sc.mainPlot}`)
       lines.push('')
       mwResult.worlds.forEach((w, i) => {
-        lines.push(`## 世界 ${i + 1}：${w.name}（${w.type}）`)
-        if (w.worldOrigin) lines.push(`- 世界来源：${w.worldOrigin}`)
-        if (w.powerHierarchy) lines.push(`- 力量体系：${w.powerHierarchy}`)
-        if (w.continentLayout) lines.push(`- 地貌分布：${w.continentLayout}`)
-        if (w.historyLine) lines.push(`- 世界历史：${w.historyLine}`)
-        if (w.factionLayout) lines.push(`- 势力分布：${w.factionLayout}`)
-        if (w.entryCondition) lines.push(`- 进入条件：${w.entryCondition}`)
-        if (w.powerRestriction) lines.push(`- 能力限制：${w.powerRestriction}`)
+        lines.push(`## ${t('inspiration.exportWorld')} ${i + 1}：${w.name}（${w.type}）`)
+        if (w.worldOrigin) lines.push(`- ${t('inspiration.exportWorldOrigin')}：${w.worldOrigin}`)
+        if (w.powerHierarchy) lines.push(`- ${t('inspiration.exportPowerSystem')}：${w.powerHierarchy}`)
+        if (w.continentLayout) lines.push(`- ${t('inspiration.exportGeography')}：${w.continentLayout}`)
+        if (w.historyLine) lines.push(`- ${t('inspiration.exportHistory')}：${w.historyLine}`)
+        if (w.factionLayout) lines.push(`- ${t('inspiration.exportFactions')}：${w.factionLayout}`)
+        if (w.entryCondition) lines.push(`- ${t('inspiration.exportEntryCondition')}：${w.entryCondition}`)
+        if (w.powerRestriction) lines.push(`- ${t('inspiration.exportPowerRestriction')}：${w.powerRestriction}`)
         lines.push('')
       })
       if (mwResult.characters.length) {
-        lines.push(`## 初始角色`)
+        lines.push(`## ${t('inspiration.exportInitialChars')}`)
         mwResult.characters.forEach(c => {
-          const home = c.isCrossWorld ? '跨世界' : (c.homeWorld || '')
+          const home = c.isCrossWorld ? t('inspiration.exportCrossWorld') : (c.homeWorld || '')
           lines.push(`- **${c.name}**（${characterAxesLabel(c)}${home ? ` · ${home}` : ''}）：${c.shortDescription}`)
         })
       }
     } else if (result) {
       const wv = result.worldview, sc = result.storyCore
-      lines.push(`## 世界观`)
-      if (wv.worldOrigin) lines.push(`- 世界来源：${wv.worldOrigin}`)
-      if (wv.powerHierarchy) lines.push(`- 力量体系：${wv.powerHierarchy}`)
-      if (wv.continentLayout) lines.push(`- 地貌分布：${wv.continentLayout}`)
-      if (wv.historyLine) lines.push(`- 世界历史：${wv.historyLine}`)
-      if (wv.factionLayout) lines.push(`- 势力分布：${wv.factionLayout}`)
-      lines.push(`\n## 故事核心`)
-      if (sc.logline) lines.push(`- 一句话：${sc.logline}`)
-      if (sc.theme) lines.push(`- 主题：${sc.theme}`)
-      if (sc.centralConflict) lines.push(`- 核心冲突：${sc.centralConflict}`)
-      if (sc.mainPlot) lines.push(`- 主线：${sc.mainPlot}`)
+      lines.push(`## ${t('inspiration.exportWorldview')}`)
+      if (wv.worldOrigin) lines.push(`- ${t('inspiration.exportWorldOrigin')}：${wv.worldOrigin}`)
+      if (wv.powerHierarchy) lines.push(`- ${t('inspiration.exportPowerSystem')}：${wv.powerHierarchy}`)
+      if (wv.continentLayout) lines.push(`- ${t('inspiration.exportGeography')}：${wv.continentLayout}`)
+      if (wv.historyLine) lines.push(`- ${t('inspiration.exportHistory')}：${wv.historyLine}`)
+      if (wv.factionLayout) lines.push(`- ${t('inspiration.exportFactions')}：${wv.factionLayout}`)
+      lines.push(`\n## ${t('inspiration.exportStoryCore')}`)
+      if (sc.logline) lines.push(`- ${t('inspiration.exportLogline')}：${sc.logline}`)
+      if (sc.theme) lines.push(`- ${t('inspiration.exportTheme')}：${sc.theme}`)
+      if (sc.centralConflict) lines.push(`- ${t('inspiration.exportConflict')}：${sc.centralConflict}`)
+      if (sc.mainPlot) lines.push(`- ${t('inspiration.exportMainPlot')}：${sc.mainPlot}`)
       if (result.characters.length) {
-        lines.push(`\n## 初始角色`)
+        lines.push(`\n## ${t('inspiration.exportInitialChars')}`)
         result.characters.forEach(c => lines.push(`- **${c.name}**（${characterAxesLabel(c)}）：${c.shortDescription}`))
       }
     }
@@ -322,19 +324,21 @@ export default function InspirationPanel({ project }: Props) {
     setAdopting(false)
   }
 
+  const placeholderText = `${t('inspiration.placeholder1')}\n\n${t('inspiration.placeholder2')}\n- ${t('inspiration.placeholder3')}\n- ${t('inspiration.placeholder4')}\n- ${t('inspiration.placeholder5')}\n- ${t('inspiration.placeholder6')}`
+
   return (
     <div className="h-full flex flex-col overflow-hidden">
       {/* 顶部标题 */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-bg-surface">
         <Lightbulb className="w-5 h-5 text-yellow-500" />
-        <h2 className="text-lg font-semibold text-text-primary">灵感反推</h2>
-        <span className="text-xs text-text-muted ml-2">从碎片想法反推完整故事框架</span>
+        <h2 className="text-lg font-semibold text-text-primary">{t('inspiration.title')}</h2>
+        <span className="text-xs text-text-muted ml-2">{t('inspiration.subtitle')}</span>
         {(result || mwResult) && (
           <button
             onClick={handleExportResult}
             className="ml-auto flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-bg-elevated text-text-secondary border border-border hover:text-accent hover:border-accent/50 transition-colors"
           >
-            <Download className="w-3.5 h-3.5" /> 导出结果
+            <Download className="w-3.5 h-3.5" /> {t('inspiration.export')}
           </button>
         )}
       </div>
@@ -343,16 +347,14 @@ export default function InspirationPanel({ project }: Props) {
         {/* ── 灵感输入 ────────────────────────────── */}
         <section>
           <label className="block text-sm font-medium text-text-primary mb-1">
-            写下你的灵感
+            {t('inspiration.writeLabel')}
           </label>
           {/* CF-5: 明确适用边界，避免用户误把长篇正文粘进来 */}
-          <p className="text-xs text-text-muted mb-2">
-            适合<strong>短灵感 / 梗概 / 片段想法</strong>（几句到一两段）。要从<strong>整章 / 整本正文</strong>提取设定，请用「文档解析 / 项目参考导入」，效果更完整。
-          </p>
+          <p className="text-xs text-text-muted mb-2" dangerouslySetInnerHTML={{ __html: t('inspiration.writeHelper') }} />
           <AutoResizeTextarea
             value={inspiration}
             onChange={e => setInspiration(e.target.value)}
-            placeholder={"随便写点什么...\n\n例如：\n- 一个在末世废墟中寻找失踪妹妹的退役军人\n- 古代宫廷里，一个替身公主发现了皇帝的秘密\n- 赛博朋克 + 修仙，用代码修炼的程序员\n- 甚至只是几个关键词：深海、孤岛、失忆、怪物"}
+            placeholder={placeholderText}
             className="w-full text-sm bg-bg-base border border-border rounded-lg px-4 py-3 text-text-primary placeholder:text-text-muted resize-none"
             minRows={5}
           />
@@ -361,18 +363,18 @@ export default function InspirationPanel({ project }: Props) {
               value={sourceKind}
               onChange={event => setSourceKind(event.target.value as InspirationSourceKind)}
               className="rounded border border-border bg-bg-elevated px-2 py-1.5 text-xs text-text-secondary"
-              aria-label="灵感来源"
+              aria-label={t('inspiration.sourceLabel')}
             >
-              <option value="author">本人灵感</option>
-              <option value="reference">参考启发</option>
-              <option value="research">研究资料</option>
-              <option value="other">其他</option>
+              <option value="author">{t('inspiration.sourceAuthor')}</option>
+              <option value="reference">{t('inspiration.sourceReference')}</option>
+              <option value="research">{t('inspiration.sourceResearch')}</option>
+              <option value="other">{t('inspiration.sourceOther')}</option>
             </select>
             <input
               value={fragmentLabel}
               onChange={event => setFragmentLabel(event.target.value)}
               maxLength={80}
-              placeholder="碎片标题（可选）"
+              placeholder={t('inspiration.fragmentTitle')}
               className="min-w-44 flex-1 rounded border border-border bg-bg-elevated px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted"
             />
             <button
@@ -380,7 +382,7 @@ export default function InspirationPanel({ project }: Props) {
               disabled={!inspiration.trim() || inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS}
               className="flex items-center gap-1 rounded border border-accent/40 px-3 py-1.5 text-xs text-accent hover:bg-accent/10 disabled:opacity-40"
             >
-              <Plus className="h-3.5 w-3.5" /> 加入素材库
+              <Plus className="h-3.5 w-3.5" /> {t('inspiration.addToLibrary')}
             </button>
           </div>
           {/* CF-5: 超长非阻断提示——不静默截断，明确告知只适合短文本 */}
@@ -389,8 +391,8 @@ export default function InspirationPanel({ project }: Props) {
               inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS ? 'text-red-400' : 'text-warning'
             }`}>
               {inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS
-                ? `当前输入 ${inspiration.trim().length} 字，超过单碎片 ${MAX_INSPIRATION_FRAGMENT_CHARS} 字上限。请拆成多个碎片；系统不会静默截断。`
-                : `⚠️ 当前输入约 ${inspiration.trim().length} 字，偏长。灵感反推面向短灵感设计；长篇正文请改用「文档解析 / 项目参考导入」。`}
+                ? t('inspiration.lengthWarning', { count: inspiration.trim().length, max: MAX_INSPIRATION_FRAGMENT_CHARS })
+                : t('inspiration.lengthCaution', { count: inspiration.trim().length })}
             </p>
           )}
         </section>
@@ -423,11 +425,11 @@ export default function InspirationPanel({ project }: Props) {
 
         {/* ── 补充说明 ────────────────────────────── */}
         <section>
-          <label className="block text-xs text-text-muted mb-1">补充说明（可选）</label>
+          <label className="block text-xs text-text-muted mb-1">{t('inspiration.notesLabel')}</label>
           <AutoResizeTextarea
             value={userHint}
             onChange={e => setUserHint(e.target.value)}
-            placeholder="例如：偏黑暗风格、需要感情线、主角要有反转..."
+            placeholder={t('inspiration.notesPlaceholder')}
             className="w-full text-sm bg-bg-base border border-border rounded px-3 py-2 text-text-primary placeholder:text-text-muted resize-none"
             minRows={2}
           />
@@ -449,11 +451,11 @@ export default function InspirationPanel({ project }: Props) {
             ) : (
               <Sparkles className="w-4 h-4" />
             )}
-            {ai.isStreaming ? '融合中...' : inspirationWorkspace.versions.some(version => version.mode === mode) ? '融合并更新' : '开始反推'}
+            {ai.isStreaming ? t('inspiration.fusing') : inspirationWorkspace.versions.some(version => version.mode === mode) ? t('inspiration.fuseAndUpdate') : t('inspiration.startReverse')}
           </button>
           {ai.isStreaming && (
             <button onClick={ai.stop} className="text-xs text-text-muted hover:text-red-500 transition-colors">
-              停止
+              {t('inspiration.stop')}
             </button>
           )}
         </div>
@@ -467,7 +469,7 @@ export default function InspirationPanel({ project }: Props) {
             tokenUsage={ai.tokenUsage}
             onStop={ai.stop}
             onRetry={handleGenerate}
-            placeholder="等待 AI 反推故事框架..."
+            placeholder={t('inspiration.waitingResult')}
             moduleKey={isMW ? 'inspiration.reverse.multiworld' : 'inspiration.reverse'}
           />
         )}

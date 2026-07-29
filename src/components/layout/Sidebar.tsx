@@ -1,8 +1,9 @@
 import { useState, type ComponentType, type ReactElement } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Settings } from 'lucide-react'
 import { APP_BUILD_ID } from '../../lib/version'
 import {
-  MODULE_CONTENT_TYPE_DEFINITIONS, NAV_TREE, getBranchChain,
+  buildNavTree, getModuleContentTypeDefinitions, getBranchChain,
   type SidebarModule, type TreeLeaf, type TreeNode,
 } from './sidebar-tree'
 import ContentTypeBadge from './ContentTypeBadge'
@@ -37,13 +38,15 @@ function normalize(m: SidebarModule): SidebarModule {
 export default function Sidebar({
   active, onSelect, onBack, projectName, collapsed, onToggleCollapse, hiddenModules,
 }: SidebarProps) {
+  const { t } = useTranslation('nav')
   const normActive = normalize(active)
+  const navTree = buildNavTree()
 
   // 默认展开 active 所在的 branch + 全部 branch（首次打开）
   const [expanded, setExpanded] = useState<Set<string>>(() => {
     const init = new Set<string>(getBranchChain(normActive))
     // 默认全部 branch 展开（避免用户找不到）
-    for (const sec of NAV_TREE) {
+    for (const sec of navTree) {
       if (sec.children) collectBranchIds(sec.children, init)
     }
     return init
@@ -66,11 +69,11 @@ export default function Sidebar({
       <div className={`border-b border-border ${collapsed ? 'p-2' : 'p-3'}`}>
         <button
           onClick={onBack}
-          title="返回首页"
+          title={t('sidebar.backHome')}
           className={`flex items-center gap-1.5 text-text-secondary hover:text-text-primary text-sm transition-colors ${collapsed ? 'justify-center w-full' : 'mb-2'}`}
         >
           <ArrowLeft className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>返回首页</span>}
+          {!collapsed && <span>{t('sidebar.backHome')}</span>}
         </button>
         {!collapsed && (
           <h2 className="text-text-primary font-semibold text-sm truncate px-1 mt-1" title={projectName}>
@@ -81,7 +84,7 @@ export default function Sidebar({
 
       {/* 导航 */}
       <nav className="flex-1 py-1.5 overflow-y-auto overflow-x-hidden">
-        {NAV_TREE.map(section => (
+        {navTree.map(section => (
           <div key={section.sectionId} className="mb-1">
             {/* section 标题 — 当 section 本身就是个单叶子（如「提示词库」），用按钮代替标题，避免重复 */}
             {!collapsed && !section.rootLeaf ? (
@@ -124,7 +127,7 @@ export default function Sidebar({
       <div className="border-t border-border p-2 flex items-center justify-between">
         <button
           onClick={() => onSelect('settings')}
-          title="设置"
+          title={t('sidebar.settings')}
           className={`p-1.5 rounded transition-colors ${
             normActive === 'settings'
               ? 'text-accent bg-accent/10'
@@ -134,13 +137,13 @@ export default function Sidebar({
           <Settings className="w-4 h-4" />
         </button>
         {!collapsed && (
-          <span className="text-[10px] text-text-muted font-mono" title="当前版本号">
+          <span className="text-[10px] text-text-muted font-mono" title={t('sidebar.version')}>
             {APP_BUILD_ID}
           </span>
         )}
         <button
           onClick={onToggleCollapse}
-          title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+          title={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
           className="p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -218,7 +221,7 @@ function NavLeafButton({
   onSelect: (id: SidebarModule) => void
 }) {
   const Icon: ComponentType<{ className?: string }> = leaf.icon
-  const contentTypeDefinition = MODULE_CONTENT_TYPE_DEFINITIONS[leaf.contentType]
+  const contentTypeDefinition = getModuleContentTypeDefinitions()[leaf.contentType]
   return (
     <button
       onClick={() => onSelect(leaf.id)}

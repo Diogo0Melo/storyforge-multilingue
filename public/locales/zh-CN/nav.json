@@ -1,8 +1,94 @@
 {
   "info": "著作信息",
-  "worldview": "世界观",
-  "characters": "角色",
   "outline": "大纲",
   "chapters": "章节",
-  "settings": "设置"
+  "section": {
+    "info": "著作信息",
+    "worldview": "设定库",
+    "creation": "创作区",
+    "experience": "体验中心",
+    "prompts": "提示词库",
+    "settings": "设置区"
+  },
+  "project": {
+    "overview": "项目概况",
+    "inspiration": "灵感反推",
+    "reference": "项目参考"
+  },
+  "worldview": {
+    "overview": "世界总览",
+    "reality": "真实与幻想",
+    "origin": "世界起源",
+    "nature": "自然环境",
+    "humanity": "人文环境",
+    "timeline": "历史年表",
+    "map": "世界地图"
+  },
+  "storyDesign": "故事设计",
+  "characters": {
+    "design": "角色设计",
+    "generate": "角色生成",
+    "main": "主要角色",
+    "minor": "次要角色",
+    "npc": "NPC",
+    "extras": "路人",
+    "relations": "关系网"
+  },
+  "creation": {
+    "rules": "创作规则",
+    "outline": "大纲",
+    "characterDriven": "角色驱动",
+    "rag": "资料与检索库",
+    "nodeMode": "节点模式",
+    "timeline": "故事线",
+    "chapters": "章节",
+    "foreshadow": "伏笔",
+    "styleLearning": "文风学习",
+    "locations": "重要地点",
+    "state": "状态表",
+    "inventory": "物品栏",
+    "facts": "事实库",
+    "storyTimeline": "故事年表",
+    "cultivation": "修炼进度",
+    "sceneVerify": "场景考证"
+  },
+  "experience": {
+    "runtime": "互动运行时"
+  },
+  "prompts": {
+    "library": "提示词库"
+  },
+  "settings": {
+    "versionHistory": "版本历史",
+    "docImport": "文档解析",
+    "dataManagement": "数据管理",
+    "usageStats": "消耗统计",
+    "general": "设置"
+  },
+  "contentType": {
+    "upstream": "设定",
+    "upstreamDesc": "你填写或规划的内容，会作为 AI 创作的上游依据。",
+    "writing": "创作",
+    "writingDesc": "小说正文的实际写作与编辑区域。",
+    "downstream": "产物",
+    "downstreamDesc": "从已写正文提取或整理的内容，可由作者校正。",
+    "tool": "AI 工具",
+    "toolDesc": "用于生成、反推、分析或考证的辅助工具。",
+    "experience": "体验",
+    "experienceDesc": "独立于创作 Canon 的互动运行、存档与事件区域。",
+    "system": "系统",
+    "systemDesc": "项目导入、导出、版本、提示词与应用配置。"
+  },
+  "sidebar": {
+    "backHome": "返回首页",
+    "settings": "设置",
+    "version": "当前版本号",
+    "expand": "展开侧边栏",
+    "collapse": "折叠侧边栏"
+  },
+  "workspace": {
+    "loading": "加载中...",
+    "panelLoading": "面板加载中…",
+    "copilotLoading": "AI 对话副驾加载中…"
+  }
 }

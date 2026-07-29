@@ -8,6 +8,7 @@ import {
   Drama, Package, CalendarClock, ScanSearch, Coins, Feather, Database, TrendingUp, Workflow,
   Gamepad2,
 } from 'lucide-react'
+import i18n from '../../i18n/i18n'
 
 /**
  * Phase 4 起的侧边栏模块 ID。
@@ -98,31 +99,36 @@ export interface ModuleContentTypeDefinition {
   description: string
 }
 
-export const MODULE_CONTENT_TYPE_DEFINITIONS: Record<ModuleContentType, ModuleContentTypeDefinition> = {
-  upstream: {
-    label: '设定',
-    description: '你填写或规划的内容，会作为 AI 创作的上游依据。',
-  },
-  writing: {
-    label: '创作',
-    description: '小说正文的实际写作与编辑区域。',
-  },
-  downstream: {
-    label: '产物',
-    description: '从已写正文提取或整理的内容，可由作者校正。',
-  },
-  tool: {
-    label: 'AI 工具',
-    description: '用于生成、反推、分析或考证的辅助工具。',
-  },
-  experience: {
-    label: '体验',
-    description: '独立于创作 Canon 的互动运行、存档与事件区域。',
-  },
-  system: {
-    label: '系统',
-    description: '项目导入、导出、版本、提示词与应用配置。',
-  },
+/** Returns content type definitions with labels/descriptions resolved via i18n. */
+export function getModuleContentTypeDefinitions(): Record<ModuleContentType, ModuleContentTypeDefinition> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const t = (key: string): string => i18n.t(`nav:${key}` as any)
+  return {
+    upstream: {
+      label: t('contentType.upstream'),
+      description: t('contentType.upstreamDesc'),
+    },
+    writing: {
+      label: t('contentType.writing'),
+      description: t('contentType.writingDesc'),
+    },
+    downstream: {
+      label: t('contentType.downstream'),
+      description: t('contentType.downstreamDesc'),
+    },
+    tool: {
+      label: t('contentType.tool'),
+      description: t('contentType.toolDesc'),
+    },
+    experience: {
+      label: t('contentType.experience'),
+      description: t('contentType.experienceDesc'),
+    },
+    system: {
+      label: t('contentType.system'),
+      description: t('contentType.systemDesc'),
+    },
+  }
 }
 
 /**
@@ -221,100 +227,108 @@ export interface TreeSection {
 const leaf = (id: SidebarModule, label: string, icon: ComponentType<{ className?: string }>): TreeLeaf =>
   ({ kind: 'leaf', id, label, icon, contentType: getModuleContentType(id) })
 
-export const NAV_TREE: TreeSection[] = [
-  {
-    sectionId: 'project',
-    label: '著作信息',
-    children: [
-      leaf('info',         '项目概况', FileText),
-      leaf('inspiration',  '灵感反推', Sparkles),
-      leaf('references',   '项目参考', Library),
-    ],
-  },
-  {
-    sectionId: 'lib',
-    label: '设定库',
-    children: [
-      leaf('world-overview', '世界总览', Globe),
-      {
-        kind: 'branch',
-        branchId: 'lib.worldview',
-        label: '世界观',
-        icon: Globe,
-        children: [
-          leaf('world-rules',        '真实与幻想', Scale),
-          leaf('worldview-origin',   '世界起源', Sparkles),
-          leaf('worldview-natural',  '自然环境', Mountain),
-          leaf('worldview-humanity', '人文环境', Users2),
-          leaf('history',            '历史年表', Clock),
-          leaf('world-map',          '世界地图', Map),
-        ],
-      },
-      leaf('story-design', '故事设计', BookOpen),
-      {
-        kind: 'branch',
-        branchId: 'lib.characters',
-        label: '角色设计',
-        icon: UsersRound,
-        children: [
-          leaf('characters',         '角色生成', UserCircle),
-          leaf('characters-main',    '主要角色', UserCircle),
-          leaf('characters-minor',   '次要角色', User),
-          leaf('characters-npc',     'NPC',      UsersRound),
-          leaf('characters-extra',   '路人',     Footprints),
-          leaf('relations',          '关系网',   Network),
-        ],
-      },
-    ],
-  },
-  {
-    sectionId: 'create',
-    label: '创作区',
-    children: [
-      leaf('rules',            '创作规则', Ruler),
-      leaf('outline',          '大纲',     BookOpen),
-      leaf('character-driven-plot', '角色驱动', Drama),
-      leaf('rag-library',      '资料与检索库', Database),
-      leaf('visual-workflows', '节点模式', Workflow),
-      leaf('story-arc',        '故事线',   GitBranch),
-      leaf('chapters-list',    '章节',     FilePen),
-      leaf('foreshadow',       '伏笔',     Eye),
-      leaf('style-learning',   '文风学习', Feather),
-      leaf('locations',        '重要地点', MapPin),
-      leaf('state-table',      '状态表',   ClipboardList),
-      leaf('inventory',        '物品栏',   Package),
-      leaf('fact-library',     '事实库',   Database),
-      leaf('story-timeline',   '故事年表', CalendarClock),
-      leaf('cultivation-progress', '修炼进度', TrendingUp),
-      leaf('scene-verify',     '场景考证', ScanSearch),
-    ],
-  },
-  {
-    sectionId: 'experience',
-    label: '体验中心',
-    children: [
-      leaf('simulation-runtime', '互动运行时', Gamepad2),
-    ],
-  },
-  // 作品学习已整合进「项目参考 → 深度分析」tab（Phase 20）
-  {
-    sectionId: 'prompts',
-    label: '提示词库',
-    icon: FileCog,
-    rootLeaf: leaf('prompts', '提示词库', FileCog),
-  },
-  {
-    sectionId: 'system',
-    label: '设置区',
-    children: [
-      leaf('version-history',  '版本历史', History),
-      leaf('import-doc',       '文档解析', Upload),
-      leaf('export',           '数据管理', Download),
-      leaf('usage-stats',      '消耗统计', Coins),
-      leaf('settings',         '设置',     Settings),
-    ],
-  },
-]
+/** Build the navigation tree with labels resolved via i18n. Call on each render to pick up language changes. */
+export function buildNavTree(): TreeSection[] {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const t = (key: string): string => i18n.t(`nav:${key}` as any)
+  return [
+    {
+      sectionId: 'project',
+      label: t('section.info'),
+      children: [
+        leaf('info',         t('project.overview'), FileText),
+        leaf('inspiration',  t('project.inspiration'), Sparkles),
+        leaf('references',   t('project.reference'), Library),
+      ],
+    },
+    {
+      sectionId: 'lib',
+      label: t('section.worldview'),
+      children: [
+        leaf('world-overview', t('worldview.overview'), Globe),
+        {
+          kind: 'branch',
+          branchId: 'lib.worldview',
+          label: t('worldview.overview'),
+          icon: Globe,
+          children: [
+            leaf('world-rules',        t('worldview.reality'), Scale),
+            leaf('worldview-origin',   t('worldview.origin'), Sparkles),
+            leaf('worldview-natural',  t('worldview.nature'), Mountain),
+            leaf('worldview-humanity', t('worldview.humanity'), Users2),
+            leaf('history',            t('worldview.timeline'), Clock),
+            leaf('world-map',          t('worldview.map'), Map),
+          ],
+        },
+        leaf('story-design', t('storyDesign'), BookOpen),
+        {
+          kind: 'branch',
+          branchId: 'lib.characters',
+          label: t('characters.design'),
+          icon: UsersRound,
+          children: [
+            leaf('characters',         t('characters.generate'), UserCircle),
+            leaf('characters-main',    t('characters.main'), UserCircle),
+            leaf('characters-minor',   t('characters.minor'), User),
+            leaf('characters-npc',     t('characters.npc'),      UsersRound),
+            leaf('characters-extra',   t('characters.extras'),     Footprints),
+            leaf('relations',          t('characters.relations'),   Network),
+          ],
+        },
+      ],
+    },
+    {
+      sectionId: 'create',
+      label: t('section.creation'),
+      children: [
+        leaf('rules',            t('creation.rules'), Ruler),
+        leaf('outline',          t('creation.outline'),     BookOpen),
+        leaf('character-driven-plot', t('creation.characterDriven'), Drama),
+        leaf('rag-library',      t('creation.rag'), Database),
+        leaf('visual-workflows', t('creation.nodeMode'), Workflow),
+        leaf('story-arc',        t('creation.timeline'),   GitBranch),
+        leaf('chapters-list',    t('creation.chapters'),     FilePen),
+        leaf('foreshadow',       t('creation.foreshadow'),     Eye),
+        leaf('style-learning',   t('creation.styleLearning'), Feather),
+        leaf('locations',        t('creation.locations'), MapPin),
+        leaf('state-table',      t('creation.state'),   ClipboardList),
+        leaf('inventory',        t('creation.inventory'),   Package),
+        leaf('fact-library',     t('creation.facts'),   Database),
+        leaf('story-timeline',   t('creation.storyTimeline'), CalendarClock),
+        leaf('cultivation-progress', t('creation.cultivation'), TrendingUp),
+        leaf('scene-verify',     t('creation.sceneVerify'), ScanSearch),
+      ],
+    },
+    {
+      sectionId: 'experience',
+      label: t('section.experience'),
+      children: [
+        leaf('simulation-runtime', t('experience.runtime'), Gamepad2),
+      ],
+    },
+    // 作品学习已整合进「项目参考 → 深度分析」tab（Phase 20）
+    {
+      sectionId: 'prompts',
+      label: t('section.prompts'),
+      icon: FileCog,
+      rootLeaf: leaf('prompts', t('prompts.library'), FileCog),
+    },
+    {
+      sectionId: 'system',
+      label: t('section.settings'),
+      children: [
+        leaf('version-history',  t('settings.versionHistory'), History),
+        leaf('import-doc',       t('settings.docImport'), Upload),
+        leaf('export',           t('settings.dataManagement'), Download),
+        leaf('usage-stats',      t('settings.usageStats'), Coins),
+        leaf('settings',         t('settings.general'),     Settings),
+      ],
+    },
+  ]
+}
+
+/** Static accessor kept for backward compatibility — prefer buildNavTree() in React components. */
+export const NAV_TREE: TreeSection[] = buildNavTree()
 
 // ── 工具 ─────────────────────────────────────────────────────────────
 
@@ -333,7 +347,8 @@ export function getBranchChain(target: SidebarModule): string[] {
     }
     return false
   }
-  for (const sec of NAV_TREE) {
+  const tree = buildNavTree()
+  for (const sec of tree) {
     if (sec.children && walk(sec.children, [])) break
     if (sec.rootLeaf?.id === target) break
   }
