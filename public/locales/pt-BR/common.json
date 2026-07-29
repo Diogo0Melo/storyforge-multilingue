@@ -1,0 +1,20 @@
+{
+  "save": "Salvar",
+  "cancel": "Cancelar",
+  "delete": "Excluir",
+  "confirm": "Confirmar",
+  "edit": "Editar",
+  "add": "Adicionar",
+  "close": "Fechar",
+  "loading": "Carregando…",
+  "generating": "Gerando com IA…",
+  "generate": "Gerar com IA",
+  "export": "Exportar",
+  "import": "Importar",
+  "search": "Buscar",
+  "retry": "Tentar novamente",
+  "copy": "Copiar",
+  "copied": "Copiado",
+  "deleteConfirm": "Esta ação não pode ser desfeita. Excluir mesmo assim?",
+  "panelLoading": "Carregando painel…"
+}

@@ -1,3 +1,5 @@
+import './i18n/i18n'
+import './i18n/i18n'
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router'
@@ -77,15 +79,17 @@ async function bootstrap() {
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
-      <ErrorBoundary>
-        <BrowserRouter basename="/storyforge">
-          <ToastProvider>
-            <DialogProvider>
-              <App />
-            </DialogProvider>
-          </ToastProvider>
-        </BrowserRouter>
-      </ErrorBoundary>
+      <React.Suspense fallback={null}>
+        <ErrorBoundary>
+          <BrowserRouter basename="/storyforge">
+            <ToastProvider>
+              <DialogProvider>
+                <App />
+              </DialogProvider>
+            </ToastProvider>
+          </BrowserRouter>
+        </ErrorBoundary>
+      </React.Suspense>
     </React.StrictMode>,
   )
 }
