@@ -4,6 +4,7 @@
  * 展示并编辑某章节的细纲场景列表，支持 AI 一键拆场景。
  */
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Trash2, Sparkles, ChevronDown, ChevronRight, Wand2 } from 'lucide-react'
 import { useDetailedOutlineStore } from '../../stores/detailed-outline'
 import { useOutlineStore } from '../../stores/outline'
@@ -22,11 +23,11 @@ import type { DetailedScene, Project, ScenePace } from '../../lib/types'
 import ChapterOutlineWorkshop from './ChapterOutlineWorkshop'
 import { adoptChapterOutlineWorkshopResult } from '../../lib/outline/adopt-workshop'
 
-const PACE_LABELS: Record<ScenePace, string> = {
-  slow:   '🐢 慢',
-  medium: '🚶 中',
-  fast:   '🏃 快',
-  climax: '⚡ 高潮',
+const PACE_LABEL_KEYS: Record<ScenePace, string> = {
+  slow:   'scene.paceSlow',
+  medium: 'scene.paceMedium',
+  fast:   'scene.paceFast',
+  climax: 'scene.paceClimax',
 }
 
 const PACE_COLORS: Record<ScenePace, string> = {
@@ -44,6 +45,7 @@ interface Props {
 }
 
 export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapterSummary }: Props) {
+  const { t } = useTranslation('outline')
   const projectId = project.id!
   const { detailedOutlines, loadAll, getOrCreate, save } = useDetailedOutlineStore()
   const nodes = useOutlineStore(state => state.nodes)
@@ -87,7 +89,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
     if (!dt) return
     const newScene: DetailedScene = {
       sceneId: nanoid(),
-      title: '新场景', summary: '',
+      title: t('scene.newScene'), summary: '',
       characterIds: [], location: '', conflict: '',
       pace: 'medium', estimatedWords: 0, notes: '',
     }
@@ -144,11 +146,11 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
       ),
     })
     if (!result.ok) {
-      toast.error(`采纳失败：${result.reason}`)
+      toast.error(t('scene.adoptFailed', { reason: result.reason }))
       return false
     }
     await loadAll(projectId)
-    toast.success(`已采纳 ${result.sceneCount} 个场景和 ${result.prohibitionCount} 条不可写约束`)
+    toast.success(t('scene.adoptedWorkshop', { scenes: result.sceneCount, prohibitions: result.prohibitionCount }))
     return true
   }
 
@@ -160,20 +162,20 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
         className="w-full flex items-center gap-2 px-3 py-2 bg-bg-elevated hover:bg-bg-hover transition-colors text-left"
       >
         {expanded ? <ChevronDown className="w-4 h-4 text-text-muted" /> : <ChevronRight className="w-4 h-4 text-text-muted" />}
-        <span className="text-sm font-medium text-text-primary">场景细纲</span>
+        <span className="text-sm font-medium text-text-primary">{t('scene.title')}</span>
         {hasScenes && (
           <span className="text-xs text-text-muted">
-            {scenes.length} 个场景 · 约 {totalWords.toLocaleString()} 字
+            {t('scene.scenesCount', { count: scenes.length, words: totalWords.toLocaleString() })}
           </span>
         )}
         <div className="flex-1" />
         <span onClick={e => { e.stopPropagation(); addScene() }}
-          className="p-1 text-text-muted hover:text-accent rounded" title="添加场景">
+          className="p-1 text-text-muted hover:text-accent rounded" title={t('scene.addSceneTitle')}>
           <Plus className="w-3.5 h-3.5" />
         </span>
         <span onClick={e => { e.stopPropagation(); handleAIGenerate() }}
           className={`p-1 text-text-muted hover:text-accent rounded ${ai.isStreaming ? 'opacity-50 pointer-events-none' : ''}`}
-          title="AI 一键拆场景">
+          title={t('scene.aiSplitTitle')}>
           <Sparkles className="w-3.5 h-3.5" />
         </span>
         <span
@@ -183,7 +185,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
             setShowWorkshop(value => !value)
           }}
           className="p-1 text-text-muted hover:text-purple-500 rounded"
-          title="五阶段章纲工坊"
+          title={t('scene.workshopTitle')}
         >
           <Wand2 className="w-3.5 h-3.5" />
         </span>
@@ -206,7 +208,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
 
           {detailed?.prohibitions && detailed.prohibitions.length > 0 && (
             <div className="rounded border border-warning/30 bg-warning/10 p-2 text-[11px] text-text-secondary">
-              <span className="font-medium text-warning">不可写清单：</span>
+              <span className="font-medium text-warning">{t('scene.prohibitionsLabel')}</span>
               {detailed.prohibitions.join('；')}
             </div>
           )}
@@ -220,14 +222,14 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
                   const parsed = await parseEnhancedDetailSmart(text, aiConfig)
                   const newScenes = normalizeParsedScenes(parsed?.scenes)
                   if (newScenes.length === 0) {
-                    toast.error('未能从 AI 输出解析出场景，请重试')
+                    toast.error(t('scene.parseFailed'))
                     return
                   }
                   await adoptScenes([...(detailed?.scenes || []), ...newScenes])
-                  toast.success(`已采纳 ${newScenes.length} 个场景`)
+                  toast.success(t('scene.adoptedCount', { count: newScenes.length }))
                 } catch (err) {
                   console.error('[ScenePanel] 采纳失败:', err)
-                  toast.error('采纳场景失败，请重试')
+                  toast.error(t('scene.adoptSceneFailed'))
                 }
                 ai.reset()
               }}
@@ -238,7 +240,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
           {/* 场景列表 */}
           {scenes.length === 0 ? (
             <div className="text-center py-6 text-text-muted text-xs">
-              还没有场景。点「+」或「✨」开始。
+              {t('scene.noScenes')}
             </div>
           ) : (
             scenes.map((s, idx) => (
@@ -248,7 +250,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
                   <input
                     value={s.title}
                     onChange={e => updateScene(s.sceneId, { title: e.target.value })}
-                    placeholder="场景标题..."
+                    placeholder={t('detailed.sceneTitlePlaceholder')}
                     className="flex-1 px-2 py-1 bg-transparent border border-border rounded text-xs font-medium text-text-primary focus:outline-none focus:border-accent"
                   />
                   <select
@@ -256,15 +258,15 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
                     onChange={e => updateScene(s.sceneId, { pace: e.target.value as ScenePace })}
                     className={`px-1.5 py-0.5 text-[10px] rounded border-0 ${PACE_COLORS[s.pace]}`}
                   >
-                    {Object.entries(PACE_LABELS).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
+                    {Object.entries(PACE_LABEL_KEYS).map(([k, v]) => (
+                      <option key={k} value={k}>{t(v as any)}</option>
                     ))}
                   </select>
                   <input
                     type="number"
                     value={s.estimatedWords || ''}
                     onChange={e => updateScene(s.sceneId, { estimatedWords: parseInt(e.target.value) || 0 })}
-                    placeholder="字数"
+                    placeholder={t('detailed.wordCount')}
                     className="w-16 px-1.5 py-0.5 bg-transparent border border-border rounded text-[10px] text-text-primary focus:outline-none focus:border-accent"
                   />
                   <button onClick={() => deleteScene(s.sceneId)} className="p-0.5 text-text-muted hover:text-error">
@@ -274,7 +276,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
                 <textarea
                   value={s.summary}
                   onChange={e => updateScene(s.sceneId, { summary: e.target.value })}
-                  placeholder="一句话场景概要..."
+                  placeholder={t('detailed.sceneSummaryPlaceholder')}
                   rows={1}
                   className="w-full px-2 py-1 bg-transparent border border-border rounded text-xs text-text-primary resize-none focus:outline-none focus:border-accent"
                 />
@@ -282,13 +284,13 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
                   <input
                     value={s.location}
                     onChange={e => updateScene(s.sceneId, { location: e.target.value })}
-                    placeholder="📍 地点"
+                    placeholder={t('detailed.location')}
                     className="px-2 py-0.5 bg-transparent border border-border rounded text-[10px] text-text-primary focus:outline-none focus:border-accent"
                   />
                   <input
                     value={s.conflict}
                     onChange={e => updateScene(s.sceneId, { conflict: e.target.value })}
-                    placeholder="⚔ 核心冲突"
+                    placeholder={t('detailed.conflict')}
                     className="px-2 py-0.5 bg-transparent border border-border rounded text-[10px] text-text-primary focus:outline-none focus:border-accent"
                   />
                 </div>
@@ -296,7 +298,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
                   <textarea
                     value={s.notes}
                     onChange={e => updateScene(s.sceneId, { notes: e.target.value })}
-                    placeholder="备注 / AI 建议..."
+                    placeholder={t('detailed.notesPlaceholder')}
                     rows={2}
                     className="w-full px-2 py-1 bg-transparent border border-border rounded text-[10px] text-text-muted resize-y focus:outline-none focus:border-accent"
                   />

@@ -5,6 +5,7 @@ import { CInput } from '../../components/shared/CompositionInput'
  */
 import { useState, useEffect } from 'react'
 import { Heart, Sparkles, ChevronUp, Trash2, Edit3, Save, Plus, X, RotateCcw } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useEmotionBeatStore } from '../../stores/emotion-beat'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
@@ -45,6 +46,7 @@ export default function EmotionBeatCard({
   projectId, chapterId, chapterTitle, chapterSummary,
   worldContext, characterContext, prevChapterEnding,
 }: Props) {
+  const { t } = useTranslation('editor')
   const dialog = useDialog()
   const { getByChapter, saveCard, updateCard, deleteCard, loadAll } = useEmotionBeatStore()
   const [expanded, setExpanded] = useState(false)
@@ -117,9 +119,9 @@ export default function EmotionBeatCard({
   const handleDelete = async () => {
     if (!card?.id) return
     const ok = await dialog.confirm({
-      title: '删除本章的情感节拍卡？',
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('emotionBeat.deleteTitle'),
+      message: t('emotionBeat.deleteMessage'),
+      confirmText: t('delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -157,7 +159,7 @@ export default function EmotionBeatCard({
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg transition-colors bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 disabled:opacity-50"
         >
           <Heart className="w-3.5 h-3.5" />
-          {ai.isStreaming ? '生成中...' : card ? `情感节拍（${card.beats.length}拍）` : '生成情感节拍'}
+          {ai.isStreaming ? t('emotionBeat.generating') : card ? t('emotionBeat.beatCount', { count: card.beats.length }) : t('emotionBeat.generateBeat')}
         </button>
         {card && (
           <span className="text-[10px] text-text-muted">{card.overallArc.slice(0, 40)}{card.overallArc.length > 40 ? '...' : ''}</span>
@@ -173,19 +175,19 @@ export default function EmotionBeatCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Heart className="w-4 h-4 text-pink-400" />
-            <span className="font-semibold text-sm text-text-primary">编辑情感节拍</span>
+            <span className="font-semibold text-sm text-text-primary">{t('emotionBeat.editTitle')}</span>
           </div>
           <div className="flex gap-2">
-            <button onClick={() => setEditing(false)} className="text-xs text-text-muted hover:text-text-primary">取消</button>
+            <button onClick={() => setEditing(false)} className="text-xs text-text-muted hover:text-text-primary">{t('cancel')}</button>
             <button onClick={handleSaveEdit}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-accent text-white rounded hover:bg-accent-hover">
-              <Save className="w-3 h-3" /> 保存
+              <Save className="w-3 h-3" /> {t('save')}
             </button>
           </div>
         </div>
 
         <CInput value={editArc} onChange={e => setEditArc(e.target.value)}
-          placeholder="整章情感概述..."
+          placeholder={t('emotionBeat.overallArcPlaceholder')}
           className="w-full px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary" />
 
         {editBeats.map((beat, idx) => (
@@ -193,25 +195,25 @@ export default function EmotionBeatCard({
             <div className="flex items-center gap-2">
               <span className="text-xs text-text-muted w-6 text-right">{idx + 1}.</span>
               <CInput value={beat.label} onChange={e => updateBeat(idx, 'label', e.target.value)}
-                placeholder="节拍名" className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary font-medium" />
+                placeholder={t('emotionBeat.beatNamePlaceholder')} className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary font-medium" />
               <CInput value={beat.emotionTone} onChange={e => updateBeat(idx, 'emotionTone', e.target.value)}
-                placeholder="情感基调" className="w-24 px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary" />
+                placeholder={t('emotionBeat.emotionTonePlaceholder')} className="w-24 px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary" />
               <button onClick={() => removeBeat(idx)} className="p-0.5 text-text-muted hover:text-error">
                 <X className="w-3 h-3" />
               </button>
             </div>
             <div className="ml-8 grid grid-cols-1 gap-1.5">
               <CInput value={beat.sceneGoal} onChange={e => updateBeat(idx, 'sceneGoal', e.target.value)}
-                placeholder="场景目标" className="px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary" />
+                placeholder={t('emotionBeat.sceneGoalPlaceholder')} className="px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary" />
               <CInput value={beat.readerFeeling} onChange={e => updateBeat(idx, 'readerFeeling', e.target.value)}
-                placeholder="期望读者感受" className="px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary" />
+                placeholder={t('emotionBeat.readerFeelingPlaceholder')} className="px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary" />
               <CInput value={beat.characterGrowth} onChange={e => updateBeat(idx, 'characterGrowth', e.target.value)}
-                placeholder="角色变化/成长" className="px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary" />
+                placeholder={t('emotionBeat.characterGrowthPlaceholder')} className="px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary" />
             </div>
           </div>
         ))}
         <button onClick={addBeat} className="text-xs text-accent hover:text-accent-hover">
-          <Plus className="w-3 h-3 inline mr-1" />添加节拍
+          <Plus className="w-3 h-3 inline mr-1" />{t('emotionBeat.addBeat')}
         </button>
       </div>
     )
@@ -223,21 +225,21 @@ export default function EmotionBeatCard({
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Heart className="w-4 h-4 text-pink-400" />
-          <span className="font-semibold text-sm text-text-primary">情感节拍</span>
-          {card && <span className="text-[10px] text-text-muted">（{card.beats.length}拍 · {card.source === 'ai' ? 'AI生成' : '手动'}）</span>}
+          <span className="font-semibold text-sm text-text-primary">{t('emotionBeat.title')}</span>
+          {card && <span className="text-[10px] text-text-muted">（{t('emotionBeat.beatCountSuffix', { count: card.beats.length })} · {card.source === 'ai' ? t('emotionBeat.aiGenerated') : t('emotionBeat.manual')}）</span>}
         </div>
         <div className="flex items-center gap-1.5">
           <button onClick={handleGenerate} disabled={ai.isStreaming}
-            title="重新生成"
+            title={t('emotionBeat.regenerate')}
             className="p-1 text-text-muted hover:text-accent transition-colors disabled:opacity-50">
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
-          <button onClick={handleStartEdit} title="编辑"
+          <button onClick={handleStartEdit} title={t('emotionBeat.editLabel')}
             className="p-1 text-text-muted hover:text-accent transition-colors">
             <Edit3 className="w-3.5 h-3.5" />
           </button>
           {card?.id && (
-            <button onClick={handleDelete} title="删除"
+            <button onClick={handleDelete} title={t('delete')}
               className="p-1 text-text-muted hover:text-error transition-colors">
               <Trash2 className="w-3.5 h-3.5" />
             </button>
@@ -280,7 +282,7 @@ export default function EmotionBeatCard({
 
       {ai.isStreaming && (
         <p className="text-xs text-text-muted mt-2 animate-pulse">
-          <Sparkles className="w-3 h-3 inline mr-1" />正在生成情感节拍...
+          <Sparkles className="w-3 h-3 inline mr-1" />{t('emotionBeat.generatingFull')}
           {ai.output.length > 0 && (
             <span className="ml-1">≈ ~{Math.round(ai.output.length * 1.5).toLocaleString()} tokens</span>
           )}

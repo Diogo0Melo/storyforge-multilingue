@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { PreparedGenerationContext, OutlineGenerationRequest } from '../../lib/outline/generation-request'
 import type { ChatMessage } from '../../lib/types'
 import PromptPreviewGate from '../shared/PromptPreviewGate'
@@ -19,11 +20,11 @@ interface Props {
   onConfirmMessages?: (messages: ChatMessage[]) => void
 }
 
-function requestTitle(request: OutlineGenerationRequest): string {
-  if (request.kind === 'volumes') return '批量生成卷级大纲'
-  if (request.kind === 'chapters') return '生成本卷所有章节'
-  if (request.kind === 'single-volume') return 'AI 生成本卷卷纲'
-  return 'AI 生成本章章纲'
+const REQUEST_TITLE_KEYS: Record<OutlineGenerationRequest['kind'], string> = {
+  volumes: 'request.titleVolumes',
+  chapters: 'request.titleChapters',
+  'single-volume': 'request.titleSingleVolume',
+  'single-chapter': 'request.titleSingleChapter',
 }
 
 export default function OutlineGenerationRequestPanel({
@@ -41,6 +42,8 @@ export default function OutlineGenerationRequestPanel({
   onClosePromptReview,
   onConfirmMessages,
 }: Props) {
+  const { t } = useTranslation('outline')
+
   if (promptReviewOpen && messages && onClosePromptReview && onConfirmMessages) {
     return (
       <div className="rounded-lg border border-accent/30 bg-accent/5 px-3 py-3">
@@ -57,11 +60,11 @@ export default function OutlineGenerationRequestPanel({
     <div className="space-y-3 rounded-lg border border-accent/30 bg-accent/5 px-3 py-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="text-xs leading-5 text-text-secondary">
-          <span className="font-medium text-text-primary">{requestTitle(request)}</span>
+          <span className="font-medium text-text-primary">{t(REQUEST_TITLE_KEYS[request.kind] as any)}</span>
           <span className="ml-2">
             {request.kind === 'single-chapter'
-              ? '单章补全固定只生成当前 1 章；上方“本卷章节数”不参与本次调用。确认后才会调用 API。'
-              : '请先调整上方参数，确认后才会调用 API。'}
+              ? t('request.singleChapterNote')
+              : t('request.defaultNote')}
           </span>
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">
@@ -70,21 +73,21 @@ export default function OutlineGenerationRequestPanel({
               onClick={onRetry}
               className="px-2.5 py-1 text-xs text-accent border border-accent/30 rounded hover:bg-accent/10"
             >
-              重新读取
+              {t('request.reRead')}
             </button>
           )}
           <button
             onClick={onCancel}
             className="px-2.5 py-1 text-xs text-text-muted border border-border rounded hover:text-text-primary"
           >
-            取消
+            {t('cancel')}
           </button>
           <button
             onClick={onConfirm}
             disabled={loading || Boolean(error) || !preparedContext}
             className="px-2.5 py-1 text-xs text-white bg-accent rounded hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            {transparentMode ? '预览最终提示词' : '确认生成'}
+            {transparentMode ? t('request.previewPrompt') : t('request.confirmGenerate')}
           </button>
         </div>
       </div>
@@ -96,9 +99,9 @@ export default function OutlineGenerationRequestPanel({
           className="mt-0.5 accent-accent"
         />
         <span>
-          <span className="font-medium text-text-secondary">透明模式（高级）</span>
+          <span className="font-medium text-text-secondary">{t('request.transparentTitle')}</span>
           <span className="ml-2 text-[10px] text-text-muted">
-            发送前查看并临时编辑拼接后的最终消息；默认关闭，本次编辑不会保存。
+            {t('request.transparentDesc')}
           </span>
         </span>
       </label>

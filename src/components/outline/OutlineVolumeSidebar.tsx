@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Check, GripVertical, Layers, Loader2, Plus, Sparkles, X } from 'lucide-react'
 import type { ParsedChapter } from '../../lib/ai/parse-outline-output'
 import type { BatchOutlineProgress } from '../../lib/ai/batch-outline-runner'
@@ -58,6 +59,7 @@ export default function OutlineVolumeSidebar({
   onReorderVolumes,
   onMoveChapter,
 }: OutlineVolumeSidebarProps) {
+  const { t } = useTranslation('outline')
   const [chapterDropTargetId, setChapterDropTargetId] = useState<number | null>(null)
   const volumeDnD = useDragReorder(volumes.map(volume => volume.id), onReorderVolumes)
 
@@ -72,14 +74,14 @@ export default function OutlineVolumeSidebar({
           onClick={onAddVolume}
           className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs bg-bg-elevated text-text-secondary rounded-md hover:text-text-primary border border-border transition-colors"
         >
-          <Plus className="w-3.5 h-3.5" /> 添加卷
+          <Plus className="w-3.5 h-3.5" /> {t('volumeSidebar.addVolume')}
         </button>
         <button
           onClick={onGenerateVolumes}
           disabled={aiStreaming || batchRunning}
           className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs bg-accent text-white rounded-md hover:bg-accent-hover disabled:opacity-50 transition-colors"
         >
-          <Sparkles className="w-3.5 h-3.5" /> 批量生成卷级大纲
+          <Sparkles className="w-3.5 h-3.5" /> {t('volumeSidebar.batchVolumes')}
         </button>
         {volumes.length >= 2 && (
           <button
@@ -87,7 +89,7 @@ export default function OutlineVolumeSidebar({
             disabled={aiStreaming || batchRunning}
             className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 text-xs bg-bg-elevated text-accent rounded-md hover:bg-accent/10 border border-accent/30 disabled:opacity-50 transition-colors"
           >
-            <Layers className="w-3.5 h-3.5" /> 批量生成所有卷的章节
+            <Layers className="w-3.5 h-3.5" /> {t('volumeSidebar.batchAllChapters')}
           </button>
         )}
       </div>
@@ -99,7 +101,7 @@ export default function OutlineVolumeSidebar({
               <>
                 <div className="flex items-center gap-1.5 text-xs text-accent">
                   <Loader2 className="w-3 h-3 animate-spin" />
-                  <span>{batchProgress.completedVolumes}/{batchProgress.totalVolumes} 卷</span>
+                  <span>{t('volumeSidebar.volumesCount', { completed: batchProgress.completedVolumes, total: batchProgress.totalVolumes })}</span>
                 </div>
                 <div className="w-full bg-border rounded-full h-1.5">
                   <div
@@ -112,25 +114,25 @@ export default function OutlineVolumeSidebar({
                   onClick={onCancelBatch}
                   className="w-full px-2 py-1 text-[10px] text-error border border-error/30 rounded hover:bg-error/10 transition-colors"
                 >
-                  取消
+                  {t('cancel')}
                 </button>
               </>
             )}
             {!batchRunning && batchResult && (
               <>
                 <p className="text-xs text-success">
-                  批量生成完成：{Array.from(batchResult.values()).reduce((sum, chapters) => sum + chapters.length, 0)} 章
+                  {t('volumeSidebar.batchComplete', { count: Array.from(batchResult.values()).reduce((sum, chapters) => sum + chapters.length, 0) })}
                 </p>
                 <div className="flex gap-1">
                   <button
                     onClick={onConfirmBatch}
                     className="flex-1 flex items-center justify-center gap-1 px-2 py-1 text-[10px] bg-accent text-white rounded hover:bg-accent-hover transition-colors"
                   >
-                    <Check className="w-3 h-3" /> 全部写入
+                    <Check className="w-3 h-3" /> {t('volumeSidebar.writeAll')}
                   </button>
                   <button
                     onClick={onDismissBatch}
-                    title="关闭批量生成结果"
+                    title={t('volumeSidebar.closeBatchTitle')}
                     className="px-2 py-1 text-[10px] text-text-muted border border-border rounded hover:text-text-primary transition-colors"
                   >
                     <X className="w-3 h-3" />
@@ -201,7 +203,7 @@ export default function OutlineVolumeSidebar({
             >
               <span
                 {...dnd.dragHandleProps}
-                title="拖动调整卷顺序"
+                title={t('volumeSidebar.dragVolumeTitle')}
                 className="shrink-0 pl-1 pr-0.5 py-2 cursor-grab active:cursor-grabbing text-text-muted/40 group-hover/vol:text-text-muted"
               >
                 <GripVertical className="w-3.5 h-3.5" />
@@ -217,14 +219,14 @@ export default function OutlineVolumeSidebar({
                   {volume.title}
                 </p>
                 <p className="text-[10px] text-text-muted">
-                  {childCount} 章{volume.summary ? ` · ${volume.summary.slice(0, 20)}...` : ''}
+                  {childCount} {t('volumeSidebar.chaptersSuffix')}{volume.summary ? ` · ${volume.summary.slice(0, 20)}...` : ''}
                 </p>
               </button>
             </div>
           )
         })}
         {volumes.length === 0 && (
-          <div className="text-center py-8 text-text-muted text-xs">还没有卷</div>
+          <div className="text-center py-8 text-text-muted text-xs">{t('volumeSidebar.noVolumes')}</div>
         )}
       </div>
     </div>

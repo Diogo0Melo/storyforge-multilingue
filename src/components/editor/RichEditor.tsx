@@ -24,6 +24,7 @@ import {
   resolveColorForInput,
   type PendingTextStyle,
 } from '../../lib/editor/rich-editor-theme'
+import { useTranslation } from 'react-i18next'
 import RichEditorEntityOverlays from './RichEditorEntityOverlays'
 import RichEditorToolbar from './RichEditorToolbar'
 
@@ -75,9 +76,11 @@ interface Props {
  * - value 允许传入旧的纯文本（自动包装为 <p>），新内容以 HTML 保存
  */
 const RichEditor = forwardRef<RichEditorHandle, Props>(function RichEditor(
-  { value, onChange, placeholder = '开始写作...', className = '', minHeight = 400, disabled = false, showToolbar = true, entityReferences = [], contentHeader },
+  { value, onChange, placeholder, className = '', minHeight = 400, disabled = false, showToolbar = true, entityReferences = [], contentHeader },
   ref,
 ) {
+  const { t } = useTranslation('editor')
+  const resolvedPlaceholder = placeholder ?? t('richEditor.placeholder')
   // 避免 onChange 引起 editor 重建
   const onChangeRef = useRef(onChange)
   onChangeRef.current = onChange
@@ -151,7 +154,7 @@ const RichEditor = forwardRef<RichEditorHandle, Props>(function RichEditor(
       FontFamily,
       FontSize,
       BlockSpacing,
-      Placeholder.configure({ placeholder }),
+      Placeholder.configure({ placeholder: resolvedPlaceholder }),
     ],
     content: normalizeThemeAdaptiveColorHtml(toHtml(value)),
     editable: !disabled,

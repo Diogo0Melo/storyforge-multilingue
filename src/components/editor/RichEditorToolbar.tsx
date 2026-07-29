@@ -14,6 +14,7 @@ import {
   Strikethrough,
   Undo2,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { EditorTypography } from '../../lib/editor-typography'
 
 const FONT_FAMILY_OPTIONS = [
@@ -126,6 +127,7 @@ export default function RichEditorToolbar({
   onUndo,
   onRedo,
 }: Props) {
+  const { t } = useTranslation('editor')
   const selectCls = 'h-8 rounded-md border border-border bg-bg-surface px-2 text-xs text-text-secondary outline-none transition-colors hover:text-text-primary focus:border-accent'
   const buttonClass = (isActive: boolean) =>
     `p-1.5 rounded text-xs transition-colors ${isActive
@@ -137,48 +139,48 @@ export default function RichEditorToolbar({
       className="flex items-center gap-1.5 px-2 py-2 border-b border-border bg-bg-elevated flex-wrap"
       onMouseDownCapture={onMouseDownCapture}
     >
-      <select aria-label="字体" value={typography.fontFamily}
+      <select aria-label={t('richToolbar.fontFamily')} value={typography.fontFamily}
         onChange={event => onTypographyChange({ fontFamily: event.target.value })}
-        className={`${selectCls} w-32`} title="字体(全局·跨章保持)">
+        className={`${selectCls} w-32`} title={t('richToolbar.fontFamilyTitle')}>
         {FONT_FAMILY_OPTIONS.map(option => (
           <option key={option.label} value={option.value} style={{ fontFamily: option.preview }}>{option.label}</option>
         ))}
       </select>
-      <select aria-label="字号" value={typography.fontSize}
+      <select aria-label={t('richToolbar.fontSize')} value={typography.fontSize}
         onChange={event => onTypographyChange({ fontSize: event.target.value })}
-        className={`${selectCls} w-20`} title="字号(全局·跨章保持)">
-        <option value="">默认</option>
+        className={`${selectCls} w-20`} title={t('richToolbar.fontSizeTitle')}>
+        <option value="">{t('richToolbar.defaultSize')}</option>
         {FONT_SIZE_OPTIONS.map(size => <option key={size} value={size}>{Number.parseInt(size, 10)}</option>)}
       </select>
-      <select aria-label="行距" value={typography.lineHeight}
+      <select aria-label={t('richToolbar.lineHeight')} value={typography.lineHeight}
         onChange={event => onTypographyChange({ lineHeight: event.target.value })}
-        className={`${selectCls} w-24`} title="行距(全局·跨章保持)">
+        className={`${selectCls} w-24`} title={t('richToolbar.lineHeightTitle')}>
         {LINE_HEIGHT_OPTIONS.map(option => <option key={option.label} value={option.value}>{option.label}</option>)}
       </select>
-      <select aria-label="段距" value={typography.paragraphSpacing}
+      <select aria-label={t('richToolbar.paragraphSpacing')} value={typography.paragraphSpacing}
         onChange={event => onTypographyChange({ paragraphSpacing: event.target.value })}
-        className={`${selectCls} w-24`} title="段距(全局·跨章保持)">
+        className={`${selectCls} w-24`} title={t('richToolbar.paragraphSpacingTitle')}>
         {PARAGRAPH_SPACING_OPTIONS.map(option => <option key={option.label} value={option.value}>{option.label}</option>)}
       </select>
-      <div className="flex items-center gap-1 rounded-md border border-border bg-bg-surface px-1.5 py-1" title="字色">
+      <div className="flex items-center gap-1 rounded-md border border-border bg-bg-surface px-1.5 py-1" title={t('richToolbar.textColor')}>
         <Palette className="h-3.5 w-3.5 text-text-muted" />
-        <input aria-label="字色" type="color" value={colorInputValue}
+        <input aria-label={t('richToolbar.textColor')} type="color" value={colorInputValue}
           onChange={event => onTextColorChange(event.target.value)}
           className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0" />
         <div className="hidden items-center gap-0.5 md:flex">
           {TEXT_COLOR_PRESETS.map(color => (
-            <button key={color.label} type="button" aria-label={`字色 ${color.label}`}
+            <button key={color.label} type="button" aria-label={t('richToolbar.textColorAria', { name: color.label })}
               onClick={() => onTextColorChange(color.value)}
               className="h-4 w-4 rounded border border-border hover:border-accent"
               style={{ backgroundColor: color.value }} />
           ))}
         </div>
         <button type="button" onClick={onClearTextColor}
-          className="px-1 text-[10px] text-text-muted hover:text-text-primary">清</button>
+          className="px-1 text-[10px] text-text-muted hover:text-text-primary">{t('richToolbar.clear')}</button>
       </div>
-      <div className="flex items-center gap-1 rounded-md border border-border bg-bg-surface px-1.5 py-1" title="文字背景色">
+      <div className="flex items-center gap-1 rounded-md border border-border bg-bg-surface px-1.5 py-1" title={t('richToolbar.backgroundColor')}>
         <PaintBucket className="h-3.5 w-3.5 text-text-muted" />
-        <input aria-label="文字背景色" type="color" value={backgroundColorInputValue}
+        <input aria-label={t('richToolbar.backgroundColor')} type="color" value={backgroundColorInputValue}
           onChange={event => onBackgroundColorChange(event.target.value)}
           className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0" />
         <div className="hidden items-center gap-0.5 md:flex">
@@ -196,24 +198,24 @@ export default function RichEditorToolbar({
         </div>
       </div>
       <div className="w-px h-5 bg-border mx-0.5" />
-      <button type="button" onClick={onBold} className={buttonClass(active.bold)} title="加粗 (Cmd/Ctrl+B)"><BoldIcon className="w-3.5 h-3.5" /></button>
-      <button type="button" onClick={onItalic} className={buttonClass(active.italic)} title="斜体 (Cmd/Ctrl+I)"><ItalicIcon className="w-3.5 h-3.5" /></button>
-      <button type="button" onClick={onStrike} className={buttonClass(active.strike)} title="删除线"><Strikethrough className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onBold} className={buttonClass(active.bold)} title={t('richToolbar.boldTitle')}><BoldIcon className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onItalic} className={buttonClass(active.italic)} title={t('richToolbar.italicTitle')}><ItalicIcon className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onStrike} className={buttonClass(active.strike)} title={t('richToolbar.strikethroughTitle')}><Strikethrough className="w-3.5 h-3.5" /></button>
       <div className="w-px h-4 bg-border mx-1" />
-      <button type="button" onClick={onHeading2} className={buttonClass(active.heading2)} title="二级标题"><Heading2 className="w-3.5 h-3.5" /></button>
-      <button type="button" onClick={onHeading3} className={buttonClass(active.heading3)} title="三级标题"><Heading3 className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onHeading2} className={buttonClass(active.heading2)} title={t('richToolbar.heading2Title')}><Heading2 className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onHeading3} className={buttonClass(active.heading3)} title={t('richToolbar.heading3Title')}><Heading3 className="w-3.5 h-3.5" /></button>
       <div className="w-px h-4 bg-border mx-1" />
-      <button type="button" onClick={onBulletList} className={buttonClass(active.bulletList)} title="无序列表"><ListIcon className="w-3.5 h-3.5" /></button>
-      <button type="button" onClick={onOrderedList} className={buttonClass(active.orderedList)} title="有序列表"><ListOrdered className="w-3.5 h-3.5" /></button>
-      <button type="button" onClick={onBlockquote} className={buttonClass(active.blockquote)} title="引用"><Quote className="w-3.5 h-3.5" /></button>
-      <button type="button" onClick={onHorizontalRule} className={buttonClass(false)} title="分割线"><Minus className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onBulletList} className={buttonClass(active.bulletList)} title={t('richToolbar.bulletListTitle')}><ListIcon className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onOrderedList} className={buttonClass(active.orderedList)} title={t('richToolbar.orderedListTitle')}><ListOrdered className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onBlockquote} className={buttonClass(active.blockquote)} title={t('richToolbar.blockquoteTitle')}><Quote className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onHorizontalRule} className={buttonClass(false)} title={t('richToolbar.horizontalRuleTitle')}><Minus className="w-3.5 h-3.5" /></button>
       <div className="flex-1" />
-      <span className="text-[11px] text-text-muted font-mono px-1.5 tabular-nums select-none" title="本章正文字数（不含空白）">
-        {wordCount.toLocaleString()} 字
+      <span className="text-[11px] text-text-muted font-mono px-1.5 tabular-nums select-none" title={t('richToolbar.wordCountTitle')}>
+        {t('richToolbar.wordCount', { count: wordCount })}
       </span>
       <div className="w-px h-4 bg-border mx-1" />
-      <button type="button" onClick={onUndo} className={buttonClass(false)} title="撤销 (Cmd/Ctrl+Z)" disabled={!canUndo}><Undo2 className="w-3.5 h-3.5" /></button>
-      <button type="button" onClick={onRedo} className={buttonClass(false)} title="重做 (Cmd/Ctrl+Shift+Z)" disabled={!canRedo}><Redo2 className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onUndo} className={buttonClass(false)} title={t('richToolbar.undoTitle')} disabled={!canUndo}><Undo2 className="w-3.5 h-3.5" /></button>
+      <button type="button" onClick={onRedo} className={buttonClass(false)} title={t('richToolbar.redoTitle')} disabled={!canRedo}><Redo2 className="w-3.5 h-3.5" /></button>
     </div>
   )
 }

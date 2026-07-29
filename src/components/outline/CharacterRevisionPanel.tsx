@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Anchor,
   FileSearch,
@@ -53,6 +54,7 @@ export default function CharacterRevisionPanel({
   plan,
   onSwitchToPlanning,
 }: Props) {
+  const { t } = useTranslation(['outline', 'common'])
   const characters = useCharacterStore(state => state.characters)
   const loadOutline = useOutlineStore(state => state.loadAll)
   const dialog = useDialog()
@@ -119,7 +121,7 @@ export default function CharacterRevisionPanel({
     if (ai.isStreaming || !ai.output || !analysisSnapshot.current || !analysisScope.current) return
     const parsed = parseCharacterRevisionOutput(ai.output, analysisSnapshot.current, analysisScope.current)
     if (!parsed) {
-      setLocalError('AI 返回的修订计划不是有效 JSON，请重试或在提示词库中恢复内置模板。')
+      setLocalError(t('revision.invalidJson'))
       return
     }
     setAnalysis(parsed)
@@ -171,7 +173,7 @@ export default function CharacterRevisionPanel({
         projectId: project.id!,
       })
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : '影响分析准备失败')
+      setLocalError(error instanceof Error ? error.message : t('revision.prepareFailed'))
     }
   }
 
@@ -180,9 +182,9 @@ export default function CharacterRevisionPanel({
     const patches = selectedOption.patches.filter(patch => selectedPatchIds.has(patch.outlineNodeId))
     if (!patches.length) return
     const confirmed = await dialog.confirm({
-      title: `应用 ${patches.length} 个未写大纲 patch？`,
-      message: '系统会再次检查正文保护区、锚点和分析后的手工改动。不会修改任何章节正文或故事主线。',
-      confirmText: '应用到大纲',
+      title: t('revision.applyConfirmTitle', { count: patches.length }),
+      message: t('revision.applyConfirmMessage'),
+      confirmText: t('revision.applyToOutline'),
     })
     if (!confirmed) return
     setApplying(true)
@@ -206,8 +208,8 @@ export default function CharacterRevisionPanel({
       await loadOutline(project.id!)
       await refreshSnapshot()
       setResultMessage(
-        `已应用 ${result.appliedOutlineNodeIds.length} 项`
-        + (result.skipped.length ? `；${result.skipped.length} 项因保护边界或版本变化跳过` : ''),
+        t('revision.appliedCount', { count: result.appliedOutlineNodeIds.length })
+        + (result.skipped.length ? t('revision.skippedCount', { count: result.skipped.length }) : ''),
       )
       if (result.appliedOutlineNodeIds.length) {
         setSelectedPatchIds(current => {

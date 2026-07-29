@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { AlertTriangle, Check, Clipboard, Loader2 } from 'lucide-react'
 import type { CharacterRevisionPlan } from '../../lib/story-planning/character-revision'
 
@@ -22,13 +23,14 @@ export default function CharacterRevisionResult({
   onCopy,
   onApply,
 }: Props) {
+  const { t } = useTranslation('outline')
   const selectedOption = analysis.options.find(option => option.id === selectedOptionId) ?? null
   return (
     <section className="space-y-4 rounded-lg border border-border bg-bg-surface p-4">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-base font-semibold text-text-primary">影响分析结果</h3>
+        <h3 className="text-base font-semibold text-text-primary">{t('revision.resultTitle')}</h3>
         <button onClick={onCopy} className="ml-auto inline-flex items-center gap-1 text-xs text-accent">
-          <Clipboard className="w-3.5 h-3.5" />复制修订计划
+          <Clipboard className="w-3.5 h-3.5" />{t('revision.copyPlan')}
         </button>
       </div>
       <p className="text-sm text-text-primary">{analysis.changeSummary}</p>
@@ -37,7 +39,7 @@ export default function CharacterRevisionResult({
       {analysis.warnings.length > 0 && (
         <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-800">
           <div className="mb-1 flex items-center gap-1 font-medium">
-            <AlertTriangle className="w-3.5 h-3.5" />边界与证据提示
+            <AlertTriangle className="w-3.5 h-3.5" />{t('revision.boundaryEvidence')}
           </div>
           {analysis.warnings.map(warning => <p key={warning}>• {warning}</p>)}
         </div>
@@ -45,44 +47,44 @@ export default function CharacterRevisionResult({
 
       <div className="grid gap-3 lg:grid-cols-2">
         <ResultList
-          title={`受影响已写章节（${analysis.affectedWrittenChapters.length}）`}
+          title={t('revision.affectedWritten', { count: analysis.affectedWrittenChapters.length })}
           items={analysis.affectedWrittenChapters.map(item =>
-            `第${item.ordinal}章 ${item.title}｜${item.severity}｜${item.reason}`,
+            `${t('revision.chapterOrdinal', { ordinal: item.ordinal })} ${item.title}｜${item.severity}｜${item.reason}`,
           )}
-          empty="未定位到需要修改的已写章节"
+          empty={t('revision.noAffectedWritten')}
         />
         <ResultList
-          title={`不可破坏事实（${analysis.immutableFacts.length}）`}
+          title={t('revision.immutableFacts', { count: analysis.immutableFacts.length })}
           items={analysis.immutableFacts.map(item =>
-            `${item.sourceChapterOrdinal ? `第${item.sourceChapterOrdinal}章｜` : ''}${item.statement}`
-            + (item.evidenceQuote ? `｜证据：${item.evidenceQuote}` : '｜证据不足'),
+            `${item.sourceChapterOrdinal ? `${t('revision.chapterOrdinal', { ordinal: item.sourceChapterOrdinal })}｜` : ''}${item.statement}`
+            + (item.evidenceQuote ? `｜${t('progress.evidenceLabel')}：${item.evidenceQuote}` : `｜${t('revision.noSummary')}`),
           )}
-          empty="没有足够证据形成硬事实清单"
+          empty={t('revision.noImmutableFacts')}
         />
         <ResultList
-          title={`冲突清单（${analysis.conflicts.length}）`}
+          title={t('revision.conflictList', { count: analysis.conflicts.length })}
           items={analysis.conflicts.map(item => `${item.severity}｜${item.title}：${item.reason}`)}
-          empty="未发现明确冲突"
+          empty={t('revision.noConflicts')}
         />
         <ResultList
-          title={`补伏笔建议（${analysis.foreshadowSuggestions.length}）`}
+          title={t('revision.foreshadowSuggestions', { count: analysis.foreshadowSuggestions.length })}
           items={analysis.foreshadowSuggestions.map(item =>
-            `第${item.chapterOrdinal}章 ${item.title}：${item.suggestion}`
+            `${t('revision.chapterOrdinal', { ordinal: item.chapterOrdinal })} ${item.title}：${item.suggestion}`
             + (item.writtenRegion ? '（仅人工建议，不会写回）' : ''),
           )}
-          empty="无需额外补伏笔"
+          empty={t('revision.noForeshadowSuggestions')}
         />
       </div>
 
       {analysis.mainPlotSuggestion && (
         <div className="rounded border border-border bg-bg-base p-3">
-          <h4 className="mb-1 text-xs font-medium text-text-primary">主线影响建议（只读）</h4>
+          <h4 className="mb-1 text-xs font-medium text-text-primary">{t('revision.mainPlotSuggestion')}</h4>
           <p className="text-xs text-text-muted whitespace-pre-wrap">{analysis.mainPlotSuggestion}</p>
         </div>
       )}
 
       <div>
-        <h4 className="mb-2 text-sm font-medium text-text-primary">选择一档后续方案</h4>
+        <h4 className="mb-2 text-sm font-medium text-text-primary">{t('revision.selectOption')}</h4>
         <div className="grid gap-3 lg:grid-cols-3">
           {analysis.options.map(option => (
             <button
@@ -95,10 +97,10 @@ export default function CharacterRevisionResult({
               }`}
             >
               <strong className="text-sm text-text-primary">{option.label}</strong>
-              <span className="ml-2 text-[10px] text-text-muted">{option.patches.length} 个 patch</span>
+              <span className="ml-2 text-[10px] text-text-muted">{t('revision.patchesCount', { count: option.patches.length })}</span>
               <p className="mt-1 text-xs text-text-muted">{option.summary}</p>
               {option.risks.length > 0 && (
-                <p className="mt-2 text-[11px] text-amber-700">风险：{option.risks.join('；')}</p>
+                <p className="mt-2 text-[11px] text-amber-700">{t('revision.risks')}：{option.risks.join('；')}</p>
               )}
             </button>
           ))}
@@ -108,12 +110,12 @@ export default function CharacterRevisionResult({
       {selectedOption && (
         <div>
           <div className="mb-2 flex items-center justify-between">
-            <h4 className="text-sm font-medium text-text-primary">逐项预览和选择大纲 patch</h4>
-            <span className="text-xs text-text-muted">{selectedPatchIds.size} 项待应用</span>
+            <h4 className="text-sm font-medium text-text-primary">{t('revision.previewSelectPatches')}</h4>
+            <span className="text-xs text-text-muted">{t('revision.pendingApply', { count: selectedPatchIds.size })}</span>
           </div>
           {selectedOption.patches.length === 0 ? (
             <div className="rounded border border-dashed border-border p-4 text-center text-xs text-text-muted">
-              这一档没有通过安全边界的可应用 patch，可复制计划后手工处理。
+              {t('revision.noApplicablePatches')}
             </div>
           ) : (
             <div className="space-y-2">
@@ -128,8 +130,8 @@ export default function CharacterRevisionResult({
                     />
                     <div className="min-w-0 flex-1">
                       <div className="text-xs font-medium text-text-primary">
-                        第{patch.ordinal}章 · {patch.title}
-                        {patch.anchorProtected && <span className="ml-2 text-amber-700">锚点</span>}
+                        {t('revision.chapterOrdinal', { ordinal: patch.ordinal })} · {patch.title}
+                        {patch.anchorProtected && <span className="ml-2 text-amber-700">{t('revision.anchor')}</span>}
                       </div>
                       {patch.currentTitle !== patch.proposedTitle && (
                         <p className="mt-1 text-xs">
@@ -163,9 +165,9 @@ export default function CharacterRevisionResult({
           className="inline-flex items-center gap-1.5 rounded bg-green-600 px-4 py-2 text-sm text-white disabled:opacity-40"
         >
           {applying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-          应用选中 patch 到未写大纲
+          {t('revision.applySelected')}
         </button>
-        <span className="text-xs text-text-muted">应用前会重新检查，不会改正文和 storyCore</span>
+        <span className="text-xs text-text-muted">{t('revision.applySafe')}</span>
       </div>
     </section>
   )

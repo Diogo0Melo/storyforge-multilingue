@@ -1,3 +1,4 @@
+// No user-facing hardcoded strings — all content is data-driven.
 import type { EditorEntityReference } from '../../lib/editor/entity-reference'
 
 interface Props {

@@ -1,12 +1,13 @@
 import { Columns2, Eye, Loader2, Save } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { ChapterStatus } from '../../lib/types'
 
-const STATUS_OPTIONS: { value: ChapterStatus; label: string }[] = [
-  { value: 'outline', label: '仅大纲' },
-  { value: 'draft', label: '初稿' },
-  { value: 'revised', label: '已修改' },
-  { value: 'polished', label: '已润色' },
-  { value: 'final', label: '定稿' },
+const STATUS_OPTIONS: { value: ChapterStatus; labelKey: 'status.outline' | 'status.draft' | 'status.revised' | 'status.polished' | 'status.final' }[] = [
+  { value: 'outline', labelKey: 'status.outline' },
+  { value: 'draft', labelKey: 'status.draft' },
+  { value: 'revised', labelKey: 'status.revised' },
+  { value: 'polished', labelKey: 'status.polished' },
+  { value: 'final', labelKey: 'status.final' },
 ]
 
 const STATUS_STYLE: Record<ChapterStatus, string> = {
@@ -48,27 +49,28 @@ export default function ChapterEditorHeader({
   onOpenCompare,
   onSave,
 }: Props) {
+  const { t } = useTranslation('editor')
   return (
     <div className="flex items-center justify-between px-6 py-3">
       <div className="flex items-center gap-3">
         <div>
           <p className="text-[11px] uppercase tracking-[0.18em] text-text-muted">
-            创作区 · 正文
+            {t('header.creationArea')}
           </p>
           <h2 className="font-serif text-xl font-semibold text-text-primary">{title}</h2>
         </div>
         <span className="rounded-full border border-border bg-bg-elevated px-2.5 py-1 text-xs text-text-muted">
-          {wordCount.toLocaleString()} 字
+          {t('chapter.wordCount', { count: wordCount.toLocaleString() })}
         </span>
         <select
-          aria-label="章节状态"
+          aria-label={t('header.chapterStatus')}
           value={status}
           onChange={event => onStatusChange(event.target.value as ChapterStatus)}
-          title="章节状态会决定该章是否可用于文风学习"
+          title={t('header.statusTitle')}
           className={`text-xs px-2 py-1 rounded border border-transparent focus:outline-none focus:border-accent cursor-pointer ${STATUS_STYLE[status]}`}
         >
           {STATUS_OPTIONS.map(option => (
-            <option key={option.value} value={option.value}>{option.label}</option>
+            <option key={option.value} value={option.value}>{t(option.labelKey)}</option>
           ))}
         </select>
       </div>
@@ -79,7 +81,7 @@ export default function ChapterEditorHeader({
           aria-pressed={showContext}
           className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-muted hover:bg-bg-hover hover:text-text-primary"
         >
-          <Eye className="w-3.5 h-3.5" /> 上下文
+          <Eye className="w-3.5 h-3.5" /> {t('header.context')}
         </button>
         <button
           type="button"
@@ -87,13 +89,13 @@ export default function ChapterEditorHeader({
           disabled={!canCompare}
           className="flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs text-text-muted hover:bg-bg-hover hover:text-accent disabled:opacity-40"
         >
-          <Columns2 className="h-3.5 w-3.5" /> 对照润色
+          <Columns2 className="h-3.5 w-3.5" /> {t('header.comparePolish')}
         </button>
         <button
           type="button"
           onClick={onSave}
           disabled={saveDisabled || saving}
-          title={saveError ? `保存失败：${saveError}` : undefined}
+          title={saveError ? t('header.saveFailedWith', { error: saveError }) : undefined}
           className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-xs hover:bg-bg-hover disabled:cursor-not-allowed disabled:opacity-40 ${
             saveError ? 'text-error' : isSaved ? 'text-success' : 'text-text-muted hover:text-accent'
           }`}
@@ -101,7 +103,7 @@ export default function ChapterEditorHeader({
           {saving
             ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
             : <Save className="w-3.5 h-3.5" />}
-          {saving ? '保存中...' : saveError ? '保存失败' : isSaved ? '已保存' : '保存'}
+          {saving ? t('header.saving') : saveError ? t('header.saveFailed') : isSaved ? t('header.saved') : t('header.save')}
         </button>
       </div>
     </div>

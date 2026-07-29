@@ -1,4 +1,5 @@
 import { AlertTriangle, BookOpenCheck, Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { CONTEXT_SOURCE_BY_KEY } from '../../lib/registry/context-sources'
 import type { AssembleContextResult } from '../../lib/registry/types'
 
@@ -26,10 +27,11 @@ export default function OutlineGenerationBasis({
   loading: boolean
   error: string
 }) {
+  const { t } = useTranslation('outline')
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-xs text-text-muted" data-testid="outline-basis-loading">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" /> 正在读取本次生成依据...
+        <Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('basis.loading')}
       </div>
     )
   }
@@ -38,7 +40,7 @@ export default function OutlineGenerationBasis({
     return (
       <div className="flex items-start gap-2 text-xs text-error" role="alert">
         <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <span>生成依据读取失败：{error}</span>
+        <span>{t('basis.loadFailed', { error })}</span>
       </div>
     )
   }
@@ -52,41 +54,41 @@ export default function OutlineGenerationBasis({
     <div className="space-y-2 text-xs" data-testid="outline-generation-basis">
       <div className="flex items-center gap-2 text-text-primary">
         <BookOpenCheck className="h-3.5 w-3.5 text-accent" />
-        <span className="font-medium">本次生成依据</span>
+        <span className="font-medium">{t('basis.title')}</span>
         <span className="text-[10px] text-text-muted">
-          约 {context.totalInputTokens.toLocaleString()} / {context.inputBudget.toLocaleString()} tokens
+          {t('basis.tokenInfo', { used: context.totalInputTokens.toLocaleString(), budget: context.inputBudget.toLocaleString() })}
         </span>
       </div>
 
-      <div className="flex flex-wrap gap-1.5" aria-label="已读取来源">
+      <div className="flex flex-wrap gap-1.5" aria-label={t('basis.title')}>
         {context.included.map(key => (
           <span key={key} className="rounded bg-accent/10 px-1.5 py-0.5 text-accent">
             {contextSourceLabel(key)}
           </span>
         ))}
-        {context.included.length === 0 && <span className="text-warning">没有读取到已登记的作品资料</span>}
+        {context.included.length === 0 && <span className="text-warning">{t('basis.noSources')}</span>}
       </div>
 
       {storyCore ? (
-        <p className="leading-5 text-text-secondary"><span className="text-text-muted">故事核心：</span>{storyCore}</p>
+        <p className="leading-5 text-text-secondary"><span className="text-text-muted">{t('basis.storyCoreLabel')}</span>{storyCore}</p>
       ) : (
-        <p className="leading-5 text-warning">未填写故事主线，AI 将主要依据世界观、角色、已有大纲与额外要求生成。</p>
+        <p className="leading-5 text-warning">{t('basis.noStoryCore')}</p>
       )}
       {existingVolumes && (
-        <p className="leading-5 text-text-secondary"><span className="text-text-muted">已有卷纲：</span>{existingVolumes}</p>
+        <p className="leading-5 text-text-secondary"><span className="text-text-muted">{t('basis.existingVolumesLabel')}</span>{existingVolumes}</p>
       )}
 
       {context.omitted.length > 0 && (
         <p className="text-text-muted">
-          无可用内容：{context.omitted.map(contextSourceLabel).join('、')}
+          {t('basis.noContent')}{context.omitted.map(contextSourceLabel).join('、')}
         </p>
       )}
       {context.trimmed.length > 0 && (
         <p className="text-warning">
-          因模型上下文预算未发送：{context.trimmed.map(contextSourceLabel).join('、')}
+          {t('basis.trimmed')}{context.trimmed.map(contextSourceLabel).join('、')}
         </p>
       )}
-      <p className="text-text-muted">未采纳的灵感草稿不会进入生成上下文。</p>
+      <p className="text-text-muted">{t('basis.draftNote')}</p>
     </div>
   )
 }

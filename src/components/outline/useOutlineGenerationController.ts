@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import i18n from '../../i18n/i18n'
 import type { UseAIStreamReturn } from '../../hooks/useAIStream'
 import type { RunOptions } from '../../lib/ai/adapters/outline-adapter'
 import {
@@ -107,7 +108,7 @@ export function useOutlineGenerationController({
     } catch (error) {
       return {
         prepared: null,
-        error: error instanceof Error ? error.message : '无法装配最终提示词',
+        error: error instanceof Error ? error.message : i18n.t('outline:controller.assembleFailed'),
       }
     }
   }, [buildNode, pendingRequest, preparedContext])
@@ -145,7 +146,7 @@ export function useOutlineGenerationController({
       }
       console.error('[Outline] 准备生成失败:', error)
       ai.reset()
-      onError(`准备大纲生成时出错：${error instanceof Error ? error.message : '未知错误'}。`)
+      onError(i18n.t('outline:controller.prepareFailed', { error: error instanceof Error ? error.message : i18n.t('outline:unknownError') }))
     }
   }, [ai, assembleContext, buildNode, clearPreview, nodes, onError, onInfo, volumes])
 
@@ -173,7 +174,7 @@ export function useOutlineGenerationController({
       setPreparedContext({ operation, assembled })
     } catch (error) {
       if (contextRequestRef.current !== requestId) return
-      setContextError(error instanceof Error ? error.message : '未知错误')
+      setContextError(error instanceof Error ? error.message : i18n.t('outline:unknownError'))
     } finally {
       if (contextRequestRef.current === requestId) setContextLoading(false)
     }

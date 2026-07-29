@@ -5,6 +5,7 @@
  * 右侧编辑区：场景细纲 + 正文编辑器
  */
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { useOutlineStore } from '../../stores/outline'
 import { useChapterStore } from '../../stores/chapter'
@@ -22,12 +23,12 @@ interface Props {
   initialNodeId?: number | null
 }
 
-const STATUS_LABELS: Record<ChapterStatus, string> = {
-  outline:  '仅大纲',
-  draft:    '初稿',
-  revised:  '已修改',
-  polished: '已润色',
-  final:    '定稿',
+const STATUS_LABEL_KEYS: Record<ChapterStatus, string> = {
+  outline:  'status.outline',
+  draft:    'status.draft',
+  revised:  'status.revised',
+  polished: 'status.polished',
+  final:    'status.final',
 }
 
 const STATUS_DOT: Record<ChapterStatus, string> = {
@@ -39,6 +40,7 @@ const STATUS_DOT: Record<ChapterStatus, string> = {
 }
 
 export default function ChaptersListPanel({ project, initialNodeId }: Props) {
+  const { t } = useTranslation('editor')
   const { nodes, loadAll: loadOutline } = useOutlineStore()
   const { chapters, loadAll: loadChapters } = useChapterStore()
   const loadCharacters = useCharacterStore(state => state.loadAll)
@@ -122,14 +124,14 @@ export default function ChaptersListPanel({ project, initialNodeId }: Props) {
     <div className="flex flex-col h-full">
       {/* 统计 */}
       <div className="px-3 py-2 text-[10px] text-text-muted border-b border-border">
-        共 {totalChapters} 章 · {totalWords.toLocaleString()} 字
+        {t('list.totalInfo', { chapters: totalChapters, words: totalWords.toLocaleString() })}
       </div>
 
       {/* 按卷分组的章节列表 */}
       <div className="flex-1 overflow-y-auto">
         {volumeGroups.length === 0 ? (
           <div className="text-center py-8 text-text-muted text-xs px-3">
-            还没有章节。先在「大纲」里生成卷和章节。
+            {t('list.noChapters')}
           </div>
         ) : (
           volumeGroups.map(grp => {
@@ -164,7 +166,7 @@ export default function ChaptersListPanel({ project, initialNodeId }: Props) {
                     >
                       <span className="text-[10px] text-text-muted w-4 shrink-0 text-right">{idx + 1}</span>
                       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${STATUS_DOT[status]}`}
-                        title={STATUS_LABELS[status]} />
+                        title={t(STATUS_LABEL_KEYS[status] as 'status.outline')} />
                       <div className="min-w-0 flex-1">
                         <p className={`text-xs truncate ${active ? 'text-accent font-medium' : 'text-text-primary'}`}>
                           {ch.title}
@@ -194,7 +196,7 @@ export default function ChaptersListPanel({ project, initialNodeId }: Props) {
   return (
     <PanelLayout
       sidebar={sidebarContent}
-      sidebarTitle="📖 章节"
+      sidebarTitle={t('list.sidebarTitle')}
       defaultWidth={200}
       minWidth={150}
       maxWidth={320}
@@ -213,7 +215,7 @@ export default function ChaptersListPanel({ project, initialNodeId }: Props) {
                 }`}
               >
                 <Search className="h-3.5 w-3.5" />
-                查找替换
+                {t('list.findReplace')}
               </button>
             </div>
             {showFindReplace && (
@@ -247,8 +249,8 @@ export default function ChaptersListPanel({ project, initialNodeId }: Props) {
           <div className="text-4xl opacity-20">📝</div>
           <p className="text-sm">
             {totalChapters > 0
-              ? '从左侧选择一个章节开始写作'
-              : '先在「大纲」里生成章节，然后回来写作'}
+              ? t('list.selectToWrite')
+              : t('list.generateFirst')}
           </p>
         </div>
       )}

@@ -9,6 +9,7 @@
  * - 场景地点 + 情绪走向
  */
 import { useMemo, useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, MapPin, Users, BookOpen, Zap, TrendingUp, Bookmark } from 'lucide-react'
 import { useDetailedOutlineStore } from '../../stores/detailed-outline'
 import { useCharacterStore } from '../../stores/character'
@@ -25,12 +26,12 @@ interface Props {
   onClose: () => void
 }
 
-const EMOTION_LABELS: Record<EmotionArc, { label: string; color: string }> = {
-  rising:  { label: '📈 情绪升温', color: 'text-success' },
-  falling: { label: '📉 情绪降温', color: 'text-info' },
-  flat:    { label: '➡️ 平稳叙事', color: 'text-text-muted' },
-  wave:    { label: '🌊 起伏波动', color: 'text-warning' },
-  climax:  { label: '⚡ 全程高潮', color: 'text-error' },
+const EMOTION_LABEL_KEYS: Record<EmotionArc, { key: string; color: string }> = {
+  rising:  { key: 'preview.emotionRising', color: 'text-success' },
+  falling: { key: 'preview.emotionFalling', color: 'text-info' },
+  flat:    { key: 'preview.emotionFlat', color: 'text-text-muted' },
+  wave:    { key: 'preview.emotionWave', color: 'text-warning' },
+  climax:  { key: 'preview.emotionClimax', color: 'text-error' },
 }
 
 const PACE_COLORS: Record<ScenePace, string> = {
@@ -40,11 +41,12 @@ const PACE_COLORS: Record<ScenePace, string> = {
   climax: 'bg-error/15 text-error',
 }
 
-const PACE_LABELS: Record<ScenePace, string> = {
-  slow: '慢', medium: '中', fast: '快', climax: '高潮',
+const PACE_LABEL_KEYS: Record<ScenePace, string> = {
+  slow: 'preview.paceSlow', medium: 'preview.paceMedium', fast: 'preview.paceFast', climax: 'preview.paceClimax',
 }
 
 export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
+  const { t } = useTranslation('outline')
   const { nodes, updateNode } = useOutlineStore()
   const { detailedOutlines } = useDetailedOutlineStore()
   const { characters } = useCharacterStore()
@@ -114,13 +116,13 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
         {/* 章节摘要(章节大纲)— FB-3:可手动编辑,失焦自动保存 */}
         {(
           <div>
-            <SectionLabel icon={<BookOpen className="w-3 h-3" />} label="章节摘要" />
+            <SectionLabel icon={<BookOpen className="w-3 h-3" />} label={t('preview.summaryLabel')} />
             <textarea
               value={summaryDraft}
               onChange={e => setSummaryDraft(e.target.value)}
               onBlur={() => { if (node.id != null && summaryDraft !== (node.summary || '')) updateNode(node.id, { summary: summaryDraft }) }}
               rows={3}
-              placeholder="章节大纲/摘要(可手动编辑,失焦自动保存)"
+              placeholder={t('preview.summaryPlaceholder')}
               className="w-full px-2 py-1.5 bg-bg-base border border-border rounded text-sm text-text-secondary leading-relaxed resize-y focus:outline-none focus:border-accent"
             />
           </div>
@@ -131,13 +133,13 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
           <div className="grid grid-cols-2 gap-3">
             {detail.openingHook && (
               <div className="bg-bg-base rounded-lg p-3">
-                <span className="text-[10px] font-medium text-accent uppercase tracking-wide">🔗 开头衔接</span>
+                <span className="text-[10px] font-medium text-accent uppercase tracking-wide">{t('preview.openingHook')}</span>
                 <p className="text-xs text-text-primary mt-1">{detail.openingHook}</p>
               </div>
             )}
             {detail.endingCliffhanger && (
               <div className="bg-bg-base rounded-lg p-3">
-                <span className="text-[10px] font-medium text-warning uppercase tracking-wide">🎣 结尾悬念</span>
+                <span className="text-[10px] font-medium text-warning uppercase tracking-wide">{t('preview.endingCliffhanger')}</span>
                 <p className="text-xs text-text-primary mt-1">{detail.endingCliffhanger}</p>
               </div>
             )}
@@ -153,8 +155,8 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
             </div>
           )}
           {detail?.emotionArc && (
-            <span className={`text-xs ${EMOTION_LABELS[detail.emotionArc]?.color || ''}`}>
-              {EMOTION_LABELS[detail.emotionArc]?.label || detail.emotionArc}
+            <span className={`text-xs ${EMOTION_LABEL_KEYS[detail.emotionArc]?.color || ''}`}>
+              {t(EMOTION_LABEL_KEYS[detail.emotionArc]?.key as any) || detail.emotionArc}
             </span>
           )}
         </div>
@@ -162,7 +164,7 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
         {/* 出场角色 */}
         {appearingChars.length > 0 && (
           <div>
-            <SectionLabel icon={<Users className="w-3 h-3" />} label={`出场角色 (${appearingChars.length})`} />
+            <SectionLabel icon={<Users className="w-3 h-3" />} label={t('preview.appearingCharacters', { count: appearingChars.length })} />
             <div className="flex flex-wrap gap-1.5">
               {appearingChars.map(c => c && (
                 <span key={c.id} className="inline-flex items-center gap-1 px-2 py-1 bg-accent/10 text-accent text-xs rounded-full">
@@ -176,23 +178,22 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
         {/* 相关伏笔 */}
         {allForeshadows.length > 0 && (
           <div>
-            <SectionLabel icon={<Bookmark className="w-3 h-3" />} label={`相关伏笔 (${allForeshadows.length})`} />
+            <SectionLabel icon={<Bookmark className="w-3 h-3" />} label={t('preview.relatedForeshadows', { count: allForeshadows.length })} />
             <div className="space-y-1">
               {allForeshadows.map(f => {
-                let role = ''
-                if (chapterId != null && f.plantChapterId === chapterId) role = '埋设'
-                else if (chapterId != null && (f.resolveChapterId === chapterId || f.expectedResolveChapterId === chapterId)) role = '回收'
-                else role = '呼应'
+                let roleKey = 'preview.roleEcho'
+                if (chapterId != null && f.plantChapterId === chapterId) roleKey = 'preview.rolePlant'
+                else if (chapterId != null && (f.resolveChapterId === chapterId || f.expectedResolveChapterId === chapterId)) roleKey = 'preview.roleResolve'
 
                 const roleColors: Record<string, string> = {
-                  '埋设': 'bg-info/15 text-info',
-                  '回收': 'bg-success/15 text-success',
-                  '呼应': 'bg-warning/15 text-warning',
+                  'preview.rolePlant': 'bg-info/15 text-info',
+                  'preview.roleResolve': 'bg-success/15 text-success',
+                  'preview.roleEcho': 'bg-warning/15 text-warning',
                 }
 
                 return (
                   <div key={f.id} className="flex items-center gap-2 text-xs">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${roleColors[role] || ''}`}>{role}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${roleColors[roleKey] || ''}`}>{t(roleKey as any)}</span>
                     <span className="text-text-primary font-medium">{f.name}</span>
                     <span className="text-text-muted truncate flex-1">{f.description}</span>
                   </div>
@@ -205,7 +206,7 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
         {/* 场景列表 */}
         {detail?.scenes && detail.scenes.length > 0 && (
           <div>
-            <SectionLabel icon={<Zap className="w-3 h-3" />} label={`场景 (${detail.scenes.length})`} />
+            <SectionLabel icon={<Zap className="w-3 h-3" />} label={t('preview.scenesLabel', { count: detail.scenes.length })} />
             <div className="space-y-1.5">
               {detail.scenes.map((s, idx) => (
                 <div key={s.sceneId} className="flex items-start gap-2 text-xs">
@@ -214,10 +215,10 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
                     <div className="flex items-center gap-2">
                       <span className="text-text-primary font-medium">{s.title}</span>
                       <span className={`px-1 py-0.5 rounded text-[10px] ${PACE_COLORS[s.pace]}`}>
-                        {PACE_LABELS[s.pace]}
+                        {t(PACE_LABEL_KEYS[s.pace] as any)}
                       </span>
                       {s.estimatedWords > 0 && (
-                        <span className="text-text-muted">{s.estimatedWords}字</span>
+                        <span className="text-text-muted">{t('preview.words', { count: s.estimatedWords })}</span>
                       )}
                     </div>
                     {s.summary && <p className="text-text-muted mt-0.5">{s.summary}</p>}
@@ -226,7 +227,7 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
               ))}
               <div className="text-xs text-text-muted text-right pt-1 border-t border-border">
                 <TrendingUp className="w-3 h-3 inline mr-1" />
-                估算总字数：{detail.scenes.reduce((s, sc) => s + (sc.estimatedWords || 0), 0).toLocaleString()}
+                {t('preview.estimatedTotal')}：{detail.scenes.reduce((s, sc) => s + (sc.estimatedWords || 0), 0).toLocaleString()}
               </div>
             </div>
           </div>
@@ -235,7 +236,7 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
         {/* 空状态 */}
         {!detail && !node.summary && (
           <div className="text-center py-8 text-text-muted text-sm">
-            暂无细纲信息，前往「细纲」面板生成
+            {t('preview.noDetail')}
           </div>
         )}
       </div>

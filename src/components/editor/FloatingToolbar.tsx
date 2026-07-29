@@ -5,6 +5,7 @@
  * 润色 / 扩写 / 缩写 / 改写 / 查漏
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Wand2, Expand, Minimize2, RefreshCw, Search, X, Loader2, Check } from 'lucide-react'
 import { useAIStream } from '../../hooks/useAIStream'
 import { buildPolishPrompt, buildExpandPrompt } from '../../lib/ai/adapters/chapter-adapter'
@@ -23,17 +24,18 @@ interface Props {
 
 type ActionType = 'polish' | 'expand' | 'condense' | 'rewrite' | 'check'
 
-const ACTIONS: { type: ActionType; icon: typeof Wand2; label: string; desc: string }[] = [
-  { type: 'polish',   icon: Wand2,      label: '润色', desc: '优化文笔' },
-  { type: 'expand',   icon: Expand,     label: '扩写', desc: '丰富细节' },
-  { type: 'condense', icon: Minimize2,  label: '缩写', desc: '精简内容' },
-  { type: 'rewrite',  icon: RefreshCw,  label: '改写', desc: '换种写法' },
-  { type: 'check',    icon: Search,     label: '查漏', desc: '检查问题' },
+const ACTION_KEYS: { type: ActionType; icon: typeof Wand2; labelKey: string; descKey: string }[] = [
+  { type: 'polish',   icon: Wand2,      labelKey: 'floating.polish', descKey: 'floating.polishDesc' },
+  { type: 'expand',   icon: Expand,     labelKey: 'floating.expand', descKey: 'floating.expandDesc' },
+  { type: 'condense', icon: Minimize2,  labelKey: 'floating.condense', descKey: 'floating.condenseDesc' },
+  { type: 'rewrite',  icon: RefreshCw,  labelKey: 'floating.rewrite', descKey: 'floating.rewriteDesc' },
+  { type: 'check',    icon: Search,     labelKey: 'floating.check', descKey: 'floating.checkDesc' },
 ]
 
 export default function FloatingToolbar({
   getSelectedText, getSelectionRect, replaceSelectedText, disabled,
 }: Props) {
+  const { t } = useTranslation('editor')
   const [visible, setVisible] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const [result, setResult] = useState<string | null>(null)
@@ -134,15 +136,15 @@ export default function FloatingToolbar({
       {/* 工具栏按钮行 */}
       {!result && !ai.isStreaming && (
         <div className="flex items-center gap-0.5 bg-bg-elevated border border-border rounded-lg shadow-lg px-1 py-0.5">
-          {ACTIONS.map(({ type, icon: Icon, label }) => (
+          {ACTION_KEYS.map(({ type, icon: Icon, labelKey, descKey }) => (
             <button
               key={type}
               onClick={() => handleAction(type)}
               className="flex items-center gap-1 px-2 py-1.5 text-xs text-text-secondary hover:text-accent hover:bg-accent/10 rounded transition-colors"
-              title={label}
+              title={t(descKey as 'floating.polishDesc')}
             >
               <Icon className="w-3 h-3" />
-              {label}
+              {t(labelKey as 'floating.polish')}
             </button>
           ))}
           <button
@@ -159,7 +161,7 @@ export default function FloatingToolbar({
         <div className="bg-bg-elevated border border-accent/30 rounded-lg shadow-lg px-3 py-2 min-w-[200px]">
           <div className="flex items-center gap-2 text-xs text-accent">
             <Loader2 className="w-3 h-3 animate-spin" />
-            AI 处理中...
+            {t('floating.processing')}
           </div>
           {ai.output && (
             <p className="mt-1 text-xs text-text-secondary max-h-20 overflow-y-auto whitespace-pre-wrap">
@@ -183,11 +185,11 @@ export default function FloatingToolbar({
           <div className="flex items-center gap-2">
             <button onClick={handleAccept}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-accent text-white rounded hover:bg-accent-hover">
-              <Check className="w-3 h-3" /> 替换
+              <Check className="w-3 h-3" /> {t('floating.replace')}
             </button>
             <button onClick={handleDismiss}
               className="flex items-center gap-1 px-2 py-1 text-xs text-text-muted hover:text-text-primary rounded hover:bg-bg-hover">
-              <X className="w-3 h-3" /> 取消
+              <X className="w-3 h-3" /> {t('floating.cancel')}
             </button>
           </div>
         </div>

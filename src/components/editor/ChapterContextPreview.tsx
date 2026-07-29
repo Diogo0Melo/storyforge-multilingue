@@ -1,4 +1,5 @@
 import { CheckSquare, Square } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { OutlineNode, StateCard } from '../../lib/types'
 import { STATE_CATEGORY_LABELS } from '../../lib/types/state-card'
 
@@ -35,27 +36,28 @@ export default function ChapterContextPreview({
   onToggleStateList,
   onToggleStateCard,
 }: Props) {
+  const { t } = useTranslation('editor')
   return (
     <div className="mx-6 mb-3 max-h-64 overflow-y-auto rounded-xl border border-border bg-bg-elevated p-3 text-xs text-text-muted shadow-theme-sm">
-      <p className="font-medium text-text-secondary mb-1">📋 发送给 AI 的上下文：</p>
+      <p className="font-medium text-text-secondary mb-1">{t('context.title')}</p>
       <div className="whitespace-pre-wrap">
-        {worldContext && <p>【世界观】{worldContext.slice(0, 500)}...</p>}
-        {characterContext && <p>【角色】{characterContext.slice(0, 300)}...</p>}
-        {outlineNode && <p>【章节大纲】{outlineNode.title}：{outlineNode.summary}</p>}
+        {worldContext && <p>{t('context.worldview')}{worldContext.slice(0, 500)}...</p>}
+        {characterContext && <p>{t('context.character')}{characterContext.slice(0, 300)}...</p>}
+        {outlineNode && <p>{t('context.outline')}{outlineNode.title}：{outlineNode.summary}</p>}
       </div>
 
       {stateCards.length > 0 && (
         <div className="mt-2 pt-2 border-t border-border">
           <div className="flex items-center justify-between mb-1">
             <p className="font-medium text-text-secondary">
-              📋 状态卡注入（{matchedIds.length}/{allIds.length}）
+              {t('context.stateInjection', { matched: matchedIds.length, total: allIds.length })}
             </p>
             <button
               type="button"
               onClick={onToggleStateList}
               className="text-accent hover:text-accent-hover text-xs"
             >
-              {stateListExpanded ? '收起' : '展开调整'}
+              {stateListExpanded ? t('context.collapse') : t('context.expandAdjust')}
             </button>
           </div>
           {stateListExpanded && (
@@ -68,7 +70,7 @@ export default function ChapterContextPreview({
                   <div key={cardId} className="flex items-center gap-1.5 cursor-pointer hover:bg-bg-hover rounded px-1 py-0.5">
                     <button
                       type="button"
-                      aria-label={`状态卡：${card.entityName}`}
+                      aria-label={t('context.stateCardLabel', { name: card.entityName })}
                       onClick={() => onToggleStateCard(cardId)}
                       className="flex-shrink-0"
                     >
@@ -82,8 +84,8 @@ export default function ChapterContextPreview({
                     <span className={isMatched || isExtra ? 'text-text-primary' : 'text-text-muted'}>
                       {card.entityName}
                     </span>
-                    {isMatched && !isExtra && <span className="text-[10px] text-accent/60">自动匹配</span>}
-                    {isExtra && <span className="text-[10px] text-warning">手动添加</span>}
+                    {isMatched && !isExtra && <span className="text-[10px] text-accent/60">{t('context.autoMatched')}</span>}
+                    {isExtra && <span className="text-[10px] text-warning">{t('context.manualAdded')}</span>}
                   </div>
                 )
               })}

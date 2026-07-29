@@ -1,4 +1,5 @@
 import { Check, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export default function OutlinePreviewPanel({
   label,
@@ -11,6 +12,7 @@ export default function OutlinePreviewPanel({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { t } = useTranslation('outline')
   return (
     <div className="border border-accent/50 rounded-lg overflow-hidden">
       <div className="flex items-center justify-between px-3 py-2 bg-accent/10">
@@ -18,11 +20,11 @@ export default function OutlinePreviewPanel({
         <div className="flex gap-2">
           <button onClick={onCancel}
             className="flex items-center gap-1 px-2 py-1 text-xs text-text-muted hover:text-text-primary rounded transition-colors">
-            <X className="w-3 h-3" /> 取消
+            <X className="w-3 h-3" /> {t('cancel')}
           </button>
           <button onClick={onConfirm}
             className="flex items-center gap-1 px-3 py-1 text-xs bg-accent text-white rounded hover:bg-accent-hover transition-colors">
-            <Check className="w-3 h-3" /> 确认写入
+            <Check className="w-3 h-3" /> {t('previewPanel.confirmWrite')}
           </button>
         </div>
       </div>

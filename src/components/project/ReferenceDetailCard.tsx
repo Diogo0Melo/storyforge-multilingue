@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+
+/** Simplified t() signature — avoids TS2589 type recursion with large project.json */
+type SimpleT = (key: string, options?: Record<string, unknown>) => string
 import {
   BookMarked,
   ChevronDown,
@@ -125,17 +128,17 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
       )}
 
       <div>
-        {activeTab === 'info' && <ReferenceInfoTab reference={reference} onUpdate={onUpdate} t={t} />}
+        {activeTab === 'info' && <ReferenceInfoTab reference={reference} onUpdate={onUpdate} t={t as unknown as SimpleT} />}
         {activeTab === 'worldview' && <ReferenceWorldviewTab entries={worldviewEntries} WORLDVIEW_LABELS={WORLDVIEW_LABELS} />}
-        {activeTab === 'characters' && <ReferenceCharactersTab characters={characters} t={t} />}
-        {activeTab === 'outline' && <ReferenceOutlineTab outline={outline} t={t} />}
+        {activeTab === 'characters' && <ReferenceCharactersTab characters={characters} t={t as unknown as SimpleT} />}
+        {activeTab === 'outline' && <ReferenceOutlineTab outline={outline} t={t as unknown as SimpleT} />}
         {activeTab === 'deep-analysis' && <ReferenceDeepAnalysisTab reference={reference} />}
       </div>
     </div>
   )
 }
 
-function ReferenceInfoTab({ reference, onUpdate, t }: { reference: Reference; onUpdate: (data: Partial<Reference>) => void; t: ReturnType<typeof useTranslation>['t'] }) {
+function ReferenceInfoTab({ reference, onUpdate, t }: { reference: Reference; onUpdate: (data: Partial<Reference>) => void; t: SimpleT }) {
   return (
     <div className="space-y-0 divide-y divide-border/40">
       <ReferenceInfoRow label={t('refDetail.titleLabel')}>
@@ -181,7 +184,7 @@ function ReferenceWorldviewTab({ entries, WORLDVIEW_LABELS }: { entries: [string
   )
 }
 
-function ReferenceCharactersTab({ characters, t }: { characters: Array<Record<string, unknown>>; t: ReturnType<typeof useTranslation>['t'] }) {
+function ReferenceCharactersTab({ characters, t }: { characters: Array<Record<string, unknown>>; t: SimpleT }) {
   const [expanded, setExpanded] = useState<number | null>(null)
   return (
     <div className="space-y-0.5">
@@ -223,11 +226,11 @@ function ReferenceCharactersTab({ characters, t }: { characters: Array<Record<st
   )
 }
 
-function ReferenceOutlineTab({ outline, t }: { outline: Array<Record<string, unknown>>; t: ReturnType<typeof useTranslation>['t'] }) {
+function ReferenceOutlineTab({ outline, t }: { outline: Array<Record<string, unknown>>; t: SimpleT }) {
   return <div className="space-y-1">{outline.map((node, index) => <ReferenceOutlineNode key={index} node={node} depth={0} t={t} />)}</div>
 }
 
-function ReferenceOutlineNode({ node, depth, t }: { node: Record<string, unknown>; depth: number; t: ReturnType<typeof useTranslation>['t'] }) {
+function ReferenceOutlineNode({ node, depth, t }: { node: Record<string, unknown>; depth: number; t: SimpleT }) {
   const title = String(node.title || t('refDetail.unnamed'))
   const summary = node.summary ? String(node.summary) : ''
   const children = Array.isArray(node.children) ? node.children : []

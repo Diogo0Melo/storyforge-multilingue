@@ -1,4 +1,7 @@
 import { useTranslation } from 'react-i18next'
+
+/** Simplified t() signature — avoids TS2589 type recursion with large project.json */
+type SimpleT = (key: string, options?: Record<string, unknown>) => string
 import {
   ArrowDownToLine,
   BookOpen,
@@ -73,7 +76,7 @@ export default function InspirationSingleResult({
         adopting={adopting}
         adoptionLocked={adoptionLocked}
         adoptLabel={t('singleResult.writeWorld')}
-        t={t}
+        t={t as unknown as SimpleT}
       >
         <div className="space-y-2 text-sm">
           {result.worldview.worldOrigin && <FieldRow label={t('singleResult.field.worldSource')} value={result.worldview.worldOrigin} />}
@@ -96,7 +99,7 @@ export default function InspirationSingleResult({
         adopting={adopting}
         adoptionLocked={adoptionLocked}
         adoptLabel={t('singleResult.writeStory')}
-        t={t}
+        t={t as unknown as SimpleT}
       >
         <div className="space-y-2 text-sm">
           {result.storyCore.logline && <FieldRow label={t('singleResult.field.oneLiner')} value={result.storyCore.logline} highlight />}
@@ -117,7 +120,7 @@ export default function InspirationSingleResult({
         adopting={adopting}
         adoptionLocked={adoptionLocked}
         adoptLabel={t('singleResult.writeChars', { count: selectedChars.size })}
-        t={t}
+        t={t as unknown as SimpleT}
       >
         <div className="space-y-3">
           {result.characters.map((character, index) => (
@@ -127,7 +130,7 @@ export default function InspirationSingleResult({
               selected={selectedChars.has(index)}
               onToggle={() => onToggleCharacter(index)}
               adopted={adoptedSections.has('characters')}
-              t={t}
+              t={t as unknown as SimpleT}
             />
           ))}
         </div>
@@ -159,7 +162,7 @@ function ResultCard({
   adoptionLocked: boolean
   adoptLabel: string
   children: ReactNode
-  t: ReturnType<typeof useTranslation>['t']
+  t: SimpleT
 }) {
   return (
     <div className="border border-border rounded-lg overflow-hidden">
@@ -215,7 +218,7 @@ function CharacterCard({
   selected: boolean
   onToggle: () => void
   adopted: boolean
-  t: ReturnType<typeof useTranslation>['t']
+  t: SimpleT
 }) {
   return (
     <div className={`border rounded-lg p-3 transition-colors ${selected ? 'border-accent bg-accent/10' : 'border-border'}`}>

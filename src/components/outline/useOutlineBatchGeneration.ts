@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import i18n from '../../i18n/i18n'
 import {
   runBatchOutlineGeneration,
   type BatchOutlineProgress,
@@ -76,7 +77,7 @@ export function useOutlineBatchGeneration({
       if (!generationResult.cancelled) setResult(generationResult.chaptersByVolume)
     } catch (error) {
       console.error('[BatchOutline] 失败:', error)
-      onError(`批量生成章节失败：${error instanceof Error ? error.message : '未知错误'}。`)
+      onError(i18n.t('outline:batch.generateFailed', { error: error instanceof Error ? error.message : i18n.t('outline:unknownError') }))
     } finally {
       if (abortRef.current === controller) abortRef.current = null
       setRunning(false)
@@ -104,7 +105,7 @@ export function useOutlineBatchGeneration({
       }
     } catch (error) {
       console.error('[Outline] 批量写入章节失败:', error)
-      onError(`批量写入章节时出错：${error instanceof Error ? error.message : '未知错误'}。请查看控制台获取详情。`)
+      onError(i18n.t('outline:batch.writeError', { error: error instanceof Error ? error.message : i18n.t('outline:unknownError') }))
       return
     }
     await reloadOutline()

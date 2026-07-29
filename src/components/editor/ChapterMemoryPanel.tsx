@@ -1,4 +1,5 @@
 import { FileText } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { ChapterPlanReconciliation } from '../../lib/types'
 
 interface Props {
@@ -22,6 +23,7 @@ export default function ChapterMemoryPanel({
   onConfirmActualProgress,
   onApplyOutlineCandidate,
 }: Props) {
+  const { t } = useTranslation('editor')
   const reconciliationStale = reconciliation
     && !reconciliationCurrent
     && (reconciliation.reviewStatus === 'pending' || reconciliation.reviewStatus === 'confirmed-constraint')
@@ -31,27 +33,27 @@ export default function ChapterMemoryPanel({
       {(summary || hasText) && (
         <div className="mb-3 p-3 bg-bg-elevated border border-border rounded-lg">
           <div className="flex items-center justify-between mb-1">
-            <p className="text-xs text-text-muted">📝 章节摘要</p>
+            <p className="text-xs text-text-muted">{t('memory.summary')}</p>
             <button
               type="button"
               onClick={onGenerateMemory}
               disabled={!hasText || memoryBusy}
-              title="基于当前正文一次刷新摘要与连续性交接记忆"
+              title={t('memory.refreshTitle')}
               className="flex items-center gap-1 text-xs text-text-muted hover:text-accent disabled:opacity-50 transition-colors"
             >
               <FileText className="w-3 h-3" />
-              {memoryBusy ? '生成中...' : summary ? '刷新章节记忆' : '生成章节记忆'}
+              {memoryBusy ? t('memory.generating') : summary ? t('memory.refreshMemory') : t('memory.generateMemory')}
             </button>
           </div>
           {summary
             ? <p className="text-sm text-text-secondary">{summary}</p>
-            : <p className="text-xs text-text-muted/60">改完正文后生成章节记忆，让后续章节获得可校验的前情与交接约束。</p>}
+            : <p className="text-xs text-text-muted/60">{t('memory.emptyHint')}</p>}
         </div>
       )}
 
       {reconciliationStale && (
         <div className="mb-3 px-3 py-2 text-xs text-text-muted bg-bg-elevated border border-border rounded-lg">
-          计划对账已因正文或章纲变化而失效；刷新章节记忆后再处理。
+          {t('memory.reconciliationStale')}
         </div>
       )}
 

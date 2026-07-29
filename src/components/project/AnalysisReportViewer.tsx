@@ -10,6 +10,9 @@
  */
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
+
+/** Simplified t() signature — avoids TS2589 type recursion with large project.json */
+type SimpleT = (key: string, options?: Record<string, unknown>) => string
 import {
   ChevronDown, ChevronRight, Loader2, Sparkles,
   Users2,
@@ -277,10 +280,10 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
             hasCharacterCraft={hasCharacterCraft}
             onAggregate={handleAggregateCharacters}
             aggregating={aggregatingChars}
-            t={t}
+            t={t as unknown as SimpleT}
           />
         ) : (
-          <ChunkListView chunks={chunks} isHistorical={isHistorical} t={t} />
+          <ChunkListView chunks={chunks} isHistorical={isHistorical} t={t as unknown as SimpleT} />
         )}
       </div>
     </div>
@@ -298,7 +301,7 @@ function MergedView({
   hasCharacterCraft: boolean
   onAggregate: () => void
   aggregating: boolean
-  t: ReturnType<typeof useTranslation>['t']
+  t: SimpleT
 }) {
   const hasSummary = Object.keys(summaryMap).length > 0
 
@@ -372,7 +375,7 @@ function MergedView({
   )
 }
 
-function DimensionSection({ dim, t }: { dim: MergedDimension; t: ReturnType<typeof useTranslation>['t'] }) {
+function DimensionSection({ dim, t }: { dim: MergedDimension; t: SimpleT }) {
   const [expanded, setExpanded] = useState(true)
   const [showAll, setShowAll] = useState(false)
   const displayItems = showAll ? dim.items : dim.items.slice(0, 5)
@@ -457,7 +460,7 @@ function AICharacterCard({ card }: { card: AIMergedCharacter }) {
 
 // ── 分块视图 ─────────────────────────────────────────────────
 
-function ChunkListView({ chunks, isHistorical, t }: { chunks: ReferenceChunkAnalysis[]; isHistorical: boolean; t: ReturnType<typeof useTranslation>['t'] }) {
+function ChunkListView({ chunks, isHistorical, t }: { chunks: ReferenceChunkAnalysis[]; isHistorical: boolean; t: SimpleT }) {
   const sorted = useMemo(() => [...chunks].sort((a, b) => a.chunkIndex - b.chunkIndex), [chunks])
   const [selectedChunk, setSelectedChunk] = useState(0)
 

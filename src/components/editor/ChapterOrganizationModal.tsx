@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   AlertTriangle,
   Check,
@@ -25,21 +26,23 @@ interface Props {
   onClose: () => void
 }
 
-const DOMAIN_META: Record<ChapterOrganizationDomain, { label: string; description: string }> = {
-  state: { label: '角色状态', description: '确认后更新状态表' },
-  facts: { label: '受控事实', description: '只进入事实候选，仍需在事实库确认 Canon' },
-  inventory: { label: '物品流水', description: '确认后替换本章的物品提取记录' },
-  timeline: { label: '故事年表', description: '确认后替换本章的剧情大事' },
-  relations: { label: '角色关系', description: '只新增已登记角色之间的新关系' },
-  foreshadows: { label: '伏笔推进', description: '只允许单向推进，不覆盖后来修改' },
+const DOMAIN_META_KEYS: Record<ChapterOrganizationDomain, { labelKey: string; descriptionKey: string }> = {
+  state: { labelKey: 'organization.domain.state', descriptionKey: 'organization.domain.stateDesc' },
+  facts: { labelKey: 'organization.domain.facts', descriptionKey: 'organization.domain.factsDesc' },
+  inventory: { labelKey: 'organization.domain.inventory', descriptionKey: 'organization.domain.inventoryDesc' },
+  timeline: { labelKey: 'organization.domain.timeline', descriptionKey: 'organization.domain.timelineDesc' },
+  relations: { labelKey: 'organization.domain.relations', descriptionKey: 'organization.domain.relationsDesc' },
+  foreshadows: { labelKey: 'organization.domain.foreshadows', descriptionKey: 'organization.domain.foreshadowsDesc' },
 }
 
-const STATUS_LABEL = {
-  pending: '待确认',
-  adopted: '已写入',
-  failed: '写入失败',
-  skipped: '已跳过',
-} as const
+type OrgStatusKey = 'organization.statusLabel.pending' | 'organization.statusLabel.adopted' | 'organization.statusLabel.failed' | 'organization.statusLabel.skipped'
+
+const STATUS_LABEL_KEYS: Record<string, OrgStatusKey> = {
+  pending: 'organization.statusLabel.pending',
+  adopted: 'organization.statusLabel.adopted',
+  failed: 'organization.statusLabel.failed',
+  skipped: 'organization.statusLabel.skipped',
+}
 
 function selectedSet(selection: ChapterOrganizationSelection, key: keyof ChapterOrganizationSelection) {
   return new Set(selection[key])
@@ -54,6 +57,7 @@ export default function ChapterOrganizationModal({
   onRerun,
   onClose,
 }: Props) {
+  const { t } = useTranslation('editor')
   const { candidate } = run
   const [selection, setSelection] = useState<ChapterOrganizationSelection>(() => (
     selectAllChapterOrganizationCandidates(candidate)
@@ -89,19 +93,19 @@ export default function ChapterOrganizationModal({
         <div className="flex items-start justify-between gap-3 border-b border-border/60 px-4 py-3">
           <div>
             <div className="flex items-center gap-2">
-              <h4 className="text-sm font-semibold text-text-primary">{DOMAIN_META[input.domain].label}</h4>
+              <h4 className="text-sm font-semibold text-text-primary">{t(DOMAIN_META_KEYS[input.domain].labelKey as 'organization.domain.state')}</h4>
               <span className="rounded-full bg-bg-elevated px-2 py-0.5 text-[10px] text-text-muted">
-                {input.items.length} 条
+                {t('organization.itemCount', { count: input.items.length })}
               </span>
             </div>
-            <p className="mt-0.5 text-[11px] text-text-muted">{DOMAIN_META[input.domain].description}</p>
+            <p className="mt-0.5 text-[11px] text-text-muted">{t(DOMAIN_META_KEYS[input.domain].descriptionKey as 'organization.domain.stateDesc')}</p>
           </div>
           <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] ${
             status === 'adopted' ? 'bg-emerald-500/10 text-emerald-400'
               : status === 'failed' ? 'bg-red-500/10 text-red-400'
                 : 'bg-amber-500/10 text-amber-300'
           }`}>
-            {STATUS_LABEL[status]}
+            {STATUS_LABEL_KEYS[status] ? t(STATUS_LABEL_KEYS[status]) : status}
           </span>
         </div>
         {candidate.domainErrors[input.domain] && (
@@ -110,7 +114,7 @@ export default function ChapterOrganizationModal({
           </p>
         )}
         {input.items.length === 0 ? (
-          <p className="px-4 py-3 text-xs text-text-muted">本章没有通过确定性证据校验的候选。</p>
+          <p className="px-4 py-3 text-xs text-text-muted">{t('organization.noCandidates')}</p>
         ) : (
           <div className="divide-y divide-border/50">
             {input.items.map((item, index) => (
@@ -126,7 +130,7 @@ export default function ChapterOrganizationModal({
                   <span className="block text-sm text-text-primary">{item.title}</span>
                   {item.detail && <span className="mt-0.5 block text-xs text-text-secondary">{item.detail}</span>}
                   <span className="mt-1 block rounded bg-bg-elevated px-2 py-1 text-[11px] text-text-muted">
-                    证据：“{item.quote}”
+                    {t('organization.evidence', { quote: item.quote })}
                   </span>
                 </span>
               </label>
@@ -144,13 +148,13 @@ export default function ChapterOrganizationModal({
           <div>
             <h3 className="flex items-center gap-2 text-lg font-bold text-text-primary">
               <Sparkles className="h-5 w-5 text-accent" />
-              整理本章 · {candidate.chapterTitle}
+              {t('organization.title', { chapterTitle: candidate.chapterTitle })}
             </h3>
             <p className="mt-1 text-xs text-text-muted">
-              一次模型调用生成六类候选；未勾选内容不会写入项目。
+              {t('organization.subtitle')}
             </p>
           </div>
-          <button onClick={onClose} disabled={busy} aria-label="关闭整理本章"
+          <button onClick={onClose} disabled={busy} aria-label={t('organization.closeLabel')}
             className="rounded p-1 text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-40">
             <X className="h-5 w-5" />
           </button>
@@ -161,16 +165,16 @@ export default function ChapterOrganizationModal({
             <div className="flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-200">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
               <div>
-                <p className="font-medium">正文已变化，这批候选已过期。</p>
-                <p className="mt-0.5 text-xs text-amber-200/80">旧结果仍保留供核对，但不能写回。请重新整理当前正文。</p>
+                <p className="font-medium">{t('organization.expiredTitle')}</p>
+                <p className="mt-0.5 text-xs text-amber-200/80">{t('organization.expiredDesc')}</p>
               </div>
             </div>
           )}
 
           <div className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-bg-base p-3 text-xs text-text-secondary sm:grid-cols-3">
-            <span>约 {candidate.budget.usedTokens.toLocaleString()} / {candidate.budget.maxTokens.toLocaleString()} tokens</span>
-            <span>{candidate.budget.calls} / {candidate.budget.maxCalls} 次模型调用</span>
-            <span>正文指纹 {candidate.sourceTextHash.slice(0, 12)}…</span>
+            <span>{t('organization.budgetTokens', { used: candidate.budget.usedTokens.toLocaleString(), max: candidate.budget.maxTokens.toLocaleString() })}</span>
+            <span>{t('organization.budgetCalls', { used: candidate.budget.calls, max: candidate.budget.maxCalls })}</span>
+            <span>{t('organization.sourceHash', { hash: candidate.sourceTextHash.slice(0, 12) })}</span>
           </div>
 
           {renderSection({
@@ -178,7 +182,7 @@ export default function ChapterOrganizationModal({
             key: 'stateDiffs',
             items: candidate.stateDiffs.map(item => ({
               title: `${item.entityName} · ${item.field}`,
-              detail: `${item.oldValue || '（空）'} → ${item.newValue}`,
+              detail: `${item.oldValue || t('organization.emptyValue')} → ${item.newValue}`,
               quote: item.sourceQuote,
             })),
           })}
@@ -187,7 +191,7 @@ export default function ChapterOrganizationModal({
             key: 'facts',
             items: candidate.facts.map(item => ({
               title: `${item.subjectName} · ${item.predicate}：${item.value}`,
-              detail: item.objectName ? `对象：${item.objectName}` : '',
+              detail: item.objectName ? t('organization.objectLabel', { name: item.objectName }) : '',
               quote: item.sourceQuote,
             })),
           })}
@@ -195,7 +199,7 @@ export default function ChapterOrganizationModal({
             domain: 'inventory',
             key: 'inventoryEvents',
             items: candidate.inventoryEvents.map(item => ({
-              title: `${item.heldByName} ${item.action === 'gain' ? '获得' : '消耗'} ${item.itemName} ×${item.quantity}`,
+              title: `${item.heldByName} ${item.action === 'gain' ? t('organization.gain') : t('organization.consume')} ${item.itemName} ×${item.quantity}`,
               detail: item.note,
               quote: item.sourceQuote,
             })),
@@ -204,7 +208,7 @@ export default function ChapterOrganizationModal({
             domain: 'timeline',
             key: 'storyEvents',
             items: candidate.storyEvents.map(item => ({
-              title: `${item.title} · 重要度 ${item.importance}`,
+              title: `${item.title} · ${t('organization.importance', { value: item.importance })}`,
               detail: [item.storyTime, item.description].filter(Boolean).join(' · '),
               quote: item.sourceQuote,
             })),
@@ -234,18 +238,18 @@ export default function ChapterOrganizationModal({
         <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-border px-5 py-4">
           <div className="flex items-center gap-2 text-xs text-text-muted">
             <Database className="h-4 w-4" />
-            候选已保存在本地创作事件流，刷新不会丢失
+            {t('organization.savedLocally')}
           </div>
           <div className="flex items-center gap-2">
             <button onClick={onRerun} disabled={busy}
               className="flex items-center gap-1.5 rounded-lg border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary hover:text-text-primary disabled:opacity-40">
-              <RefreshCw className="h-4 w-4" /> 重新整理
+              <RefreshCw className="h-4 w-4" /> {t('organization.rerun')}
             </button>
             <button onClick={() => onApply(selection)}
               disabled={busy || !current || total === 0 || allResolved}
               className="flex items-center gap-1.5 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-40">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-              {busy ? '正在写入…' : `确认写入所选（${total}）`}
+              {busy ? t('organization.writing') : t('organization.confirmWrite', { count: total })}
             </button>
           </div>
         </footer>

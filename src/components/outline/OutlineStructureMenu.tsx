@@ -1,15 +1,17 @@
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { LayoutList } from 'lucide-react'
 import { STORY_STRUCTURES, type StoryStructure } from '../../lib/types/outline'
 
 export default function OutlineStructureMenu({ onSelect }: { onSelect: (structure: StoryStructure) => void }) {
+  const { t } = useTranslation('outline')
   const [open, setOpen] = useState(false)
 
   return (
     <div className="relative">
       <button onClick={() => setOpen(!open)}
         className="flex items-center gap-1 px-2 py-1 text-xs text-text-muted hover:text-accent border border-border rounded-md transition-colors">
-        <LayoutList className="w-3 h-3" /> 添加故事结构
+        <LayoutList className="w-3 h-3" /> {t('structure.addStructure')}
       </button>
       {open && (
         <>
@@ -20,7 +22,7 @@ export default function OutlineStructureMenu({ onSelect }: { onSelect: (structur
                 className="w-full px-3 py-1.5 text-left text-xs text-text-primary hover:bg-bg-hover transition-colors">
                 <span className="font-medium">{definition.label}</span>
                 {definition.blocks.length > 0 && (
-                  <span className="text-text-muted ml-1">（{definition.blocks.length} 块）</span>
+                  <span className="text-text-muted ml-1">{t('structure.blocksCount', { count: definition.blocks.length })}</span>
                 )}
               </button>
             ))}

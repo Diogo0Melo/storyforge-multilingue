@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { Check, Loader2, Network, RefreshCw, Sparkles } from 'lucide-react'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
@@ -34,6 +36,7 @@ export default function StorylineProgressPanel(props: {
   arcs: StoryArc[]
   onArcsChanged: () => Promise<void>
 }) {
+  const { t } = useTranslation('outline')
   const { progress, crossings, loadAll } = useStorylineProgressStore()
   const ai = useAIStream(createAISessionKey(props.projectId, 'storyline-progress.map'))
   const [chapters, setChapters] = useState<Chapter[]>([])
@@ -134,26 +137,26 @@ export default function StorylineProgressPanel(props: {
   const hasCandidates = candidates.progress.length + candidates.crossings.length + candidates.newArcs.length > 0
 
   return (
-    <section className="mt-6 space-y-4" aria-label="动态故事线进度">
+    <section className="mt-6 space-y-4" aria-label={t('progress.title')}>
       <div className="bg-bg-surface border border-border rounded-xl p-4">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
             <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
-              <Network className="w-4 h-4 text-accent" /> 动态进度与交汇
+              <Network className="w-4 h-4 text-accent" /> {t('progress.title')}
             </h3>
-            <p className="text-xs text-text-muted mt-1">AI 只生成闭集候选；点击采纳后才写入项目。</p>
+            <p className="text-xs text-text-muted mt-1">{t('progress.subtitle')}</p>
           </div>
-          <span className="text-[11px] text-text-muted">已确认 {progress.length} 条进度 · {crossings.length} 个交汇</span>
+          <span className="text-[11px] text-text-muted">{t('progress.confirmedInfo', { progress: progress.length, crossings: crossings.length })}</span>
         </div>
 
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
           <select
-            aria-label="选择已写章节"
+            aria-label={t('progress.selectChapter')}
             value={chapterId ?? ''}
             onChange={event => setChapterId(event.target.value ? Number(event.target.value) : null)}
             className="px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary"
           >
-            <option value="">选择已写章节</option>
+            <option value="">{t('progress.selectChapter')}</option>
             {chapters.map(chapter => <option key={chapter.id} value={chapter.id}>{chapter.title}</option>)}
           </select>
           <button
@@ -162,11 +165,11 @@ export default function StorylineProgressPanel(props: {
             className="flex items-center justify-center gap-1.5 px-4 py-2 bg-accent text-white rounded-lg text-sm disabled:opacity-50"
           >
             {ai.isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            映射本章
+            {t('progress.mapChapter')}
           </button>
         </div>
-        {!props.arcs.length && <p className="text-xs text-warning mt-2">请先登记至少一条故事线。</p>}
-        {!chapters.length && <p className="text-xs text-text-muted mt-2">保存章节正文后才能进行映射。</p>}
+        {!props.arcs.length && <p className="text-xs text-warning mt-2">{t('progress.registerArcFirst')}</p>}
+        {!chapters.length && <p className="text-xs text-text-muted mt-2">{t('progress.saveProseFirst')}</p>}
         {(ai.error || actionError) && <p role="alert" className="text-xs text-error mt-2">{actionError || ai.error}</p>}
       </div>
 
@@ -178,12 +181,12 @@ export default function StorylineProgressPanel(props: {
             return (
               <div key={row.id} className="bg-bg-surface border border-border rounded-lg p-3">
                 <div className="flex justify-between gap-2">
-                  <strong className="text-sm text-text-primary">{arc?.name ?? `故事线 #${row.arcId}`}</strong>
+                  <strong className="text-sm text-text-primary">{arc?.name ?? t('progress.arcDefaultName', { id: row.arcId })}</strong>
                   <span className="text-xs text-accent">{STATUS_LABELS[row.status]}</span>
                 </div>
-                {stage && <p className="text-xs text-text-secondary mt-1">阶段：{stage.title}</p>}
+                {stage && <p className="text-xs text-text-secondary mt-1">{t('progress.stageLabel')}：{stage.title}</p>}
                 <p className="text-xs text-text-muted mt-1">{row.progressNote}</p>
-                {row.lastActiveChapterTitle && <p className="text-[11px] text-text-muted mt-2">最近：{row.lastActiveChapterTitle}</p>}
+                {row.lastActiveChapterTitle && <p className="text-[11px] text-text-muted mt-2">{t('progress.recent')}：{row.lastActiveChapterTitle}</p>}
               </div>
             )
           })}
@@ -192,7 +195,7 @@ export default function StorylineProgressPanel(props: {
 
       {crossings.length > 0 && (
         <div className="bg-bg-surface border border-border rounded-xl p-4">
-          <h4 className="text-sm font-medium text-text-primary mb-3">已确认交汇节点</h4>
+          <h4 className="text-sm font-medium text-text-primary mb-3">{t('progress.confirmedCrossings')}</h4>
           <div className="space-y-2">
             {crossings.slice(-12).reverse().map(row => (
               <div key={row.id} className="flex items-start gap-2 text-xs">
@@ -214,41 +217,44 @@ export default function StorylineProgressPanel(props: {
       {(hasCandidates || ai.output) && (
         <div className="bg-bg-surface border border-border rounded-xl p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-text-primary">本次待确认候选</h4>
+            <h4 className="text-sm font-medium text-text-primary">{t('progress.pendingCandidates')}</h4>
             <button onClick={() => { setCandidates(EMPTY); ai.reset() }} className="text-xs text-text-muted flex items-center gap-1">
-              <RefreshCw className="w-3 h-3" /> 清空
+              <RefreshCw className="w-3 h-3" /> {t('progress.clear')}
             </button>
           </div>
-          {!hasCandidates && !ai.isStreaming && <p className="text-xs text-text-muted">没有通过闭集与逐字证据校验的候选。</p>}
+          {!hasCandidates && !ai.isStreaming && <p className="text-xs text-text-muted">{t('progress.noCandidates')}</p>}
           {candidates.progress.map(item => (
             <CandidateCard
               key={`p:${item.arcId}`}
-              title={`推进 · ${arcsById.get(item.arcId)?.name ?? item.arcId}`}
+              title={`${t('progress.progressPrefix')} · ${arcsById.get(item.arcId)?.name ?? item.arcId}`}
               text={`${STATUS_LABELS[item.status]} · ${item.progressNote}`}
               quote={item.evidenceQuote}
               accepted={accepted.has(`p:${item.arcId}`)}
               onAccept={() => acceptProgress(item)}
+              t={t}
             />
           ))}
           {candidates.crossings.map(item => (
             <CandidateCard
               key={`c:${item.arcIdA}:${item.arcIdB}`}
-              title={`交汇 · ${arcsById.get(item.arcIdA)?.name} × ${arcsById.get(item.arcIdB)?.name}`}
+              title={`${t('progress.crossingPrefix')} · ${arcsById.get(item.arcIdA)?.name} × ${arcsById.get(item.arcIdB)?.name}`}
               text={item.note}
               quote={item.evidenceQuote}
               accepted={accepted.has(`c:${item.arcIdA}:${item.arcIdB}`)}
               onAccept={() => acceptCrossing(item)}
+              t={t}
             />
           ))}
           {candidates.newArcs.map(item => (
             <CandidateCard
               key={`n:${item.name}`}
-              title={`疑似新故事线 · ${item.name}`}
-              text={`${item.arcType === 'main' ? '主线' : '支线'} · ${item.description}`}
+              title={`${t('progress.newArcPrefix')} · ${item.name}`}
+              text={`${item.arcType === 'main' ? t('progress.mainArc') : t('progress.subArc')} · ${item.description}`}
               quote={item.evidenceQuote}
               accepted={accepted.has(`n:${item.name}`)}
               onAccept={() => acceptNewArc(item)}
-              acceptLabel="创建登记"
+              acceptLabel={t('progress.registerCreate')}
+              t={t}
             />
           ))}
         </div>
@@ -264,6 +270,7 @@ function CandidateCard(props: {
   accepted: boolean
   onAccept: () => void
   acceptLabel?: string
+  t: TFunction<'outline'>
 }) {
   return (
     <div className="border border-border rounded-lg p-3">
@@ -271,14 +278,14 @@ function CandidateCard(props: {
         <div>
           <p className="text-sm font-medium text-text-primary">{props.title}</p>
           <p className="text-xs text-text-secondary mt-1">{props.text}</p>
-          <p className="text-[11px] text-text-muted mt-2">证据：“{props.quote}”</p>
+          <p className="text-[11px] text-text-muted mt-2">{props.t('progress.evidenceLabel')}："{props.quote}"</p>
         </div>
         <button
           onClick={props.onAccept}
           disabled={props.accepted}
           className="shrink-0 flex items-center gap-1 px-2.5 py-1.5 text-xs bg-accent/10 text-accent rounded disabled:opacity-60"
         >
-          <Check className="w-3.5 h-3.5" /> {props.accepted ? '已采纳' : props.acceptLabel ?? '采纳'}
+          <Check className="w-3.5 h-3.5" /> {props.accepted ? props.t('progress.accepted') : props.acceptLabel ?? props.t('progress.accept')}
         </button>
       </div>
     </div>
