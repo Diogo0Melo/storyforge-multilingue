@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { Character, WorldGroup } from '../../lib/types'
 import {
   MORAL_AXIS_LABELS,
@@ -36,6 +37,7 @@ export default function CharacterDetailCard({
   onReload,
   onDelete,
 }: Props) {
+  const { t } = useTranslation('characters')
   const [expanded, setExpanded] = useState(true)
 
   return (
@@ -56,7 +58,7 @@ export default function CharacterDetailCard({
 
             {multiWorld && (
               <select
-                aria-label="角色所属世界"
+                aria-label={t('detail.worldLabel')}
                 value={char.isCrossWorld ? 'cross' : (char.homeWorldGroupId ?? '')}
                 onChange={event => {
                   const value = event.target.value
@@ -71,9 +73,9 @@ export default function CharacterDetailCard({
                       })
                 }}
                 className="px-1.5 py-0.5 bg-bg-elevated text-text-secondary text-[10px] rounded border border-border focus:outline-none focus:border-accent cursor-pointer"
-                title="角色所属世界"
+                title={t('detail.worldLabel')}
               >
-                <option value="cross">🌐 跨世界</option>
+                <option value="cross">🌐 {t('detail.crossWorld')}</option>
                 {worldGroups.map(group => (
                   <option key={group.id} value={group.id}>{group.icon || '🌐'} {group.name}</option>
                 ))}
@@ -92,7 +94,7 @@ export default function CharacterDetailCard({
             className={`text-sm mt-1 italic ${char.shortDescription ? 'text-text-secondary' : 'text-text-muted'}`}
             prefix={char.shortDescription ? '“' : undefined}
             suffix={char.shortDescription ? '”' : undefined}
-            placeholder="点击添加一句话简介…"
+            placeholder={t('detail.shortDescPlaceholder')}
           />
         </div>
 
@@ -106,14 +108,14 @@ export default function CharacterDetailCard({
           <button
             onClick={() => setExpanded(value => !value)}
             className="p-1.5 text-text-muted hover:text-text-primary rounded transition-colors"
-            aria-label={expanded ? '收起角色详情' : '展开角色详情'}
+            aria-label={expanded ? t('detail.collapseDetail') : t('detail.expandDetail')}
           >
             {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
           <button
             onClick={onDelete}
             className="p-1.5 text-text-muted hover:text-error rounded transition-colors"
-            aria-label="删除角色"
+            aria-label={t('detail.deleteCharacter')}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -148,12 +150,12 @@ export default function CharacterDetailCard({
             exclude={['shortDescription']}
           />
           <div className="flex gap-2">
-            <span className="w-20 flex-shrink-0 pt-1.5 text-xs text-text-muted">人物关系</span>
+            <span className="w-20 flex-shrink-0 pt-1.5 text-xs text-text-muted">{t('detail.relationships')}</span>
             <div className="flex-1 min-w-0">
               <InlineTextarea
                 value={char.relationships || ''}
                 onChange={value => onUpdateField('relationships', value)}
-                placeholder="点击填写人物关系…"
+                placeholder={t('detail.relationshipsPlaceholder')}
               />
             </div>
           </div>

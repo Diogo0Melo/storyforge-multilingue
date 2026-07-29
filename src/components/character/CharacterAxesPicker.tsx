@@ -3,6 +3,7 @@ import type {
   CharacterOrderAxis,
   CharacterRoleWeight,
 } from '../../lib/types'
+import { useTranslation } from 'react-i18next'
 import {
   MORAL_AXES,
   MORAL_AXIS_LABELS,
@@ -27,10 +28,11 @@ interface Props {
 export default function CharacterAxesPicker({
   roleWeight, moralAxis, orderAxis, onChange, compact = false,
 }: Props) {
+  const { t } = useTranslation('characters')
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'}>
       <div>
-        <p className="text-[11px] text-text-muted mb-1">戏份（必选）</p>
+        <p className="text-[11px] text-text-muted mb-1">{t('axes.roleWeight')}</p>
         <div className="grid grid-cols-4 gap-1">
           {ROLE_WEIGHTS.map(weight => (
             <button
@@ -50,7 +52,7 @@ export default function CharacterAxesPicker({
       </div>
 
       <div>
-        <p className="text-[11px] text-text-muted mb-1">阵营九宫格（必选）</p>
+        <p className="text-[11px] text-text-muted mb-1">{t('axes.alignmentGrid')}</p>
         <div className="grid grid-cols-[44px_repeat(3,minmax(0,1fr))] gap-1 items-stretch">
           <span />
           {MORAL_AXES.map(moral => (
@@ -77,7 +79,7 @@ export default function CharacterAxesPicker({
                     }`}
                   >
                     {order === 'neutral' && moral === 'neutral'
-                      ? '绝对中立'
+                      ? t('axes.absoluteNeutral')
                       : `${ORDER_AXIS_LABELS[order]}${MORAL_AXIS_LABELS[moral]}`}
                   </button>
                 )

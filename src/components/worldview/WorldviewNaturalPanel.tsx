@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Sparkles } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useWorldviewStore } from '../../stores/worldview'
 import { useWorldGroupStore } from '../../stores/world-group'
 import WorldGroupSwitcher from '../world-group/WorldGroupSwitcher'
@@ -29,11 +30,11 @@ interface Props { project: Project }
 // ── 字段定义（统一标签，兼容幻想与历史） ─────────────────────────
 
 const FIELDS = [
-  { key: 'worldStructure',   emoji: '🌐', label: '世界结构',   desc: '世界的物理层级——星球 / 大陆 / 行政区划 / 平行空间等', ctxKey: 'structure',  ctxLabel: '世界结构' },
-  { key: 'worldDimensions',  emoji: '📐', label: '疆域尺寸',   desc: '世界整体大小、核心区域的疆域范围',                      ctxKey: 'dim',       ctxLabel: '疆域尺寸' },
-  { key: 'continentLayout',  emoji: '🗺', label: '地貌分布',   desc: '主要大陆 / 山脉 / 平原 / 盆地的分布与地形特征',         ctxKey: 'continent', ctxLabel: '地貌分布' },
-  { key: 'mountainsRivers',  emoji: '⛰', label: '山川水系',   desc: '重要山脉、河流、湖泊、运河与水路',                       ctxKey: 'mountains', ctxLabel: '山川水系' },
-  { key: 'climateByRegion',  emoji: '🌦', label: '气候环境',   desc: '不同区域的气候类型、季节特征与自然灾害',                 ctxKey: 'climate',   ctxLabel: '气候环境' },
+  { key: 'worldStructure',   emoji: '🌐', labelKey: 'natural.fieldWorldStructure',   descKey: 'natural.fieldWorldStructureDesc',   ctxKey: 'structure',  ctxLabel: '世界结构' },
+  { key: 'worldDimensions',  emoji: '📐', labelKey: 'natural.fieldWorldDimensions',  descKey: 'natural.fieldWorldDimensionsDesc',  ctxKey: 'dim',       ctxLabel: '疆域尺寸' },
+  { key: 'continentLayout',  emoji: '🗺', labelKey: 'natural.fieldContinentLayout',  descKey: 'natural.fieldContinentLayoutDesc',  ctxKey: 'continent', ctxLabel: '地貌分布' },
+  { key: 'mountainsRivers',  emoji: '⛰', labelKey: 'natural.fieldMountainsRivers',  descKey: 'natural.fieldMountainsRiversDesc',  ctxKey: 'mountains', ctxLabel: '山川水系' },
+  { key: 'climateByRegion',  emoji: '🌦', labelKey: 'natural.fieldClimateByRegion',  descKey: 'natural.fieldClimateByRegionDesc',  ctxKey: 'climate',   ctxLabel: '气候环境' },
 ] as const
 
 type FieldKey = typeof FIELDS[number]['key'] | 'naturalResources'
@@ -50,6 +51,7 @@ const NATURAL_CODEX_KEYS: Record<string, string[] | undefined> = {
 // ── 主面板 ─────────────────────────────────────────────────────
 
 export default function WorldviewNaturalPanel({ project }: Props) {
+  const { t } = useTranslation('worlds')
   const { worldview, saveWorldview, loadAll } = useWorldviewStore()
   const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
 
@@ -86,8 +88,8 @@ export default function WorldviewNaturalPanel({ project }: Props) {
   const buildCtx = useCallback((skipCtxKey: string): string => {
     const parts: string[] = []
     // ── 世界起源面板关键字段 ──
-    if (worldview?.worldOrigin)    parts.push(`【世界来源】${worldview.worldOrigin.slice(0, 200)}`)
-    if (worldview?.powerHierarchy) parts.push(`【力量体系】${worldview.powerHierarchy.slice(0, 150)}`)
+    if (worldview?.worldOrigin)    parts.push(`【${t('origin.fieldOrigin')}】${worldview.worldOrigin.slice(0, 200)}`)
+    if (worldview?.powerHierarchy) parts.push(`【${t('origin.fieldPower')}】${worldview.powerHierarchy.slice(0, 150)}`)
     // ── 本面板内互参 ──
     for (const f of FIELDS) {
       if (f.ctxKey !== skipCtxKey && values[f.key]) {
@@ -95,10 +97,10 @@ export default function WorldviewNaturalPanel({ project }: Props) {
       }
     }
     // ── 人文环境面板关键字段 ──
-    if (worldview?.races)         parts.push(`【种族与民族】${worldview.races.slice(0, 100)}`)
-    if (worldview?.factionLayout) parts.push(`【势力分布】${worldview.factionLayout.slice(0, 100)}`)
+    if (worldview?.races)         parts.push(`【${t('humanity.fieldRaces')}】${worldview.races.slice(0, 100)}`)
+    if (worldview?.factionLayout) parts.push(`【${t('humanity.fieldFactions')}】${worldview.factionLayout.slice(0, 100)}`)
     return parts.join('\n')
-  }, [worldview, values])
+  }, [worldview, values, t])
 
   const handleStreamingChange = useCallback((key: string, streaming: boolean) => {
     setStreamingKeys(prev => {
@@ -116,12 +118,12 @@ export default function WorldviewNaturalPanel({ project }: Props) {
       <div className="pb-4 border-b border-border/40 px-6 pt-4 shrink-0">
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            🏔️ 自然环境与地理
+            {t('natural.title')}
           </h2>
           {project.enableMultiWorld && <WorldGroupSwitcher />}
         </div>
         <p className="text-xs text-text-muted mt-0.5">
-          定义世界的地理、气候与自然资源。如需声明真实与幻想的规则，请前往「⚖️ 真实与幻想」面板。
+          {t('natural.subtitle')}
         </p>
         <div className="mt-3 max-w-xl">
           <CodexSearchBar
@@ -138,8 +140,13 @@ export default function WorldviewNaturalPanel({ project }: Props) {
       <div className="flex flex-1 overflow-hidden">
         {/* ── 左侧边栏 ── */}
         <nav className="w-max min-w-32 max-w-44 flex-shrink-0 border-r border-border bg-bg-surface/50 overflow-y-auto">
-          {[...FIELDS.map(f => ({ key: f.key, emoji: f.emoji, label: f.label })),
-            { key: 'naturalResources' as const, emoji: '🌿', label: '自然资源' },
+          {[
+            { key: 'worldStructure' as const, emoji: '🌐', label: t('natural.fieldWorldStructure') },
+            { key: 'worldDimensions' as const, emoji: '📐', label: t('natural.fieldWorldDimensions') },
+            { key: 'continentLayout' as const, emoji: '🗺', label: t('natural.fieldContinentLayout') },
+            { key: 'mountainsRivers' as const, emoji: '⛰', label: t('natural.fieldMountainsRivers') },
+            { key: 'climateByRegion' as const, emoji: '🌦', label: t('natural.fieldClimateByRegion') },
+            { key: 'naturalResources' as const, emoji: '🌿', label: t('natural.fieldNaturalResources') },
           ].map(f => {
             const isActive = activeKey === f.key
             const isFieldStreaming = streamingKeys.has(f.key)
@@ -180,8 +187,8 @@ export default function WorldviewNaturalPanel({ project }: Props) {
               {/* 全貌之下:本方面的专属词条(只显示对应那一类) */}
               {NATURAL_CODEX_KEYS[f.key] && (
                 <div className="mt-6">
-                  <h3 className="text-sm font-semibold text-text-primary mb-1">📚 {f.label} · 具体词条</h3>
-                  <p className="text-xs text-text-muted mb-3">在上面写完整体「全貌」后，这里把「{f.label}」逐条细化登记，可自定义字段、打重要度星级，并进入 AI 生成上下文。</p>
+                  <h3 className="text-sm font-semibold text-text-primary mb-1">📚 {t(f.labelKey)} · {t('natural.entriesTitle', { label: t(f.labelKey) })}</h3>
+                  <p className="text-xs text-text-muted mb-3">{t('natural.entriesDesc', { label: t(f.labelKey) })}</p>
                   <CodexPanel
                     project={project}
                     fixedCategoryKeys={NATURAL_CODEX_KEYS[f.key]}
@@ -195,7 +202,7 @@ export default function WorldviewNaturalPanel({ project }: Props) {
           <div className={activeKey === 'naturalResources' ? 'space-y-4' : 'hidden'}>
             {/* 全貌(上):自然资源整体概述,带 AI 生成,与其它方面一致 */}
             <SimpleFieldEditor
-              field={{ key: 'naturalResourceOverview', emoji: '🌿', label: '自然资源', desc: '矿产 / 灵材 / 动植物等自然产出的总体分布、丰饶程度与特点' }}
+              field={{ key: 'naturalResourceOverview', emoji: '🌿', labelKey: 'natural.fieldNaturalResources', descKey: 'natural.fieldNaturalResourcesDesc' }}
               value={values.naturalResourceOverview || ''}
               onChange={v => {
                 setValues(prev => ({ ...prev, naturalResourceOverview: v }))
@@ -207,8 +214,8 @@ export default function WorldviewNaturalPanel({ project }: Props) {
             />
             {/* 自然资源:矿物/草药/异兽 三类词条 */}
             <div>
-              <h3 className="text-sm font-semibold text-text-primary mb-1">📚 自然物产 · 具体词条</h3>
-              <p className="text-xs text-text-muted mb-2">矿物灵材 / 灵植草药 / 灵兽异兽——逐条登记,可自定义字段、互相关联、打星,并进入 AI 生成上下文。</p>
+              <h3 className="text-sm font-semibold text-text-primary mb-1">📚 {t('natural.resourcesEntriesTitle')}</h3>
+              <p className="text-xs text-text-muted mb-2">{t('natural.resourcesEntriesDesc')}</p>
               <CodexPanel
                 project={project}
                 fixedCategoryKeys={['mineral', 'herb', 'beast']}
@@ -243,13 +250,14 @@ export default function WorldviewNaturalPanel({ project }: Props) {
 // ── 单字段编辑器（各自独立的 AI 流） ──────────────────────────
 
 function SimpleFieldEditor({ field, value, onChange, project, contextSummary, onStreamingChange }: {
-  field: { key: string; emoji: string; label: string; desc: string }
+  field: { key: string; emoji: string; labelKey: string; descKey: string }
   value: string
   onChange: (v: string) => void
   project: Project
   contextSummary: string
   onStreamingChange: (streaming: boolean) => void
 }) {
+  const { t } = useTranslation('worlds')
   const [hint, setHint] = useState('')
   const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({})
   const [systemOverride, setSystemOverride] = useState<string | null>(null)
@@ -279,7 +287,7 @@ function SimpleFieldEditor({ field, value, onChange, project, contextSummary, on
       } : undefined,
     }
     const messages = buildWorldviewPrompt(
-      field.label, project.name, project.genre || '', contextSummary, hint, opts, value, mode,
+      t(field.labelKey as 'natural.fieldWorldStructure'), project.name, project.genre || '', contextSummary, hint, opts, value, mode,
     )
     ai.start(messages, undefined, { category: 'worldview.dimension', projectId: project.id! })
   }
@@ -287,22 +295,22 @@ function SimpleFieldEditor({ field, value, onChange, project, contextSummary, on
   return (
     <div className="max-w-3xl space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-text-primary">{field.emoji} {field.label}</h3>
-        <p className="mt-1 text-sm text-text-muted">{field.desc}</p>
+        <h3 className="text-lg font-semibold text-text-primary">{field.emoji} {t(field.labelKey as 'natural.fieldWorldStructure')}</h3>
+        <p className="mt-1 text-sm text-text-muted">{t(field.descKey as 'natural.fieldWorldStructureDesc')}</p>
       </div>
 
       <div className="bg-bg-surface border border-border rounded-lg p-4">
-        <InlineTextarea value={value} onChange={onChange} placeholder={field.desc} />
+        <InlineTextarea value={value} onChange={onChange} placeholder={t(field.descKey as 'natural.fieldWorldStructureDesc')} />
       </div>
 
       <div className="flex items-center gap-2">
         <AIFieldModeTabs value={mode} onChange={setMode} />
         <input value={hint} onChange={e => setHint(e.target.value)}
-          placeholder="给 AI 的补充说明（可选）"
+          placeholder={t('natural.aiHintPlaceholder')}
           className="flex-1 px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent" />
         <button onClick={handleGenerate} disabled={ai.isStreaming}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded disabled:opacity-50 shrink-0 bg-accent/10 text-accent hover:bg-accent/20">
-          <Sparkles className="w-3.5 h-3.5" /> AI 生成
+          <Sparkles className="w-3.5 h-3.5" /> {t('natural.aiGenerate')}
         </button>
       </div>
 

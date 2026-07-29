@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Plus, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useCharacterStore } from '../../stores/character'
 import type { Project, Character } from '../../lib/types'
 import { filterCharactersByRoleWeight } from '../../lib/character/character-axes'
@@ -14,6 +15,7 @@ interface Props {
 
 /** v3 §2.1 — NPC（紧凑列表视图 + 可展开完整设定） */
 export default function CharacterNPCPanel({ project }: Props) {
+  const { t } = useTranslation('characters')
   const { characters, loadAll, addCharacter, updateCharacter, deleteCharacter } = useCharacterStore()
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
@@ -30,7 +32,7 @@ export default function CharacterNPCPanel({ project }: Props) {
 
   const handleAdd = () => addCharacter({
     projectId: project.id!,
-    name: '新 NPC',
+    name: t('npc.newCharacter'),
     roleWeight: 'npc',
     moralAxis: 'neutral',
     orderAxis: 'neutral',
@@ -45,20 +47,20 @@ export default function CharacterNPCPanel({ project }: Props) {
     <div className="max-w-5xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-text-primary mb-1">🧑‍🤝‍🧑 NPC</h2>
-          <p className="text-sm text-text-muted">非剧情驱动的常驻角色 — 紧凑列表，一眼扫完。</p>
+          <h2 className="text-xl font-bold text-text-primary mb-1">🧑‍🤝‍🧑 {t('npc.title')}</h2>
+          <p className="text-sm text-text-muted">{t('npc.description')}</p>
         </div>
         <button
           onClick={handleAdd}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded hover:bg-accent-hover"
         >
-          <Plus className="w-4 h-4" /> 新增
+          <Plus className="w-4 h-4" /> {t('npc.add')}
         </button>
       </div>
 
       {list.length === 0 ? (
         <div className="text-center py-12 text-text-muted text-sm">
-          还没有 NPC，点上方「新增」开始。
+          {t('npc.empty')}
         </div>
       ) : (
         <div className="bg-bg-surface border border-border rounded-xl divide-y divide-border">
@@ -71,30 +73,30 @@ export default function CharacterNPCPanel({ project }: Props) {
                 <button
                   onClick={() => toggle(c.id!)}
                   className="p-0.5 text-text-muted hover:text-accent flex-shrink-0"
-                  title={isOpen ? '收起完整设定' : '展开完整设定'}
+                  title={isOpen ? t('npc.collapseFull') : t('npc.expandFull')}
                 >
                   {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                 </button>
                 <CInput
                   value={c.name}
                   onChange={e => update(c.id!, { name: e.target.value })}
-                  placeholder="姓名"
+                  placeholder={t('npc.name')}
                   className="w-32 flex-shrink-0 px-2 py-1 bg-bg-base border border-border rounded text-sm font-medium text-text-primary focus:outline-none focus:border-accent"
                 />
                 <CInput
                   value={c.location || ''}
                   onChange={e => update(c.id!, { location: e.target.value })}
-                  placeholder="地点"
+                  placeholder={t('npc.location')}
                   className="w-28 flex-shrink-0 px-2 py-1 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
                 />
                 <CInput
                   value={c.shortDescription}
                   onChange={e => update(c.id!, { shortDescription: e.target.value })}
-                  placeholder="一句话描述（性格/职业/作用）..."
+                  placeholder={t('npc.shortDesc')}
                   className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
                 />
                 {filled > 0 && !isOpen && (
-                  <span className="flex-shrink-0 text-[11px] text-text-muted whitespace-nowrap" title="已有完整设定，点左侧箭头展开">已填 {filled} 项 ▸</span>
+                  <span className="flex-shrink-0 text-[11px] text-text-muted whitespace-nowrap" title={t('npc.hasFullHint')}>{t('npc.filledCount', { count: filled })} ▸</span>
                 )}
                 <CharacterSupplementAction
                   character={c}
@@ -106,7 +108,7 @@ export default function CharacterNPCPanel({ project }: Props) {
                 <button
                   onClick={() => deleteCharacter(c.id!)}
                   className="p-1 text-text-muted hover:text-error flex-shrink-0"
-                  title="删除"
+                  title={t('delete')}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>

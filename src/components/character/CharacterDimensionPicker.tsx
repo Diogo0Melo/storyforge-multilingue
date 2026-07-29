@@ -1,11 +1,14 @@
 import { dimensionsByGroup, defaultDimensionsForWeight, CHARACTER_DIMENSIONS, type CharacterDimensionKey } from '../../lib/character/character-dimensions'
 import type { CharacterRoleWeight } from '../../lib/types/character'
+import { useTranslation } from 'react-i18next'
 
-const WEIGHT_PRESETS: Array<{ weight: CharacterRoleWeight; label: string }> = [
-  { weight: 'main', label: '主要(全)' },
-  { weight: 'secondary', label: '次要' },
-  { weight: 'npc', label: 'NPC' },
-  { weight: 'extra', label: '路人' },
+type PresetKey = 'picker.presetMain' | 'picker.presetSecondary' | 'picker.presetNPC' | 'picker.presetExtra'
+
+const WEIGHT_PRESET_KEYS: Array<{ weight: CharacterRoleWeight; key: PresetKey }> = [
+  { weight: 'main', key: 'picker.presetMain' },
+  { weight: 'secondary', key: 'picker.presetSecondary' },
+  { weight: 'npc', key: 'picker.presetNPC' },
+  { weight: 'extra', key: 'picker.presetExtra' },
 ]
 
 interface Props {
@@ -18,6 +21,7 @@ interface Props {
  * 维度全部来自 CHARACTER_DIMENSIONS,加一个维度这里自动出现。
  */
 export default function CharacterDimensionPicker({ selected, onChange }: Props) {
+  const { t } = useTranslation('characters')
   const toggle = (key: CharacterDimensionKey) => {
     const next = new Set(selected)
     if (next.has(key)) next.delete(key)
@@ -30,17 +34,17 @@ export default function CharacterDimensionPicker({ selected, onChange }: Props) 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5 flex-wrap">
-        <span className="text-[11px] text-text-muted">按戏份:</span>
-        {WEIGHT_PRESETS.map(p => (
+        <span className="text-[11px] text-text-muted">{t('picker.byRole')}</span>
+        {WEIGHT_PRESET_KEYS.map(p => (
           <button key={p.weight} onClick={() => applyPreset(p.weight)}
             className="px-2 py-0.5 text-[11px] rounded bg-bg-elevated border border-border text-text-secondary hover:text-accent hover:border-accent/50">
-            {p.label}
+            {t(p.key)}
           </button>
         ))}
         <span className="mx-1 text-border">|</span>
-        <button onClick={() => onChange(new Set(allKeys))} className="px-2 py-0.5 text-[11px] rounded text-text-secondary hover:text-accent">全选</button>
-        <button onClick={() => onChange(new Set())} className="px-2 py-0.5 text-[11px] rounded text-text-secondary hover:text-accent">清空</button>
-        <span className="ml-auto text-[11px] text-text-muted">已选 {selected.size}/{allKeys.length}</span>
+        <button onClick={() => onChange(new Set(allKeys))} className="px-2 py-0.5 text-[11px] rounded text-text-secondary hover:text-accent">{t('picker.selectAll')}</button>
+        <button onClick={() => onChange(new Set())} className="px-2 py-0.5 text-[11px] rounded text-text-secondary hover:text-accent">{t('picker.clearAll')}</button>
+        <span className="ml-auto text-[11px] text-text-muted">{t('picker.selectedCount', { selected: selected.size, total: allKeys.length })}</span>
       </div>
       <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
         {dimensionsByGroup().map(({ group, dims }) => (

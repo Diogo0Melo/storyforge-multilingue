@@ -1,4 +1,5 @@
 import { useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { Character, WorldGroup } from '../../lib/types'
 import { parseCultivationStages } from '../../lib/types/cultivation'
 import { codexEntryInWorld } from '../../lib/types/codex'
@@ -16,6 +17,7 @@ export default function CharacterWorldAffiliations({
   worldGroups: WorldGroup[]
   onChange: (patch: Partial<Character>) => void
 }) {
+  const { t } = useTranslation('characters')
   const categories = useCodexStore(state => state.categories)
   const entries = useCodexStore(state => state.entries)
   const loadCodex = useCodexStore(state => state.loadExisting)
@@ -44,14 +46,14 @@ export default function CharacterWorldAffiliations({
   return (
     <div className="grid sm:grid-cols-3 gap-2 rounded-lg border border-border bg-bg-base/40 p-3">
       <label className="min-w-0">
-        <span className="block text-[11px] text-text-muted mb-1">结构化种族</span>
+        <span className="block text-[11px] text-text-muted mb-1">{t('affiliations.race')}</span>
         <select
-          aria-label="结构化种族"
+          aria-label={t('affiliations.race')}
           value={character.raceEntryId ?? ''}
           onChange={event => onChange({ raceEntryId: event.target.value ? Number(event.target.value) : null })}
           className="w-full px-2 py-1.5 bg-bg-elevated border border-border rounded text-xs text-text-primary"
         >
-          <option value="">未关联</option>
+          <option value="">{t('affiliations.unlinked')}</option>
           {races.map(entry => (
             <option key={entry.id} value={entry.id}>
               {entry.name}{character.isCrossWorld && worldName(entry.worldGroupId) ? ` · ${worldName(entry.worldGroupId)}` : ''}
@@ -60,9 +62,9 @@ export default function CharacterWorldAffiliations({
         </select>
       </label>
       <label className="min-w-0">
-        <span className="block text-[11px] text-text-muted mb-1">主修体系</span>
+        <span className="block text-[11px] text-text-muted mb-1">{t('affiliations.system')}</span>
         <select
-          aria-label="主修体系"
+          aria-label={t('affiliations.system')}
           value={character.cultivationSystemId ?? ''}
           onChange={event => onChange({
             cultivationSystemId: event.target.value ? Number(event.target.value) : null,
@@ -70,7 +72,7 @@ export default function CharacterWorldAffiliations({
           })}
           className="w-full px-2 py-1.5 bg-bg-elevated border border-border rounded text-xs text-text-primary"
         >
-          <option value="">未关联</option>
+          <option value="">{t('affiliations.unlinked')}</option>
           {visibleSystems.map(system => (
             <option key={system.id} value={system.id}>
               {system.name}{character.isCrossWorld && worldName(system.worldGroupId) ? ` · ${worldName(system.worldGroupId)}` : ''}
@@ -79,15 +81,15 @@ export default function CharacterWorldAffiliations({
         </select>
       </label>
       <label className="min-w-0">
-        <span className="block text-[11px] text-text-muted mb-1">当前设定境界</span>
+        <span className="block text-[11px] text-text-muted mb-1">{t('affiliations.stage')}</span>
         <select
-          aria-label="当前设定境界"
+          aria-label={t('affiliations.stage')}
           disabled={!selectedSystem}
           value={character.cultivationStageId ?? ''}
           onChange={event => onChange({ cultivationStageId: event.target.value || null })}
           className="w-full px-2 py-1.5 bg-bg-elevated border border-border rounded text-xs text-text-primary disabled:opacity-40"
         >
-          <option value="">未指定</option>
+          <option value="">{t('affiliations.unspecified')}</option>
           {stages.map(stage => <option key={stage.id} value={stage.id}>{stage.name}</option>)}
         </select>
       </label>

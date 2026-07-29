@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Sparkles, Loader2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useWorldviewStore } from '../../stores/worldview'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIConfigStore } from '../../stores/ai-config'
@@ -54,6 +55,7 @@ interface Props {
 
 /** v3 §2.1 — 世界观.世界起源（三个子模块） */
 export default function WorldviewOriginPanel({ project }: Props) {
+  const { t } = useTranslation('worlds')
   const { worldview, saveWorldview, loadAll } = useWorldviewStore()
   const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
 
@@ -122,12 +124,12 @@ export default function WorldviewOriginPanel({ project }: Props) {
       <div className="pb-4 border-b border-border/40">
         <div className="flex items-start justify-between gap-3">
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            🌌 世界起源与核心设定
+            {t('origin.title')}
           </h2>
           {project.enableMultiWorld && <WorldGroupSwitcher />}
         </div>
         <p className="text-xs text-text-muted mt-0.5">
-          定义世界的起源、力量体系与信仰体系。如需声明真实与幻想的规则，请前往「⚖️ 真实与幻想」面板。
+          {t('origin.subtitle')}
         </p>
         <div className="mt-3 max-w-xl">
           <CodexSearchBar
@@ -167,8 +169,8 @@ export default function WorldviewOriginPanel({ project }: Props) {
             />
             <CultivationSystemsPanel project={project} />
             <div className="mt-6">
-              <h3 className="text-sm font-semibold text-text-primary mb-1">📚 力量层级 · 具体词条</h3>
-              <p className="text-xs text-text-muted mb-3">在上面写完力量体系「全貌」后，这里把各等级/层级逐条登记，可自定义字段、打重要度星级，并进入 AI 生成上下文。</p>
+              <h3 className="text-sm font-semibold text-text-primary mb-1">{t('origin.powerEntriesTitle')}</h3>
+              <p className="text-xs text-text-muted mb-3">{t('origin.powerEntriesDesc')}</p>
               <CodexPanel
                 project={project}
                 fixedCategoryKeys={['originPower']}
@@ -192,8 +194,8 @@ export default function WorldviewOriginPanel({ project }: Props) {
               onStreamingChange={streaming => handleStreamingChange('divine', streaming)}
             />
             <div className="mt-6">
-              <h3 className="text-sm font-semibold text-text-primary mb-1">📚 神明信仰 · 具体词条</h3>
-              <p className="text-xs text-text-muted mb-3">在上面写完信仰体系「全貌」后，这里把各神明/信仰逐条登记，可自定义字段、打重要度星级，并进入 AI 生成上下文。</p>
+              <h3 className="text-sm font-semibold text-text-primary mb-1">{t('origin.divineEntriesTitle')}</h3>
+              <p className="text-xs text-text-muted mb-3">{t('origin.divineEntriesDesc')}</p>
               <CodexPanel
                 project={project}
                 fixedCategoryKeys={['originDeity']}
@@ -224,6 +226,7 @@ function TextFieldEditor({
   contextSummary: string
   onStreamingChange: (streaming: boolean) => void
 }) {
+  const { t } = useTranslation('worlds')
   const [hint, setHint] = useState('')
   const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({})
   const [systemOverride, setSystemOverride] = useState<string | null>(null)
@@ -262,29 +265,34 @@ function TextFieldEditor({
     ai.start(messages, undefined, { category: 'worldview.dimension', projectId: project.id! })
   }
 
+  const fieldLabelKey = field.key === 'origin' ? 'origin.fieldOrigin' as const : field.key === 'power' ? 'origin.fieldPower' as const : 'origin.fieldDivine' as const
+  const fieldDescKey = field.key === 'origin' ? 'origin.fieldOriginDesc' as const : field.key === 'power' ? 'origin.fieldPowerDesc' as const : 'origin.fieldDivineDesc' as const
+  const fieldLabel = t(fieldLabelKey)
+  const fieldDesc = t(fieldDescKey)
+
   return (
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-          <span>{field.icon}</span> {field.label}
+          <span>{field.icon}</span> {fieldLabel}
         </h2>
-        <p className="text-xs text-text-muted mt-0.5">{field.desc}</p>
+        <p className="text-xs text-text-muted mt-0.5">{fieldDesc}</p>
       </div>
 
       <div className="bg-bg-surface border border-border rounded-lg p-4">
-        <InlineTextarea value={value} onChange={onChange} placeholder={field.desc} />
+        <InlineTextarea value={value} onChange={onChange} placeholder={fieldDesc} />
       </div>
 
       <div className="flex items-center gap-2">
         <AIFieldModeTabs value={mode} onChange={setMode} />
         <input
           value={hint} onChange={e => setHint(e.target.value)}
-          placeholder="给 AI 的补充说明（可选）"
+          placeholder={t('origin.aiHintPlaceholder')}
           className="flex-1 px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
         />
         <button onClick={handleGenerate} disabled={ai.isStreaming}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded disabled:opacity-50 bg-accent/10 text-accent hover:bg-accent/20">
-          <Sparkles className="w-3.5 h-3.5" /> AI 生成
+          <Sparkles className="w-3.5 h-3.5" /> {t('origin.aiGenerate')}
         </button>
       </div>
 
@@ -315,6 +323,7 @@ function DivineFieldEditor({
   contextSummary: string
   onStreamingChange: (streaming: boolean) => void
 }) {
+  const { t } = useTranslation('worlds')
   const [hint, setHint] = useState('')
   const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({})
   const [systemOverride, setSystemOverride] = useState<string | null>(null)
@@ -428,38 +437,38 @@ function DivineFieldEditor({
           }}
           className="accent-accent"
         />
-        <span className="text-text-secondary">存在神明或宗教信仰</span>
+        <span className="text-text-secondary">{t('origin.hasDivinity')}</span>
       </label>
 
       {divineDesign.hasDivinity && (
         <div className="space-y-0 divide-y divide-border/40">
           <div className="flex gap-4 py-3 first:pt-0">
-            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">信仰层级</span>
+            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">{t('origin.divineRank')}</span>
             <div className="flex-1 min-w-0">
               <InlineTextarea
                 value={divineDesign.divineRank}
                 onChange={v => onDivineChange({ ...divineDesign, divineRank: v })}
-                placeholder="例：主神 / 次神 / 半神 / 国教 / 民间信仰 ..."
+                placeholder={t('origin.divineRankPlaceholder')}
               />
             </div>
           </div>
           <div className="flex gap-4 py-3">
-            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">名号与职司</span>
+            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">{t('origin.divineNames')}</span>
             <div className="flex-1 min-w-0">
               <InlineTextarea
                 value={divineDesign.divineNames}
                 onChange={v => onDivineChange({ ...divineDesign, divineNames: v })}
-                placeholder="例：天帝 · 创世神；关帝信仰；妈祖信仰 ..."
+                placeholder={t('origin.divineNamesPlaceholder')}
               />
             </div>
           </div>
           <div className="flex gap-4 py-3">
-            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">规则与禁忌</span>
+            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">{t('origin.divineRules')}</span>
             <div className="flex-1 min-w-0">
               <InlineTextarea
                 value={divineDesign.divineRules}
                 onChange={v => onDivineChange({ ...divineDesign, divineRules: v })}
-                placeholder="例：不可直接干涉凡间 / 避讳字 / 祭祀风俗 ..."
+                placeholder={t('origin.divineRulesPlaceholder')}
               />
             </div>
           </div>
@@ -471,12 +480,12 @@ function DivineFieldEditor({
         <AIFieldModeTabs value={mode} onChange={setMode} />
         <input
           value={hint} onChange={e => setHint(e.target.value)}
-          placeholder="给 AI 的补充说明（可选）"
+          placeholder={t('origin.aiHintPlaceholder')}
           className="flex-1 px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
         />
         <button onClick={handleGenerate} disabled={ai.isStreaming}
           className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded disabled:opacity-50 bg-accent/10 text-accent hover:bg-accent/20">
-          <Sparkles className="w-3.5 h-3.5" /> AI 生成信仰体系
+          <Sparkles className="w-3.5 h-3.5" /> {t('origin.aiGenerateDivine')}
         </button>
       </div>
 
@@ -488,7 +497,7 @@ function DivineFieldEditor({
       {splitting && (
         <div className="flex items-center gap-2 p-3 bg-accent/10 border border-accent/20 rounded-lg text-sm text-accent">
           <Loader2 className="w-4 h-4 animate-spin" />
-          AI 正在将信仰体系拆分到三个字段中...
+          {t('origin.aiSplittingDivine')}
         </div>
       )}
 

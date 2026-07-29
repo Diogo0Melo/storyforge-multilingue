@@ -6,6 +6,7 @@
  */
 import { useMemo } from 'react'
 import { MapPin, Zap, Package, History, Swords } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useStateCardStore } from '../../stores/state-card'
 import { parseFields, type StateField } from '../../lib/types/state-card'
 
@@ -25,6 +26,7 @@ function getFieldIcon(key: string) {
 }
 
 export default function CharacterStatusPanel({ projectId, characterName }: Props) {
+  const { t } = useTranslation('characters')
   const { cards } = useStateCardStore()
 
   // 找到该角色的状态卡
@@ -44,7 +46,7 @@ export default function CharacterStatusPanel({ projectId, characterName }: Props
   return (
     <div className="mt-2 p-2 bg-bg-elevated/50 rounded-lg border border-border/50">
       <p className="text-[10px] text-text-muted font-medium mb-1.5 uppercase tracking-wide">
-        当前状态
+        {t('status.title')}
       </p>
       <div className="space-y-1">
         {fields.map((f, i) => {
@@ -60,7 +62,7 @@ export default function CharacterStatusPanel({ projectId, characterName }: Props
       </div>
       {stateCard.lastChapterId && (
         <p className="mt-1 text-[10px] text-text-muted">
-          最后更新于章节 #{stateCard.lastChapterId}
+          {t('status.lastUpdated', { chapterId: stateCard.lastChapterId })}
         </p>
       )}
     </div>

@@ -1,0 +1,119 @@
+{
+  "delete": "Excluir",
+  "panel": {
+    "newCharacter": "Novo personagem",
+    "add": "Novo personagem",
+    "createAndAssign": "Criar e atribuir",
+    "hintPlaceholder": "Requisitos do personagem (opcional)",
+    "dimPickerTitle": "Selecionar quais dimensões a IA deve projetar",
+    "dimensionCount": "Dimensões {{selected}}/{{total}}",
+    "aiGenerate": "Projetar personagem com IA",
+    "mainTitle": "Personagens principais",
+    "generatorTitle": "Gerador de personagens",
+    "allWorlds": "Todos",
+    "crossWorld": "Multi-mundo",
+    "aiParsing": "A IA está organizando o conteúdo do personagem em campos, aguarde…",
+    "aiGeneratedName": "Personagem gerado por IA",
+    "emptyMain": "Nenhum personagem principal ainda. Crie ou ajuste o papel em «Gerador de personagens».",
+    "emptyGenerator": "Nenhum personagem ainda. Clique em «Novo personagem» para começar.",
+    "selectHint": "← Selecione um personagem para ver detalhes",
+    "delete": "Excluir"
+  },
+  "minor": {
+    "newCharacter": "Novo personagem secundário",
+    "title": "Personagens secundários",
+    "description": "Elenco de apoio — visão em cartões simples, registre apenas informações essenciais.",
+    "add": "Adicionar",
+    "empty": "Nenhum personagem secundário ainda. Clique em «Adicionar» acima para começar.",
+    "shortDescPlaceholder": "Resumo em uma frase...",
+    "collapse": "Recolher",
+    "expandFull": "Expandir definição completa ▾",
+    "delete": "Excluir"
+  },
+  "npc": {
+    "newCharacter": "Novo NPC",
+    "title": "NPCs",
+    "description": "Personagens recorrentes não impulsionados pela trama — lista compacta para revisão rápida.",
+    "add": "Adicionar",
+    "empty": "Nenhum NPC ainda. Clique em «Adicionar» acima para começar.",
+    "collapseFull": "Recolher definição completa",
+    "expandFull": "Expandir definição completa",
+    "name": "Nome",
+    "location": "Local",
+    "shortDesc": "Descrição em uma frase (personalidade/profissão/função)...",
+    "hasFullHint": "Definição completa preenchida, clique na seta para expandir",
+    "filledCount": "{{count}} itens preenchidos",
+    "delete": "Excluir"
+  },
+  "extra": {
+    "newCharacter": "Figurante",
+    "title": "Figurantes",
+    "description": "Personagens de passagem — visão em tabela, registre o mínimo necessário; expanda para completar a definição quando preciso.",
+    "add": "Adicionar",
+    "empty": "Nenhum figurante ainda. Clique em «Adicionar» acima para começar.",
+    "colName": "Nome",
+    "colAppearance": "Aparição",
+    "colChapter": "Capítulo",
+    "colRole": "Função",
+    "colEnding": "Desfecho",
+    "collapseFull": "Recolher definição completa",
+    "expandFull": "Expandir definição completa",
+    "phVolume": "Ex.: Volume 3",
+    "phChapter": "Ex.: Capítulo 12",
+    "phStoryRole": "Ex.: Espadachim de passagem / Mensageiro",
+    "phEnding": "Ex.: Desaparecido / Morto",
+    "hasFullHint": "Definição completa preenchida, clique na seta para expandir",
+    "filledCount": "{{count}} itens",
+    "delete": "Excluir"
+  },
+  "detail": {
+    "worldLabel": "Mundo do personagem",
+    "crossWorld": "Multi-mundo",
+    "shortDescPlaceholder": "Clique para adicionar um resumo…",
+    "collapseDetail": "Recolher detalhes do personagem",
+    "expandDetail": "Expandir detalhes do personagem",
+    "deleteCharacter": "Excluir personagem",
+    "relationships": "Relacionamentos",
+    "relationshipsPlaceholder": "Clique para preencher os relacionamentos…"
+  },
+  "supplement": {
+    "title": "Completar definição com IA",
+    "missingCount": "Faltam {{count}} itens",
+    "titleWithMissing": "Completar definição com IA (faltam {{count}} itens)",
+    "titleWithName": "Completar definição com IA · {{name}}",
+    "unnamed": "Sem nome",
+    "description": "Marque as dimensões a completar (padrão: vazias). A IA usará as definições existentes e o mundo como referência, preenchendo apenas esses campos sem sobrescrever os demais.",
+    "useEvidenceLabel": "Combinar com conteúdo já escrito (retroalimentação)",
+    "useEvidenceDesc": "Envie à IA os fatos confirmados e as atuações reais deste personagem no texto, para um preenchimento mais fiel à trama. Especialmente útil quando NPCs são promovidos a protagonistas.",
+    "generating": "Gerando…",
+    "done": "{{count}} dimensões completadas e salvas no personagem.",
+    "filling": "Completando…",
+    "fillSelected": "Completar {{count}} dimensões selecionadas"
+  },
+  "status": {
+    "title": "Estado atual",
+    "lastUpdated": "Última atualização no capítulo #{{chapterId}}"
+  },
+  "affiliations": {
+    "race": "Raça estruturada",
+    "unlinked": "Não vinculado",
+    "system": "Sistema principal",
+    "stage": "Estágio de cultivo definido",
+    "unspecified": "Não especificado"
+  },
+  "picker": {
+    "presetMain": "Principal (completo)",
+    "presetSecondary": "Secundário",
+    "presetNPC": "NPC",
+    "presetExtra": "Figurante",
+    "byRole": "Por papel:",
+    "selectAll": "Selecionar tudo",
+    "clearAll": "Limpar tudo",
+    "selectedCount": "{{selected}}/{{total}} selecionados"
+  },
+  "axes": {
+    "roleWeight": "Papel (obrigatório)",
+    "alignmentGrid": "Grade de alinhamento (obrigatório)",
+    "absoluteNeutral": "Neutro absoluto"
+  }
+}
