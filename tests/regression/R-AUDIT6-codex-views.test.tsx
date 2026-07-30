@@ -85,19 +85,19 @@ describe('AUDIT-6 / HEALTH-4 · 词条受控视图', () => {
       onSave,
     }))
 
-    const labelInput = host.querySelector<HTMLInputElement>('input[placeholder="字段名(如:品级)"]')!
+    const labelInput = host.querySelector<HTMLInputElement>('input[placeholder="codex.fields.fieldNamePlaceholder"]')!
     await act(async () => setControlValue(labelInput, '器物品级'))
-    const optionInput = host.querySelector<HTMLInputElement>('input[placeholder^="选项,用 / 分隔"]')!
+    const optionInput = host.querySelector<HTMLInputElement>('input[placeholder="codex.fields.selectOptionsPlaceholder"]')!
     await act(async () => setControlValue(optionInput, '凡品 / 灵品 / 神品'))
-    const add = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('添加字段'))!
+    const add = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('codex.fields.addField'))!
     await act(async () => add.click())
-    expect(host.querySelectorAll('input[placeholder="字段名(如:品级)"]')).toHaveLength(2)
+    expect(host.querySelectorAll('input[placeholder="codex.fields.fieldNamePlaceholder"]')).toHaveLength(2)
 
-    const save = Array.from(host.querySelectorAll('button')).find(button => button.textContent === '保存')!
+    const save = Array.from(host.querySelectorAll('button')).find(button => button.textContent === 'codex.fields.save')!
     await act(async () => save.click())
     const saved = parseFieldSchema(onSave.mock.calls[0][0])
     expect(saved[0]).toMatchObject({ label: '器物品级', type: 'select', options: ['凡品', '灵品', '神品'] })
-    expect(saved[1]).toMatchObject({ label: '新字段', type: 'text' })
+    expect(saved[1]).toMatchObject({ label: 'codex.fields.newField', type: 'text' })
   })
 
   it('词条详情把星级、专属字段和 ref 关联作为 patch 交还父级', async () => {
@@ -125,8 +125,8 @@ describe('AUDIT-6 / HEALTH-4 · 词条受控视图', () => {
       onChange,
     }))
 
-    expect(host.textContent).toContain('本分类下已有同名词条')
-    await act(async () => host.querySelector<HTMLButtonElement>('button[title="4 星"]')!.click())
+    expect(host.textContent).toContain('codex.entry.dupWarning')
+    await act(async () => (host.querySelectorAll<HTMLButtonElement>('button[title="codex.entry.starTitle"]')[3])!.click())
     expect(onChange).toHaveBeenCalledWith({ importance: 4 })
 
     const tier = host.querySelector<HTMLSelectElement>('select[aria-label="品级"]')!
@@ -134,7 +134,7 @@ describe('AUDIT-6 / HEALTH-4 · 词条受控视图', () => {
     const fieldPatch = onChange.mock.calls.map(call => call[0]).find(patch => patch.fields)
     expect(parseEntryFields(fieldPatch.fields)).toEqual({ tier: '上品' })
 
-    const openRefs = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('点击关联词条'))!
+    const openRefs = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('codex.entry.clickToLink'))!
     await act(async () => openRefs.click())
     const checkboxes = host.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
     expect(checkboxes).toHaveLength(1)

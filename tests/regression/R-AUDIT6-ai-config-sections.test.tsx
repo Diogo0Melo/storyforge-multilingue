@@ -59,9 +59,9 @@ describe('AUDIT-6 / HEALTH-4 · AI 设置分区', () => {
     const host = await mount(AIConfigPresetSection as ComponentType<never>, props)
     const buttons = Array.from(host.querySelectorAll('button'))
     await act(async () => buttons.find(button => button.textContent === '写作模型')!.click())
-    await act(async () => buttons.find(button => button.textContent === '保存')!.click())
-    await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="重命名预设 写作模型"]')!.click())
-    await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="删除预设 写作模型"]')!.click())
+    await act(async () => buttons.find(button => button.textContent === 'presets.saveToPreset')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="presets.rename 写作模型"]')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('[aria-label="presets.delete 写作模型"]')!.click())
     expect(props.onApplyPreset).toHaveBeenCalledWith('writer')
     expect(props.onUpdatePreset).toHaveBeenCalledWith('writer')
     expect(props.onRenamePreset).toHaveBeenCalledWith('writer', '写作模型')
@@ -82,31 +82,31 @@ describe('AUDIT-6 / HEALTH-4 · AI 设置分区', () => {
       onSetTeamBudgetProfile,
     })
     expect(host.querySelectorAll('select')).toHaveLength(16)
-    expect(host.textContent).toContain('结构提取')
-    expect(host.textContent).toContain('主 Agent 团队角色')
-    expect(host.textContent).toContain('正文领域 Agent')
-    const review = host.querySelector<HTMLSelectElement>('select[aria-label="审查校验模型预设"]')!
+    expect(host.textContent).toContain('taskRouting.tasks.extraction')
+    expect(host.textContent).toContain('taskRouting.agentTeamTitle')
+    expect(host.textContent).toContain('taskRouting.tasks.agent-prose')
+    const review = host.querySelector<HTMLSelectElement>('select[aria-label="taskRouting.tasks.review taskRouting.presetLabel"]')!
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!
       setter.call(review, 'writer')
       review.dispatchEvent(new Event('change', { bubbles: true }))
     })
     expect(onSetRoute).toHaveBeenCalledWith('review', 'writer')
-    const prose = host.querySelector<HTMLSelectElement>('select[aria-label="正文领域 Agent模型预设"]')!
+    const prose = host.querySelector<HTMLSelectElement>('select[aria-label="taskRouting.tasks.agent-prose taskRouting.presetLabel"]')!
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!
       setter.call(prose, 'writer')
       prose.dispatchEvent(new Event('change', { bubbles: true }))
     })
     expect(onSetRoute).toHaveBeenCalledWith('agent-prose', 'writer')
-    const proseContext = host.querySelector<HTMLSelectElement>('select[aria-label="正文领域 Agent上下文输入档位"]')!
+    const proseContext = host.querySelector<HTMLSelectElement>('select[aria-label="taskRouting.tasks.agent-prose taskRouting.contextLevelLabel"]')!
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!
       setter.call(proseContext, 'lean')
       proseContext.dispatchEvent(new Event('change', { bubbles: true }))
     })
     expect(onSetContextProfile).toHaveBeenCalledWith('agent-prose', 'lean')
-    const teamBudget = host.querySelector<HTMLSelectElement>('select[aria-label="主 Agent 团队总预算"]')!
+    const teamBudget = host.querySelector<HTMLSelectElement>('select[aria-label="taskRouting.teamBudgetLabel"]')!
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!
       setter.call(teamBudget, 'economy')
@@ -123,7 +123,7 @@ describe('AUDIT-6 / HEALTH-4 · AI 设置分区', () => {
     })
     expect(host.textContent).toContain('deepseek')
     expect(host.textContent).toContain('42ms')
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('清空'))!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('connectionLog.clear'))!.click())
     expect(onClear).toHaveBeenCalledOnce()
   })
 
@@ -131,7 +131,7 @@ describe('AUDIT-6 / HEALTH-4 · AI 设置分区', () => {
     const onChange = vi.fn()
     const host = await mount(ThemeSelector as ComponentType<never>, { value: 'warm', onChange })
     expect(host.querySelectorAll('button[aria-pressed="true"]')).toHaveLength(1)
-    const paper = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('纸与墨'))!
+    const paper = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('theme.paper.label'))!
     await act(async () => paper.click())
     expect(onChange).toHaveBeenCalledWith('paper')
   })
@@ -151,9 +151,9 @@ describe('AUDIT-6 / HEALTH-4 · AI 设置分区', () => {
       onToggleLogs,
     })
     expect(host.textContent).toContain('CORS 网络错误')
-    expect(host.textContent).toContain('耗时 88ms')
-    expect(host.textContent).toContain('日志 (3)')
-    expect(host.textContent).toContain('切换到本地代理')
+    expect(host.textContent).toContain('aiConfig.duration')
+    expect(host.textContent).toContain('aiConfig.logs')
+    expect(host.textContent).toContain('aiConfig.corsHintDev')
     const buttons = host.querySelectorAll('button')
     await act(async () => buttons[0].click())
     await act(async () => buttons[1].click())

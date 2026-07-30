@@ -56,7 +56,7 @@ describe('R-E-group-ui-and-divine · E 组收尾', () => {
     expect(editorSource).toContain('<ChapterEditorHeader')
     expect(editorSource).toContain('onStatusChange={status =>')
     expect(editorSource).toContain('void updateChapter(currentChapter.id, { status })')
-    expect(headerSource).toContain('aria-label="章节状态"')
+    expect(headerSource).toContain('aria-label={t(\'header.chapterStatus\')}')
     for (const status of ['outline', 'draft', 'revised', 'polished', 'final']) {
       expect(headerSource).toContain(`value: '${status}'`)
     }

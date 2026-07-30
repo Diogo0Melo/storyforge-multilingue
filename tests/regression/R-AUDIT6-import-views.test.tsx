@@ -59,9 +59,9 @@ function ImportPreparationHarness() {
 describe('AUDIT-6 · 文档导入视图', () => {
   it('介绍区使用当前切块大小并展示文件限制', async () => {
     const host = await mount(createElement(ImportDocIntro, { chunkSize: 50000 }))
-    expect(host.textContent).toContain('AI 分块文档解析')
-    expect(host.textContent).toContain('每块约 50,000 字')
-    expect(host.textContent).toContain('支持的文件格式与大小上限')
+    expect(host.textContent).toContain('intro.title')
+    expect(host.textContent).toContain('intro.description')
+    expect(host.textContent).toContain('intro.supportedFormats')
   })
 
   it('复用会话的四个操作只向父级转发', async () => {
@@ -87,7 +87,7 @@ describe('AUDIT-6 · 文档导入视图', () => {
     expect(onApplyReference).toHaveBeenNthCalledWith(1, 'quick')
     expect(onApplyReference).toHaveBeenNthCalledWith(2, 'deep')
     expect(onIgnore).toHaveBeenCalledOnce()
-    expect(host.textContent).toContain('原文已不在内存')
+    expect(host.textContent).toContain('reuse.originalNotAvailable')
   })
 
   it('词条候选审查允许取消、改名和改分类，确认时只交回选中项', async () => {
@@ -142,10 +142,10 @@ describe('AUDIT-6 · 文档导入视图', () => {
       valueSetter.call(firstName, '新临渊城')
       firstName.dispatchEvent(new Event('input', { bubbles: true }))
     })
-    const secondToggle = host.querySelector<HTMLButtonElement>('button[aria-label="取消选择 海盟"]')!
+    const secondToggle = host.querySelector<HTMLButtonElement>('button[aria-label="codexReview.deselect 海盟"]')!
     await act(async () => secondToggle.click())
     const confirm = Array.from(host.querySelectorAll('button'))
-      .find(button => button.textContent?.includes('确认导入 1 条'))!
+      .find(button => button.textContent?.includes('codexReview.confirmImport'))!
     await act(async () => confirm.click())
 
     expect(onConfirm).toHaveBeenCalledOnce()
@@ -165,11 +165,11 @@ describe('AUDIT-6 · 文档导入视图', () => {
       onResume,
       onCancel,
     }))
-    expect(host.textContent).toContain('恢复')
-    expect(host.textContent).toContain('取消')
-    expect(host.textContent).not.toContain('暂停')
-    const resume = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('恢复'))!
-    const cancel = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('取消'))!
+    expect(host.textContent).toContain('runtime.resume')
+    expect(host.textContent).toContain('runtime.cancel')
+    expect(host.textContent).not.toContain('runtime.pause')
+    const resume = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('runtime.resume'))!
+    const cancel = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('runtime.cancel'))!
     await act(async () => resume.click())
     await act(async () => cancel.click())
     expect(onResume).toHaveBeenCalledOnce()
@@ -182,6 +182,6 @@ describe('AUDIT-6 · 文档导入视图', () => {
     const prepare = Array.from(host.querySelectorAll('button')).find(button => button.textContent === '准备解析')!
     await act(async () => load.click())
     await act(async () => prepare.click())
-    expect(host.querySelector('[data-testid="state"]')?.textContent).toBe('1|1|粘贴内容.txt')
+    expect(host.querySelector('[data-testid="state"]')?.textContent).toBe('1|1|import:prep.pastedContent')
   })
 })

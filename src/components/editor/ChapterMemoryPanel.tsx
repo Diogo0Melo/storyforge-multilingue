@@ -23,7 +23,7 @@ export default function ChapterMemoryPanel({
   onConfirmActualProgress,
   onApplyOutlineCandidate,
 }: Props) {
-  const { t } = useTranslation('editor')
+  const { t } = useTranslation(['panels', 'editor'])
   const reconciliationStale = reconciliation
     && !reconciliationCurrent
     && (reconciliation.reviewStatus === 'pending' || reconciliation.reviewStatus === 'confirmed-constraint')
@@ -60,23 +60,23 @@ export default function ChapterMemoryPanel({
       {reconciliation && reconciliationCurrent && (
         <div className="mb-3 p-3 bg-amber-500/5 border border-amber-500/20 rounded-lg">
           <div className="flex items-center justify-between gap-3">
-            <p className="text-xs font-medium text-amber-300">计划—正文对账</p>
+            <p className="text-xs font-medium text-amber-300">{t('chapterMemory.reconciliationTitle')}</p>
             <span className="text-[10px] text-text-muted">
-              {reconciliation.reviewStatus === 'pending' ? '待确认' : '已处理'}
+              {reconciliation.reviewStatus === 'pending' ? t('chapterMemory.statusPending') : t('chapterMemory.statusProcessed')}
             </span>
           </div>
           <div className="mt-2 space-y-1 text-xs text-text-secondary">
             {([
-              ['已完成', reconciliation.completedGoals],
-              ['未完成', reconciliation.unfinishedGoals],
-              ['实际偏移', reconciliation.deviations],
-              ['新增约束', reconciliation.newConstraints],
-              ['下一章影响', reconciliation.nextChapterImpacts],
+              [t('chapterMemory.completedGoals'), reconciliation.completedGoals],
+              [t('chapterMemory.unfinishedGoals'), reconciliation.unfinishedGoals],
+              [t('chapterMemory.deviations'), reconciliation.deviations],
+              [t('chapterMemory.newConstraints'), reconciliation.newConstraints],
+              [t('chapterMemory.nextChapterImpacts'), reconciliation.nextChapterImpacts],
             ] as const).flatMap(([label, items]) => items.map((item, index) => (
               <div key={`${label}:${index}`}>
                 <p><span className="text-amber-300/80">{label}：</span>{item.text}</p>
                 {item.evidenceQuotes[0] && (
-                  <p className="pl-3 text-[11px] text-text-muted">证据：“{item.evidenceQuotes[0].quote}”</p>
+                  <p className="pl-3 text-[11px] text-text-muted">{t('chapterMemory.evidence')}"{item.evidenceQuotes[0].quote}"</p>
                 )}
               </div>
             )))}
@@ -88,7 +88,7 @@ export default function ChapterMemoryPanel({
                 onClick={onConfirmActualProgress}
                 className="px-2 py-1 text-xs rounded bg-amber-500/10 text-amber-300 hover:bg-amber-500/20"
               >
-                确认并附加实际进展约束
+                {t('chapterMemory.confirmProgress')}
               </button>
               {reconciliation.proposedOutlineSummary && (
                 <button
@@ -96,7 +96,7 @@ export default function ChapterMemoryPanel({
                   onClick={onApplyOutlineCandidate}
                   className="px-2 py-1 text-xs rounded bg-accent/10 text-accent hover:bg-accent/20"
                 >
-                  用候选更新本章章纲
+                  {t('chapterMemory.applyOutlineCandidate')}
                 </button>
               )}
             </div>

@@ -210,7 +210,7 @@ describe('AUDIT-6 · 大纲生成 controller', () => {
 
     expect(ai.start).not.toHaveBeenCalled()
     expect(ai.reset).toHaveBeenCalledOnce()
-    expect(onError).toHaveBeenCalledWith('准备大纲生成时出错：上下文损坏。')
+    expect(onError).toHaveBeenCalledWith('outline:controller.prepareFailed')
   })
 
   it('取消预检会使在途结果失效并清空请求状态', async () => {

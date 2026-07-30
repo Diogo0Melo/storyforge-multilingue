@@ -48,12 +48,12 @@ export default function CultivationSystemsPanel({ project }: { project: Project 
 
   const handleAdd = async () => {
     if (worldGroupId === undefined) {
-      toast.error(t('cultivation.error.loadFailed' as any))
+      toast.error(t('cultivationSystem.emptyHint'))
       return
     }
     const name = (await dialog.prompt({
-      title: t('cultivation.dialog.addTitle' as any),
-      placeholder: t('cultivation.dialog.addPlaceholder' as any),
+      title: t('cultivationSystem.addSystem'),
+      placeholder: t('cultivationSystem.subtitle'),
     }))?.trim()
     if (!name) return
     const id = await addSystem({
@@ -68,10 +68,9 @@ export default function CultivationSystemsPanel({ project }: { project: Project 
 
   const handleDelete = async (system: CultivationSystem) => {
     if (!await dialog.confirm({
-      title: t('cultivation.dialog.deleteTitle' as any, { name: system.name }),
-      message: t('cultivation.dialog.deleteMessage' as any),
-      confirmText: t('cultivation.dialog.confirmDelete' as any),
-      tone: 'danger',
+      title: t('cultivationSystem.deleteSystemAria'),
+      message: t('cultivationSystem.subtitle'),
+      confirmText: t('cultivationSystem.deleteSystemAria'),
     })) return
     await deleteSystem(system.id!)
   }
@@ -81,10 +80,10 @@ export default function CultivationSystemsPanel({ project }: { project: Project 
       <div className="flex items-start justify-between gap-4 mb-4">
         <div>
           <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-            <GitBranch className="w-5 h-5 text-accent" /> 修炼体系
+            <GitBranch className="w-5 h-5 text-accent" /> {t('cultivationSystem.title')}
           </h2>
           <p className="text-xs text-text-muted mt-1">
-            这里定义“如何利用力量”的流派与境界路径；上面的力量体系只描述世界底层能量。境界支持分叉与合流。
+            {t('cultivationSystem.subtitle')}
           </p>
         </div>
         <button
@@ -92,13 +91,13 @@ export default function CultivationSystemsPanel({ project }: { project: Project 
           disabled={worldGroupId === undefined}
           className="px-3 py-1.5 text-xs rounded-md bg-accent text-white disabled:opacity-40 inline-flex items-center gap-1"
         >
-          <Plus className="w-3.5 h-3.5" /> 新增体系
+          <Plus className="w-3.5 h-3.5" /> {t('cultivationSystem.addSystem')}
         </button>
       </div>
 
       {scoped.length === 0 ? (
         <div className="border border-dashed border-border rounded-xl py-10 text-center text-sm text-text-muted">
-          当前世界还没有修炼体系。可创建武夫、术士、剑修等多套独立路径。
+          {t('cultivationSystem.emptyHint')}
         </div>
       ) : (
         <div className="grid grid-cols-[11rem_minmax(0,1fr)] gap-4 min-h-[26rem]">
@@ -115,7 +114,7 @@ export default function CultivationSystemsPanel({ project }: { project: Project 
               >
                 <span className="block truncate">{system.name}</span>
                 <span className="text-[10px] text-text-muted">
-                  {parseCultivationStages(system.stages).length} 个境界
+                  {t('cultivationSystem.stageCount', { count: parseCultivationStages(system.stages).length })}
                 </span>
               </button>
             ))}
@@ -143,6 +142,7 @@ function CultivationSystemEditor({
   onUpdate: (patch: Partial<CultivationSystem>) => Promise<void>
   onDelete: () => void
 }) {
+  const { t } = useTranslation('panels')
   const toast = useToast()
   const [selectedStageId, setSelectedStageId] = useState<string | null>(null)
   const stages = useMemo(() => parseCultivationStages(system.stages), [system.stages])
@@ -168,7 +168,7 @@ function CultivationSystemEditor({
       (tiers.get(right.id) ?? 0) - (tiers.get(left.id) ?? 0))[0]
     const next: CultivationStage = {
       id,
-      name: '新境界',
+      name: t('cultivationSystem.newStage'),
       features: '',
       breakthrough: '',
       parentStageIds: deepest ? [deepest.id] : [],
@@ -195,30 +195,30 @@ function CultivationSystemEditor({
           <InlineTextarea
             value={system.description}
             onChange={description => onUpdate({ description })}
-            placeholder="点击说明这套体系的核心原理、适用者和代价…"
+            placeholder={t('cultivationSystem.descriptionPlaceholder')}
           />
         </div>
-        <button onClick={onDelete} aria-label="删除修炼体系" className="p-1.5 text-text-muted hover:text-error">
+        <button onClick={onDelete} aria-label={t('cultivationSystem.deleteSystemAria')} className="p-1.5 text-text-muted hover:text-error">
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
 
       <div className="flex items-center justify-between mt-5 mb-2">
-        <h3 className="text-sm font-medium text-text-secondary">境界 DAG</h3>
+        <h3 className="text-sm font-medium text-text-secondary">{t('cultivationSystem.stageDag')}</h3>
         <button onClick={addStage} className="text-xs text-accent inline-flex items-center gap-1">
-          <Plus className="w-3.5 h-3.5" /> 添加后续境界
+          <Plus className="w-3.5 h-3.5" /> {t('cultivationSystem.addNextStage')}
         </button>
       </div>
       <div className="overflow-x-auto border border-border rounded-lg bg-bg-base/50 p-3">
         {stages.length === 0 ? (
           <button onClick={addStage} className="w-full py-10 text-xs text-text-muted hover:text-accent">
-            添加第一个起始境界
+            {t('cultivationSystem.addFirstStage')}
           </button>
         ) : (
           <div className="flex items-stretch gap-5 min-w-max">
             {Array.from({ length: maxTier + 1 }, (_, tier) => (
               <div key={tier} className="w-40 space-y-2">
-                <div className="text-[10px] text-text-muted text-center">层级 {tier}</div>
+                <div className="text-[10px] text-text-muted text-center">{t('cultivationSystem.tierLabel', { tier })}</div>
                 {stages
                   .filter(stage => (tiers.get(stage.id) ?? 0) === tier)
                   .map(stage => (
@@ -250,7 +250,7 @@ function CultivationSystemEditor({
         <div className="mt-4 border border-border rounded-lg p-3 space-y-3">
           <div className="flex items-center gap-3">
             <div className="flex-1">
-              <label className="block text-[11px] text-text-muted mb-1">境界名称</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('cultivationSystem.stageName')}</label>
               <InlineInput
                 value={selectedStage.name}
                 onChange={name => patchStage(selectedStage.id, { name })}
@@ -259,39 +259,39 @@ function CultivationSystemEditor({
             </div>
             <button
               onClick={() => removeStage(selectedStage.id)}
-              aria-label="删除境界"
+              aria-label={t('cultivationSystem.deleteStageAria')}
               className="p-1.5 text-text-muted hover:text-error"
             >
               <Trash2 className="w-4 h-4" />
             </button>
           </div>
           <div>
-            <label className="block text-[11px] text-text-muted mb-1">分支标签</label>
+            <label className="block text-[11px] text-text-muted mb-1">{t('cultivationSystem.branchLabel')}</label>
             <InlineInput
               value={selectedStage.branchLabel || ''}
               onChange={branchLabel => patchStage(selectedStage.id, { branchLabel })}
-              placeholder="如：剑修 / 体修（可空）"
+              placeholder={t('cultivationSystem.branchPlaceholder')}
               className="text-sm text-text-primary"
             />
           </div>
           <div>
-            <label className="block text-[11px] text-text-muted mb-1">境界特征 / 战力边界</label>
+            <label className="block text-[11px] text-text-muted mb-1">{t('cultivationSystem.featuresLabel')}</label>
             <InlineTextarea
               value={selectedStage.features || ''}
               onChange={features => patchStage(selectedStage.id, { features })}
-              placeholder="能做到什么、不能做到什么…"
+              placeholder={t('cultivationSystem.featuresPlaceholder')}
             />
           </div>
           <div>
-            <label className="block text-[11px] text-text-muted mb-1">突破到此阶的条件</label>
+            <label className="block text-[11px] text-text-muted mb-1">{t('cultivationSystem.breakthroughLabel')}</label>
             <InlineTextarea
               value={selectedStage.breakthrough || ''}
               onChange={breakthrough => patchStage(selectedStage.id, { breakthrough })}
-              placeholder="资源、领悟、仪式、代价…"
+              placeholder={t('cultivationSystem.breakthroughPlaceholder')}
             />
           </div>
           <div>
-            <label className="block text-[11px] text-text-muted mb-1">前置境界（可多选形成合流）</label>
+            <label className="block text-[11px] text-text-muted mb-1">{t('cultivationSystem.prerequisiteLabel')}</label>
             <div className="flex flex-wrap gap-1.5">
               {stages.filter(stage => stage.id !== selectedStage.id).map(stage => (
                 <label key={stage.id} className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded border border-border">
@@ -310,7 +310,7 @@ function CultivationSystemEditor({
                   {stage.name}
                 </label>
               ))}
-              {stages.length === 1 && <span className="text-xs text-text-muted">起始境界无需前置</span>}
+              {stages.length === 1 && <span className="text-xs text-text-muted">{t('cultivationSystem.noPrerequisite')}</span>}
             </div>
           </div>
         </div>

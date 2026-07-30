@@ -149,18 +149,18 @@ describe('SIM-1A · 共享互动运行时核心', () => {
       sessionId: session.id!,
       type: 'entity.patched',
       payload: { entityKey: 'character:missing', patch: { name: '幽灵' } },
-    })).rejects.toThrow('不存在')
+    })).rejects.toThrow('common:errors.simulation.entityNotFound')
     await expect(appendSimulationEvent({
       sessionId: session.id!,
       type: 'random.resolved',
       payload: { expression: '1d20', dice: [20], modifier: 0, total: 20 },
-    })).rejects.toThrow('只能通过')
+    })).rejects.toThrow('common:errors.simulation.randomOnlyViaResolve')
     await db.simulationSessions.update(session.id!, { status: 'paused' })
     await expect(appendSimulationEvent({
       sessionId: session.id!,
       type: 'time.advanced',
       payload: { amount: 1 },
-    })).rejects.toThrow('active')
+    })).rejects.toThrow('common:errors.simulation.onlyActiveSession')
     expect(await db.simulationEvents.count()).toBe(0)
   })
 
@@ -207,7 +207,7 @@ describe('SIM-1A · 共享互动运行时核心', () => {
       memories: [],
       narratives: [],
       lastSequence: 0,
-    }, forged)).toThrow('合计')
+    }, forged)).toThrow('common:errors.simulation.diceTotalMismatch')
   })
 
   it('并发追加仍形成连续唯一序号，记忆自动绑定真实事件序号', async () => {

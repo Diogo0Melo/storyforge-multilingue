@@ -19,6 +19,7 @@ import {
   type AgentContextProfile,
 } from './context-policy'
 import { executeAgentTool } from './tool-registry'
+import i18n from '../../i18n/i18n'
 
 const WORLD_ORIGIN_MAX_CHARS = 12_000
 
@@ -60,7 +61,7 @@ interface WorldOriginCopilotDependencies {
 
 export class WorldOriginCopilotStaleError extends Error {
   constructor() {
-    super('世界来源已在候选生成后发生变化。为避免覆盖新内容，请重新生成候选。')
+    super(i18n.t('common:errors.agent.worldOriginStale'))
     this.name = 'WorldOriginCopilotStaleError'
   }
 }
@@ -91,8 +92,8 @@ function sameSnapshot(left: WorldOriginSnapshot, right: WorldOriginSnapshot): bo
 
 function assertAuthorRequest(value: string): string {
   const request = value.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的创作要求。')
-  if (request.length > 1000) throw new Error('单次创作要求不能超过 1000 个字符。')
+  if (request.length < 2) throw new Error(i18n.t('common:errors.agent.worldOriginMinChars'))
+  if (request.length > 1000) throw new Error(i18n.t('common:errors.agent.worldOriginMaxChars'))
   return request
 }
 
@@ -109,9 +110,9 @@ export async function prepareWorldOriginCopilot(
   },
 ): Promise<PreparedWorldOriginCopilot> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(i18n.t('common:errors.agent.projectNotFound'))
   if (project.enableMultiWorld && input.worldGroupId == null) {
-    throw new Error('多世界项目必须先选择世界。')
+    throw new Error(i18n.t('common:errors.agent.worldOriginMultiWorld'))
   }
   const routingCategory = input.routingCategory ?? 'worldview.dimension'
   const config = resolveRequestConfig(
@@ -133,7 +134,7 @@ export async function prepareWorldOriginCopilot(
     readScopedWorldview(input.projectId, input.worldGroupId),
   ])
   for (const result of [status, worldview]) {
-    if (!result.ok) throw new Error(result.error || `${result.meta.toolName} 读取失败`)
+    if (!result.ok) throw new Error(result.error || i18n.t('common:errors.agent.toolReadFailed', { toolName: result.meta.toolName }))
   }
 
   const snapshot = snapshotOf(row)
@@ -238,7 +239,7 @@ export function createWorldOriginCopilotNode(
         || result.fkErrors.length
         || result.skipped.length
       ) {
-        throw new Error('世界来源写回未完整通过字段注册表校验。')
+        throw new Error(i18n.t('common:errors.agent.worldOriginRegistryFailed'))
       }
       return result
     },

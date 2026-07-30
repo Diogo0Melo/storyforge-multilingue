@@ -111,7 +111,7 @@ describe('AUDIT-6 · 批量章纲 controller', () => {
 
     expect(controller.running).toBe(false)
     expect(controller.result).toBeNull()
-    expect(onError).toHaveBeenCalledWith('批量生成章节失败：装配失败。')
+    expect(onError).toHaveBeenCalledWith('outline:batch.generateFailed')
     expect(mocks.runBatch).not.toHaveBeenCalled()
   })
 

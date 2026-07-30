@@ -3,6 +3,7 @@ import type { ChatMessage } from '../types'
 import { executeAgentTool } from './tool-registry'
 import { buildAgentProtocolSystemPrompt, parseAgentProtocolAction } from './protocol'
 import type { AgentToolExecutionContext } from './types'
+import i18n from '../../i18n/i18n'
 
 export interface AgentModelUsage {
   inputTokens: number
@@ -173,7 +174,7 @@ function stopResult(args: {
 
 export async function runReadOnlyAgent(input: RunReadOnlyAgentInput): Promise<ReadOnlyAgentResult> {
   const goal = input.goal.trim()
-  if (!goal) throw new Error('Agent 目标不能为空')
+  if (!goal) throw new Error(i18n.t('common:errors.agent.goalEmpty'))
   const limits = resolveLimits(input.limits)
   const events: ReadOnlyAgentEvent[] = []
   const emit = (event: ReadOnlyAgentEvent) => {

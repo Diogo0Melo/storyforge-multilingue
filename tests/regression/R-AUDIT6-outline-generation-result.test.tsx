@@ -43,7 +43,7 @@ afterEach(async () => {
 describe('AUDIT-6 · 大纲生成结果视图', () => {
   it('结构整理中保留明确进度状态', async () => {
     const host = await mount({ restructuring: true })
-    expect(host.textContent).toContain('正在用 AI 整理大纲结构')
+    expect(host.textContent).toContain('result.restructuring')
   })
 
   it('卷预览区分新增与定点补全，并转发确认/取消', async () => {
@@ -54,9 +54,9 @@ describe('AUDIT-6 · 大纲生成结果视图', () => {
       onConfirmVolumes,
       onCancelPreview,
     })
-    expect(newHost.textContent).toContain('将创建 2 个卷')
-    await act(async () => Array.from(newHost.querySelectorAll('button')).find(button => button.textContent?.includes('确认写入'))!.click())
-    await act(async () => Array.from(newHost.querySelectorAll('button')).find(button => button.textContent?.includes('取消'))!.click())
+    expect(newHost.textContent).toContain('result.willCreateVolumes')
+    await act(async () => Array.from(newHost.querySelectorAll('button')).find(button => button.textContent?.includes('previewPanel.confirmWrite'))!.click())
+    await act(async () => Array.from(newHost.querySelectorAll('button')).find(button => button.textContent?.includes('cancel'))!.click())
     expect(onConfirmVolumes).toHaveBeenCalledOnce()
     expect(onCancelPreview).toHaveBeenCalledOnce()
 
@@ -64,7 +64,7 @@ describe('AUDIT-6 · 大纲生成结果视图', () => {
       previewVolumes: [{ title: '第一卷', summary: '补全' }],
       previewTargetId: 7,
     })
-    expect(targetHost.textContent).toContain('将补全当前卷的卷纲')
+    expect(targetHost.textContent).toContain('result.willCompleteVolume')
   })
 
   it('章节预览保留目标卷名称和定点补全文案', async () => {
@@ -75,8 +75,8 @@ describe('AUDIT-6 · 大纲生成结果视图', () => {
       selectedVolumeTitle: '青石卷',
       onConfirmChapters,
     })
-    expect(newHost.textContent).toContain('将在「青石卷」下创建 1 个章节')
-    await act(async () => Array.from(newHost.querySelectorAll('button')).find(button => button.textContent?.includes('确认写入'))!.click())
+    expect(newHost.textContent).toContain('result.willCreateChapters')
+    await act(async () => Array.from(newHost.querySelectorAll('button')).find(button => button.textContent?.includes('previewPanel.confirmWrite'))!.click())
     expect(onConfirmChapters).toHaveBeenCalledOnce()
 
     const targetHost = await mount({
@@ -84,6 +84,6 @@ describe('AUDIT-6 · 大纲生成结果视图', () => {
       previewChapters: [{ title: '第一章', summary: '补全' }],
       previewTargetId: 9,
     })
-    expect(targetHost.textContent).toContain('将补全当前章节的章纲')
+    expect(targetHost.textContent).toContain('result.willCompleteChapter')
   })
 })

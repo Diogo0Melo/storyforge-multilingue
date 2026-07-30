@@ -42,6 +42,7 @@ import { useCharacterRelationStore } from '../../stores/character-relation'
 import { useCharacterStore } from '../../stores/character'
 import { useForeshadowStore } from '../../stores/foreshadow'
 import { syncRelationToCharacterFields } from '../relations/relationship-summary'
+import i18n from '../../i18n/i18n'
 
 export const CHAPTER_ORGANIZATION_VERSION = 1
 export const CHAPTER_ORGANIZATION_PAYLOAD_TYPE = 'chapter-organization'
@@ -414,7 +415,7 @@ export async function runChapterOrganization(input: {
     sourceTextHash,
     budget: input.budget.snapshot(),
   })
-  if (!candidate) throw new Error('整理本章返回的 JSON 无法解析；没有写入任何项目数据。')
+  if (!candidate) throw new Error(i18n.t('common:errors.agent.chapterOrganizationParseFailed'))
   return candidate
 }
 
@@ -491,7 +492,7 @@ export async function updateChapterOrganizationRun(input: {
     || input.candidate.projectId !== input.run.event.projectId
     || input.candidate.chapterId !== input.run.candidate.chapterId
   ) {
-    throw new Error('整理本章运行记录不存在或范围不匹配。')
+    throw new Error(i18n.t('common:errors.agent.chapterOrganizationRunMismatch'))
   }
   const now = Date.now()
   return db.transaction('rw', db.agentConversations, db.agentEvents, async () => {
@@ -592,7 +593,7 @@ export async function adoptChapterOrganizationSelection(input: {
   selection: ChapterOrganizationSelection
 }): Promise<ChapterOrganizationAdoptionResult> {
   if (!await isChapterOrganizationCurrent(input.run.candidate)) {
-    throw new Error('章节正文已变化，这批整理候选已过期；请重新运行“整理本章”。')
+    throw new Error(i18n.t('common:errors.agent.chapterOrganizationStale'))
   }
   const candidate: ChapterOrganizationCandidate = {
     ...input.run.candidate,
@@ -745,7 +746,7 @@ export async function adoptChapterOrganizationSelection(input: {
         || current.status !== update.fromStatus
         || !FORESHADOW_TRANSITIONS[current.status].includes(update.toStatus)
       ) {
-        throw new Error(`伏笔“${update.name}”状态已变化，未覆盖当前数据。`)
+        throw new Error(i18n.t('common:errors.agent.foreshadowStatusChanged', { name: update.name }))
       }
     })
     let count = 0

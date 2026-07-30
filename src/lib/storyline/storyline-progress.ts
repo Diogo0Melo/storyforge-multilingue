@@ -17,6 +17,7 @@ import { adopt } from '../registry/adopt'
 import { db } from '../db/schema'
 import { htmlToPlainText } from '../utils/html'
 import { resolveCanonicalChapterSequence } from '../ai/chapter-memory/canonical-chapter-sequence'
+import i18n from '../../i18n/i18n'
 
 export interface StorylineProgressCandidate {
   kind: 'progress'
@@ -222,7 +223,7 @@ export async function acceptStorylineCrossingCandidate(args: {
   chapterId: number
   candidate: StorylineCrossingCandidate
 }): Promise<number> {
-  if (args.candidate.arcIdA === args.candidate.arcIdB) throw new Error('故事线不能与自身交汇')
+  if (args.candidate.arcIdA === args.candidate.arcIdB) throw new Error(i18n.t('common:errors.storyline.selfCrossing'))
   const chapter = await assertChapterEvidence(
     args.projectId,
     args.chapterId,
@@ -258,7 +259,7 @@ export async function acceptNewStorylineCandidate(args: {
 }): Promise<number> {
   const existing = await db.storyArcs.where('projectId').equals(args.projectId).toArray()
   if (existing.some(arc => normalizeName(arc.name) === normalizeName(args.candidate.name))) {
-    throw new Error('同名故事线已登记，请重新映射后再处理')
+    throw new Error(i18n.t('common:errors.storyline.duplicateArcName'))
   }
   const result = await adopt({
     projectId: args.projectId,
@@ -334,17 +335,17 @@ export async function readStorylineProgressContext(
 
 async function assertArcStageBoundary(projectId: number, arcId: number, stageId: string | null): Promise<void> {
   const arc = await db.storyArcs.get(arcId)
-  if (!arc || arc.projectId !== projectId) throw new Error('故事线不存在或不属于当前项目')
+  if (!arc || arc.projectId !== projectId) throw new Error(i18n.t('common:errors.storyline.arcNotFound'))
   if (stageId != null && !parseStages(arc.stages).some(stage => stage.id === stageId)) {
-    throw new Error('阶段不属于目标故事线')
+    throw new Error(i18n.t('common:errors.storyline.stageNotInArc'))
   }
 }
 
 async function assertChapterEvidence(projectId: number, chapterId: number, quote: string) {
   const chapter = await db.chapters.get(chapterId)
-  if (!chapter || chapter.projectId !== projectId) throw new Error('章节不存在或不属于当前项目')
+  if (!chapter || chapter.projectId !== projectId) throw new Error(i18n.t('common:errors.storyline.chapterNotFound'))
   const content = htmlToPlainText(chapter.content || '')
-  if (!isExactQuote(content, quote)) throw new Error('正文已变化，候选证据不再成立，请重新映射')
+  if (!isExactQuote(content, quote)) throw new Error(i18n.t('common:errors.storyline.evidenceStale'))
   return chapter
 }
 
@@ -354,7 +355,7 @@ function requireWrittenId(result: Awaited<ReturnType<typeof adopt>>, label: stri
     const reason = result.skipped[0]?.reason
       || result.fkErrors.map(item => `${item.field}=${String(item.refValue)}`).join(', ')
       || '未知原因'
-    throw new Error(`${label}采纳失败：${reason}`)
+    throw new Error(i18n.t('common:errors.storyline.adoptionFailed', { label, reason }))
   }
   return id
 }

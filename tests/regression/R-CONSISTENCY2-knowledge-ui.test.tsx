@@ -49,10 +49,10 @@ describe('CONSISTENCY-2 · 角色认知用户出口', () => {
       await new Promise(resolve => setTimeout(resolve, 0))
     })
 
-    expect(host.textContent).toContain('角色认知账本')
+    expect(host.textContent).toContain('facts.knowledge.title')
     expect(host.textContent).toContain('黑衣人是城主')
     expect(host.textContent).toContain('enemy.true_identity')
-    expect(host.querySelector('button[title="确认事件"]')).not.toBeNull()
-    expect(host.querySelector('button[title="否决事件"]')).not.toBeNull()
+    expect(host.querySelector('button[title="facts.knowledge.confirmAria"]')).not.toBeNull()
+    expect(host.querySelector('button[title="facts.knowledge.rejectAria"]')).not.toBeNull()
   })
 })

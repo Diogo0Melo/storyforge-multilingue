@@ -18,6 +18,7 @@ import {
 } from '../fact-ledger/setting-assertions'
 import type { AssembleContextResult } from '../registry/types'
 import type { ChatMessage, TemporalFact } from '../types'
+import i18n from '../../i18n/i18n'
 
 export const OUTLINE_WORKSHOP_STAGES = [
   'scan',
@@ -54,10 +55,10 @@ export function confirmWorkshopArtifact(
   const index = OUTLINE_WORKSHOP_STAGES.indexOf(stage)
   for (const required of OUTLINE_WORKSHOP_STAGES.slice(0, index)) {
     if (!artifacts[required]?.trim()) {
-      throw new Error(`必须先确认“${OUTLINE_WORKSHOP_STAGE_META[required].title}”。`)
+      throw new Error(i18n.t('common:errors.outline.mustConfirmStage', { stage: OUTLINE_WORKSHOP_STAGE_META[required].title }))
     }
   }
-  if (!output.trim()) throw new Error('当前节点没有可确认的产物。')
+  if (!output.trim()) throw new Error(i18n.t('common:errors.outline.noArtifactToConfirm'))
   return {
     artifacts: { ...artifacts, [stage]: output.trim() },
     nextStage: OUTLINE_WORKSHOP_STAGES[index + 1] ?? null,

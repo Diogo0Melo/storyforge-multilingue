@@ -29,8 +29,8 @@ async function mount(patch: Record<string, unknown> = {}) {
     stormAI: stream(),
     savedConsult: undefined,
     savedStorm: undefined,
-    savedStormLabel: 'AI 头脑风暴结果',
-    deleteLabel: '删除事件',
+    savedStormLabel: 'history.agentStormResult',
+    deleteLabel: 'history.deleteEvent',
     onConsult: vi.fn(),
     onStorm: vi.fn(),
     onDelete: vi.fn(),
@@ -64,10 +64,10 @@ afterEach(async () => {
 
 describe('AUDIT-6 · 历史双 agent 工作区视图', () => {
   it('转发考据、风暴与删除命令，并保留条目类型文案', async () => {
-    const { host, props } = await mount({ deleteLabel: '删除关键词' })
-    await act(async () => button(host, 'AI 历史考据').click())
-    await act(async () => button(host, 'AI 头脑风暴').click())
-    await act(async () => button(host, '删除关键词').click())
+    const { host, props } = await mount({ deleteLabel: 'history.deleteKeyword' })
+    await act(async () => button(host, 'history.agentConsult').click())
+    await act(async () => button(host, 'history.agentStorm').click())
+    await act(async () => button(host, 'history.deleteKeyword').click())
     expect(props.onConsult).toHaveBeenCalledOnce()
     expect(props.onStorm).toHaveBeenCalledOnce()
     expect(props.onDelete).toHaveBeenCalledOnce()
@@ -79,9 +79,9 @@ describe('AUDIT-6 · 历史双 agent 工作区视图', () => {
       consultPreparing: true,
       stormAI: stream({ isStreaming: true }),
     })
-    expect(button(host, 'AI 历史考据').disabled).toBe(true)
-    expect(button(host, 'AI 头脑风暴').disabled).toBe(true)
-    expect(host.textContent).not.toContain('删除事件')
+    expect(button(host, 'history.agentConsult').disabled).toBe(true)
+    expect(button(host, 'history.agentStorm').disabled).toBe(true)
+    expect(host.textContent).not.toContain('history.deleteEvent')
   })
 
   it('活动输出隐藏同类已保存结果，采纳与重试仍转发当前条目动作', async () => {
@@ -96,8 +96,8 @@ describe('AUDIT-6 · 历史双 agent 工作区视图', () => {
     })
     expect(host.textContent).toContain('本轮考据输出')
     expect(host.textContent).not.toContain('旧考据结果')
-    await act(async () => button(host, '采纳').click())
-    await act(async () => button(host, '重试').click())
+    await act(async () => button(host, 'aiStream.adopt').click())
+    await act(async () => button(host, 'retry').click())
     expect(onAcceptConsult).toHaveBeenCalledWith('本轮考据输出')
     expect(onConsult).toHaveBeenCalledOnce()
   })
@@ -113,9 +113,9 @@ describe('AUDIT-6 · 历史双 agent 工作区视图', () => {
       onClearConsult,
       onClearStorm,
     })
-    expect(host.textContent).toContain('AI 历史考据结果')
+    expect(host.textContent).toContain('history.agentConsultResult')
     expect(host.textContent).toContain('AI 时代细节库')
-    const clearButtons = Array.from(host.querySelectorAll('button')).filter(item => item.textContent?.trim() === '清除')
+    const clearButtons = Array.from(host.querySelectorAll('button')).filter(item => item.textContent?.trim() === 'history.clear')
     expect(clearButtons).toHaveLength(2)
     await act(async () => clearButtons[0].click())
     await act(async () => clearButtons[1].click())

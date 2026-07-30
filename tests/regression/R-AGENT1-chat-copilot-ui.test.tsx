@@ -96,17 +96,17 @@ describe('AGENT-2 · 单一主 Agent 对话入口', () => {
       onClose: vi.fn(),
     })))
 
-    expect(host.querySelector('aside')?.getAttribute('aria-label')).toBe('主 Agent 创作副驾')
-    expect(host.textContent).toContain('主 Agent')
-    expect(host.textContent).toContain('单一对话入口')
-    expect(host.textContent).toContain('幕后调度领域 Agent')
-    expect(host.textContent).toContain('待确认 · 世界来源')
-    expect(host.textContent).toContain('2 个输入来源')
+    expect(host.querySelector('aside')?.getAttribute('aria-label')).toBe('agent.chat.ariaLabel')
+    expect(host.textContent).toContain('agent.chat.title')
+    expect(host.textContent).toContain('agent.chat.singleEntry')
+    expect(host.textContent).toContain('agent.chat.banner')
+    expect(host.textContent).toContain('agent.chat.pendingConfirm')
+    expect(host.textContent).toContain('agent.chat.inputSources')
     expect(host.textContent).not.toContain('角色生成')
     expect(host.textContent).not.toContain('灵感反推')
 
     const candidate = host.querySelector<HTMLTextAreaElement>(
-      'textarea[aria-label="世界来源候选内容"]',
+      'textarea[aria-label="agent.chat.candidateAria"]',
     )!
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(
@@ -119,8 +119,8 @@ describe('AGENT-2 · 单一主 Agent 对话入口', () => {
     expect(mocks.updateCandidate).toHaveBeenCalledWith(3, '作者修订后的候选')
 
     const buttons = Array.from(host.querySelectorAll('button'))
-    await act(async () => buttons.find(button => button.textContent?.includes('拒绝'))!.click())
-    await act(async () => buttons.find(button => button.textContent?.includes('采纳'))!.click())
+    await act(async () => buttons.find(button => button.textContent?.includes('agent.chat.reject'))!.click())
+    await act(async () => buttons.find(button => button.textContent?.includes('agent.chat.adopt'))!.click())
     expect(mocks.rejectCandidate).toHaveBeenCalledTimes(1)
     expect(mocks.adoptCandidate).toHaveBeenCalledTimes(1)
   })

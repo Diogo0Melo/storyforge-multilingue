@@ -15,6 +15,7 @@ import {
   refreshSettingAssertionSourceStatus,
 } from '../fact-ledger/setting-assertions'
 import type { CanonAssertionSourceTable } from './canon-assertion-source-registry'
+import i18n from '../../i18n/i18n'
 
 const CANON_SOURCE_TABLES = new Set<CanonAssertionSourceTable>([
   'worldviews',
@@ -48,7 +49,7 @@ export async function adopt(input: AdoptInput): Promise<AdoptResult> {
   }
 
   const tableSpec = REGISTRY_BY_NAME.get(input.target)
-  if (!tableSpec) throw new Error(`[adopt] target ${input.target} 不在 PROJECT_TABLES`)
+  if (!tableSpec) throw new Error(i18n.t('common:errors.registry.targetNotInProjectTables', { target: input.target }))
 
   if (input.recordId != null) {
     return adoptCollectionRecord(input, fieldSpecs, tableSpec, result)
@@ -72,19 +73,19 @@ export async function clearAdoptedCollection(input: {
   const tableSpec = REGISTRY_BY_NAME.get(input.target)
   const fields = FIELD_BY_TARGET.get(input.target) ?? []
   if (!adoption || !tableSpec || !adoption.replaceScope?.length) {
-    throw new Error(`[adopt] target ${input.target} 未登记 replaceScope`)
+    throw new Error(i18n.t('common:errors.registry.targetNoReplaceScope', { target: input.target }))
   }
 
   const result = emptyResult()
   const normalized = normalizeAndValidate(input.scope, fields, result)
   if (!normalized || result.unknown.length || result.typeErrors.length) {
-    throw new Error(`[adopt] ${input.target} replaceScope 非法`)
+    throw new Error(i18n.t('common:errors.registry.replaceScopeInvalid', { target: input.target }))
   }
   for (const field of adoption.replaceScope) {
-    if (normalized[field] == null) throw new Error(`[adopt] ${input.target} replaceScope 缺少 ${field}`)
+    if (normalized[field] == null) throw new Error(i18n.t('common:errors.registry.replaceScopeMissingField', { target: input.target, field }))
   }
   if (!await applyFkChecks(normalized, input.scope, adoption, result, input.projectId)) {
-    throw new Error(`[adopt] ${input.target} replaceScope FK 不属于当前项目`)
+    throw new Error(i18n.t('common:errors.registry.replaceScopeFkInvalid', { target: input.target }))
   }
 
   const rows = await rowsForProject(input.projectId, tableSpec)
@@ -109,7 +110,7 @@ export async function replaceAdoptedCollection(input: {
   const adoption = ADOPTION_BY_TARGET.get(input.target)
   const tableSpec = REGISTRY_BY_NAME.get(input.target)
   if (!adoption || !tableSpec || !adoption.replaceScope?.length) {
-    throw new Error(`[adopt] target ${input.target} 未登记 replaceScope`)
+    throw new Error(i18n.t('common:errors.registry.targetNoReplaceScope', { target: input.target }))
   }
   const relatedTables = (adoption.fkChecks ?? [])
     .map(check => REGISTRY_BY_NAME.get(check.target)?.table)
@@ -129,7 +130,7 @@ export async function replaceAdoptedCollection(input: {
     })
     if (result.written.length !== input.data.length) {
       throw new Error(
-        `[adopt] ${input.target} 整批替换未完整写入（${result.written.length}/${input.data.length}），已回滚。`,
+        i18n.t('common:errors.registry.batchReplaceIncomplete', { target: input.target, written: result.written.length, total: input.data.length }),
       )
     }
     return result
@@ -318,7 +319,7 @@ async function adoptCollection(
   result: AdoptResult,
 ): Promise<AdoptResult> {
   const adoption = ADOPTION_BY_TARGET.get(input.target)
-  if (!adoption) throw new Error(`[adopt] target ${input.target} 是集合写回但未在 ADOPTION_SCHEMAS 登记`)
+  if (!adoption) throw new Error(i18n.t('common:errors.registry.targetNotInAdoptionSchemas', { target: input.target }))
   if (adoption.recordOnly) {
     result.skipped.push({ reason: `target ${input.target} 仅允许 recordId 定点更新`, data: input.data })
     return result
@@ -359,7 +360,7 @@ async function adoptCollection(
         await refreshCanonSourceAfterWrite(input.target, input.projectId, existing.id, Object.keys(patch))
         result.written.push({ id: existing.id, fields: Object.keys(patch) })
       } else {
-        throw new Error(`[adopt] 重复记录 ${input.target}.${JSON.stringify(identityValue(item, adoption))}`)
+        throw new Error(i18n.t('common:errors.registry.duplicateRecord', { target: input.target, identity: JSON.stringify(identityValue(item, adoption)) }))
       }
     } else {
       const id = await tableSpec.table.add(item as any) as number

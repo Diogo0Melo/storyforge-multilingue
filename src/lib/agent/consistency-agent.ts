@@ -33,6 +33,7 @@ import {
   AgentTeamBudgetTracker,
   type AgentTeamBudgetEvidence,
 } from './team-budget'
+import i18n from '../../i18n/i18n'
 
 export const CONSISTENCY_AGENT_VERSION = 1
 export const CONSISTENCY_AGENT_PAYLOAD_TYPE = 'consistency-agent'
@@ -256,7 +257,7 @@ export async function runConsistencyAgent(input: {
     evidenceContext: evidence.text,
   })
   if (!parsed) {
-    throw new Error('一致性 Agent 返回的 JSON 无法解析；没有保存不完整报告。')
+    throw new Error(i18n.t('common:errors.agent.consistencyParseFailed'))
   }
   const cognitionFindings = checkCognitionBoundary(
     chapterText,

@@ -31,6 +31,7 @@ import {
   type AgentContextEvidence,
   type AgentContextProfile,
 } from './context-policy'
+import i18n from '../../i18n/i18n'
 
 export const OUTLINE_COPILOT_SOURCE_KEYS = [
   'canonAssertions',
@@ -104,7 +105,7 @@ const MAX_SUMMARY_CHARS = 8_000
 
 export class OutlineCopilotStaleError extends Error {
   constructor() {
-    super('大纲已在候选生成后发生变化。为避免覆盖或错位追加，请重新生成候选。')
+    super(i18n.t('common:errors.agent.outlineStale'))
     this.name = 'OutlineCopilotStaleError'
   }
 }
@@ -177,8 +178,8 @@ async function readSnapshot(
 
 function assertAuthorRequest(value: string): string {
   const request = value.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的大纲要求。')
-  if (request.length > 2000) throw new Error('单次大纲要求不能超过 2000 个字符。')
+  if (request.length < 2) throw new Error(i18n.t('common:errors.agent.outlineMinChars'))
+  if (request.length > 2000) throw new Error(i18n.t('common:errors.agent.outlineMaxChars'))
   return request
 }
 
@@ -197,9 +198,9 @@ function chooseTargetVolume(request: string, volumes: OutlineNode[]): OutlineNod
 
 function parseStrictArray(draft: string): unknown[] {
   const input = draft.trim()
-  if (!input) throw new Error('大纲候选为空。')
+  if (!input) throw new Error(i18n.t('common:errors.agent.outlineCandidateEmpty'))
   if (input.length > MAX_CANDIDATE_CHARS) {
-    throw new Error(`大纲候选超过 ${MAX_CANDIDATE_CHARS} 字符。`)
+    throw new Error(i18n.t('common:errors.agent.outlineCandidateTooLong', { max: MAX_CANDIDATE_CHARS }))
   }
   const fenced = /^```(?:json)?\s*([\s\S]*?)```\s*$/i.exec(input)
   const candidate = fenced?.[1]?.trim() ?? input
@@ -210,17 +211,17 @@ function parseStrictArray(draft: string): unknown[] {
     try {
       parsed = JSON5.parse(candidate)
     } catch {
-      throw new Error('大纲候选不是有效的 JSON 数组。')
+      throw new Error(i18n.t('common:errors.agent.outlineCandidateInvalidJson'))
     }
   }
-  if (!Array.isArray(parsed)) throw new Error('大纲候选必须是 JSON 数组。')
+  if (!Array.isArray(parsed)) throw new Error(i18n.t('common:errors.agent.outlineCandidateMustBeArray'))
   return parsed
 }
 
 export function parseOutlineCandidateDraft(draft: string): GeneratedOutlineItem[] {
   const rows = parseStrictArray(draft)
-  if (!rows.length) throw new Error('大纲候选至少需要一项。')
-  if (rows.length > MAX_ITEMS) throw new Error(`单次大纲候选不能超过 ${MAX_ITEMS} 项。`)
+  if (!rows.length) throw new Error(i18n.t('common:errors.agent.outlineCandidateMinItems'))
+  if (rows.length > MAX_ITEMS) throw new Error(i18n.t('common:errors.agent.outlineCandidateMaxItems', { max: MAX_ITEMS }))
   const result = rows.map((row, index) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) {
       throw new Error(`大纲候选第 ${index + 1} 项必须是对象。`)
@@ -274,7 +275,7 @@ function candidateIssues(
 
 function generationRequest(input: OutlineCopilotInput): OutlineGenerationRequest {
   if (input.mode === 'volumes') return { kind: 'volumes' }
-  if (input.parentVolumeId == null) throw new Error('章节大纲缺少目标卷。')
+  if (input.parentVolumeId == null) throw new Error(i18n.t('common:errors.agent.outlineMissingVolume'))
   return { kind: 'chapters', volumeId: input.parentVolumeId }
 }
 
@@ -322,7 +323,7 @@ async function adoptCandidate(input: {
       startingOrder: current.startingOrder,
     })
     if (result.writtenCount !== input.items.length || result.skippedReasons.length) {
-      throw new Error(`大纲候选只写入 ${result.writtenCount}/${input.items.length} 项，已回滚。`)
+      throw new Error(i18n.t('common:errors.agent.outlinePartialWrite', { written: result.writtenCount, total: input.items.length }))
     }
     return result
   })
@@ -352,9 +353,9 @@ export async function prepareOutlineCopilot(input: {
   signal?: AbortSignal
 }): Promise<PreparedOutlineCopilot> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(i18n.t('common:errors.agent.projectNotFound'))
   if (project.enableMultiWorld && input.worldGroupId == null) {
-    throw new Error('多世界项目必须先选择一个世界，才能生成大纲。')
+    throw new Error(i18n.t('common:errors.agent.outlineMultiWorldRequired'))
   }
   const worldGroupId = project.enableMultiWorld ? input.worldGroupId : null
   const request = assertAuthorRequest(input.authorRequest)
@@ -365,7 +366,7 @@ export async function prepareOutlineCopilot(input: {
     .sort((left, right) => left.order - right.order)
   const mode = determineMode(request, volumes)
   const targetVolume = mode === 'chapters' ? chooseTargetVolume(request, volumes) : null
-  if (mode === 'chapters' && !targetVolume?.id) throw new Error('当前世界没有可展开的卷纲。')
+  if (mode === 'chapters' && !targetVolume?.id) throw new Error(i18n.t('common:errors.agent.outlineNoExpandableVolume'))
 
   const parentVolumeId = targetVolume?.id ?? null
   const before = snapshotOf(allNodes, worldGroupId, mode, parentVolumeId)

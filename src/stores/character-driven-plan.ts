@@ -11,6 +11,7 @@ import {
   stringifyCharacterDrivenPlanArcs,
   stringifyCharacterDrivenPlotVolumes,
 } from '../lib/types'
+import i18n from '../i18n/i18n'
 
 interface CharacterDrivenPlanStore {
   plans: CharacterDrivenPlan[]
@@ -91,7 +92,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
 
   copyAsNewVersion: async (id) => {
     const source = get().plans.find(plan => plan.id === id) ?? await db.characterDrivenPlans.get(id)
-    if (!source?.id) throw new Error('来源方案不存在')
+    if (!source?.id) throw new Error(i18n.t('common:errors.plan.sourcePlanNotFound'))
     const ts = now()
     const version = Math.max(1, source.version) + 1
     const copy: CharacterDrivenPlan = {
@@ -123,7 +124,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
 
   saveInputs: async (id, input) => {
     const plan = get().plans.find(item => item.id === id) ?? await db.characterDrivenPlans.get(id)
-    if (!plan) throw new Error('方案不存在')
+    if (!plan) throw new Error(i18n.t('common:errors.plan.planNotFound'))
     const validCharacterIds = new Set(
       (await db.characters.where('projectId').equals(plan.projectId).primaryKeys()) as number[],
     )
@@ -145,7 +146,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
 
   saveGenerated: async (id, volumes) => {
     const parsed = parseCharacterDrivenPlotVolumes(volumes)
-    if (parsed.length === 0) throw new Error('生成结果没有可保存的有效卷')
+    if (parsed.length === 0) throw new Error(i18n.t('common:errors.plan.noValidVolumes'))
     const patch: Partial<CharacterDrivenPlan> = {
       generatedVolumes: stringifyCharacterDrivenPlotVolumes(parsed),
       status: 'generated',
@@ -164,7 +165,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
   setActivePlan: async (projectId, id) => {
     if (id != null) {
       const plan = get().plans.find(item => item.id === id) ?? await db.characterDrivenPlans.get(id)
-      if (!plan || plan.projectId !== projectId) throw new Error('不能激活其它项目的角色驱动方案')
+      if (!plan || plan.projectId !== projectId) throw new Error(i18n.t('common:errors.plan.cannotActivateOtherProject'))
     }
     await db.projects.update(projectId, {
       activeCharacterDrivenPlanId: id,

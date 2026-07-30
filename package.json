@@ -23,6 +23,7 @@
     "gen:project-metrics": "node scripts/generate-project-metrics.mjs",
     "check:project-metrics": "node scripts/generate-project-metrics.mjs --check",
     "gen:ai-manual": "node scripts/generate-ai-manual.mjs",
+    "i18n:types": "node scripts/generate-i18n-types.mjs",
     "check:ai-manual": "node scripts/generate-ai-manual.mjs --check",
     "check:architecture": "node scripts/check-architecture.mjs",
     "lint": "eslint . --max-warnings=0",

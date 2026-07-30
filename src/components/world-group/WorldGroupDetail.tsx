@@ -148,21 +148,21 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
       <div className="pb-4 border-b border-border/40">
         <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
           <span className="text-2xl">{form.icon}</span>
-          {form.name || '未命名世界'}
+          {form.name || t('worldGroup.unnamedWorld')}
         </h2>
         <p className="text-xs text-text-muted mt-0.5">
           {WORLD_GROUP_TYPE_LABELS[form.type]}
-          {form.plannedChapterCount ? ` · 预计 ${form.plannedChapterCount} 章` : ''}
+          {form.plannedChapterCount ? ` · ${t('worldGroupDetail.plannedChapters', { count: form.plannedChapterCount })}` : ''}
         </p>
       </div>
 
       {/* 基础信息 */}
       <section className="bg-bg-surface border border-border rounded-lg p-4 space-y-4">
-        <h3 className="text-sm font-semibold text-text-primary">基础信息</h3>
+        <h3 className="text-sm font-semibold text-text-primary">{t('worldGroup.basicInfo')}</h3>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs text-text-muted mb-1">世界名称</label>
+            <label className="block text-xs text-text-muted mb-1">{t('worldGroup.worldName')}</label>
             <CInput
               value={form.name}
               onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
@@ -170,7 +170,7 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
             />
           </div>
           <div>
-            <label className="block text-xs text-text-muted mb-1">世界类型</label>
+            <label className="block text-xs text-text-muted mb-1">{t('worldGroup.worldType')}</label>
             <select
               value={form.type}
               onChange={e => setForm(f => ({ ...f, type: e.target.value as WorldGroupType }))}
@@ -185,19 +185,19 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
         </div>
 
         <div>
-          <label className="block text-xs text-text-muted mb-1">世界描述</label>
+          <label className="block text-xs text-text-muted mb-1">{t('worldGroup.worldDescription')}</label>
           <CTextarea
             value={form.description}
             onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
             rows={3}
-            placeholder="这个世界的核心特征、氛围、独特之处..."
+              placeholder={t('worldGroup.worldDescriptionPlaceholder')}
             className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent transition-colors resize-none"
           />
         </div>
 
         <div className="flex items-center gap-4">
           <div>
-            <label className="block text-xs text-text-muted mb-1">图标</label>
+            <label className="block text-xs text-text-muted mb-1">{t('worldGroup.icon')}</label>
             <div className="flex flex-wrap gap-1">
               {EMOJI_OPTIONS.map(e => (
                 <button
@@ -213,7 +213,7 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
             </div>
           </div>
           <div>
-            <label className="block text-xs text-text-muted mb-1">预计章节数</label>
+            <label className="block text-xs text-text-muted mb-1">{t('worldGroup.plannedChapterCount')}</label>
             <CInput
               type="number"
               min={0}
@@ -229,48 +229,48 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
       {/* 穿越规则（非主世界才显示） */}
       {!isPrimary && (
         <section className="bg-bg-surface border border-border rounded-lg p-4 space-y-4">
-          <h3 className="text-sm font-semibold text-text-primary">🚪 穿越规则</h3>
+          <h3 className="text-sm font-semibold text-text-primary">{t('worldGroup.traversalRules')}</h3>
 
           <div>
-            <label className="block text-xs text-text-muted mb-1">进入条件</label>
+            <label className="block text-xs text-text-muted mb-1">{t('worldGroup.entryConditionLabel')}</label>
             <CTextarea
               value={form.entryCondition}
               onChange={e => setForm(f => ({ ...f, entryCondition: e.target.value }))}
               rows={2}
-              placeholder="例如：主线触发，主角实力达到斗皇..."
+              placeholder={t('worldGroup.entryConditionPlaceholder')}
               className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent transition-colors resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-text-muted mb-1">能力限制</label>
+            <label className="block text-xs text-text-muted mb-1">{t('worldGroup.powerRestrictionLabel')}</label>
             <CTextarea
               value={form.powerRestriction}
               onChange={e => setForm(f => ({ ...f, powerRestriction: e.target.value }))}
               rows={2}
-              placeholder="例如：修为压制至斗者，仅保留精神力..."
+              placeholder={t('worldGroup.powerRestrictionPlaceholder')}
               className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent transition-colors resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-text-muted mb-1">可带走的能力/物品</label>
+            <label className="block text-xs text-text-muted mb-1">{t('worldGroup.takeawayRules')}</label>
             <CTextarea
               value={form.takeawayRules}
               onChange={e => setForm(f => ({ ...f, takeawayRules: e.target.value }))}
               rows={2}
-              placeholder="例如：异火（最多一种）、炼药术..."
+              placeholder={t('worldGroup.takeawayRulesPlaceholder')}
               className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent transition-colors resize-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs text-text-muted mb-1">离开条件</label>
+            <label className="block text-xs text-text-muted mb-1">{t('worldGroup.exitCondition')}</label>
             <CTextarea
               value={form.exitCondition}
               onChange={e => setForm(f => ({ ...f, exitCondition: e.target.value }))}
               rows={2}
-              placeholder="例如：完成主线任务后自动返回..."
+              placeholder={t('worldGroup.exitConditionPlaceholder')}
               className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent transition-colors resize-none"
             />
           </div>

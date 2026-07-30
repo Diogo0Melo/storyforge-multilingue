@@ -2,15 +2,10 @@ import { useTranslation } from 'react-i18next'
 
 export type WorldviewOriginFieldKey = 'origin' | 'power' | 'divine'
 
-export const WORLDVIEW_ORIGIN_FIELDS: Array<{
-  key: WorldviewOriginFieldKey
-  label: string
-  icon: string
-  desc: string
-}> = [
-  { key: 'origin', label: '世界来源', icon: '🌌', desc: '创世神话 / 历史时期 / 文明起源……世界从何而来？' },
-  { key: 'power', label: '力量体系', icon: '⚡', desc: '修真等级 / 社会等级 / 科技层级……力量如何分层、怎么晋升？' },
-  { key: 'divine', label: '神明与信仰', icon: '🌟', desc: '是否存在神明或宗教？神明 / 信仰的层级、名号、规则与限制。' },
+export const WORLDVIEW_ORIGIN_FIELDS = [
+  { key: 'origin' as WorldviewOriginFieldKey, label: '世界来源', icon: '🌌', desc: 'origin.fieldOriginDesc' as const },
+  { key: 'power' as WorldviewOriginFieldKey, label: '力量体系', icon: '⚡', desc: 'origin.fieldPowerDesc' as const },
+  { key: 'divine' as WorldviewOriginFieldKey, label: '神明与信仰', icon: '🌟', desc: 'origin.fieldDivineDesc' as const },
 ]
 
 const FIELD_LABEL_KEYS = {
@@ -26,7 +21,7 @@ interface Props {
 }
 
 export default function WorldviewOriginSidebar({ active, streamingKeys, onSelect }: Props) {
-  const { t } = useTranslation('worlds')
+  const { t } = useTranslation(['worlds', 'panels'])
   return (
     <div className="w-fit min-w-32 max-w-44 shrink-0 space-y-0.5 pt-1">
       {WORLDVIEW_ORIGIN_FIELDS.map(field => {
@@ -39,6 +34,7 @@ export default function WorldviewOriginSidebar({ active, streamingKeys, onSelect
             onClick={() => onSelect(field.key)}
             aria-label={label}
             aria-pressed={isActive}
+            title={t(field.desc)}
             className={`w-full flex items-center gap-2.5 px-2 py-2.5 rounded-lg text-left transition-all ${
               isActive
                 ? 'bg-accent/8 border-l-2 border-accent'
@@ -47,7 +43,7 @@ export default function WorldviewOriginSidebar({ active, streamingKeys, onSelect
             <span className="text-base shrink-0">{field.icon}</span>
             <span className={`text-sm font-medium truncate flex-1 ${isActive ? 'text-accent' : 'text-text-primary'}`}>{label}</span>
             {isFieldStreaming && !isActive && (
-              <span aria-label={t('origin.generating', { label })} className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
+              <span aria-label={t('worlds:origin.generating', { label })} className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
             )}
           </button>
         )

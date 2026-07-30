@@ -47,7 +47,7 @@ describe('CF-20260702-11 · OpenAI-compatible 模型列表刷新', () => {
     await expect(fetchOpenAIModels({
       baseUrl: 'http://localhost:11434/v1',
       fetchImpl: fetchImpl as unknown as typeof fetch,
-    })).rejects.toThrow('模型列表响应格式无效')
+    })).rejects.toThrow('errors.ai.modelListFormatInvalid')
   })
 })
 

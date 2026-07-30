@@ -70,10 +70,10 @@ describe('HEALTH-4 · 数据管理诊断下载用户路径', () => {
     await act(async () => root.render(createElement(DataManagementPanel, { project })))
 
     const button = Array.from(host.querySelectorAll('button'))
-      .find(candidate => candidate.textContent?.includes('下载诊断信息'))
+      .find(candidate => candidate.textContent?.includes('data.mgmt.downloadDiagnostics'))
     expect(button).toBeDefined()
     await act(async () => button!.click())
-    await waitFor(() => host.textContent?.includes('诊断信息已下载') === true)
+    await waitFor(() => host.textContent?.includes('data.mgmt.diagnosticsSuccess') === true)
 
     expect(createObjectURL).toHaveBeenCalledOnce()
     expect(anchorClick).toHaveBeenCalledOnce()
@@ -84,6 +84,6 @@ describe('HEALTH-4 · 数据管理诊断下载用户路径', () => {
     expect(reportText).toContain('"includesRecordContents": false')
     expect(reportText).not.toContain('不可泄漏书名-SENTINEL')
     expect(reportText).not.toContain('sk-SENTINEL')
-    expect(host.textContent).toContain('不含作品内容与 API Key')
+    expect(host.textContent).toContain('data.mgmt.diagnosticsDesc')
   })
 })

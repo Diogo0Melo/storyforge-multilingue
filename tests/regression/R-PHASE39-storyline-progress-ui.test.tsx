@@ -124,7 +124,7 @@ describe('Phase 39 · 动态故事线作者确认 UI', () => {
     })
 
     const analyze = Array.from(host.querySelectorAll('button'))
-      .find(button => button.textContent?.includes('映射本章')) as HTMLButtonElement
+      .find(button => button.textContent?.includes('progress.mapChapter')) as HTMLButtonElement
     await act(async () => {
       analyze.click()
       await new Promise(resolve => setTimeout(resolve, 0))
@@ -135,7 +135,7 @@ describe('Phase 39 · 动态故事线作者确认 UI', () => {
     expect(await db.storylineProgress.count()).toBe(0)
 
     const accept = Array.from(host.querySelectorAll('button'))
-      .find(button => button.textContent?.trim() === '采纳') as HTMLButtonElement
+      .find(button => button.textContent?.includes('progress.accept')) as HTMLButtonElement
     await act(async () => {
       accept.click()
       await new Promise(resolve => setTimeout(resolve, 0))
@@ -143,7 +143,7 @@ describe('Phase 39 · 动态故事线作者确认 UI', () => {
     await act(async () => {
       await vi.waitFor(() => expect(db.storylineProgress.count()).resolves.toBe(1))
     })
-    expect(host.textContent).toContain('已采纳')
+    expect(host.textContent).toContain('progress.accepted')
     expect((await db.storylineProgress.toArray())[0]).toEqual(expect.objectContaining({
       arcId,
       status: 'active',

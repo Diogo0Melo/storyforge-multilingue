@@ -124,8 +124,8 @@ describe('AUDIT-6 · 历史时间线事件卡', () => {
   it('折叠态展示纪年原点、史实锚点和世界归属，并转发展开命令', async () => {
     const { host, props } = await mount()
     expect(host.textContent).toContain('星历元年 (纪年原点)')
-    expect(host.textContent).toContain('史实锚点')
-    expect(host.textContent).toContain('AI 不可违反')
+    expect(host.textContent).toContain('history.historicalAnchor')
+    expect(host.textContent).toContain('history.aiCannotViolate')
     expect(host.textContent).toContain('🌙月海界')
     expect(host.textContent).toContain('王朝改用新的纪年法')
     const toggle = Array.from(host.querySelectorAll('button')).find(item => item.textContent?.includes('开元改制'))!
@@ -136,8 +136,8 @@ describe('AUDIT-6 · 历史时间线事件卡', () => {
   it('展开态将字段、属性与章节变化转成精确 patch', async () => {
     const { host, props } = await mount({ expanded: true })
     const title = host.querySelector('input[value="开元改制"]')!
-    const era = host.querySelector('select[aria-label="历史时期"]')!
-    const year = host.querySelector('input[aria-label="数字化年份"]')!
+    const era = host.querySelector('select[aria-label="history.historicalEraAriaLabel"]')!
+    const year = host.querySelector('input[aria-label="history.digitalYearAriaLabel"]')!
     const description = host.querySelector('textarea')!
     const radios = Array.from(host.querySelectorAll('input[type="radio"]')) as HTMLInputElement[]
 
@@ -158,10 +158,10 @@ describe('AUDIT-6 · 历史时间线事件卡', () => {
 
   it('双 Agent、删除与结果清除继续转发父级命令', async () => {
     const { host, props } = await mount({ expanded: true })
-    await act(async () => button(host, 'AI 历史考据').click())
-    await act(async () => button(host, 'AI 头脑风暴').click())
-    await act(async () => button(host, '删除事件').click())
-    const clearButtons = Array.from(host.querySelectorAll('button')).filter(item => item.textContent?.trim() === '清除')
+    await act(async () => button(host, 'history.agentConsult').click())
+    await act(async () => button(host, 'history.agentStorm').click())
+    await act(async () => button(host, 'history.deleteEvent').click())
+    const clearButtons = Array.from(host.querySelectorAll('button')).filter(item => item.textContent?.trim() === 'history.clear')
     expect(clearButtons).toHaveLength(2)
     await act(async () => clearButtons[0].click())
     await act(async () => clearButtons[1].click())

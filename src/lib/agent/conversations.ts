@@ -4,6 +4,7 @@ import type {
   AgentEvent,
   AgentEventKind,
 } from '../types'
+import i18n from '../../i18n/i18n'
 
 export async function getOrCreateAgentConversation(input: {
   projectId: number
@@ -49,7 +50,7 @@ export async function appendAgentEvent(input: {
   return db.transaction('rw', db.agentConversations, db.agentEvents, async () => {
     const conversation = await db.agentConversations.get(input.conversationId)
     if (!conversation || conversation.projectId !== input.projectId) {
-      throw new Error('Agent 对话不存在或不属于当前项目。')
+      throw new Error(i18n.t('common:errors.agent.agentConversationNotFound'))
     }
     const existing = await db.agentEvents
       .where('conversationId')
@@ -85,7 +86,7 @@ export async function updateAgentEventCandidate(
 ): Promise<void> {
   const event = await db.agentEvents.get(eventId)
   if (!event || event.projectId !== projectId || event.kind !== 'candidate') {
-    throw new Error('待更新的 Agent 候选不存在。')
+    throw new Error(i18n.t('common:errors.agent.agentCandidateNotFound'))
   }
   await db.agentEvents.update(eventId, { content })
 }

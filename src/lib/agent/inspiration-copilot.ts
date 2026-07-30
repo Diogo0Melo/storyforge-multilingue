@@ -36,6 +36,7 @@ import {
   type AgentContextProfile,
 } from './context-policy'
 import { executeAgentTool } from './tool-registry'
+import i18n from '../../i18n/i18n'
 
 export type InspirationCopilotResult = ReverseResult | ReverseMultiWorldResult
 
@@ -82,7 +83,7 @@ interface InspirationCopilotDependencies {
 
 export class InspirationCopilotStaleError extends Error {
   constructor() {
-    super('灵感工作区已在候选生成后发生变化。为避免覆盖新版本，请重新生成候选。')
+    super(i18n.t('common:errors.agent.inspirationStale'))
     this.name = 'InspirationCopilotStaleError'
   }
 }
@@ -113,8 +114,8 @@ async function readWorkspaceSnapshot(projectId: number): Promise<InspirationWork
 
 function assertAuthorRequest(value: string): string {
   const request = value.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的本轮反推要求。')
-  if (request.length > 1000) throw new Error('单次反推要求不能超过 1000 个字符。')
+  if (request.length < 2) throw new Error(i18n.t('common:errors.agent.inspirationMinChars'))
+  if (request.length > 1000) throw new Error(i18n.t('common:errors.agent.inspirationMaxChars'))
   return request
 }
 
@@ -152,12 +153,12 @@ export function parseInspirationCandidateDraft(
   mode: InspirationResultMode,
 ): InspirationCopilotResult {
   const trimmed = draft.trim()
-  if (!trimmed) throw new Error('灵感反推候选为空。')
+  if (!trimmed) throw new Error(i18n.t('common:errors.agent.inspirationCandidateEmpty'))
   if (trimmed.length > MAX_INSPIRATION_RESULT_CHARS) {
-    throw new Error(`灵感反推候选超过 ${MAX_INSPIRATION_RESULT_CHARS} 字符。`)
+    throw new Error(i18n.t('common:errors.agent.inspirationCandidateTooLong', { max: MAX_INSPIRATION_RESULT_CHARS }))
   }
   const parsed = parseResult(trimmed, mode)
-  if (!parsed) throw new Error('候选不是有效的灵感反推 JSON 结构。')
+  if (!parsed) throw new Error(i18n.t('common:errors.agent.inspirationCandidateInvalidJson'))
   return parsed
 }
 
@@ -174,7 +175,7 @@ export async function prepareInspirationCopilot(input: {
   signal?: AbortSignal
 }): Promise<PreparedInspirationCopilot> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(i18n.t('common:errors.agent.inspirationProjectNotFound'))
   const mode: InspirationResultMode = project.enableMultiWorld ? 'multiworld' : 'single'
   const snapshot = await readWorkspaceSnapshot(input.projectId)
   const fragments = parseInspirationFragments(snapshot.fragments)
@@ -182,10 +183,10 @@ export async function prepareInspirationCopilot(input: {
   if (
     selectedFragmentIds.length === 0
     || selectedFragmentIds.length > MAX_INSPIRATION_FRAGMENTS
-  ) throw new Error(`请选择 1-${MAX_INSPIRATION_FRAGMENTS} 条已保存的灵感碎片。`)
+  ) throw new Error(i18n.t('common:errors.agent.inspirationFragmentRange', { max: MAX_INSPIRATION_FRAGMENTS }))
   const existingIds = new Set(fragments.map(fragment => fragment.id))
   if (selectedFragmentIds.some(id => !existingIds.has(id))) {
-    throw new Error('所选灵感碎片已不存在或不属于当前项目。')
+    throw new Error(i18n.t('common:errors.agent.inspirationFragmentNotFound'))
   }
 
   const routingCategory = input.routingCategory ?? 'inspiration.reverse'
@@ -206,7 +207,7 @@ export async function prepareInspirationCopilot(input: {
     { fragmentIds: selectedFragmentIds, mode },
   )
   if (!context.ok || !context.meta.included.includes('inspirationWorkspace')) {
-    throw new Error(context.error || '当前选择没有可用的灵感上下文。')
+    throw new Error(context.error || i18n.t('common:errors.agent.inspirationNoContext'))
   }
 
   const versions = parseInspirationVersions(snapshot.versions)
@@ -284,7 +285,7 @@ export function createInspirationCopilotNode(
         ),
     run: async messages => {
       const parsed = parseResult(await runAI(messages), input.mode)
-      if (!parsed) throw new Error('Agnes 返回内容无法解析为灵感反推结构。')
+      if (!parsed) throw new Error(i18n.t('common:errors.agent.inspirationParseFailed'))
       return parsed
     },
     gate: output => {

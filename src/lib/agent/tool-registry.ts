@@ -10,6 +10,7 @@ import type {
   AgentToolJsonSchema,
   AgentToolResult,
 } from './types'
+import i18n from '../../i18n/i18n'
 
 type ArgRules = {
   allowed: readonly string[]
@@ -233,37 +234,37 @@ function failure(spec: ReadToolSpec, error: string): AgentToolResult {
 
 function positiveInteger(value: unknown, name: string): number | undefined {
   if (value == null) return undefined
-  if (!Number.isInteger(value) || Number(value) <= 0) throw new Error(`${name} 必须是正整数`)
+  if (!Number.isInteger(value) || Number(value) <= 0) throw new Error(i18n.t('common:errors.agent.positiveIntegerRequired', { name }))
   return Number(value)
 }
 
 function validateArgs(spec: ReadToolSpec, raw: Record<string, unknown>): Record<string, unknown> {
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error('工具参数必须是对象')
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) throw new Error(i18n.t('common:errors.agent.toolArgsMustBeObject'))
   const keys = Object.keys(raw)
   const unknown = keys.filter(key => !spec.argRules.allowed.includes(key))
-  if (unknown.length) throw new Error(`不允许的参数：${unknown.join(', ')}`)
+  if (unknown.length) throw new Error(i18n.t('common:errors.agent.toolUnknownParams', { params: unknown.join(', ') }))
   const missing = (spec.argRules.required ?? []).filter(key => raw[key] == null)
-  if (missing.length) throw new Error(`缺少必填参数：${missing.join(', ')}`)
+  if (missing.length) throw new Error(i18n.t('common:errors.agent.toolMissingParams', { params: missing.join(', ') }))
 
   const args = { ...raw }
   for (const key of ['chapterId', 'outlineNodeId', 'characterId']) {
     if (key in args) args[key] = positiveInteger(args[key], key)
   }
   if ('query' in args) {
-    if (typeof args.query !== 'string') throw new Error('query 必须是字符串')
+    if (typeof args.query !== 'string') throw new Error(i18n.t('common:errors.agent.toolQueryMustBeString'))
     const query = args.query.trim()
-    if (query.length < 2 || query.length > 100) throw new Error('query 长度必须为 2-100')
+    if (query.length < 2 || query.length > 100) throw new Error(i18n.t('common:errors.agent.toolQueryLength'))
     args.query = query
   }
   if ('limit' in args) {
     const limit = positiveInteger(args.limit, 'limit')
-    if (limit != null && limit > 10) throw new Error('limit 不能大于 10')
+    if (limit != null && limit > 10) throw new Error(i18n.t('common:errors.agent.toolLimitMax'))
     args.limit = limit
   }
   if ('kinds' in args) {
     if (!Array.isArray(args.kinds) || args.kinds.some(kind => (
       typeof kind !== 'string' || !AGENT_SEARCH_KINDS.includes(kind as typeof AGENT_SEARCH_KINDS[number])
-    ))) throw new Error('kinds 含有不支持的数据类型')
+    ))) throw new Error(i18n.t('common:errors.agent.toolKindsInvalid'))
   }
   if ('fragmentIds' in args) {
     if (
@@ -271,11 +272,11 @@ function validateArgs(spec: ReadToolSpec, raw: Record<string, unknown>): Record<
       || args.fragmentIds.length === 0
       || args.fragmentIds.length > 24
       || args.fragmentIds.some(id => typeof id !== 'string' || !id.trim() || id.length > 120)
-    ) throw new Error('fragmentIds 必须包含 1-24 个有效碎片 ID')
+    ) throw new Error(i18n.t('common:errors.agent.toolFragmentIdsInvalid'))
     args.fragmentIds = [...new Set(args.fragmentIds.map(id => String(id).trim()))]
   }
   if ('mode' in args && args.mode !== 'single' && args.mode !== 'multiworld') {
-    throw new Error('mode 必须是 single 或 multiworld')
+    throw new Error(i18n.t('common:errors.agent.toolModeInvalid'))
   }
   return args
 }
@@ -287,18 +288,18 @@ async function resolveScope(
 ): Promise<AssembleContextInput> {
   const projectId = positiveInteger(context.projectId, 'projectId')!
   const project = await db.projects.get(projectId)
-  if (!project) throw new Error('项目不存在')
+  if (!project) throw new Error(i18n.t('common:errors.agent.toolProjectNotFound'))
   const fragmentIds = args.fragmentIds as string[] | undefined
   const inspirationMode = args.mode as 'single' | 'multiworld' | undefined
   if (
     inspirationMode
     && inspirationMode !== (project.enableMultiWorld ? 'multiworld' : 'single')
-  ) throw new Error('灵感反推模式与当前项目不一致')
+  ) throw new Error(i18n.t('common:errors.agent.toolInspirationModeMismatch'))
   if (fragmentIds) {
     const workspace = await db.inspirationWorkspaces.where('projectId').equals(projectId).first()
     const available = new Set(parseInspirationFragments(workspace?.fragments).map(item => item.id))
     if (fragmentIds.some(fragmentId => !available.has(fragmentId))) {
-      throw new Error('灵感碎片不存在或不属于当前项目')
+      throw new Error(i18n.t('common:errors.agent.toolFragmentNotFound'))
     }
   }
 
@@ -308,12 +309,12 @@ async function resolveScope(
     && context.worldGroupId !== undefined
   let worldGroupId = context.worldGroupId
   if (needsWorld && !explicitWorld) {
-    if (project.enableMultiWorld) throw new Error('多世界项目必须先选择世界组')
+    if (project.enableMultiWorld) throw new Error(i18n.t('common:errors.agent.toolMultiWorldGroupRequired'))
     worldGroupId = null
   }
   if (worldGroupId != null) {
     const group = await db.worldGroups.get(worldGroupId)
-    if (!group || group.projectId !== projectId) throw new Error('世界组不属于当前项目')
+    if (!group || group.projectId !== projectId) throw new Error(i18n.t('common:errors.agent.toolWorldGroupMismatch'))
   }
 
   const chapterId = args.chapterId as number | undefined
@@ -325,7 +326,7 @@ async function resolveScope(
     const visited = new Set<number>()
     let effectiveWorld: number | null = null
     while (node) {
-      if (node.projectId !== projectId) throw new Error('大纲节点不属于当前项目')
+      if (node.projectId !== projectId) throw new Error(i18n.t('common:errors.agent.toolOutlineNodeMismatch'))
       if (node.worldGroupId != null) {
         effectiveWorld = node.worldGroupId
         break
@@ -335,31 +336,31 @@ async function resolveScope(
       node = await db.outlineNodes.get(node.parentId)
     }
     if (needsWorld && effectiveWorld !== (worldGroupId ?? null)) {
-      throw new Error('大纲或章节不属于当前世界作用域')
+      throw new Error(i18n.t('common:errors.agent.toolWorldScopeMismatch'))
     }
   }
   if (chapterId != null) {
     const chapter = await db.chapters.get(chapterId)
-    if (!chapter || chapter.projectId !== projectId) throw new Error('章节不属于当前项目')
+    if (!chapter || chapter.projectId !== projectId) throw new Error(i18n.t('common:errors.agent.toolChapterMismatch'))
     chapterOutlineNodeId = chapter.outlineNodeId
     await assertOutlineWorld(chapter.outlineNodeId)
   }
   if (outlineNodeId != null) {
     const node = await db.outlineNodes.get(outlineNodeId)
-    if (!node || node.projectId !== projectId) throw new Error('大纲节点不属于当前项目')
+    if (!node || node.projectId !== projectId) throw new Error(i18n.t('common:errors.agent.toolOutlineNodeMismatch'))
     await assertOutlineWorld(outlineNodeId)
   }
   if (chapterOutlineNodeId != null && outlineNodeId != null && chapterOutlineNodeId !== outlineNodeId) {
-    throw new Error('章节与大纲节点边界不一致')
+    throw new Error(i18n.t('common:errors.agent.toolOutlineChapterMismatch'))
   }
   if (characterId != null) {
     const character = await db.characters.get(characterId)
-    if (!character || character.projectId !== projectId) throw new Error('角色不属于当前项目')
+    if (!character || character.projectId !== projectId) throw new Error(i18n.t('common:errors.agent.toolCharacterMismatch'))
     if (
       needsWorld
       && !character.isCrossWorld
       && (character.homeWorldGroupId ?? null) !== (worldGroupId ?? null)
-    ) throw new Error('角色不属于当前世界作用域')
+    ) throw new Error(i18n.t('common:errors.agent.toolCharacterWorldMismatch'))
   }
 
   return {
@@ -408,14 +409,14 @@ async function executeReadTool(
       },
     }
   } catch (error) {
-    return failure(spec, error instanceof Error ? error.message : '工具执行失败')
+    return failure(spec, error instanceof Error ? error.message : i18n.t('common:errors.agent.toolExecutionFailed'))
   }
 }
 
 export const AGENT_READ_TOOLS: readonly AgentToolDefinition[] = READ_TOOL_SPECS.map(spec => {
   for (const sourceKey of spec.sourceKeys) {
     if (!CONTEXT_SOURCE_BY_KEY.has(sourceKey)) {
-      throw new Error(`Agent 工具 ${spec.name} 引用了未注册上下文源：${sourceKey}`)
+      throw new Error(i18n.t('common:errors.agent.toolUnregisteredSource', { name: spec.name, key: sourceKey }))
     }
   }
   return {
@@ -443,7 +444,7 @@ export async function executeAgentTool(
     return {
       ok: false,
       content: '',
-      error: `未知工具：${name}`,
+      error: i18n.t('common:errors.agent.unknownTool', { name }),
       meta: emptyMeta(name, [], 0),
     }
   }

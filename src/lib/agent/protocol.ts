@@ -1,4 +1,5 @@
 import { AGENT_TOOL_BY_NAME } from './tool-registry'
+import i18n from '../../i18n/i18n'
 
 export interface AgentProtocolToolCall {
   name: string
@@ -27,41 +28,41 @@ function exactKeys(value: Record<string, unknown>, allowed: readonly string[]): 
 export function parseAgentProtocolAction(raw: string): AgentProtocolAction {
   const text = raw.trim()
   if (!text.startsWith('{') || !text.endsWith('}')) {
-    throw new Error('动作必须是单个 JSON 对象，不能包含解释文字或代码围栏')
+    throw new Error(i18n.t('common:errors.agent.protocolMustBeJson'))
   }
   let value: unknown
   try {
     value = JSON.parse(text)
   } catch {
-    throw new Error('动作不是合法 JSON')
+    throw new Error(i18n.t('common:errors.agent.protocolInvalidJson'))
   }
-  if (!isRecord(value) || typeof value.type !== 'string') throw new Error('动作缺少 type')
+  if (!isRecord(value) || typeof value.type !== 'string') throw new Error(i18n.t('common:errors.agent.protocolMissingType'))
 
   if (value.type === 'final') {
-    if (!exactKeys(value, ['type', 'answer'])) throw new Error('final 动作只允许 type 和 answer')
-    if (typeof value.answer !== 'string' || !value.answer.trim()) throw new Error('final.answer 必须是非空字符串')
+    if (!exactKeys(value, ['type', 'answer'])) throw new Error(i18n.t('common:errors.agent.protocolFinalKeysOnly'))
+    if (typeof value.answer !== 'string' || !value.answer.trim()) throw new Error(i18n.t('common:errors.agent.protocolFinalAnswerRequired'))
     return { type: 'final', answer: value.answer.trim() }
   }
 
   if (value.type === 'tool') {
-    if (!exactKeys(value, ['type', 'calls'])) throw new Error('tool 动作只允许 type 和 calls')
+    if (!exactKeys(value, ['type', 'calls'])) throw new Error(i18n.t('common:errors.agent.protocolToolKeysOnly'))
     if (!Array.isArray(value.calls) || !value.calls.length || value.calls.length > MAX_CALLS_PER_ACTION) {
-      throw new Error(`tool.calls 必须包含 1-${MAX_CALLS_PER_ACTION} 个调用`)
+      throw new Error(i18n.t('common:errors.agent.protocolToolCallsRange', { max: MAX_CALLS_PER_ACTION }))
     }
     const calls = value.calls.map((call, index): AgentProtocolToolCall => {
       if (!isRecord(call) || !exactKeys(call, ['name', 'arguments'])) {
-        throw new Error(`calls[${index}] 只允许 name 和 arguments`)
+        throw new Error(i18n.t('common:errors.agent.protocolCallKeysOnly', { index }))
       }
-      if (typeof call.name !== 'string' || !call.name.trim()) throw new Error(`calls[${index}].name 无效`)
-      if (!isRecord(call.arguments)) throw new Error(`calls[${index}].arguments 必须是对象`)
+      if (typeof call.name !== 'string' || !call.name.trim()) throw new Error(i18n.t('common:errors.agent.protocolCallNameInvalid', { index }))
+      if (!isRecord(call.arguments)) throw new Error(i18n.t('common:errors.agent.protocolCallArgsMustBeObject', { index }))
       const tool = AGENT_TOOL_BY_NAME.get(call.name)
-      if (!tool || tool.risk !== 'read') throw new Error(`calls[${index}] 不是已登记的只读工具`)
+      if (!tool || tool.risk !== 'read') throw new Error(i18n.t('common:errors.agent.protocolCallNotReadOnly', { index }))
       return { name: call.name, arguments: call.arguments }
     })
     return { type: 'tool', calls }
   }
 
-  throw new Error('type 只能是 tool 或 final')
+  throw new Error(i18n.t('common:errors.agent.protocolTypeInvalid'))
 }
 
 function parameterSummary(properties: Record<string, {

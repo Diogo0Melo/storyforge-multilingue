@@ -1,4 +1,5 @@
 import { buildOpenAIEndpoint } from './openai-endpoint'
+import i18n from '../../i18n/i18n'
 
 interface FetchOpenAIModelsOptions {
   baseUrl: string
@@ -24,12 +25,12 @@ export async function fetchOpenAIModels({
     })
 
     if (!response.ok) {
-      throw new Error(`模型列表请求失败（HTTP ${response.status}）`)
+      throw new Error(i18n.t('common:errors.ai.modelListRequestFailed', { status: response.status }))
     }
 
     const body: unknown = await response.json()
     if (!body || typeof body !== 'object' || !Array.isArray((body as { data?: unknown }).data)) {
-      throw new Error('模型列表响应格式无效，服务需兼容 OpenAI /v1/models')
+      throw new Error(i18n.t('common:errors.ai.modelListFormatInvalid'))
     }
 
     const models = (body as { data: unknown[] }).data
@@ -40,10 +41,10 @@ export async function fetchOpenAIModels({
     return [...new Set(models)].sort((left, right) => left.localeCompare(right))
   } catch (error) {
     if (error instanceof Error && error.name === 'AbortError') {
-      throw new Error('刷新模型列表超时，请确认本地模型服务已启动')
+      throw new Error(i18n.t('common:errors.ai.modelListTimeout'))
     }
     if (error instanceof TypeError) {
-      throw new Error('无法连接模型服务，请检查 Base URL、服务状态或 CORS 设置')
+      throw new Error(i18n.t('common:errors.ai.modelListConnectionFailed'))
     }
     throw error
   } finally {

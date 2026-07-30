@@ -46,14 +46,6 @@
       })();
     </script>
     <script>
-      /* i18n: set <html lang> from persisted preference before paint */
-      (function () {
-        var lang = 'zh-CN';
-        try { lang = localStorage.getItem('i18nextLng') || (navigator.language.startsWith('pt') ? 'pt-BR' : 'zh-CN'); } catch (e) {}
-        document.documentElement.lang = lang;
-      })();
-    </script>
-    <script>
       /*
        * CF-1: 本地 .bat / .exe 用户在 localhost / 127.0.0.1 常因历史遗留的 service worker
        * 缓存了旧导航回退 → 打开时提示「127.0.0.1 重定向次数过多 (ERR_TOO_MANY_REDIRECTS)」。

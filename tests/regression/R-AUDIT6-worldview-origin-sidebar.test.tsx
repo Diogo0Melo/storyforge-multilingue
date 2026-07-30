@@ -28,9 +28,9 @@ describe('AUDIT-6 / HEALTH-4 · 世界起源导航', () => {
       onSelect,
     })))
     expect(host.querySelectorAll('button')).toHaveLength(3)
-    expect(host.querySelector('button[aria-pressed="true"]')?.textContent).toContain('世界来源')
-    expect(host.querySelector('[aria-label="力量体系生成中"]')).not.toBeNull()
-    const divine = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('神明与信仰'))!
+    expect(host.querySelector('button[aria-pressed="true"]')?.textContent).toContain('origin.fieldOrigin')
+    expect(host.querySelector('[aria-label="worlds:origin.generating"]')).not.toBeNull()
+    const divine = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('origin.fieldDivine'))!
     await act(async () => divine.click())
     expect(onSelect).toHaveBeenCalledWith('divine')
   })

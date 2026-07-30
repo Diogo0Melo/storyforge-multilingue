@@ -13,6 +13,7 @@ import type {
 import { ANALYSIS_DIMENSIONS } from '../types/reference'
 import type { ChunkPlan } from '../import/chunker'
 import { ensureLegacyActiveReferenceRun } from './legacy-bridge'
+import i18n from '../../i18n/i18n'
 
 export { ensureLegacyActiveReferenceRun } from './legacy-bridge'
 
@@ -61,12 +62,12 @@ export async function createReferenceAnalysisRun(
   input: CreateReferenceAnalysisRunInput,
 ): Promise<ReferenceAnalysisRun> {
   const ref = await db.references.get(input.referenceId)
-  if (!ref?.id) throw new Error('参考资料不存在')
-  if (!input.sourceFilename.trim()) throw new Error('来源文件名不能为空')
-  if (!input.fileHash.trim()) throw new Error('来源文件哈希不能为空')
-  if (input.totalChars <= 0 || input.expectedChunks <= 0) throw new Error('来源文本或分块计划为空')
+  if (!ref?.id) throw new Error(i18n.t('common:errors.reference.referenceNotFound'))
+  if (!input.sourceFilename.trim()) throw new Error(i18n.t('common:errors.reference.sourceFilenameEmpty'))
+  if (!input.fileHash.trim()) throw new Error(i18n.t('common:errors.reference.sourceFileHashEmpty'))
+  if (input.totalChars <= 0 || input.expectedChunks <= 0) throw new Error(i18n.t('common:errors.reference.sourceTextEmpty'))
   if (!await pruneOneDisposableRun(ref.id)) {
-    throw new Error(`每份参考最多保留 ${REFERENCE_ANALYSIS_RUN_POLICY.maxRunsPerReference} 个版本，请先删除未使用版本`)
+    throw new Error(i18n.t('common:errors.reference.maxVersionsReached', { max: REFERENCE_ANALYSIS_RUN_POLICY.maxRunsPerReference }))
   }
 
   await ensureLegacyActiveReferenceRun(ref.id)
@@ -178,7 +179,7 @@ export async function patchReferenceAnalysisRun(
   changes: Partial<ReferenceAnalysisRun>,
 ): Promise<void> {
   const run = await db.referenceAnalysisRuns.get(runId)
-  if (!run) throw new Error('分析版本不存在')
+  if (!run) throw new Error(i18n.t('common:errors.reference.analysisVersionNotFound'))
   const result = await adopt({
     projectId: run.projectId,
     target: 'referenceAnalysisRuns',
@@ -187,7 +188,7 @@ export async function patchReferenceAnalysisRun(
     data: changes as Record<string, unknown>,
   })
   if (!result.written.length) {
-    throw new Error(`分析版本写回被拒绝：${result.skipped[0]?.reason ?? result.typeErrors[0]?.field ?? 'unknown'}`)
+    throw new Error(i18n.t('common:errors.reference.analysisWriteRejected', { reason: result.skipped[0]?.reason ?? result.typeErrors[0]?.field ?? 'unknown' }))
   }
 }
 
@@ -197,7 +198,7 @@ export async function completeReferenceAnalysisRun(
   error?: string,
 ): Promise<'active' | 'ready' | 'failed'> {
   const run = await db.referenceAnalysisRuns.get(runId)
-  if (!run) throw new Error('分析版本不存在')
+  if (!run) throw new Error(i18n.t('common:errors.reference.analysisVersionNotFound'))
   const completedChunks = await db.referenceChunkAnalysis
     .where('analysisRunId').equals(runId).count()
   const hasResults = completedChunks > 0
@@ -242,9 +243,9 @@ export async function completeReferenceAnalysisRun(
 
 export async function activateReferenceAnalysisRun(runId: number): Promise<void> {
   const target = await db.referenceAnalysisRuns.get(runId)
-  if (!target?.id) throw new Error('分析版本不存在')
+  if (!target?.id) throw new Error(i18n.t('common:errors.reference.analysisVersionNotFound'))
   if (!['ready', 'active', 'superseded'].includes(target.status)) {
-    throw new Error('只有已完成版本可以激活')
+    throw new Error(i18n.t('common:errors.reference.onlyCompletedCanActivate'))
   }
   const now = Date.now()
   await db.transaction('rw', db.references, db.referenceAnalysisRuns, async () => {
@@ -286,7 +287,7 @@ export async function updateReferenceAnalysisDerived(
 export async function discardReferenceAnalysisRun(runId: number): Promise<void> {
   const run = await db.referenceAnalysisRuns.get(runId)
   if (!run) return
-  if (run.status === 'active') throw new Error('不能删除当前激活版本，请先激活另一版本')
+  if (run.status === 'active') throw new Error(i18n.t('common:errors.reference.cannotDeleteActive'))
   await db.transaction(
     'rw',
     db.referenceAnalysisRuns,
@@ -345,7 +346,7 @@ async function patchReferenceCompatibility(referenceId: number, changes: Partial
     mode: 'replace',
     data: changes as Record<string, unknown>,
   })
-  if (!result.written.length) throw new Error('参考资料兼容投影写回失败')
+  if (!result.written.length) throw new Error(i18n.t('common:errors.reference.compatibilityWriteFailed'))
 }
 
 function parseIdArray(value: unknown): number[] {

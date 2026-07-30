@@ -97,12 +97,12 @@ describe('AUDIT-6 · 灵感反推结果视图', () => {
     }))
 
     expect(host.textContent).not.toContain('镜海退潮后形成七座城邦')
-    const worldviewTitle = Array.from(host.querySelectorAll('span')).find(node => node.textContent === '世界观草稿')!
+    const worldviewTitle = Array.from(host.querySelectorAll('span')).find(node => node.textContent === 'singleResult.worldDraft')!
     const worldviewHeader = worldviewTitle.parentElement!.parentElement!
     await act(async () => worldviewHeader.click())
     expect(onToggleSection).toHaveBeenCalledWith('worldview')
 
-    const adoptButton = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('写入世界观'))!
+    const adoptButton = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('singleResult.writeWorld'))!
     await act(async () => adoptButton.click())
     expect(onAdoptWorldview).toHaveBeenCalledOnce()
     expect(onToggleSection).toHaveBeenCalledOnce()
@@ -143,7 +143,7 @@ describe('AUDIT-6 · 灵感反推结果视图', () => {
     expect(host.textContent).toContain('镜海城')
     expect(host.textContent).toContain('七城议会')
     expect(host.textContent).toContain('@镜海城')
-    const adoptButton = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('一键创建多世界'))!
+    const adoptButton = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('multiWorld.createAll'))!
     await act(async () => adoptButton.click())
     expect(onAdopt).toHaveBeenCalledOnce()
   })

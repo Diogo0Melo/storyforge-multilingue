@@ -1,5 +1,6 @@
 import { estimateTokens } from '../ai/context-budget'
 import type { ChatMessage } from '../types'
+import i18n from '../../i18n/i18n'
 
 export const AGENT_TEAM_BUDGET_PROFILES = ['economy', 'balanced', 'expanded'] as const
 export type AgentTeamBudgetProfile = typeof AGENT_TEAM_BUDGET_PROFILES[number]
@@ -77,15 +78,18 @@ export class AgentTeamBudgetTracker {
     const reservedOutputTokens = Math.max(1, Math.floor(input.maxOutputTokens))
     if (this.calls + 1 > this.policy.maxCalls) {
       throw new AgentTeamBudgetExceededError(
-        `本轮 Agent 团队已达到 ${this.policy.maxCalls} 次模型调用上限，已在发起“${input.label}”前停止。`,
+        i18n.t('common:errors.agent.budgetCallLimit', { max: this.policy.maxCalls, label: input.label }),
       )
     }
     const projected = this.usedTokens + estimatedInputTokens + reservedOutputTokens
     if (projected > this.policy.maxTokens) {
       throw new AgentTeamBudgetExceededError(
-        `本轮 Agent 团队预算不足：已用约 ${this.usedTokens.toLocaleString()} tokens，`
-        + `“${input.label}”最坏还需约 ${(estimatedInputTokens + reservedOutputTokens).toLocaleString()}，`
-        + `上限为 ${this.policy.maxTokens.toLocaleString()}。已在调用前停止，没有产生这次费用。`,
+        i18n.t('common:errors.agent.budgetTokenLimit', {
+          used: this.usedTokens.toLocaleString(),
+          label: input.label,
+          needed: (estimatedInputTokens + reservedOutputTokens).toLocaleString(),
+          max: this.policy.maxTokens.toLocaleString(),
+        }),
       )
     }
     this.calls += 1
@@ -103,8 +107,10 @@ export class AgentTeamBudgetTracker {
   claimCanonRetry(issues: readonly { message: string }[]): void {
     if (this.canonRetries >= this.policy.maxCanonRetries) {
       throw new AgentTeamBudgetExceededError(
-        `确定性 Canon 校验仍未通过，且本轮 ${this.policy.maxCanonRetries} 次受控打回机会已经用完：`
-        + issues.map(issue => issue.message).join('；'),
+        i18n.t('common:errors.agent.budgetCanonRetryExhausted', {
+          max: this.policy.maxCanonRetries,
+          messages: issues.map(issue => issue.message).join('；'),
+        }),
       )
     }
     this.canonRetries += 1

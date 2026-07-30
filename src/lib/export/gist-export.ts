@@ -1,4 +1,5 @@
 import type { ProjectExportData } from './json-export'
+import i18n from '../../i18n/i18n'
 
 const GIST_API = 'https://api.github.com/gists'
 
@@ -84,7 +85,7 @@ export async function listStoryforgeGists(pat: string): Promise<GistBackupMeta[]
   const response = await fetch(`${GIST_API}?per_page=100`, {
     headers: { Authorization: `Bearer ${pat}`, Accept: 'application/vnd.github+json' },
   })
-  if (!response.ok) throw new Error(`GitHub API 错误 ${response.status}`)
+  if (!response.ok) throw new Error(i18n.t('common:errors.gist.githubApiError', { status: response.status }))
   const gists = await response.json() as any[]
   const out: GistBackupMeta[] = []
   for (const g of gists) {
@@ -104,11 +105,11 @@ export async function importFromGist(gistId: string, pat: string, sha?: string):
   })
   if (!response.ok) {
     const err = await response.json().catch(() => ({}))
-    throw new Error(err.message ?? `GitHub API 错误 ${response.status}`)
+    throw new Error(err.message ?? i18n.t('common:errors.gist.githubApiError', { status: response.status }))
   }
   const json = await response.json()
   const file = Object.values(json.files || {}).find((f: any) => /^storyforge-.*\.json$/i.test(f?.filename || '')) as any
-  if (!file) throw new Error('该 Gist 里没有故事熔炉备份文件')
+  if (!file) throw new Error(i18n.t('common:errors.gist.noBackupFile'))
   // 大文件 GitHub 会截断,truncated=true 时要去 raw_url 取全文
   let content: string = file.content
   if (file.truncated && file.raw_url) {
@@ -140,7 +141,7 @@ export async function listGistRevisions(gistId: string, pat: string): Promise<Gi
   })
   if (!response.ok) {
     const err = await response.json().catch(() => ({}))
-    throw new Error(err.message ?? `GitHub API 错误 ${response.status}`)
+    throw new Error(err.message ?? i18n.t('common:errors.gist.githubApiError', { status: response.status }))
   }
   const json = await response.json()
   const history = Array.isArray(json.history) ? json.history : []
@@ -160,7 +161,7 @@ export async function validateGitHubPAT(pat: string): Promise<string> {
       Accept: 'application/vnd.github+json',
     },
   })
-  if (!response.ok) throw new Error('PAT 无效或权限不足')
+  if (!response.ok) throw new Error(i18n.t('common:errors.gist.invalidPat'))
   const json = await response.json()
   return json.login as string
 }

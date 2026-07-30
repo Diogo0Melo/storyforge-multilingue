@@ -60,7 +60,7 @@ afterEach(async () => {
 describe('AUDIT-6 / HEALTH-4 · 正文编辑器工具栏', () => {
   it('逐项转发现有 AI、提取和面板命令', async () => {
     const { host, props } = await mount()
-    for (const label of ['✨ 生成正文', '📝 续写', '📖 扩写', '💎 润色', '🔥 去AI味', '整理本章', '影响分析', '大纲预览', '质量审校', '便签']) {
+    for (const label of ['toolbar.generate', 'toolbar.continue', 'toolbar.expand', 'toolbar.polish', 'toolbar.deai', 'toolbar.organizeChapter', 'toolbar.impactAnalysis', 'toolbar.outlinePreview', 'toolbar.qualityReview', 'toolbar.notes']) {
       await act(async () => button(host, label).click())
     }
     expect(props.onGenerate).toHaveBeenCalledOnce()
@@ -82,11 +82,11 @@ describe('AUDIT-6 / HEALTH-4 · 正文编辑器工具栏', () => {
       organizingChapter: true,
       analyzingImpact: true,
     })
-    for (const label of ['✨ 生成正文', '📝 续写', '📖 扩写', '💎 润色', '🔥 去AI味', '分析中...', '质量审校']) {
+    for (const label of ['toolbar.generate', 'toolbar.continue', 'toolbar.expand', 'toolbar.polish', 'toolbar.deai', 'toolbar.analyzing', 'toolbar.qualityReview']) {
       expect(button(host, label).disabled).toBe(true)
     }
-    expect(button(host, '停止整理').disabled).toBe(true)
-    expect(button(host, '便签').disabled).toBe(false)
+    expect(button(host, 'toolbar.stopOrganizing').disabled).toBe(true)
+    expect(button(host, 'toolbar.notes').disabled).toBe(false)
   })
 
   it('展示影响分析结果、开关状态并转发组合输入', async () => {
@@ -97,9 +97,9 @@ describe('AUDIT-6 / HEALTH-4 · 正文编辑器工具栏', () => {
       showNotePanel: true,
     })
     expect(host.textContent).toContain('2 条事实需要复核')
-    expect(button(host, '大纲预览').getAttribute('aria-pressed')).toBe('true')
-    expect(button(host, '质量审校').getAttribute('aria-pressed')).toBe('true')
-    expect(button(host, '便签').getAttribute('aria-pressed')).toBe('true')
+    expect(button(host, 'toolbar.outlinePreview').getAttribute('aria-pressed')).toBe('true')
+    expect(button(host, 'toolbar.qualityReview').getAttribute('aria-pressed')).toBe('true')
+    expect(button(host, 'toolbar.notes').getAttribute('aria-pressed')).toBe('true')
     await act(async () => button(host, '×').click())
     expect(props.onDismissImpact).toHaveBeenCalledOnce()
 
@@ -115,7 +115,7 @@ describe('AUDIT-6 / HEALTH-4 · 正文编辑器工具栏', () => {
   it('当前正文存在一致性告警时在审校入口显示计数', async () => {
     const { host } = await mount({ consistencyAlertCount: 3 })
     const review = Array.from(host.querySelectorAll('button'))
-      .find(item => item.textContent?.includes('质量审校'))
+      .find(item => item.textContent?.includes('toolbar.qualityReview'))
     expect(review?.textContent).toContain('3')
   })
 })

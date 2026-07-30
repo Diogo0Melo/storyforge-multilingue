@@ -64,6 +64,7 @@ import {
   AgentTeamBudgetTracker,
   type AgentTeamBudgetEvidence,
 } from './team-budget'
+import i18n from '../../i18n/i18n'
 
 export const DOMAIN_AGENT_IDS = ['world-origin', 'character', 'inspiration', 'outline', 'prose'] as const
 export type DomainAgentId = typeof DOMAIN_AGENT_IDS[number]
@@ -129,10 +130,10 @@ function extractJsonObject(text: string): Record<string, unknown> {
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text)?.[1] ?? text
   const start = fenced.indexOf('{')
   const end = fenced.lastIndexOf('}')
-  if (start < 0 || end < start) throw new Error('主 Agent 没有返回任务计划 JSON。')
+  if (start < 0 || end < start) throw new Error(i18n.t('common:errors.agent.noPlanJson'))
   const parsed = JSON5.parse(fenced.slice(start, end + 1)) as unknown
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('主 Agent 任务计划必须是对象。')
+    throw new Error(i18n.t('common:errors.agent.planMustBeObject'))
   }
   return parsed as Record<string, unknown>
 }
@@ -309,7 +310,7 @@ export async function createMasterAgentPlan(input: {
   signal?: AbortSignal
 }, dependencies: PlannerDependencies = {}): Promise<MasterAgentPlan> {
   const request = input.request.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的创作要求。')
+  if (request.length < 2) throw new Error(i18n.t('common:errors.agent.minCharsRequired'))
   const config = resolveRequestConfig(
     useAIConfigStore.getState().config,
     { category: AGENT_ROLE_CATEGORIES.orchestrator },
@@ -378,7 +379,7 @@ function topologicalTasks(plan: MasterAgentPlan): MasterAgentTask[] {
     const available = plan.tasks.filter(task => (
       !done.has(task.id) && task.dependsOn.every(id => done.has(id) || !byId.has(id))
     ))
-    if (!available.length) throw new Error('主 Agent 任务计划包含循环依赖。')
+    if (!available.length) throw new Error(i18n.t('common:errors.agent.circularDependency'))
     available.forEach(task => {
       result.push(task)
       done.add(task.id)
@@ -481,7 +482,7 @@ export async function executeMasterAgentPlan(input: {
         const selectedFragmentIds = parseInspirationFragments(workspace?.fragments)
           .slice(0, MAX_INSPIRATION_FRAGMENTS)
           .map(fragment => fragment.id)
-        if (!selectedFragmentIds.length) throw new Error('项目尚无已保存的灵感碎片。')
+        if (!selectedFragmentIds.length) throw new Error(i18n.t('common:errors.agent.noInspirationFragments'))
         const prepared = await prepareInspirationCopilot({
           projectId: input.projectId,
           selectedFragmentIds,
@@ -691,7 +692,7 @@ async function assertCandidateDependenciesAdopted(
     return candidateId == null || !adoptedCandidateIds.has(candidateId)
   })
   if (missing.length) {
-    throw new Error(`请先采纳本候选依赖的上游结果：${missing.join('、')}。`)
+    throw new Error(i18n.t('common:errors.agent.upstreamNotAdopted', { ids: missing.join('、') }))
   }
 }
 
@@ -716,15 +717,15 @@ export async function adoptMasterCandidate(input: {
             : parseProseCandidateDraft(input.draft)
     const result = await adoptGenerationNodeOutput(input.runtime.runtimeNode, output)
     if (!result.adopted) {
-      throw new Error(result.gate?.issues.map(issue => issue.message).join('；') || '候选没有通过确认闸门。')
+      throw new Error(result.gate?.issues.map(issue => issue.message).join('；') || i18n.t('common:errors.agent.gateNotPassed'))
     }
   } else if (input.payload.agentId === 'world-origin') {
     const base = input.payload.baseSnapshot as WorldOriginSnapshot
     if (!sameWorldSnapshot(base, await currentWorldSnapshot(input.projectId, input.worldGroupId))) {
-      throw new Error('世界来源已在候选生成后发生变化，请重新生成。')
+      throw new Error(i18n.t('common:errors.agent.worldOriginChanged'))
     }
     const draft = input.draft.trim()
-    if (draft.length < 4 || draft.length > 12_000) throw new Error('世界来源候选长度无效。')
+    if (draft.length < 4 || draft.length > 12_000) throw new Error(i18n.t('common:errors.agent.worldOriginLengthInvalid'))
     await adopt({
       projectId: input.projectId,
       worldGroupId: input.worldGroupId,
@@ -749,7 +750,7 @@ export async function adoptMasterCandidate(input: {
   } else if (input.payload.agentId === 'inspiration') {
     const base = input.payload.baseSnapshot as InspirationWorkspaceSnapshot
     const current = await currentInspirationSnapshot(input.projectId)
-    if (JSON.stringify(base) !== JSON.stringify(current)) throw new Error('灵感工作区已变化，请重新生成。')
+    if (JSON.stringify(base) !== JSON.stringify(current)) throw new Error(i18n.t('common:errors.agent.inspirationChanged'))
     const mode = input.payload.mode ?? 'single'
     const result = parseInspirationCandidateDraft(input.draft, mode)
     await useInspirationWorkspaceStore.getState().load(input.projectId)
@@ -761,7 +762,7 @@ export async function adoptMasterCandidate(input: {
     })
   } else if (input.payload.agentId === 'outline') {
     const mode = input.payload.outlineMode
-    if (!mode) throw new Error('大纲候选缺少写回模式，请重新生成。')
+    if (!mode) throw new Error(i18n.t('common:errors.agent.outlineMissingMode'))
     await adoptRestoredOutlineCandidate({
       projectId: input.projectId,
       worldGroupId: input.worldGroupId,
@@ -772,7 +773,7 @@ export async function adoptMasterCandidate(input: {
     })
   } else {
     if (!input.payload.proseOperation || input.payload.proseOutlineNodeId == null) {
-      throw new Error('正文候选缺少目标章节或写回模式，请重新生成。')
+      throw new Error(i18n.t('common:errors.agent.proseMissingTarget'))
     }
     await adoptRestoredProseCandidate({
       projectId: input.projectId,

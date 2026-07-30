@@ -77,11 +77,11 @@ describe('AUDIT-6 / HEALTH-4 · 细纲受控视图', () => {
     }))
 
     expect(host.querySelector('button[aria-pressed="true"]')?.textContent).toContain('第一章')
-    expect(host.querySelector('[title="有细纲"]')?.parentElement?.textContent).toContain('第二章')
+    expect(host.querySelector('[title="detailed.hasDetail"]')?.parentElement?.textContent).toContain('第二章')
     const second = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('第二章'))!
     await act(async () => second.click())
     expect(onSelect).toHaveBeenCalledWith(12)
-    const batch = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('批量生成细纲'))!
+    const batch = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('detailed.batchGenerate'))!
     await act(async () => batch.click())
     expect(onBatchStart).toHaveBeenCalledOnce()
   })
@@ -106,7 +106,7 @@ describe('AUDIT-6 / HEALTH-4 · 细纲受控视图', () => {
     }))
     expect(host.textContent).toContain('1/4')
     expect(host.textContent).toContain('正在生成第二章')
-    await act(async () => host.querySelector<HTMLButtonElement>('button[title="停止"]')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('button[title="detailed.stopAria"]')!.click())
     expect(onBatchStop).toHaveBeenCalledOnce()
   })
 
@@ -116,13 +116,13 @@ describe('AUDIT-6 / HEALTH-4 · 细纲受控视图', () => {
     const host = await mount(createElement(DetailedSceneCard, { scene, index: 1, onUpdate, onDelete }))
     expect(host.textContent).toContain('#2')
 
-    await act(async () => setControlValue(host.querySelector<HTMLInputElement>('input[placeholder="场景标题..."]')!, '雨夜闯关'))
-    await act(async () => setControlValue(host.querySelector<HTMLSelectElement>('select[aria-label="场景节奏"]')!, 'fast'))
-    await act(async () => setControlValue(host.querySelector<HTMLInputElement>('input[placeholder="字数"]')!, '1200'))
-    await act(async () => setControlValue(host.querySelector<HTMLTextAreaElement>('textarea[placeholder="一句话场景概要..."]')!, '主角强行入城'))
-    await act(async () => setControlValue(host.querySelector<HTMLInputElement>('input[placeholder="📍 地点"]')!, '瓮城'))
-    await act(async () => setControlValue(host.querySelector<HTMLInputElement>('input[placeholder="⚔ 核心冲突"]')!, '身份暴露'))
-    await act(async () => setControlValue(host.querySelector<HTMLTextAreaElement>('textarea[placeholder="备注 / AI 建议..."]')!, '加快动作节奏'))
+    await act(async () => setControlValue(host.querySelector<HTMLInputElement>('input[placeholder="detailed.sceneTitlePlaceholder"]')!, '雨夜闯关'))
+    await act(async () => setControlValue(host.querySelector<HTMLSelectElement>('select[aria-label="detailed.scenePaceAria"]')!, 'fast'))
+    await act(async () => setControlValue(host.querySelector<HTMLInputElement>('input[placeholder="detailed.wordCount"]')!, '1200'))
+    await act(async () => setControlValue(host.querySelector<HTMLTextAreaElement>('textarea[placeholder="detailed.sceneSummaryPlaceholder"]')!, '主角强行入城'))
+    await act(async () => setControlValue(host.querySelector<HTMLInputElement>('input[placeholder="detailed.location"]')!, '瓮城'))
+    await act(async () => setControlValue(host.querySelector<HTMLInputElement>('input[placeholder="detailed.conflict"]')!, '身份暴露'))
+    await act(async () => setControlValue(host.querySelector<HTMLTextAreaElement>('textarea[placeholder="detailed.notesPlaceholder"]')!, '加快动作节奏'))
 
     expect(onUpdate).toHaveBeenCalledWith({ title: '雨夜闯关' })
     expect(onUpdate).toHaveBeenCalledWith({ pace: 'fast' })
@@ -132,7 +132,7 @@ describe('AUDIT-6 / HEALTH-4 · 细纲受控视图', () => {
     expect(onUpdate).toHaveBeenCalledWith({ conflict: '身份暴露' })
     expect(onUpdate).toHaveBeenCalledWith({ notes: '加快动作节奏' })
 
-    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="删除场景2"]')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="detailed.deleteSceneAria"]')!.click())
     expect(onDelete).toHaveBeenCalledOnce()
   })
 })

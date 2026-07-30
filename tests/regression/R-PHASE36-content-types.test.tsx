@@ -56,8 +56,8 @@ describe('Phase 36 · 页面上游/下游内容标记', () => {
       contentType: 'downstream',
       showDescription: true,
     }))
-    expect(full.textContent).toContain('产物')
-    expect(full.textContent).toContain('从已写正文提取或整理')
+    expect(full.textContent).toContain('nav:contentType.downstream')
+    expect(full.textContent).toContain('nav:contentType.downstreamDesc')
     expect(full.querySelector('[data-content-type="downstream"]')).not.toBeNull()
 
     const compact = await mount(createElement(ContentTypeBadge, {
@@ -66,14 +66,14 @@ describe('Phase 36 · 页面上游/下游内容标记', () => {
     }))
     const compactBadge = compact.querySelector('[data-content-type="tool"]')
     expect(compactBadge?.getAttribute('aria-hidden')).toBe('true')
-    expect(compactBadge?.getAttribute('title')).toContain('AI 工具')
+    expect(compactBadge?.getAttribute('title')).toContain('nav:contentType.tool')
 
     const experience = await mount(createElement(ContentTypeBadge, {
       contentType: 'experience',
       showDescription: true,
     }))
-    expect(experience.textContent).toContain('体验')
-    expect(experience.textContent).toContain('独立于创作 Canon')
+    expect(experience.textContent).toContain('nav:contentType.experience')
+    expect(experience.textContent).toContain('nav:contentType.experienceDesc')
     expect(experience.querySelector('[data-content-type="experience"]')).not.toBeNull()
   })
 
@@ -89,16 +89,16 @@ describe('Phase 36 · 页面上游/下游内容标记', () => {
     }))
 
     const inventoryButton = Array.from(host.querySelectorAll('button')).find(button =>
-      button.textContent?.includes('物品栏'),
+      button.textContent?.includes('nav:creation.inventory'),
     )!
-    expect(inventoryButton.textContent).toContain('产物')
+    expect(inventoryButton.textContent).toContain('nav:contentType.downstream')
     await act(async () => inventoryButton.click())
     expect(onSelect).toHaveBeenCalledWith('inventory')
 
     const runtimeButton = Array.from(host.querySelectorAll('button')).find(button =>
-      button.textContent?.includes('互动运行时'),
+      button.textContent?.includes('nav:experience.runtime'),
     )!
-    expect(runtimeButton.textContent).toContain('体验')
+    expect(runtimeButton.textContent).toContain('nav:contentType.experience')
     await act(async () => runtimeButton.click())
     expect(onSelect).toHaveBeenCalledWith('simulation-runtime')
   })

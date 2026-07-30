@@ -37,7 +37,7 @@ afterEach(async () => {
 describe('AUDIT-6 · 历史关联章节选择器', () => {
   it('空章节列表保留明确空态', async () => {
     const { host } = await mount([])
-    expect(host.textContent).toContain('暂无章节可关联')
+    expect(host.textContent).toContain('history.noChapters')
   })
 
   it('点击未关联章节追加 ID，点击已关联章节移除 ID', async () => {

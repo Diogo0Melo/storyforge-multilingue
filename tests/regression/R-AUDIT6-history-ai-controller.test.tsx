@@ -185,7 +185,7 @@ describe('AUDIT-6 · 历史双 agent controller', () => {
 
     expect(consultAI.start).not.toHaveBeenCalled()
     expect(consultAI.reset).toHaveBeenCalledOnce()
-    expect(onError).toHaveBeenCalledWith('历史 AI 准备失败：读取损坏。')
+    expect(onError).toHaveBeenCalledWith('panels:history.errorPrepareFailed')
     expect(controller.consultPreparing).toBe(false)
   })
 

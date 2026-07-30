@@ -77,7 +77,7 @@ afterEach(async () => {
 describe('AUDIT-6 · 卷详情视图拆分', () => {
   it('未选卷时显示明确空态', async () => {
     const host = await mount(createElement(OutlineVolumeDetail, detailProps()))
-    expect(host.textContent).toContain('选择左侧的卷开始编辑')
+    expect(host.textContent).toContain('volumeDetail.emptyHint')
   })
 
   it('保留标题、摘要、所属世界编辑和顶部命令', async () => {
@@ -118,10 +118,10 @@ describe('AUDIT-6 · 卷详情视图拆分', () => {
     expect(onUpdateNode).toHaveBeenCalledWith(1, { title: '新卷名' })
     expect(onUpdateNode).toHaveBeenCalledWith(1, { summary: '新卷摘要' })
     expect(onUpdateNode).toHaveBeenCalledWith(1, { worldGroupId: 8 })
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('AI 生成本卷卷纲'))!.click())
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('生成本卷所有章节'))!.click())
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('添加章节'))!.click())
-    await act(async () => host.querySelector<HTMLButtonElement>('button[title="删除当前卷"]')!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('volumeDetail.aiGenerateVolume'))!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('volumeDetail.generateAllChapters'))!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('volumeDetail.addChapter'))!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('button[title="volumeDetail.deleteVolumeTitle"]')!.click())
     expect(onGenerateVolume).toHaveBeenCalledWith(1)
     expect(onGenerateAllChapters).toHaveBeenCalledOnce()
     expect(onAddChapter).toHaveBeenCalledWith()
@@ -133,10 +133,10 @@ describe('AUDIT-6 · 卷详情视图拆分', () => {
     const onAddStructure = vi.fn()
     const host = await mount(createElement(OutlineVolumeDetail, detailProps({ volume, nodes: [volume], onAddStructure })))
 
-    expect(host.textContent).not.toContain('AI 生成本卷卷纲')
-    expect(host.textContent).toContain('章节列表（0 章）')
-    expect(host.textContent).toContain('还没有章节')
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('添加故事结构'))!.click())
+    expect(host.textContent).not.toContain('volumeDetail.aiGenerateVolume')
+    expect(host.textContent).toContain('volumeDetail.chapterList')
+    expect(host.textContent).toContain('volumeDetail.noChapters')
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('structure.addStructure'))!.click())
     await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('三幕式'))!.click())
     expect(onAddStructure).toHaveBeenCalledWith('three-act')
   })
@@ -153,9 +153,9 @@ describe('AUDIT-6 · 卷详情视图拆分', () => {
       })),
     ))
 
-    expect(host.textContent).toContain('故事结构（2 章）')
+    expect(host.textContent).toContain('volumeDetail.storyStructure')
     expect(Array.from(host.querySelectorAll('input')).some(input => input.value === '第一幕')).toBe(true)
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('+ 添加故事块'))!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('volumeDetail.addBlock'))!.click())
     expect(onAddStructure).toHaveBeenCalledWith('custom')
   })
 })

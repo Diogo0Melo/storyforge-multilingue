@@ -17,6 +17,7 @@ import type {
   InspirationVersion,
   InspirationWorkspace,
 } from '../lib/types/inspiration-workspace'
+import i18n from '../i18n/i18n'
 
 interface InspirationWorkspaceState {
   workspace: InspirationWorkspace | null
@@ -53,10 +54,10 @@ async function persistWorkspace(
     },
   })
   if (adopted.written.length === 0) {
-    throw new Error(`灵感工作区写回被拒绝：${adopted.skipped[0]?.reason ?? adopted.typeErrors[0]?.field ?? 'unknown'}`)
+    throw new Error(i18n.t('common:errors.inspiration.workspaceWriteRejected', { reason: adopted.skipped[0]?.reason ?? adopted.typeErrors[0]?.field ?? 'unknown' }))
   }
   const row = await db.inspirationWorkspaces.where('projectId').equals(projectId).first()
-  if (!row) throw new Error('灵感工作区写回后无法回读')
+  if (!row) throw new Error(i18n.t('common:errors.inspiration.workspaceReadBackFailed'))
   return row
 }
 
@@ -100,7 +101,7 @@ export const useInspirationWorkspaceStore = create<InspirationWorkspaceState>((s
     const current = get().workspace?.projectId === projectId ? get().fragments : []
     const versions = get().workspace?.projectId === projectId ? get().versions : []
     if (versions.some(version => version.fragmentIds.includes(fragmentId))) {
-      throw new Error('该碎片已被确认版本引用，只能取消勾选，不能删除来源证据')
+      throw new Error(i18n.t('common:errors.inspiration.fragmentReferenced'))
     }
     const fragments = current.filter(fragment => fragment.id !== fragmentId)
     const workspace = await persistWorkspace(projectId, fragments, versions)

@@ -345,7 +345,7 @@ describe('AGENT-1 27.2b · 整理本章 Agent', () => {
     await expect(adoptChapterOrganizationSelection({
       run,
       selection: selectAllChapterOrganizationCandidates(candidate),
-    })).rejects.toThrow('已过期')
+    })).rejects.toThrow('common:errors.agent.chapterOrganizationStale')
     expect(await db.stateCards.count()).toBe(0)
     expect(await db.temporalFacts.count()).toBe(0)
   })
@@ -379,7 +379,7 @@ describe('AGENT-1 27.2b · 整理本章 Agent', () => {
         chapterTitle: '第一章 月纹',
         note: '',
       }],
-    })).rejects.toThrow('已回滚')
+    })).rejects.toThrow('common:errors.registry.batchReplaceIncomplete')
 
     const rows = await db.itemLedger.where('projectId').equals(project.id!).toArray()
     expect(rows).toHaveLength(1)

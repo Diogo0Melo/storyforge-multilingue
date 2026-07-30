@@ -59,9 +59,9 @@ describe('AUDIT-6 · 历史静态视图', () => {
   it('时间线与关键词说明保留各自边界文案', async () => {
     const timeline = await render(createElement(TimelineHistoryHelp))
     const keyword = await render(createElement(KeywordHistoryHelp))
-    expect(timeline.textContent).toContain('史实考证模式')
-    expect(timeline.textContent).toContain('数字化年份支持负数')
-    expect(keyword.textContent).toContain('细节风暴助手')
-    expect(keyword.textContent).toContain('器物与科技')
+    expect(timeline.textContent).toContain('history.helpConsultMode')
+    expect(timeline.textContent).toContain('history.helpTip2')
+    expect(keyword.textContent).toContain('history.helpKeywordTitle')
+    expect(keyword.textContent).toContain('history.helpKeywordTip1')
   })
 })

@@ -59,19 +59,19 @@ afterEach(async () => {
 describe('AUDIT-6 / HEALTH-4 · 富文本格式工具栏', () => {
   it('转发排版选择并保持跨章配置值', async () => {
     const { host, props } = await mount()
-    const fontSize = host.querySelector<HTMLSelectElement>('select[aria-label="字号"]')!
+    const fontSize = host.querySelector<HTMLSelectElement>('select[aria-label="richToolbar.fontSize"]')!
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!
       setter.call(fontSize, '20px')
       fontSize.dispatchEvent(new Event('change', { bubbles: true }))
     })
     expect(props.onTypographyChange).toHaveBeenCalledWith({ fontSize: '20px' })
-    expect(host.textContent).toContain('12,345 字')
+    expect(host.textContent).toContain('richToolbar.wordCount')
   })
 
   it('逐项转发格式命令，并准确禁用重做', async () => {
     const { host, props } = await mount()
-    for (const title of ['加粗 (Cmd/Ctrl+B)', '斜体 (Cmd/Ctrl+I)', '删除线', '二级标题', '三级标题', '无序列表', '有序列表', '引用', '分割线', '撤销 (Cmd/Ctrl+Z)']) {
+    for (const title of ['richToolbar.boldTitle', 'richToolbar.italicTitle', 'richToolbar.strikethroughTitle', 'richToolbar.heading2Title', 'richToolbar.heading3Title', 'richToolbar.bulletListTitle', 'richToolbar.orderedListTitle', 'richToolbar.blockquoteTitle', 'richToolbar.horizontalRuleTitle', 'richToolbar.undoTitle']) {
       await act(async () => titledButton(host, title).click())
     }
     expect(props.onBold).toHaveBeenCalledOnce()
@@ -84,18 +84,18 @@ describe('AUDIT-6 / HEALTH-4 · 富文本格式工具栏', () => {
     expect(props.onBlockquote).toHaveBeenCalledOnce()
     expect(props.onHorizontalRule).toHaveBeenCalledOnce()
     expect(props.onUndo).toHaveBeenCalledOnce()
-    expect(titledButton(host, '重做 (Cmd/Ctrl+Shift+Z)').disabled).toBe(true)
+    expect(titledButton(host, 'richToolbar.redoTitle').disabled).toBe(true)
   })
 
   it('转发自定义字色、预设字色、清除字色和背景色', async () => {
     const { host, props } = await mount()
-    const color = host.querySelector<HTMLInputElement>('input[aria-label="字色"]')!
+    const color = host.querySelector<HTMLInputElement>('input[aria-label="richToolbar.textColor"]')!
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
       setter.call(color, '#abcdef')
       color.dispatchEvent(new Event('input', { bubbles: true }))
     })
-    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="字色 正文"]')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="richToolbar.textColorAria"]')!.click())
     await act(async () => Array.from(host.querySelectorAll('button')).find(item => item.textContent === '清')!.dispatchEvent(new MouseEvent('click', { bubbles: true })))
     await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="黄底"]')!.click())
     expect(props.onTextColorChange).toHaveBeenNthCalledWith(1, '#abcdef')

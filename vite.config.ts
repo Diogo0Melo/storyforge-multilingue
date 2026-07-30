@@ -33,7 +33,7 @@ export default defineConfig({
         display: 'standalone',
         start_url: '/storyforge/',
         scope: '/storyforge/',
-        lang: 'zh-CN',
+
         icons: [
           {
             src: '/storyforge/icon-192.png',

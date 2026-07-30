@@ -11,6 +11,7 @@ import {
   AgentTeamBudgetTracker,
   type AgentTeamCallReservation,
 } from './team-budget'
+import i18n from '../../i18n/i18n'
 
 function mergeIssues(
   gate: GenerationGateResult | null,
@@ -89,7 +90,7 @@ export async function runBudgetedGenerationNode<TInput, TOutput, TAdoption>(inpu
     messages: [...input.prepared.messages, correctionMessage(first.issues)],
   })
   if (retry.issues.length > 0) {
-    throw new Error(`确定性 Canon 校验打回后仍未通过：${retry.issues.map(issue => issue.message).join('；')}`)
+    throw new Error(i18n.t('common:errors.agent.canonRetryFailed', { messages: retry.issues.map(issue => issue.message).join('；') }))
   }
   return retry.result
 }

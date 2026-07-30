@@ -64,6 +64,14 @@ function buttonByLabel(host: HTMLElement, label: string): HTMLButtonElement {
   return button
 }
 
+function buttonInNode(host: HTMLElement, nodeTestId: string, ariaLabel: string): HTMLButtonElement {
+  const node = host.querySelector(`[data-testid="${nodeTestId}"]`)
+  if (!node) throw new Error(`missing node: ${nodeTestId}`)
+  const button = node.querySelector<HTMLButtonElement>(`button[aria-label="${ariaLabel}"]`)
+  if (!button) throw new Error(`missing button in ${nodeTestId}: ${ariaLabel}`)
+  return button
+}
+
 describe('FLOW-1 · 节点画布用户路径', () => {
   beforeEach(async () => {
     await db.delete()
@@ -78,12 +86,12 @@ describe('FLOW-1 · 节点画布用户路径', () => {
     expect(mounted.host.textContent).toContain('故事种子 → 世界设定.storyCore')
     expect(mounted.host.textContent).toContain('世界设定 → 角色设计.worldContext')
 
-    await act(async () => buttonByLabel(mounted.host, '从 故事种子 输出').click())
-    await act(async () => buttonByLabel(mounted.host, '连接到 角色设计').click())
+    await act(async () => buttonInNode(mounted.host, 'workflow-node-seed', 'prompt.workflow.canvas.outputFrom').click())
+    await act(async () => buttonInNode(mounted.host, 'workflow-node-character', 'prompt.workflow.canvas.connectTo').click())
     expect(mounted.host.textContent).toContain('故事种子 → 角色设计.worldContext')
 
     const save = Array.from(mounted.host.querySelectorAll('button'))
-      .find(button => button.textContent?.includes('保存 *')) as HTMLButtonElement
+      .find(button => button.textContent?.includes('prompt.workflow.editor.save')) as HTMLButtonElement
     await act(async () => save.click())
     const stored = await db.promptWorkflows.get(92001)
     expect(stored?.graph?.edges).toHaveLength(3)
@@ -100,10 +108,10 @@ describe('FLOW-1 · 节点画布用户路径', () => {
   it('画布在交互时拒绝形成环路，坏边不会进入草稿或数据库', async () => {
     const mounted = await mount()
 
-    await act(async () => buttonByLabel(mounted.host, '从 角色设计 输出').click())
-    await act(async () => buttonByLabel(mounted.host, '连接到 故事种子').click())
+    await act(async () => buttonInNode(mounted.host, 'workflow-node-character', 'prompt.workflow.canvas.outputFrom').click())
+    await act(async () => buttonInNode(mounted.host, 'workflow-node-seed', 'prompt.workflow.canvas.connectTo').click())
 
-    expect(mounted.host.textContent).toContain('工作流图包含环路')
+    expect(mounted.host.textContent).toContain('工作流图包含环路，已阻止执行。')
     expect(mounted.host.textContent).not.toContain('角色设计 → 故事种子.worldContext')
     expect((await db.promptWorkflows.get(92001))?.graph).toBeUndefined()
 

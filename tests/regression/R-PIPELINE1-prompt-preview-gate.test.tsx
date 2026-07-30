@@ -39,7 +39,7 @@ describe('PIPELINE-1 · 最终提示词预览闸门', () => {
     const textareas = host.querySelectorAll('textarea')
     expect(textareas).toHaveLength(2)
     expect(textareas[0].value).toBe('守住世界宪法')
-    expect(host.textContent).toContain('不写回模板或作品资料')
+    expect(host.textContent).toContain('promptPreview.description')
 
     await act(async () => {
       const userPrompt = textareas[1]
@@ -51,7 +51,7 @@ describe('PIPELINE-1 · 最终提示词预览闸门', () => {
       userPrompt.dispatchEvent(new Event('input', { bubbles: true }))
     })
     const send = Array.from(host.querySelectorAll('button'))
-      .find(button => button.textContent?.includes('发送本次版本'))!
+      .find(button => button.textContent?.includes('promptPreview.send'))!
     await act(async () => send.click())
 
     expect(onConfirm).toHaveBeenCalledWith([
@@ -73,7 +73,7 @@ describe('PIPELINE-1 · 最终提示词预览闸门', () => {
       userPrompt.dispatchEvent(new Event('input', { bubbles: true }))
     })
     const send = Array.from(first.host.querySelectorAll('button'))
-      .find(button => button.textContent?.includes('发送本次版本'))!
+      .find(button => button.textContent?.includes('promptPreview.send'))!
     expect(send.disabled).toBe(true)
 
     const second = await mount()

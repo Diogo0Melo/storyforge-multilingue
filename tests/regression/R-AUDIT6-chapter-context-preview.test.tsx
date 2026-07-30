@@ -57,28 +57,32 @@ describe('AUDIT-6 · 章节上下文预览', () => {
       characterContext: `${'角'.repeat(300)}角色尾部`,
       stateCards: [],
     })).host
-    expect(host.textContent).toContain('【世界观】')
-    expect(host.textContent).toContain('【角色】')
-    expect(host.textContent).toContain('【章节大纲】雨夜入城：主角抵达北门。')
+    expect(host.textContent).toContain('context.worldview')
+    expect(host.textContent).toContain('context.character')
+    expect(host.textContent).toContain('context.outline')
+    expect(host.textContent).toContain('雨夜入城：主角抵达北门。')
     expect(host.textContent).not.toContain('世界尾部')
     expect(host.textContent).not.toContain('角色尾部')
   })
 
   it('折叠态显示注入计数并转发展开命令', async () => {
     const { host, props } = await mount()
-    expect(host.textContent).toContain('状态卡注入（1/3）')
+    expect(host.textContent).toContain('context.stateInjection')
     expect(host.textContent).not.toContain('陆沉')
-    await act(async () => button(host, '展开调整').click())
+    await act(async () => button(host, 'context.expandAdjust').click())
     expect(props.onToggleStateList).toHaveBeenCalledOnce()
   })
 
   it('展开态区分自动匹配、手动添加和未选状态卡，并转发卡片 ID', async () => {
     const { host, props } = await mount({ stateListExpanded: true })
-    expect(host.textContent).toContain('角色陆沉自动匹配')
-    expect(host.textContent).toContain('物品星盘手动添加')
-    expect(host.textContent).toContain('地点北门')
-    const starChart = host.querySelector('button[aria-label="状态卡：星盘"]') as HTMLButtonElement
-    const northGate = host.querySelector('button[aria-label="状态卡：北门"]') as HTMLButtonElement
+    expect(host.textContent).toContain('陆沉')
+    expect(host.textContent).toContain('context.autoMatched')
+    expect(host.textContent).toContain('星盘')
+    expect(host.textContent).toContain('context.manualAdded')
+    expect(host.textContent).toContain('北门')
+    const stateCardButtons = host.querySelectorAll('button[aria-label="context.stateCardLabel"]')
+    const starChart = stateCardButtons[1] as HTMLButtonElement
+    const northGate = stateCardButtons[2] as HTMLButtonElement
     await act(async () => starChart.click())
     await act(async () => northGate.click())
     expect(props.onToggleStateCard).toHaveBeenCalledWith(2)

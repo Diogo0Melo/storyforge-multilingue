@@ -80,7 +80,7 @@ describe('AGENT-1 27.1-e · 跨调用团队预算与 Canon 受控打回', () => 
     const tracker = new AgentTeamBudgetTracker('balanced')
     tracker.claimCanonRetry([{ message: '第一次冲突' }])
     expect(() => tracker.claimCanonRetry([{ message: '第二次冲突' }]))
-      .toThrow('打回机会已经用完')
+      .toThrow('errors.agent.budgetCanonRetryExhausted')
   })
 
   it('领域外部确定性 Canon validator 也能带证据打回，不依赖 LLM 自评', async () => {

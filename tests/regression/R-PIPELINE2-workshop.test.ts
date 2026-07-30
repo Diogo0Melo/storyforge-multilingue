@@ -237,7 +237,7 @@ describe('PIPELINE-2 · 五阶段章纲工坊', () => {
 
   it('节点顺序不可跳级，重做会清掉当前及后续会话产物', () => {
     expect(() => confirmWorkshopArtifact({}, 'collision', '直接跳到碰撞'))
-      .toThrow('必须先确认“现状扫描”')
+      .toThrow('common:errors.outline.mustConfirmStage')
     const scan = confirmWorkshopArtifact({}, 'scan', '现状').artifacts
     const motivation = confirmWorkshopArtifact(scan, 'motivation', '动机').artifacts
     const collision = confirmWorkshopArtifact(motivation, 'collision', '碰撞').artifacts

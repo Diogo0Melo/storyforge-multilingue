@@ -5,6 +5,7 @@
  * 底部：规则预览 + Token 估算
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff } from 'lucide-react'
 import { useWorldRulesStore } from '../../stores/world-rules'
 import { useWorldGroupStore } from '../../stores/world-group'
@@ -62,6 +63,7 @@ function getL2Nodes(
 // ── 主面板 ─────────────────────────────────────────────────────────
 
 export default function WorldRulesPanel({ project }: Props) {
+  const { t } = useTranslation('panels')
   const dialog = useDialog()
   const {
     profile, loading, loadProfile,
@@ -232,25 +234,25 @@ export default function WorldRulesPanel({ project }: Props) {
 
   const handleDeleteCustomNode = useCallback(async (nodeId: string, label: string) => {
     const ok = await dialog.confirm({
-      title: `删除「${label}」及其设定？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('worldRules.deleteNodeTitle', { label }),
+      message: t('worldRules.deleteConfirm'),
+      confirmText: t('worldRules.deleteButton'),
       tone: 'danger',
     })
     if (!ok) return
     deleteCustomNode(nodeId)
     if (selectedNode === nodeId) setSelectedNode(null)
-  }, [deleteCustomNode, dialog, selectedNode])
+  }, [deleteCustomNode, dialog, selectedNode, t])
 
   const handleClearEntry = useCallback(async (nodeId: string) => {
     const ok = await dialog.confirm({
-      title: '清空此节点的所有设定？',
-      message: '此操作不可恢复。',
-      confirmText: '清空',
+      title: t('worldRules.clearNodeTitle'),
+      message: t('worldRules.deleteConfirm'),
+      confirmText: t('worldRules.clearButton'),
       tone: 'danger',
     })
     if (ok) deleteEntry(nodeId)
-  }, [deleteEntry, dialog])
+  }, [deleteEntry, dialog, t])
 
   // 预览清单
   const handleTogglePreview = useCallback(async () => {
@@ -292,7 +294,7 @@ export default function WorldRulesPanel({ project }: Props) {
   if (loading || !profile) {
     return (
       <div className="flex items-center justify-center h-64">
-        <span className="text-text-muted">加载中...</span>
+        <span className="text-text-muted">{t('worldRules.loading')}</span>
       </div>
     )
   }
@@ -305,11 +307,11 @@ export default function WorldRulesPanel({ project }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <span>⚖️</span> 真实与幻想
+            <span>⚖️</span> {t('worldRules.title')}
           </h2>
           <p className="text-sm text-text-muted mt-1">
-            按维度声明哪些设定取自真实历史、哪些是架空改造，AI 生成时会严格遵守这些约束。
-            <span className="ml-2 text-accent">{filled} 个维度已设定</span>
+            {t('worldRules.subtitle')}
+            <span className="ml-2 text-accent">{t('worldRules.dimensionsSet', { count: filled })}</span>
           </p>
         </div>
         <button
@@ -317,7 +319,7 @@ export default function WorldRulesPanel({ project }: Props) {
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-bg-elevated hover:bg-bg-hover text-text-secondary transition-colors"
         >
           {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          {showPreview ? '关闭预览' : 'AI 清单预览'}
+          {showPreview ? t('worldRules.closePreview') : t('worldRules.aiPreview')}
         </button>
       </div>
 
@@ -370,12 +372,12 @@ export default function WorldRulesPanel({ project }: Props) {
       {/* 全局补充说明 */}
       <div className="border border-border rounded-xl p-4 bg-bg-base">
         <label className="block text-sm font-medium text-text-secondary mb-1.5">
-          📝 全局补充说明（对 AI 的额外约束，适用于所有维度）
+          {t('worldRules.globalNoteLabel')}
         </label>
         <textarea
           value={profile.globalNote || ''}
           onChange={e => updateGlobalNote(e.target.value)}
-          placeholder="例如：本作以唐代为蓝本但加入仙侠元素，凡是涉及朝堂制度的一律遵循史实，力量体系完全虚构。"
+          placeholder={t('worldRules.globalNotePlaceholder')}
           rows={3}
           className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-base text-text-primary placeholder:text-text-muted/50 focus:ring-1 focus:ring-accent focus:border-accent resize-y"
         />
@@ -386,10 +388,10 @@ export default function WorldRulesPanel({ project }: Props) {
         <div className="border border-border rounded-xl p-4 bg-bg-elevated">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-text-secondary">
-              AI 清单预览
+              {t('worldRules.previewTitle')}
             </h3>
             <span className="text-xs text-text-muted">
-              约 {previewTokens.toLocaleString()} tokens（{previewText.length.toLocaleString()} 字符）
+              {t('worldRules.previewStats', { tokens: previewTokens.toLocaleString(), chars: previewText.length.toLocaleString() })}
             </span>
           </div>
           {previewText ? (
@@ -397,7 +399,7 @@ export default function WorldRulesPanel({ project }: Props) {
               {previewText}
             </pre>
           ) : (
-            <p className="text-sm text-text-muted italic">暂无设定内容。填写上方维度后，这里会显示注入 AI 的结构化清单。</p>
+            <p className="text-sm text-text-muted italic">{t('worldRules.noContent')}</p>
           )}
         </div>
       )}

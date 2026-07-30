@@ -50,7 +50,7 @@ describe('AUDIT-6 · 正文编辑器标题栏', () => {
   it('展示规范标题、字数与状态，并转发状态切换', async () => {
     const { host, props } = await mount()
     expect(host.textContent).toContain('雨夜入城')
-    expect(host.textContent).toContain('1,234 字')
+    expect(host.textContent).toContain('chapter.wordCount')
     const status = host.querySelector('select')!
     await act(async () => {
       const setter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value')!.set!
@@ -62,9 +62,9 @@ describe('AUDIT-6 · 正文编辑器标题栏', () => {
 
   it('转发上下文、对照润色与保存命令', async () => {
     const { host, props } = await mount()
-    await act(async () => button(host, '上下文').click())
-    await act(async () => button(host, '对照润色').click())
-    await act(async () => button(host, '保存').click())
+    await act(async () => button(host, 'header.context').click())
+    await act(async () => button(host, 'header.comparePolish').click())
+    await act(async () => button(host, 'header.save').click())
     expect(props.onToggleContext).toHaveBeenCalledOnce()
     expect(props.onOpenCompare).toHaveBeenCalledOnce()
     expect(props.onSave).toHaveBeenCalledOnce()
@@ -72,14 +72,14 @@ describe('AUDIT-6 · 正文编辑器标题栏', () => {
 
   it('准确展示保存中、失败、已保存和禁用状态', async () => {
     const saving = await mount({ saving: true })
-    expect(saving.host.textContent).toContain('保存中...')
-    expect(button(saving.host, '保存中...').disabled).toBe(true)
+    expect(saving.host.textContent).toContain('header.saving')
+    expect(button(saving.host, 'header.saving').disabled).toBe(true)
 
     const failed = await mount({ saveError: '磁盘写入失败' })
-    expect(button(failed.host, '保存失败').title).toContain('磁盘写入失败')
+    expect(button(failed.host, 'header.saveFailed').title).toContain('header.saveFailedWith')
 
     const saved = await mount({ isSaved: true, canCompare: false, saveDisabled: true })
-    expect(button(saved.host, '已保存').disabled).toBe(true)
-    expect(button(saved.host, '对照润色').disabled).toBe(true)
+    expect(button(saved.host, 'header.saved').disabled).toBe(true)
+    expect(button(saved.host, 'header.comparePolish').disabled).toBe(true)
   })
 })

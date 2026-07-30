@@ -81,16 +81,16 @@ describe('R-CM1 · 增量灵感融合 UI', () => {
       onDiscard: vi.fn(),
     }))
 
-    expect(host.textContent).toContain('本人灵感')
-    expect(host.textContent).toContain('1 个已确认版本')
+    expect(host.textContent).toContain('fusion.sourceAuthor')
+    expect(host.textContent).toContain('fusion.versionCount')
     expect(host.textContent).toContain('storyCore.theme')
     expect(host.textContent).toContain('复仇')
     expect(host.textContent).toContain('记忆')
-    const remove = host.querySelector<HTMLButtonElement>('button[aria-label="移除灵感碎片"]')!
+    const remove = host.querySelector<HTMLButtonElement>('button[aria-label="fusion.removeLabel"]')!
     expect(remove.disabled).toBe(true)
 
     const confirm = Array.from(host.querySelectorAll('button'))
-      .find(button => button.textContent?.includes('确认融合版本'))!
+      .find(button => button.textContent?.includes('fusion.confirmVersion'))!
     await act(async () => confirm.click())
     expect(onConfirm).toHaveBeenCalledOnce()
   })
@@ -114,7 +114,7 @@ describe('R-CM1 · 增量灵感融合 UI', () => {
     }))
 
     const locked = Array.from(host.querySelectorAll<HTMLButtonElement>('button'))
-      .filter(button => button.textContent?.includes('先确认融合版本'))
+      .filter(button => button.textContent?.includes('singleResult.confirmFirst'))
     expect(locked.length).toBeGreaterThanOrEqual(2)
     expect(locked.every(button => button.disabled)).toBe(true)
     await act(async () => locked[0].click())

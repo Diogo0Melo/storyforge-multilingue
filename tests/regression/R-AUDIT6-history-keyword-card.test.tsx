@@ -133,8 +133,8 @@ describe('AUDIT-6 · 历史关键词卡', () => {
   it('展开态将字段与章节变化转成精确 patch', async () => {
     const { host, props } = await mount({ expanded: true })
     const nameInput = host.querySelector('input')!
-    const category = host.querySelector('select[aria-label="关键词分类"]')!
-    const era = host.querySelector('select[aria-label="适用历史时期"]')!
+    const category = host.querySelector('select[aria-label="history.categoryAriaLabel"]')!
+    const era = host.querySelector('select[aria-label="history.eraAriaLabel"]')!
     const description = host.querySelector('textarea')!
 
     await changeValue(nameInput, '交子')
@@ -152,10 +152,10 @@ describe('AUDIT-6 · 历史关键词卡', () => {
 
   it('双 Agent、删除与结果清除继续转发父级命令', async () => {
     const { host, props } = await mount({ expanded: true })
-    await act(async () => button(host, 'AI 历史考据').click())
-    await act(async () => button(host, 'AI 头脑风暴').click())
-    await act(async () => button(host, '删除关键词').click())
-    const clearButtons = Array.from(host.querySelectorAll('button')).filter(item => item.textContent?.trim() === '清除')
+    await act(async () => button(host, 'history.agentConsult').click())
+    await act(async () => button(host, 'history.agentStorm').click())
+    await act(async () => button(host, 'history.deleteKeyword').click())
+    const clearButtons = Array.from(host.querySelectorAll('button')).filter(item => item.textContent?.trim() === 'history.clear')
     expect(clearButtons).toHaveLength(2)
     await act(async () => clearButtons[0].click())
     await act(async () => clearButtons[1].click())
