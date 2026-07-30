@@ -6,6 +6,7 @@
  * 设定校验与情节灵感。
  */
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ScanSearch, Sparkles, Loader2 } from 'lucide-react'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIStream } from '../../hooks/useAIStream'
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export default function SceneVerifyPanel({ project }: Props) {
+  const { t } = useTranslation('panels')
   const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
   const ai = useAIStream(createAISessionKey(
     project.id!,
@@ -91,10 +93,10 @@ export default function SceneVerifyPanel({ project }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-              <ScanSearch className="w-5 h-5" /> 场景考证
+              <ScanSearch className="w-5 h-5" /> {t('scene.verify.title' as any)}
             </h2>
             <p className="text-xs text-text-muted mt-0.5">
-              描述你正在构思的场景，AI 结合本作品的世界观、历史年表与「真实与幻想」规则，给出符合背景的细节、设定校验与情节灵感。
+              {t('scene.verify.subtitle' as any)}
             </p>
           </div>
           {project.enableMultiWorld && <WorldGroupSwitcher />}
@@ -103,11 +105,11 @@ export default function SceneVerifyPanel({ project }: Props) {
 
       {/* 场景输入 */}
       <section>
-        <label className="block text-sm font-medium text-text-primary mb-2">当前场景</label>
+        <label className="block text-sm font-medium text-text-primary mb-2">{t('scene.verify.currentScene' as any)}</label>
         <AutoResizeTextarea
           value={scene}
           onChange={e => setScene(e.target.value)}
-          placeholder={'描述你正在写或构思的场景，越具体越好。\n\n例如：主角在宋代汴京的酒楼里，与一名丝绸商人讨价还价，想压低一批江南绸缎的进货价。'}
+          placeholder={t('scene.verify.scenePlaceholder' as any)}
           className="w-full text-sm bg-bg-base border border-border rounded-lg px-4 py-3 text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-accent"
           minRows={4}
         />
@@ -116,20 +118,20 @@ export default function SceneVerifyPanel({ project }: Props) {
       {/* 时代 / 地点（可选） */}
       <section className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-text-muted mb-1">时代/时间背景（可选）</label>
+          <label className="block text-xs text-text-muted mb-1">{t('scene.verify.eraLabel' as any)}</label>
           <CInput
             value={sceneEra}
             onChange={e => setSceneEra(e.target.value)}
-            placeholder="如：北宋仁宗年间 / 穿越后第三年"
+            placeholder={t('scene.verify.eraPlaceholder' as any)}
             className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
           />
         </div>
         <div>
-          <label className="block text-xs text-text-muted mb-1">地点（可选）</label>
+          <label className="block text-xs text-text-muted mb-1">{t('scene.verify.locationLabel' as any)}</label>
           <CInput
             value={sceneLocation}
             onChange={e => setSceneLocation(e.target.value)}
-            placeholder="如：汴京樊楼 / 斗气大陆乌坦城"
+            placeholder={t('scene.verify.locationPlaceholder' as any)}
             className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
           />
         </div>
@@ -143,10 +145,10 @@ export default function SceneVerifyPanel({ project }: Props) {
           className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {building || ai.isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {building ? '读取设定中...' : ai.isStreaming ? '考证中...' : '场景考证'}
+          {building ? t('scene.verify.readingSettings' as any) : ai.isStreaming ? t('scene.verify.verifying' as any) : t('scene.verify.verify' as any)}
         </button>
         {ai.isStreaming && (
-          <button onClick={ai.stop} className="text-xs text-text-muted hover:text-red-500 transition-colors">停止</button>
+          <button onClick={ai.stop} className="text-xs text-text-muted hover:text-red-500 transition-colors">{t('scene.verify.stop' as any)}</button>
         )}
       </div>
 
@@ -160,7 +162,7 @@ export default function SceneVerifyPanel({ project }: Props) {
           onStop={ai.stop}
           onAccept={() => { /* 考证结果供参考，无需写入数据，采纳=无操作 */ }}
           onRetry={handleVerify}
-          placeholder="考证结果会显示在这里..."
+          placeholder={t('scene.verify.resultPlaceholder' as any)}
           moduleKey="scene.verify"
         />
       )}

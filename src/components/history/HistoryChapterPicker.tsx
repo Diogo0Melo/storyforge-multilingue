@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { Chapter } from '../../lib/types'
 
 interface Props {
@@ -13,10 +14,11 @@ export default function HistoryChapterPicker({
   spacious = false,
   onChange,
 }: Props) {
+  const { t } = useTranslation('panels')
   return (
     <div className={`flex flex-wrap gap-1 p-1.5 bg-bg-base border border-border rounded-lg ${spacious ? 'min-h-[40px] max-h-24' : 'min-h-[32px] max-h-20'} overflow-y-auto`}>
       {chapters.length === 0 ? (
-        <span className="text-[10px] text-text-muted">暂无章节可关联</span>
+        <span className="text-[10px] text-text-muted">{t('history.noChapters')}</span>
       ) : (
         chapters.map(chapter => {
           const chapterId = chapter.id!

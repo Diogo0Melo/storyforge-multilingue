@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Trash2, ChevronDown, ChevronRight, MapPin, GitBranch, List, Sparkles, Image, Copy, Check, Loader2 } from 'lucide-react'
 import { useGeographyStore } from '../../stores/project-singletons'
 import { useWorldGroupStore } from '../../stores/world-group'
@@ -11,18 +12,18 @@ import { nanoid } from '../../lib/utils/id'
 import { sanitizeSvg } from '../../lib/utils/sanitize-svg'
 import LocationTreeMap from './LocationTreeMap'
 
-const LOCATION_TYPES: { value: LocationType; label: string }[] = [
-  { value: 'continent', label: '大陆' },
-  { value: 'country', label: '国家' },
-  { value: 'city', label: '城市' },
-  { value: 'sect', label: '门派驻地' },
-  { value: 'secret', label: '秘境' },
-  { value: 'ruin', label: '遗迹' },
-  { value: 'battlefield', label: '战场' },
-  { value: 'nature', label: '自然景观' },
-  { value: 'building', label: '建筑' },
-  { value: 'other', label: '其他' },
-]
+const LOCATION_TYPE_KEYS: Record<LocationType, string> = {
+  continent: 'geography.legendContinent',
+  country: 'geography.legendCountry',
+  city: 'geography.legendCity',
+  sect: 'geography.legendSect',
+  secret: 'geography.legendSecret',
+  ruin: 'geography.legendRuin',
+  battlefield: 'geography.legendBattlefield',
+  nature: 'geography.legendNature',
+  building: 'geography.legendBuilding',
+  other: 'geography.legendOther',
+}
 
 export function removeLocationSubtree(locations: Location[], id: string): Location[] {
   const toDelete = new Set<string>()
@@ -41,6 +42,7 @@ interface Props {
 }
 
 export default function GeographyPanel({ project }: Props) {
+  const { t } = useTranslation('panels')
   const { geography, loadAll, save } = useGeographyStore()
   const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
   const [overview, setOverview] = useState('')
@@ -98,7 +100,7 @@ export default function GeographyPanel({ project }: Props) {
   const handleAddLocation = () => {
     const newLoc: Location = {
       id: nanoid(),
-      name: '新地点',
+      name: t('geography.addLocation'),
       type: 'other',
       description: '',
       significance: '',
@@ -149,25 +151,25 @@ export default function GeographyPanel({ project }: Props) {
   return (
     <div className="max-w-4xl">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-text-primary">🗺️ 地理环境</h2>
+        <h2 className="text-xl font-bold text-text-primary">{t('geography.title')}</h2>
         {project.enableMultiWorld && <WorldGroupSwitcher />}
       </div>
 
       {/* 总述 */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-text-secondary mb-1">地理总述</label>
+        <label className="block text-sm font-medium text-text-secondary mb-1">{t('geography.overviewLabel')}</label>
         <textarea
           value={overview}
           onChange={e => setOverview(e.target.value)}
           onBlur={handleSaveOverview}
-          placeholder="描述这个世界的整体地理面貌、大陆分布、气候特征等..."
+          placeholder={t('geography.overviewPlaceholder')}
           className="w-full h-32 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
       </div>
 
       {/* 地点工具栏 */}
       <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
-        <h3 className="text-base font-semibold text-text-primary">地点列表 ({locations.length})</h3>
+        <h3 className="text-base font-semibold text-text-primary">{t('geography.locationList')} ({locations.length})</h3>
         <div className="flex items-center gap-2 flex-wrap">
           {/* 视图切换 */}
           <div className="flex bg-bg-elevated rounded-lg p-0.5">
@@ -177,7 +179,7 @@ export default function GeographyPanel({ project }: Props) {
                 view === 'map' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <GitBranch className="w-3.5 h-3.5" /> 树状图
+              <GitBranch className="w-3.5 h-3.5" /> {t('geography.viewTree')}
             </button>
             <button
               onClick={() => setView('aimap')}
@@ -185,7 +187,7 @@ export default function GeographyPanel({ project }: Props) {
                 view === 'aimap' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <Sparkles className="w-3.5 h-3.5" /> AI地图
+              <Sparkles className="w-3.5 h-3.5" /> {t('geography.viewAIMap')}
             </button>
             <button
               onClick={() => setView('list')}
@@ -193,7 +195,7 @@ export default function GeographyPanel({ project }: Props) {
                 view === 'list' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <List className="w-3.5 h-3.5" /> 列表
+              <List className="w-3.5 h-3.5" /> {t('geography.viewList')}
             </button>
           </div>
           <button
@@ -201,7 +203,7 @@ export default function GeographyPanel({ project }: Props) {
             className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded-md hover:bg-accent-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
-            添加地点
+            {t('geography.addLocation')}
           </button>
         </div>
       </div>
@@ -219,7 +221,7 @@ export default function GeographyPanel({ project }: Props) {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded-md hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
               {ai.isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {ai.isStreaming ? 'AI 生成中...' : '生成 AI 概念地图'}
+              {ai.isStreaming ? t('geography.generating') : t('geography.generateConceptMap')}
             </button>
             <button
               onClick={handleGenerateImagePrompt}
@@ -227,10 +229,10 @@ export default function GeographyPanel({ project }: Props) {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-elevated text-text-secondary text-sm rounded-md hover:text-text-primary disabled:opacity-50 transition-colors"
             >
               <Image className="w-4 h-4" />
-              生成图像 Prompt
+              {t('geography.generateImagePrompt')}
             </button>
             {locations.length === 0 && (
-              <span className="text-xs text-text-muted">请先在列表中添加地点</span>
+              <span className="text-xs text-text-muted">{t('geography.addLocationFirst')}</span>
             )}
           </div>
 
@@ -238,7 +240,7 @@ export default function GeographyPanel({ project }: Props) {
           {ai.isStreaming && !svgContent && (
             <div className="flex items-center gap-2 text-text-muted text-sm py-8 justify-center">
               <Loader2 className="w-4 h-4 animate-spin" />
-              AI 正在绘制地图...
+              {t('geography.drawingMap')}
               {ai.output.length > 0 && (
                 <span className="text-xs">≈ ~{Math.round(ai.output.length * 1.5).toLocaleString()} tokens</span>
               )}
@@ -264,14 +266,14 @@ export default function GeographyPanel({ project }: Props) {
             <div className="mt-4 p-3 bg-bg-elevated border border-border rounded-lg">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-xs font-medium text-text-secondary flex items-center gap-1">
-                  <Image className="w-3.5 h-3.5" /> 图像生成 Prompt（适用于 Midjourney / DALL-E）
+                  <Image className="w-3.5 h-3.5" /> {t('geography.imagePromptLabel')}
                 </span>
                 <button
                   onClick={handleCopyPrompt}
                   className="flex items-center gap-1 px-2 py-1 text-xs text-text-muted hover:text-accent transition-colors"
                 >
                   {copied ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? '已复制' : '复制'}
+                  {copied ? t('geography.copied') : t('geography.copy')}
                 </button>
               </div>
               <p className="text-xs text-text-muted leading-relaxed break-words select-all">{imagePrompt}</p>
@@ -282,7 +284,7 @@ export default function GeographyPanel({ project }: Props) {
 
       <div className={`space-y-2 ${view === 'map' ? 'hidden' : ''}`}>
         {locations.length === 0 ? (
-          <p className="text-text-muted text-sm py-8 text-center">暂无地点，点击上方按钮添加</p>
+          <p className="text-text-muted text-sm py-8 text-center">{t('geography.noLocations')}</p>
         ) : (
           locations.map(loc => {
             const isExpanded = expandedId === loc.id
@@ -297,7 +299,7 @@ export default function GeographyPanel({ project }: Props) {
                   <MapPin className="w-4 h-4 text-accent" />
                   <span className="text-sm font-medium text-text-primary flex-1 text-left">{loc.name}</span>
                   <span className="text-xs text-text-muted bg-bg-elevated px-2 py-0.5 rounded">
-                    {LOCATION_TYPES.find(t => t.value === loc.type)?.label || loc.type}
+                    {t(LOCATION_TYPE_KEYS[loc.type] as any)}
                   </span>
                 </button>
 
@@ -306,7 +308,7 @@ export default function GeographyPanel({ project }: Props) {
                   <div className="px-4 pb-4 space-y-3 border-t border-border pt-3">
                     <div className="grid grid-cols-3 gap-3">
                       <div>
-                        <label className="block text-xs text-text-muted mb-1">名称</label>
+                        <label className="block text-xs text-text-muted mb-1">{t('geography.name')}</label>
                         <input
                           value={loc.name}
                           onChange={e => handleUpdateLocation(loc.id, { name: e.target.value })}
@@ -314,25 +316,27 @@ export default function GeographyPanel({ project }: Props) {
                         />
                       </div>
                       <div>
-                        <label className="block text-xs text-text-muted mb-1">类型</label>
+                        <label className="block text-xs text-text-muted mb-1">{t('geography.type')}</label>
                         <select
                           value={loc.type}
-                          onChange={e => handleUpdateLocation(loc.id, { type: e.target.value as LocationType })}
+                          onChange={e => handleUpdateLocation(loc.id, { type: e.target.value as any })}
                           className="w-full px-2 py-1.5 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
                         >
-                          {LOCATION_TYPES.map(t => (
-                            <option key={t.value} value={t.value}>{t.label}</option>
+                          {(Object.keys(LOCATION_TYPE_KEYS) as any[]).map(type => (
+                            <option key={type} value={type}>
+                              {t(`geography.legend${type.charAt(0).toUpperCase() + type.slice(1)}` as any)}
+                            </option>
                           ))}
                         </select>
                       </div>
                       <div>
-                        <label className="block text-xs text-text-muted mb-1">上级地点</label>
+                        <label className="block text-xs text-text-muted mb-1">{t('geography.parentLocation')}</label>
                         <select
                           value={loc.parentId ?? ''}
                           onChange={e => handleUpdateLocation(loc.id, { parentId: e.target.value || null })}
                           className="w-full px-2 py-1.5 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
                         >
-                          <option value="">（顶级）</option>
+                          <option value="">{t('geography.topLevel')}</option>
                           {locations.filter(l => l.id !== loc.id).map(l => (
                             <option key={l.id} value={l.id}>{l.name}</option>
                           ))}
@@ -340,7 +344,7 @@ export default function GeographyPanel({ project }: Props) {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-xs text-text-muted mb-1">描述</label>
+                      <label className="block text-xs text-text-muted mb-1">{t('geography.description')}</label>
                       <textarea
                         value={loc.description}
                         onChange={e => handleUpdateLocation(loc.id, { description: e.target.value })}
@@ -348,7 +352,7 @@ export default function GeographyPanel({ project }: Props) {
                       />
                     </div>
                     <div>
-                      <label className="block text-xs text-text-muted mb-1">剧情重要性</label>
+                      <label className="block text-xs text-text-muted mb-1">{t('geography.significance')}</label>
                       <input
                         value={loc.significance}
                         onChange={e => handleUpdateLocation(loc.id, { significance: e.target.value })}
@@ -361,7 +365,7 @@ export default function GeographyPanel({ project }: Props) {
                         className="flex items-center gap-1 px-3 py-1.5 text-red-400 hover:bg-red-500/10 text-xs rounded transition-colors"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        删除地点
+                        {t('geography.deleteLocation')}
                       </button>
                     </div>
                   </div>

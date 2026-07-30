@@ -4,6 +4,7 @@
  */
 
 import { useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ChevronRight,
   ChevronDown,
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export default function WorldTreeSidebar({ projectId }: Props) {
+  const { t } = useTranslation('panels')
   const {
     activeWorldId,
     setActiveWorld,
@@ -42,13 +44,13 @@ export default function WorldTreeSidebar({ projectId }: Props) {
       await createNode({
         projectId,
         parentId,
-        name: parentId ? '子位面' : '新世界',
+        name: parentId ? t('geography.childPlane') : t('geography.newWorld'),
         description: '',
         sortOrder: siblingCount,
         icon: parentId ? '🌀' : '🌍',
       })
     },
-    [projectId, nodes, createNode],
+    [projectId, nodes, createNode, t],
   )
 
   // 折叠态：只显示图标列
@@ -58,7 +60,7 @@ export default function WorldTreeSidebar({ projectId }: Props) {
         <button
           onClick={() => setCollapsed(false)}
           className="p-1.5 rounded hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors"
-          title="展开世界树"
+          title={t('geography.expandWorldTree')}
         >
           <PanelLeftOpen className="w-3.5 h-3.5" />
         </button>
@@ -78,7 +80,7 @@ export default function WorldTreeSidebar({ projectId }: Props) {
         <button
           onClick={() => handleAddChild(null)}
           className="p-1 rounded hover:bg-bg-hover text-text-muted hover:text-accent mt-1"
-          title="新建世界"
+          title={t('geography.newWorld')}
         >
           <Plus className="w-3 h-3" />
         </button>
@@ -90,19 +92,19 @@ export default function WorldTreeSidebar({ projectId }: Props) {
     <div className="w-40 shrink-0 border-r border-border bg-bg-elevated flex flex-col h-full">
       {/* 标题 */}
       <div className="flex items-center justify-between px-2 py-1.5 border-b border-border">
-        <span className="text-[10px] font-medium text-text-secondary">世界树</span>
+        <span className="text-[10px] font-medium text-text-secondary">{t('geography.worldTree.title' as any)}</span>
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => handleAddChild(null)}
             className="p-1 rounded hover:bg-bg-hover text-text-muted hover:text-accent transition-colors"
-            title="新建根世界"
+            title={t('geography.worldTree.newRootWorld' as any)}
           >
             <Plus className="w-3 h-3" />
           </button>
           <button
             onClick={() => setCollapsed(true)}
             className="p-1 rounded hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors"
-            title="折叠"
+            title={t('geography.worldTree.collapse' as any)}
           >
             <PanelLeftClose className="w-3 h-3" />
           </button>
@@ -112,7 +114,7 @@ export default function WorldTreeSidebar({ projectId }: Props) {
       {/* 树列表 */}
       <div className="flex-1 overflow-y-auto py-0.5">
         {tree.length === 0 ? (
-          <div className="px-2 py-4 text-center text-text-muted text-[10px]">暂无世界</div>
+          <div className="px-2 py-4 text-center text-text-muted text-[10px]">{t('geography.worldTree.noWorlds' as any)}</div>
         ) : (
           tree.map(node => (
             <TreeItem
@@ -147,6 +149,7 @@ interface TreeItemProps {
 function TreeItem({
   node, depth, activeId, onSelect, onAddChild, onDelete, onRename,
 }: TreeItemProps) {
+  const { t } = useTranslation('panels')
   const dialog = useDialog()
   const [expanded, setExpanded] = useState(true)
   const [editing, setEditing] = useState(false)
@@ -213,14 +216,14 @@ function TreeItem({
           <button
             onClick={(e) => { e.stopPropagation(); setEditName(node.name); setEditing(true) }}
             className="p-0.5 rounded hover:bg-bg-base text-text-muted hover:text-text-primary"
-            title="重命名"
+            title={t('geography.worldTree.rename' as any)}
           >
             <Edit3 className="w-2.5 h-2.5" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onAddChild(node.id!) }}
             className="p-0.5 rounded hover:bg-bg-base text-text-muted hover:text-accent"
-            title="新建子世界"
+            title={t('geography.worldTree.newChildWorld' as any)}
           >
             <Plus className="w-2.5 h-2.5" />
           </button>
@@ -228,15 +231,15 @@ function TreeItem({
             onClick={async (e) => {
               e.stopPropagation()
               const ok = await dialog.confirm({
-                title: `删除「${node.name}」及其所有子世界？`,
-                message: '此操作不可恢复。',
-                confirmText: '删除',
+                title: t('geography.worldTree.deleteTitle' as any, { name: node.name }),
+                message: t('geography.worldTree.deleteMessage' as any),
+                confirmText: t('geography.worldTree.delete' as any),
                 tone: 'danger',
               })
               if (ok) onDelete(node.id!)
             }}
             className="p-0.5 rounded hover:bg-bg-base text-text-muted hover:text-red-400"
-            title="删除"
+            title={t('geography.worldTree.delete' as any)}
           >
             <Trash2 className="w-2.5 h-2.5" />
           </button>

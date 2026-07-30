@@ -7,6 +7,17 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 const mounted: Array<{ host: HTMLDivElement; root: ReturnType<typeof createRoot> }> = []
 
+const mockT = (key: string) => {
+  const map: Record<string, string> = {
+    'state.panel.heldItems': '持有物',
+    'state.panel.fromInventory': '来自物品栏',
+    'state.panel.fromState': '来自状态字段',
+    'state.panel.goToInventory': '去物品栏',
+    'state.panel.goToInventoryAria': '去物品栏',
+  }
+  return map[key] ?? key
+}
+
 async function renderFact(source: 'inventory' | 'state', onOpenInventory = vi.fn()) {
   const host = document.createElement('div')
   document.body.append(host)
@@ -17,6 +28,7 @@ async function renderFact(source: 'inventory' | 'state', onOpenInventory = vi.fn
       value: '青锋剑 ×1',
       source,
       onOpenInventory,
+      t: mockT,
     }))
   })
   return { host, onOpenInventory }

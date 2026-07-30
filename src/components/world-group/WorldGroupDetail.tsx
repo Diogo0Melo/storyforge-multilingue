@@ -3,6 +3,7 @@
  */
 import { CTextarea, CInput } from '../shared/CompositionInput'
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ArrowLeft, Save, Loader2, Sparkles, Check } from 'lucide-react'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIStream } from '../../hooks/useAIStream'
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function WorldGroupDetail({ group, onBack }: Props) {
+  const { t } = useTranslation('panels')
   const { updateGroup } = useWorldGroupStore()
   const [form, setForm] = useState({
     name: '',
@@ -120,17 +122,17 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
           className="flex items-center gap-1.5 text-sm text-text-muted hover:text-text-primary transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-          返回世界总览
+          {t('worldGroup.detailBack')}
         </button>
         <div className="flex items-center gap-2">
           <button
             onClick={handleAIExpand}
             disabled={ai.isStreaming}
-            title="根据描述 + 其他世界，AI 生成本世界的完整世界观"
+            title={t('worldGroup.aiExpandTitle')}
             className="flex items-center gap-1.5 px-3 py-2 bg-bg-elevated text-text-secondary border border-border rounded-lg hover:text-accent hover:border-accent/50 disabled:opacity-50 transition-colors text-sm"
           >
             {ai.isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : expanded ? <Check className="w-4 h-4 text-green-400" /> : <Sparkles className="w-4 h-4" />}
-            {ai.isStreaming ? 'AI 扩写中...' : expanded ? '已写入世界观' : 'AI 扩写世界观'}
+            {ai.isStreaming ? t('worldGroup.aiExpanding') : expanded ? t('worldGroup.aiExpanded') : t('worldGroup.aiExpand')}
           </button>
           <button
             onClick={handleSave}
@@ -138,7 +140,7 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
             className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 transition-colors text-sm font-medium"
           >
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-            {saving ? '保存中...' : '保存'}
+            {saving ? t('worldGroup.saving') : t('worldGroup.save')}
           </button>
         </div>
       </div>

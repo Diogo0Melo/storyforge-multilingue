@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { Project } from '../../lib/types'
 import { parseAgentEventPayload } from '../../lib/types'
 import { useMasterCopilot } from './useMasterCopilot'
@@ -22,18 +23,13 @@ interface Props {
   onClose: () => void
 }
 
-const CONTEXT_PROFILE_LABELS = {
-  lean: '精简',
-  balanced: '均衡',
-  full: '完整',
-} as const
-
 export default function ChatCopilotPanel({
   project,
   worldGroupId,
   worldName,
   onClose,
 }: Props) {
+  const { t } = useTranslation('panels')
   const copilot = useMasterCopilot({ project, worldGroupId })
   const [showDetails, setShowDetails] = useState(false)
   const endRef = useRef<HTMLDivElement | null>(null)
@@ -69,7 +65,7 @@ export default function ChatCopilotPanel({
 
   return (
     <aside
-      aria-label="主 Agent 创作副驾"
+      aria-label={t('agent.chat.ariaLabel' as any)}
       className="fixed inset-y-0 right-0 z-30 flex h-full w-[min(28rem,calc(100vw-2rem))] shrink-0 flex-col border-l border-border bg-bg-surface shadow-xl lg:static lg:z-auto lg:w-[28rem] lg:shadow-none"
     >
       <header className="border-b border-border/70 px-4 py-3">
@@ -77,9 +73,9 @@ export default function ChatCopilotPanel({
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
               <Bot className="h-4 w-4 text-accent" />
-              主 Agent
+              {t('agent.chat.title' as any)}
               <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                单一对话入口
+                {t('agent.chat.singleEntry' as any)}
               </span>
             </div>
             <p className="mt-1 truncate text-[11px] text-text-muted" title={`${project.name} · ${worldName}`}>
@@ -88,7 +84,7 @@ export default function ChatCopilotPanel({
           </div>
           <button
             type="button"
-            aria-label="关闭主 Agent"
+            aria-label={t('agent.chat.closeAria' as any)}
             onClick={onClose}
             className="rounded p-1 text-text-muted hover:bg-bg-hover hover:text-text-primary"
           >
@@ -97,7 +93,7 @@ export default function ChatCopilotPanel({
         </div>
         <div className="mt-3 flex items-start gap-2 rounded-md border border-accent/20 bg-accent/5 p-2 text-[11px] leading-4 text-text-secondary">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
-          你只需要描述目标。主 Agent 会在幕后调度领域 Agent；任何正式写入仍必须由你确认。
+          {t('agent.chat.banner' as any)}
         </div>
       </header>
 
@@ -105,7 +101,7 @@ export default function ChatCopilotPanel({
         {copilot.loading && (
           <div className="flex items-center gap-2 text-xs text-text-muted">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            正在恢复对话与候选…
+            {t('agent.chat.restoring' as any)}
           </div>
         )}
 
@@ -132,7 +128,7 @@ export default function ChatCopilotPanel({
             >
               <span className="flex items-center gap-2 text-xs font-medium text-text-primary">
                 {copilot.busy && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
-                后台执行
+                {t('agent.chat.backgroundExec' as any)}
               </span>
               <span className="flex items-center gap-1 text-[10px] text-text-muted">
                 {latestTasks.filter(task => task.status === 'completed').length}/{latestTasks.length || '…'}
@@ -144,7 +140,7 @@ export default function ChatCopilotPanel({
             {showDetails && (
               <div className="space-y-1 border-t border-border/60 px-3 py-2">
                 {latestTasks.length === 0 && (
-                  <p className="text-[10px] text-text-muted">主 Agent 正在理解目标并安排任务。</p>
+                  <p className="text-[10px] text-text-muted">{t('agent.chat.understanding' as any)}</p>
                 )}
                 {latestTasks.map(task => (
                   <div key={task.taskId} className="flex items-start justify-between gap-2 text-[10px]">
@@ -156,7 +152,7 @@ export default function ChatCopilotPanel({
                           ? 'text-error'
                           : 'text-accent'
                     }>
-                      {task.status === 'completed' ? '已完成' : task.status === 'failed' ? task.error || '失败' : '执行中'}
+                      {task.status === 'completed' ? t('agent.chat.completed' as any) : task.status === 'failed' ? task.error || t('agent.chat.failed' as any) : t('agent.chat.running' as any)}
                     </span>
                   </div>
                 ))}
@@ -172,19 +168,19 @@ export default function ChatCopilotPanel({
           >
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-text-primary">
-                待确认 · {candidate.payload.label}
+                {t('agent.chat.pendingConfirm' as any, { label: candidate.payload.label })}
               </span>
               <span
                 className="max-w-[45%] truncate text-[10px] text-text-muted"
                 title={candidate.payload.contextSources.join('、')}
               >
                 {candidate.payload.contextEvidence
-                  ? `${CONTEXT_PROFILE_LABELS[candidate.payload.contextEvidence.profile]} · ≈${candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString()} tokens`
-                  : `${candidate.payload.contextSources.length} 个输入来源`}
+                  ? `${t(`agent.context${candidate.payload.contextEvidence.profile.charAt(0).toUpperCase() + candidate.payload.contextEvidence.profile.slice(1)}` as any)} · ≈${candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString()} tokens`
+                  : t('agent.chat.inputSources' as any, { count: candidate.payload.contextSources.length })}
               </span>
             </div>
             <textarea
-              aria-label={`${candidate.payload.label}候选内容`}
+              aria-label={t('agent.chat.candidateAria' as any, { label: candidate.payload.label })}
               value={candidate.event.content}
               disabled={copilot.busy}
               onChange={event => {
@@ -195,39 +191,35 @@ export default function ChatCopilotPanel({
               }`}
             />
             <p className="mt-1 text-[10px] text-text-muted">
-              这是领域 Agent 的真实输出。刷新后仍会保留；只有采纳才会进入项目正式数据。
+              {t('agent.chat.realOutput' as any)}
             </p>
             {candidate.payload.contextEvidence && (
               <details className="mt-2 rounded border border-border/60 bg-bg-surface px-2 py-1.5 text-[10px] text-text-muted">
                 <summary className="cursor-pointer text-text-secondary">
-                  查看本次实际输入证据 · {candidate.payload.contextEvidence.included.length} 个来源
+                  {t('agent.chat.viewEvidence' as any, { count: candidate.payload.contextEvidence.included.length })}
                 </summary>
                 <div className="mt-2 space-y-1 break-words">
                   <p>
-                    上下文估算 {candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString()} /
-                    {' '}{candidate.payload.contextEvidence.inputBudgetTokens.toLocaleString()} tokens
+                    {t('agent.chat.contextEstimate' as any, { estimate: candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString(), budget: candidate.payload.contextEvidence.inputBudgetTokens.toLocaleString() })}
                   </p>
-                  <p>已纳入：{candidate.payload.contextEvidence.included.join('、') || '无'}</p>
+                  <p>{t('agent.chat.included' as any, { items: candidate.payload.contextEvidence.included.join('、') || t('agent.chat.none' as any) })}</p>
                   {candidate.payload.contextEvidence.trimmed.length > 0 && (
-                    <p className="text-warning">整段裁剪：{candidate.payload.contextEvidence.trimmed.join('、')}</p>
+                    <p className="text-warning">{t('agent.chat.trimmed' as any, { items: candidate.payload.contextEvidence.trimmed.join('、') })}</p>
                   )}
                   {candidate.payload.contextEvidence.omitted.length > 0 && (
-                    <p>无数据/未启用：{candidate.payload.contextEvidence.omitted.join('、')}</p>
+                    <p>{t('agent.chat.omitted' as any, { items: candidate.payload.contextEvidence.omitted.join('、') })}</p>
                   )}
                 </div>
               </details>
             )}
             {candidate.payload.teamBudgetEvidence && (
               <p className="mt-2 rounded border border-border/60 bg-bg-surface px-2 py-1.5 text-[10px] text-text-muted">
-                本轮团队预算约 {candidate.payload.teamBudgetEvidence.usedTokens.toLocaleString()} /
-                {' '}{candidate.payload.teamBudgetEvidence.maxTokens.toLocaleString()} tokens
-                {' · '}{candidate.payload.teamBudgetEvidence.calls}/{candidate.payload.teamBudgetEvidence.maxCalls} 次调用
-                {' · '}Canon 打回 {candidate.payload.teamBudgetEvidence.canonRetries}/{candidate.payload.teamBudgetEvidence.maxCanonRetries}
+                {t('agent.chat.teamBudget' as any, { used: candidate.payload.teamBudgetEvidence.usedTokens.toLocaleString(), max: candidate.payload.teamBudgetEvidence.maxTokens.toLocaleString(), calls: candidate.payload.teamBudgetEvidence.calls, maxCalls: candidate.payload.teamBudgetEvidence.maxCalls, retries: candidate.payload.teamBudgetEvidence.canonRetries, maxRetries: candidate.payload.teamBudgetEvidence.maxCanonRetries })}
               </p>
             )}
             {(candidate.payload.dependsOnTaskIds?.length ?? 0) > 0 && (
               <p className="mt-1 text-[10px] text-warning">
-                采纳前需先采纳上游任务：{candidate.payload.dependsOnTaskIds!.join('、')}
+                {t('agent.chat.adoptUpstreamFirst' as any, { tasks: candidate.payload.dependsOnTaskIds!.join('、') })}
               </p>
             )}
             <div className="mt-3 flex justify-end gap-2">
@@ -238,7 +230,7 @@ export default function ChatCopilotPanel({
                 className="flex items-center gap-1 rounded px-2.5 py-1.5 text-xs text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                拒绝
+                {t('agent.chat.reject' as any)}
               </button>
               <button
                 type="button"
@@ -249,7 +241,7 @@ export default function ChatCopilotPanel({
                 {copilot.busy
                   ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   : <Check className="h-3.5 w-3.5" />}
-                采纳
+                {t('agent.chat.adopt' as any)}
               </button>
             </div>
           </section>
@@ -265,7 +257,7 @@ export default function ChatCopilotPanel({
         }}
       >
         <textarea
-          aria-label="告诉主 Agent 你的目标"
+          aria-label={t('agent.chat.tellGoal' as any)}
           value={copilot.authorRequest}
           disabled={copilot.loading || copilot.busy || copilot.pendingCandidates.length > 0}
           maxLength={2000}
@@ -278,12 +270,12 @@ export default function ChatCopilotPanel({
             }
           }}
           placeholder={copilot.pendingCandidates.length
-            ? '请先处理当前候选，再继续对话'
-            : '例如：建立宋风世界，设计守灯人主角，规划三卷大纲，再写第一章正文…'}
+            ? t('agent.chat.placeholderPending' as any)
+            : t('agent.chat.placeholder' as any)}
           className="w-full resize-none rounded-md border border-border bg-bg-base px-3 py-2 text-xs leading-5 text-text-primary outline-none focus:border-accent disabled:opacity-60"
         />
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-[10px] text-text-muted">Enter 发送 · 输入、计划和候选自动保存在本地</span>
+          <span className="text-[10px] text-text-muted">{t('agent.chat.enterToSend' as any)}</span>
           {copilot.busy ? (
             <button
               type="button"
@@ -291,7 +283,7 @@ export default function ChatCopilotPanel({
               className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover"
             >
               <Square className="h-3.5 w-3.5" />
-              停止
+              {t('agent.chat.stop' as any)}
             </button>
           ) : (
             <button
@@ -304,7 +296,7 @@ export default function ChatCopilotPanel({
               className="flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-xs text-white hover:opacity-90 disabled:opacity-40"
             >
               <Send className="h-3.5 w-3.5" />
-              交给主 Agent
+              {t('agent.chat.submitToAgent' as any)}
             </button>
           )}
         </div>

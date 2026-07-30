@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useRef, useState } from 'react'
+import i18n from '../../i18n/i18n'
 import type { UseAIStreamReturn } from '../../hooks/useAIStream'
 import { assembleContext } from '../../lib/registry/assemble-context'
 import { adopt } from '../../lib/registry/adopt'
@@ -123,7 +125,7 @@ export function useHistoryAI({
       if (requestRef.current[mode] !== requestId) return
       console.error('[HistoryAI] 生成失败:', error)
       ai.reset()
-      onError(`历史 AI 准备失败：${error instanceof Error ? error.message : '未知错误'}。`)
+      onError(i18n.t('panels:history.errorPrepareFailed' as any, { error: error instanceof Error ? error.message : String(error) }) as string)
     } finally {
       if (requestRef.current[mode] === requestId) {
         if (mode === 'consult') setConsultPreparing(false)
@@ -149,7 +151,7 @@ export function useHistoryAI({
         data: { [field]: text },
       })
       if (result.written.length === 0) {
-        onError(`历史 AI 结果未能保存：${result.skipped[0]?.reason ?? '写回校验未通过'}。`)
+        onError(i18n.t('panels:history.errorSaveNotWritten' as any, { reason: result.skipped[0]?.reason ?? '写回校验未通过' }) as string)
         return
       }
       if (eventId != null) await reloadEvents()
@@ -165,7 +167,7 @@ export function useHistoryAI({
       }
     } catch (error) {
       console.error('[HistoryAI] 保存失败:', error)
-      onError(`历史 AI 结果保存失败：${error instanceof Error ? error.message : '未知错误'}。`)
+      onError(i18n.t('panels:history.errorSaveFailed' as any, { error: error instanceof Error ? error.message : String(error) }) as string)
     }
   }, [consultAI, consultEventId, consultKeywordId, onError, projectId, reloadEvents, reloadKeywords, stormAI, stormEventId, stormKeywordId, worldGroupId])
 

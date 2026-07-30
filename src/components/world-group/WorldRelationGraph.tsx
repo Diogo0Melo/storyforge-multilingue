@@ -9,18 +9,12 @@
  *   - tree     树状分支（平行世界）
  */
 import { useState, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { WORLD_LINK_TYPE_LABELS } from '../../lib/types/world-group'
 import type { WorldGroup, WorldGroupLink, WorldGroupLinkType } from '../../lib/types'
 
 type LayoutMode = 'flow' | 'radial' | 'ladder' | 'tree'
-
-const LAYOUT_LABELS: Record<LayoutMode, string> = {
-  flow: '横向流程',
-  radial: '中心辐射',
-  ladder: '纵向阶梯',
-  tree: '树状分支',
-}
 
 /** 连线颜色/样式（按关系类型区分） */
 const LINK_STYLE: Record<WorldGroupLinkType, { color: string; dash?: string }> = {
@@ -88,8 +82,16 @@ interface Props {
 }
 
 export default function WorldRelationGraph({ onNodeClick }: Props) {
+  const { t } = useTranslation('panels')
   const { groups, links } = useWorldGroupStore()
   const [mode, setMode] = useState<LayoutMode | null>(null)
+
+  const LAYOUT_LABELS: Record<LayoutMode, string> = {
+    flow: t('worldGroup.layoutFlow'),
+    radial: t('worldGroup.layoutRadial'),
+    ladder: t('worldGroup.layoutLadder'),
+    tree: t('worldGroup.layoutTree'),
+  }
 
   const effectiveMode: LayoutMode = mode ?? smartDefault(groups)
   const positions = useMemo(() => computePositions(groups, effectiveMode), [groups, effectiveMode])
@@ -100,7 +102,7 @@ export default function WorldRelationGraph({ onNodeClick }: Props) {
     <div className="space-y-2">
       {/* 布局切换 */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-text-muted">布局</span>
+        <span className="text-xs text-text-muted">{t('worldGroup.layoutLabel')}</span>
         {(Object.keys(LAYOUT_LABELS) as LayoutMode[]).map(m => (
           <button
             key={m}

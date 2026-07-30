@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
 import type { UseAIStreamReturn } from '../../hooks/useAIStream'
 import AIStreamOutput from '../shared/AIStreamOutput'
@@ -50,6 +51,7 @@ export default function HistoryAgentWorkspace({
   onClearConsult,
   onClearStorm,
 }: Props) {
+  const { t } = useTranslation('panels')
   const showConsultOutput = consultActive && !!(consultAI.output || consultAI.isStreaming || consultAI.error)
   const showStormOutput = stormActive && !!(stormAI.output || stormAI.isStreaming || stormAI.error)
 
@@ -64,7 +66,7 @@ export default function HistoryAgentWorkspace({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs font-medium rounded-lg hover:bg-blue-500/20 transition-colors disabled:opacity-50"
           >
             <ShieldCheck className="w-3.5 h-3.5" />
-            AI 历史考据
+            {t('history.agentConsult')}
           </button>
           <button
             type="button"
@@ -73,7 +75,7 @@ export default function HistoryAgentWorkspace({
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 text-purple-400 text-xs font-medium rounded-lg hover:bg-purple-500/20 transition-colors disabled:opacity-50"
           >
             <Sparkles className="w-3.5 h-3.5" />
-            AI 头脑风暴
+            {t('history.agentStorm')}
           </button>
         </div>
 
@@ -92,7 +94,7 @@ export default function HistoryAgentWorkspace({
       {showConsultOutput && (
         <div className="mt-3">
           <p className="text-[10px] text-blue-400 mb-1 flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> 历史考据 agent
+            <ShieldCheck className="w-3 h-3" /> {t('history.agentConsultLabel')}
           </p>
           <AIStreamOutput
             output={consultAI.output}
@@ -109,7 +111,7 @@ export default function HistoryAgentWorkspace({
       {showStormOutput && (
         <div className="mt-3">
           <p className="text-[10px] text-purple-400 mb-1 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> 头脑风暴 agent
+            <Sparkles className="w-3 h-3" /> {t('history.agentStormLabel')}
           </p>
           <AIStreamOutput
             output={stormAI.output}
@@ -126,7 +128,7 @@ export default function HistoryAgentWorkspace({
       {savedConsult && !consultActive && (
         <SavedAgentResult
           mode="consult"
-          label="AI 历史考据结果"
+          label={t('history.agentConsultResult')}
           text={savedConsult}
           canEdit={canEdit}
           onClear={onClearConsult}
@@ -162,6 +164,7 @@ function SavedAgentResult({
   maxHeight?: '60' | '80'
   onClear: () => void
 }) {
+  const { t } = useTranslation('panels')
   const isConsult = mode === 'consult'
   const Icon = isConsult ? ShieldCheck : Sparkles
   return (
@@ -177,7 +180,7 @@ function SavedAgentResult({
             onClick={onClear}
             className="text-[10px] text-text-muted hover:text-red-400"
           >
-            清除
+            {t('history.clear')}
           </button>
         )}
       </div>

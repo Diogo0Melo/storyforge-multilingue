@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Plus, Clock,
   BookOpen, Calendar, Loader2, Tag, Filter
@@ -27,6 +28,7 @@ interface Props {
 type TabKey = 'overview' | 'timeline' | 'keywords'
 
 export default function HistoryPanel({ project }: Props) {
+  const { t } = useTranslation('panels')
   const dialog = useDialog()
   const toast = useToast()
   const [activeTab, setActiveTab] = useState<TabKey>('timeline')
@@ -62,9 +64,9 @@ export default function HistoryPanel({ project }: Props) {
 
   const handleDeleteEvent = async (id: number) => {
     const ok = await dialog.confirm({
-      title: '删除该历史事件？',
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('history.deleteEventTitle'),
+      message: t('history.deleteConfirm'),
+      confirmText: t('history.deleteButton'),
       tone: 'danger',
     })
     if (ok) deleteEvent(id)
@@ -72,9 +74,9 @@ export default function HistoryPanel({ project }: Props) {
 
   const handleDeleteKeyword = async (id: number) => {
     const ok = await dialog.confirm({
-      title: '删除该关键词？',
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('history.deleteKeywordTitle'),
+      message: t('history.deleteConfirm'),
+      confirmText: t('history.deleteButton'),
       tone: 'danger',
     })
     if (ok) deleteKeyword(id)
@@ -145,9 +147,9 @@ export default function HistoryPanel({ project }: Props) {
       projectId: project.id!,
       era: 'custom',
       year: 0,
-      date: '公元元年',
-      title: '新历史事件',
-      description: '描述该事件的发生过程...',
+      date: t('history.eventDateDefault' as any),
+      title: t('history.eventTitleDefault' as any),
+      description: t('history.eventDescriptionDefault' as any),
       isHistorical: true,
       ...(scopeGroupId != null ? { worldGroupId: scopeGroupId } : {}),
     })
@@ -159,10 +161,10 @@ export default function HistoryPanel({ project }: Props) {
     if (!canEdit) return
     const newId = await addKeyword({
       projectId: project.id!,
-      keyword: '新历史关键词',
+      keyword: t('history.keywordDefault' as any),
       category: 'technology',
       era: 'custom',
-      description: '输入该关键词的基础概念或您想借鉴的方面...',
+      description: t('history.keywordDescriptionDefault' as any),
       ...(scopeGroupId != null ? { worldGroupId: scopeGroupId } : {}),
     })
     setExpandedKeywordId(newId)
@@ -201,9 +203,9 @@ export default function HistoryPanel({ project }: Props) {
               <Calendar className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-semibold text-text-primary">📜 历史年表与时间线</h1>
+              <h1 className="text-xl font-semibold text-text-primary">{t('history.title')}</h1>
               <p className="text-xs text-text-muted mt-0.5">
-                管理真实历史背景或架空历史事件，支持 AI 历史考证与细节头脑风暴。
+                {t('history.subtitle')}
               </p>
             </div>
           </div>
@@ -233,9 +235,9 @@ export default function HistoryPanel({ project }: Props) {
                 ? 'bg-accent text-white border-accent'
                 : 'bg-bg-base text-text-secondary border-border hover:border-accent/50'
             }`}
-            title="并排查看所有世界的历史，只读"
+            title={t('history.worldTabAllTitle')}
           >
-            📋 一览
+            {t('history.worldTabAll')}
           </button>
         </div>
       )}
@@ -251,7 +253,7 @@ export default function HistoryPanel({ project }: Props) {
           }`}
         >
           <Clock className="w-4 h-4" />
-          历史时间轴
+          {t('history.tabTimeline')}
         </button>
         <button
           onClick={() => setActiveTab('keywords')}
@@ -262,7 +264,7 @@ export default function HistoryPanel({ project }: Props) {
           }`}
         >
           <Tag className="w-4 h-4" />
-          历史细节风暴
+          {t('history.tabKeywords')}
         </button>
         <button
           onClick={() => setActiveTab('overview')}
@@ -273,7 +275,7 @@ export default function HistoryPanel({ project }: Props) {
           }`}
         >
           <BookOpen className="w-4 h-4" />
-          历史总述与纪年
+          {t('history.tabOverview')}
         </button>
       </nav>
 
@@ -296,8 +298,8 @@ export default function HistoryPanel({ project }: Props) {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-medium text-text-secondary">
-                时间轴事件 ({scopedEvents.length})
-                {isMW && worldTab === 'all' && <span className="ml-1 text-text-muted">· 一览（只读）</span>}
+                {t('history.timelineEvents')} ({scopedEvents.length})
+                {isMW && worldTab === 'all' && <span className="ml-1 text-text-muted">· {t('history.overviewReadOnly')}</span>}
               </h3>
               {canEdit && (
                 <button
@@ -305,7 +307,7 @@ export default function HistoryPanel({ project }: Props) {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-xs rounded-lg hover:opacity-90 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  添加事件
+                  {t('history.addEvent')}
                 </button>
               )}
             </div>
@@ -313,19 +315,19 @@ export default function HistoryPanel({ project }: Props) {
             {loadingEvents ? (
               <div className="flex items-center justify-center py-12 text-text-muted">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                加载时间线中...
+                {t('history.loadingTimeline')}
               </div>
             ) : scopedEvents.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border bg-bg-elevated/10 p-12 text-center">
                 <Clock className="w-8 h-8 text-text-muted mx-auto mb-3 opacity-40" />
-                <h4 className="text-sm font-medium text-text-primary mb-1">暂无时间线事件</h4>
-                <p className="text-xs text-text-muted mb-4">添加真实历史事件或虚构事件，构建完整的小说时间轴。</p>
+                <h4 className="text-sm font-medium text-text-primary mb-1">{t('history.noEvents')}</h4>
+                <p className="text-xs text-text-muted mb-4">{t('history.noEventsDescription')}</p>
                 <button
                   onClick={handleAddEvent}
                   className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent text-white text-xs rounded-lg hover:opacity-90"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  添加第一个事件
+                  {t('history.addFirstEvent')}
                 </button>
               </div>
             ) : (
@@ -336,7 +338,7 @@ export default function HistoryPanel({ project }: Props) {
                     ? groups.find(candidate => candidate.id === event.worldGroupId)
                     : undefined
                   const worldBadge = isMW && worldTab === 'all' && event.worldGroupId != null
-                    ? { icon: group?.icon || '🌐', name: group?.name || '未知世界' }
+                    ? { icon: group?.icon || '🌐', name: group?.name || t('worldGroup.unnamedWorld' as any) }
                     : undefined
                   return (
                     <HistoryTimelineEventCard
@@ -384,14 +386,14 @@ export default function HistoryPanel({ project }: Props) {
               <div className="flex items-center gap-2 flex-wrap">
                 <div className="flex items-center gap-1 text-xs text-text-muted mr-1">
                   <Filter className="w-3.5 h-3.5" />
-                  筛选：
+                  {t('history.filterLabel')}
                 </div>
                 <select
                   value={filterCategory}
                   onChange={e => setFilterCategory(e.target.value as any)}
                   className="px-2 py-1 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 >
-                  <option value="all">所有分类</option>
+                  <option value="all">{t('history.allCategories')}</option>
                   {Object.entries(KEYWORD_CATEGORY_LABELS).map(([k, v]) => (
                     <option key={k} value={k}>{v}</option>
                   ))}
@@ -401,7 +403,7 @@ export default function HistoryPanel({ project }: Props) {
                   onChange={e => setFilterEra(e.target.value as any)}
                   className="px-2 py-1 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 >
-                  <option value="all">所有时期</option>
+                  <option value="all">{t('history.allEras')}</option>
                   {Object.entries(HISTORICAL_ERA_LABELS).map(([k, v]) => (
                     <option key={k} value={k}>{v}</option>
                   ))}
@@ -414,7 +416,7 @@ export default function HistoryPanel({ project }: Props) {
                   className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-xs rounded-lg hover:opacity-90 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  添加关键词
+                  {t('history.addKeyword')}
                 </button>
               )}
             </div>
@@ -422,20 +424,20 @@ export default function HistoryPanel({ project }: Props) {
             {loadingKeywords ? (
               <div className="flex items-center justify-center py-12 text-text-muted">
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                加载细节库中...
+                {t('history.loadingKeywords')}
               </div>
             ) : filteredKeywords.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-border bg-bg-elevated/10 p-12 text-center">
                 <Tag className="w-8 h-8 text-text-muted mx-auto mb-3 opacity-40" />
-                <h4 className="text-sm font-medium text-text-primary mb-1">暂无匹配的关键词</h4>
-                <p className="text-xs text-text-muted mb-4">添加您想考证或头脑风暴的关键词（如“织布机”、“科举”），让 AI 帮您补充细节。</p>
+                <h4 className="text-sm font-medium text-text-primary mb-1">{t('history.noKeywords')}</h4>
+                <p className="text-xs text-text-muted mb-4">{t('history.noKeywordsDescription')}</p>
                 {keywords.length === 0 && (
                   <button
                     onClick={handleAddKeyword}
                     className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent text-white text-xs rounded-lg hover:opacity-90"
                   >
                     <Plus className="w-3.5 h-3.5" />
-                    添加第一个关键词
+                    {t('history.addFirstKeyword')}
                   </button>
                 )}
               </div>

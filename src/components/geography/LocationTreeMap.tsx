@@ -1,4 +1,5 @@
 import { useMemo, useRef, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { stratify, tree, type HierarchyPointNode } from 'd3-hierarchy'
 import type { Location } from '../../lib/types'
 
@@ -9,6 +10,19 @@ const TYPE_EMOJI: Record<string, string> = {
   continent: '🌍', country: '🏯', city: '🏙️', sect: '⚔️',
   secret: '✨', ruin: '🏚️', battlefield: '🔥', nature: '🌿',
   building: '🏛️', other: '📍',
+}
+
+const TYPE_I18N_KEYS: Record<string, string> = {
+  continent: 'geography.legendContinent',
+  country: 'geography.legendCountry',
+  city: 'geography.legendCity',
+  sect: 'geography.legendSect',
+  secret: 'geography.legendSecret',
+  ruin: 'geography.legendRuin',
+  battlefield: 'geography.legendBattlefield',
+  nature: 'geography.legendNature',
+  building: 'geography.legendBuilding',
+  other: 'geography.legendOther',
 }
 
 const NODE_COLORS: Record<string, string> = {
@@ -22,6 +36,7 @@ interface Props {
 }
 
 export default function LocationTreeMap({ locations }: Props) {
+  const { t } = useTranslation('panels')
   const svgRef = useRef<SVGSVGElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [svgSize, setSvgSize] = useState({ width: 700, height: 400 })
@@ -41,7 +56,7 @@ export default function LocationTreeMap({ locations }: Props) {
 
     // 添加虚拟根节点
     const allNodes: NodeDatum[] = [
-      { id: '__root__', name: '世界', type: 'continent', description: '', significance: '', parentId: null, order: 0 },
+      { id: '__root__', name: t('geography.world'), type: 'continent', description: '', significance: '', parentId: null, order: 0 },
       ...locations.map(l => ({
         ...l,
         parentId: l.parentId || '__root__',
@@ -69,7 +84,7 @@ export default function LocationTreeMap({ locations }: Props) {
   if (locations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-40 text-text-muted text-sm">
-        暂无地点数据，请在下方添加地点
+        {t('geography.noLocationData')}
       </div>
     )
   }
@@ -77,7 +92,7 @@ export default function LocationTreeMap({ locations }: Props) {
   if (!treeLayout) {
     return (
       <div className="flex flex-col items-center justify-center h-40 text-text-muted text-sm">
-        地点层级结构有误，请检查父级关系
+        {t('geography.locationHierarchyError')}
       </div>
     )
   }
@@ -137,9 +152,7 @@ export default function LocationTreeMap({ locations }: Props) {
           <div key={key} className="flex items-center gap-1 text-xs text-text-muted">
             <span>{emoji}</span>
             <span style={{ color: NODE_COLORS[key] }}>
-              {{ continent:'大陆', country:'国家', city:'城市', sect:'门派',
-                 secret:'秘境', ruin:'遗迹', battlefield:'战场', nature:'自然',
-                 building:'建筑', other:'其他' }[key]}
+              {t(TYPE_I18N_KEYS[key] as any)}
             </span>
           </div>
         ))}

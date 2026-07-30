@@ -5,6 +5,7 @@
  * 角色基础地点与势力词条。旧的非角色状态卡保留在库中，但不再作为正式 UI 展示。
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   ArrowRight, BookOpenCheck, Download, Edit3, MapPin, Package, Save, Shield, Sparkles, UserRound, X,
 } from 'lucide-react'
@@ -33,6 +34,7 @@ function findField(fields: StateField[], keys: string[]): string {
 }
 
 export default function StatePanel({ project, onOpenInventory }: Props) {
+  const { t } = useTranslation('panels')
   const projectId = project.id!
   const { cards, loading, loadAll, addCard, updateCard, buildStateContext } = useStateCardStore()
   const { characters, loadAll: loadCharacters } = useCharacterStore()
@@ -88,10 +90,10 @@ export default function StatePanel({ project, onOpenInventory }: Props) {
       <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/40">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <UserRound className="w-5 h-5" /> 角色状态卡
+            <UserRound className="w-5 h-5" /> {t('state.panel.title' as any)}
           </h2>
           <p className="text-xs text-text-muted mt-1">
-            以角色为中心聚合当前状态、地点、剧情进度、持有物与势力。章节编辑器的“提取状态”只会更新已登记角色。
+            {t('state.panel.subtitle' as any)}
           </p>
         </div>
         <button
@@ -99,23 +101,23 @@ export default function StatePanel({ project, onOpenInventory }: Props) {
           disabled={!characterCards.length}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border bg-bg-elevated text-text-secondary disabled:opacity-40"
         >
-          <Download className="w-3.5 h-3.5" /> 导出
+          <Download className="w-3.5 h-3.5" /> {t('state.panel.export' as any)}
         </button>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Summary label="角色总数" value={characters.length} />
-        <Summary label="已建立状态" value={characterCards.length} accent />
-        <Summary label="待补状态" value={Math.max(0, characters.length - characterCards.length)} />
+        <Summary label={t('state.panel.totalCharacters' as any)} value={characters.length} />
+        <Summary label={t('state.panel.establishedState' as any)} value={characterCards.length} accent />
+        <Summary label={t('state.panel.pendingState' as any)} value={Math.max(0, characters.length - characterCards.length)} />
       </div>
 
       {loading ? (
-        <div className="text-sm text-text-muted text-center py-10">加载中…</div>
+        <div className="text-sm text-text-muted text-center py-10">{t('state.panel.loading' as any)}</div>
       ) : characters.length === 0 ? (
         <div className="text-center py-12 text-text-muted">
           <UserRound className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">还没有角色</p>
-          <p className="text-xs mt-1">先在“角色设计”登记角色，再从章节正文提取动态状态。</p>
+          <p className="text-sm">{t('state.panel.noCharacters' as any)}</p>
+          <p className="text-xs mt-1">{t('state.panel.noCharactersHint' as any)}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -146,6 +148,7 @@ export default function StatePanel({ project, onOpenInventory }: Props) {
                   }
                   setEditingCharacter(null)
                 }}
+                t={t}
               />
             )
           })}
@@ -166,7 +169,7 @@ function Summary({ label, value, accent }: { label: string; value: number; accen
 
 function CharacterStateCard({
   character, card, chapterTitle, protagonistItems, inventoryBacked, onOpenInventory,
-  knownFactions, editing, onToggleEdit, onSave,
+  knownFactions, editing, onToggleEdit, onSave, t,
 }: {
   character: Character
   card: StateCard | null
@@ -178,6 +181,7 @@ function CharacterStateCard({
   editing: boolean
   onToggleEdit: () => void
   onSave: (fields: StateField[]) => Promise<void>
+  t: any
 }) {
   const fields = useMemo(() => parseFields(card?.fields || '[]'), [card?.fields])
   const [draft, setDraft] = useState<StateField[]>(fields)
@@ -186,12 +190,12 @@ function CharacterStateCard({
     if (editing) setDraft(fields.length ? fields : [{ key: '当前状态', value: '' }])
   }, [editing, fields])
 
-  const location = findField(fields, LOCATION_KEYS) || character.location || '未记录'
+  const location = findField(fields, LOCATION_KEYS) || character.location || t('state.panel.notRecorded' as any)
   const faction = findField(fields, FACTION_KEYS)
     || knownFactions.find(name => fields.some(field => field.value.includes(name)))
-    || '未记录'
+    || t('state.panel.notRecorded' as any)
   const stateItems = findField(fields, ITEM_KEYS)
-  const heldItems = protagonistItems.length ? protagonistItems.join('、') : stateItems || '未记录'
+  const heldItems = protagonistItems.length ? protagonistItems.join('、') : stateItems || t('state.panel.notRecorded' as any)
   const coreFields = fields.filter(field =>
     ![...LOCATION_KEYS, ...FACTION_KEYS, ...ITEM_KEYS]
       .some(key => field.key.toLocaleLowerCase().includes(key.toLocaleLowerCase())),
@@ -207,11 +211,11 @@ function CharacterStateCard({
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-text-primary truncate">{character.name}</h3>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-elevated text-text-muted">{character.role}</span>
-            {!card && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">待提取</span>}
+            {!card && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">{t('state.panel.pendingExtract' as any)}</span>}
           </div>
-          <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{character.shortDescription || '暂无角色简介'}</p>
+          <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{character.shortDescription || t('state.panel.noBio' as any)}</p>
         </div>
-        <button onClick={onToggleEdit} className="p-1 text-text-muted hover:text-accent" title="编辑状态">
+        <button onClick={onToggleEdit} className="p-1 text-text-muted hover:text-accent" title={t('state.panel.editStateAria' as any)}>
           {editing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
         </button>
       </div>
@@ -223,13 +227,13 @@ function CharacterStateCard({
               <CInput
                 value={field.key}
                 onChange={event => setDraft(current => current.map((item, i) => i === index ? { ...item, key: event.target.value } : item))}
-                placeholder="字段"
+                placeholder={t('state.panel.fieldPlaceholder' as any)}
                 className="w-28 px-2 py-1.5 rounded border border-border bg-bg-base text-xs"
               />
               <CInput
                 value={field.value}
                 onChange={event => setDraft(current => current.map((item, i) => i === index ? { ...item, value: event.target.value } : item))}
-                placeholder="当前值"
+                placeholder={t('state.panel.valuePlaceholder' as any)}
                 className="flex-1 px-2 py-1.5 rounded border border-border bg-bg-base text-xs"
               />
               <button onClick={() => setDraft(current => current.filter((_, i) => i !== index))} className="p-1 text-text-muted hover:text-red-400">
@@ -238,30 +242,31 @@ function CharacterStateCard({
             </div>
           ))}
           <div className="flex items-center justify-between">
-            <button onClick={() => setDraft(current => [...current, { key: '', value: '' }])} className="text-xs text-accent">+ 添加字段</button>
+            <button onClick={() => setDraft(current => [...current, { key: '', value: '' }])} className="text-xs text-accent">{t('state.panel.addField' as any)}</button>
             <button
               onClick={() => onSave(draft.filter(field => field.key.trim() && field.value.trim()))}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-accent text-white text-xs"
             >
-              <Save className="w-3.5 h-3.5" /> 保存
+              <Save className="w-3.5 h-3.5" /> {t('state.panel.save' as any)}
             </button>
           </div>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2 mt-4">
-            <Fact icon={MapPin} label="所在地点" value={location} />
-            <Fact icon={Shield} label="所属势力" value={faction} />
-            <Fact icon={BookOpenCheck} label="剧情进度" value={chapterTitle || '未记录'} />
+            <Fact icon={MapPin} label={t('state.panel.location' as any)} value={location} />
+            <Fact icon={Shield} label={t('state.panel.faction' as any)} value={faction} />
+            <Fact icon={BookOpenCheck} label={t('state.panel.storyProgress' as any)} value={chapterTitle || t('state.panel.notRecorded' as any)} />
             <InventoryFact
               value={heldItems}
               source={inventoryBacked ? 'inventory' : 'state'}
               onOpenInventory={onOpenInventory}
+              t={t}
             />
           </div>
           <div className="mt-3 pt-3 border-t border-border/50">
             <p className="text-[10px] uppercase tracking-wide text-text-muted flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> 当前状态
+              <Sparkles className="w-3 h-3" /> {t('state.panel.currentStatus' as any)}
             </p>
             {coreFields.length ? (
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -272,7 +277,7 @@ function CharacterStateCard({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-text-muted mt-2">尚无动态状态。可在章节编辑器中点击“提取状态”。</p>
+              <p className="text-xs text-text-muted mt-2">{t('state.panel.noDynamicStatus' as any)}</p>
             )}
           </div>
         </>
@@ -285,26 +290,28 @@ export function InventoryFact({
   value,
   source,
   onOpenInventory,
+  t,
 }: {
   value: string
   source: 'inventory' | 'state'
   onOpenInventory?: () => void
+  t: any
 }) {
   return (
     <div className="rounded-lg bg-bg-elevated/60 p-2.5 min-w-0" data-testid="state-inventory-fact">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] text-text-muted flex min-w-0 items-center gap-1">
-          <Package className="w-3 h-3 shrink-0" /> 持有物
+          <Package className="w-3 h-3 shrink-0" /> {t('state.panel.heldItems' as any)}
           <span className="truncate text-[9px] text-text-muted/70">
-            · {source === 'inventory' ? '来自物品栏' : '来自状态字段'}
+            · {source === 'inventory' ? t('state.panel.fromInventory' as any) : t('state.panel.fromState' as any)}
           </span>
         </p>
         {onOpenInventory && (
           <button
             type="button"
             onClick={onOpenInventory}
-            title="去物品栏"
-            aria-label="去物品栏"
+            title={t('state.panel.goToInventory' as any)}
+            aria-label={t('state.panel.goToInventoryAria' as any)}
             className="shrink-0 rounded p-0.5 text-text-muted hover:bg-accent/10 hover:text-accent"
           >
             <ArrowRight className="h-3 w-3" />

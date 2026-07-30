@@ -1,21 +1,22 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Brain, Check, Plus, X } from 'lucide-react'
 import type { KnowledgeAction, KnowledgeEventStatus, Project } from '../../lib/types'
 import { useKnowledgeLedgerStore } from '../../stores/knowledge-ledger'
 
-const ACTION_LABEL: Record<KnowledgeAction, string> = {
-  learn: '获知',
-  mislearn: '误认',
-  forget: '遗忘',
-  correct: '纠正',
+const ACTION_LABEL_KEY: Record<KnowledgeAction, string> = {
+  learn: 'facts.action.learn',
+  mislearn: 'facts.action.mislearn',
+  forget: 'facts.action.forget',
+  correct: 'facts.action.correct',
 }
 
-const STATUS_LABEL: Record<KnowledgeEventStatus, string> = {
-  candidate: '待确认',
-  confirmed: '已确认',
-  rejected: '已否决',
-  'source-missing': '来源缺失',
-  'invalid-range': '时序失效',
+const STATUS_LABEL_KEY: Record<KnowledgeEventStatus, string> = {
+  candidate: 'facts.kStatus.candidate',
+  confirmed: 'facts.kStatus.confirmed',
+  rejected: 'facts.kStatus.rejected',
+  'source-missing': 'facts.kStatus.sourceMissing',
+  'invalid-range': 'facts.kStatus.invalidRange',
 }
 
 const REVIEWABLE: KnowledgeEventStatus[] = ['candidate', 'source-missing', 'invalid-range']
@@ -24,6 +25,7 @@ export default function KnowledgeLedgerPanel({ project, onShowFacts }: {
   project: Project
   onShowFacts: () => void
 }) {
+  const { t } = useTranslation('panels')
   const { events, characters, chapters, loading, load, adopt, confirmEvent, rejectEvent } = useKnowledgeLedgerStore()
   const [status, setStatus] = useState<KnowledgeEventStatus>('candidate')
   const [characterId, setCharacterId] = useState('')
@@ -49,11 +51,11 @@ export default function KnowledgeLedgerPanel({ project, onShowFacts }: {
     if (project.id == null) return
     const character = characters.find(item => item.id === Number(characterId))
     if (!character || !knowledgeKey.trim() || !statement.trim()) {
-      setMessage('请选择角色，并填写稳定知识 key 与命题文本。')
+      setMessage(t('facts.knowledge.selectCharAndFill' as any))
       return
     }
     if (action === 'mislearn' && !belief.trim()) {
-      setMessage('误认事件必须填写角色实际相信的错误内容。')
+      setMessage(t('facts.knowledge.mislearnRequiresBelief' as any))
       return
     }
     const result = await adopt(project.id, [{
@@ -68,7 +70,7 @@ export default function KnowledgeLedgerPanel({ project, onShowFacts }: {
       sourceChapterId: sourceChapterId ? Number(sourceChapterId) : null,
       sourceQuote: '',
     }])
-    setMessage(result.written ? '已加入待确认候选。' : `未写入（跳过 ${result.skipped} 条），请检查重复项或字段。`)
+    setMessage(result.written ? t('facts.knowledge.added' as any) : t('facts.knowledge.notWritten' as any, { count: result.skipped } as any))
     if (result.written) {
       setKnowledgeKey('')
       setStatement('')
@@ -82,85 +84,85 @@ export default function KnowledgeLedgerPanel({ project, onShowFacts }: {
       <div className="flex items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2">
           <Brain className="w-5 h-5 text-violet-400" />
-          <h1 className="text-lg font-bold text-text-primary">角色认知账本（CONSISTENCY-2）</h1>
+          <h1 className="text-lg font-bold text-text-primary">{t('facts.knowledge.title' as any)}</h1>
         </div>
         <button onClick={onShowFacts} className="px-3 py-1.5 text-xs rounded-md bg-bg-elevated text-text-secondary hover:text-text-primary">
-          查看世界事实
+          {t('facts.knowledge.viewFacts' as any)}
         </button>
       </div>
       <p className="text-xs text-text-muted mb-4">
-        世界事实与角色认知分开保存；只有作者确认的事件才会进入后续章节认知投影。目标章自身的获知事件不会提前生效。
+        {t('facts.knowledge.desc' as any)}
       </p>
 
       <div className="mb-4 p-3 rounded-lg border border-border bg-bg-elevated/60 space-y-2">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           <select value={characterId} onChange={event => setCharacterId(event.target.value)}
             className="px-2 py-1.5 text-xs rounded bg-bg-base border border-border text-text-primary">
-            <option value="">选择角色</option>
+            <option value="">{t('facts.knowledge.selectCharacter' as any)}</option>
             {characters.map(character => <option key={character.id} value={character.id}>{character.name}</option>)}
           </select>
           <select value={action} onChange={event => setAction(event.target.value as KnowledgeAction)}
             className="px-2 py-1.5 text-xs rounded bg-bg-base border border-border text-text-primary">
-            {(Object.keys(ACTION_LABEL) as KnowledgeAction[]).map(key =>
-              <option key={key} value={key}>{ACTION_LABEL[key]}</option>)}
+            {(Object.keys(ACTION_LABEL_KEY) as KnowledgeAction[]).map(key =>
+              <option key={key} value={key}>{t(ACTION_LABEL_KEY[key] as any)}</option>)}
           </select>
           <select value={sourceChapterId} onChange={event => setSourceChapterId(event.target.value)}
             className="px-2 py-1.5 text-xs rounded bg-bg-base border border-border text-text-primary">
-            <option value="">基线（人工/导入）</option>
+            <option value="">{t('facts.knowledge.baseline' as any)}</option>
             {chapters.map(chapter => <option key={chapter.id} value={chapter.id}>{chapter.title}</option>)}
           </select>
         </div>
         <input value={knowledgeKey} onChange={event => setKnowledgeKey(event.target.value)}
-          placeholder="稳定知识 key，例如 enemy.true_identity"
+          placeholder={t('facts.knowledge.keyPlaceholder' as any)}
           className="w-full px-2 py-1.5 text-xs rounded bg-bg-base border border-border text-text-primary placeholder:text-text-muted" />
         <textarea value={statement} onChange={event => setStatement(event.target.value)}
-          placeholder="世界中的真实命题，例如：黑衣人是城主"
+          placeholder={t('facts.knowledge.statementPlaceholder' as any)}
           className="w-full min-h-[56px] px-2 py-1.5 text-xs rounded bg-bg-base border border-border text-text-primary placeholder:text-text-muted" />
         {action === 'mislearn' && (
           <textarea value={belief} onChange={event => setBelief(event.target.value)}
-            placeholder="角色实际相信的错误内容"
+            placeholder={t('facts.knowledge.beliefPlaceholder' as any)}
             className="w-full min-h-[48px] px-2 py-1.5 text-xs rounded bg-bg-base border border-border text-text-primary placeholder:text-text-muted" />
         )}
         <div className="flex items-center gap-2">
           <button onClick={() => void addCandidate()}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-violet-500/15 text-xs text-violet-300 hover:bg-violet-500/25">
-            <Plus className="w-3.5 h-3.5" /> 加入待确认
+            <Plus className="w-3.5 h-3.5" /> {t('facts.knowledge.addToPending' as any)}
           </button>
           {message && <span className="text-[11px] text-text-muted">{message}</span>}
         </div>
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
-        {(Object.keys(STATUS_LABEL) as KnowledgeEventStatus[]).map(key => (
+        {(Object.keys(STATUS_LABEL_KEY) as KnowledgeEventStatus[]).map(key => (
           <button key={key} onClick={() => setStatus(key)}
             className={`px-3 py-1.5 text-xs rounded-md ${status === key ? 'bg-violet-500/20 text-violet-300' : 'bg-bg-elevated text-text-muted hover:text-text-secondary'}`}>
-            {STATUS_LABEL[key]}{counts.get(key) ? `（${counts.get(key)}）` : ''}
+            {t(STATUS_LABEL_KEY[key] as any)}{counts.get(key) ? `（${counts.get(key)}）` : ''}
           </button>
         ))}
       </div>
 
-      {loading && <p className="text-sm text-text-muted">加载中…</p>}
-      {!loading && !rows.length && <p className="text-sm text-text-muted py-8 text-center">暂无{STATUS_LABEL[status]}事件。</p>}
+      {loading && <p className="text-sm text-text-muted">{t('facts.library.loading' as any)}</p>}
+      {!loading && !rows.length && <p className="text-sm text-text-muted py-8 text-center">{t('facts.knowledge.empty' as any, { status: t(STATUS_LABEL_KEY[status] as any) } as any)}</p>}
       <div className="space-y-2">
         {rows.map(event => (
           <div key={event.id} className="flex items-start gap-3 p-3 bg-bg-elevated rounded-lg border border-border">
             <div className="flex-1 min-w-0">
               <p className="text-sm text-text-primary">
                 <span className="font-medium">{event.characterName}</span>
-                <span className="text-text-muted"> · {ACTION_LABEL[event.action]}：</span>
+                <span className="text-text-muted"> · {t(ACTION_LABEL_KEY[event.action] as any)}：</span>
                 <span>{event.statement}</span>
                 <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-bg-base text-text-muted">{event.knowledgeKey}</span>
               </p>
-              {event.belief && <p className="text-xs text-amber-300 mt-1">实际相信：{event.belief}</p>}
+              {event.belief && <p className="text-xs text-amber-300 mt-1">{t('facts.knowledge.actualBelief' as any, { belief: event.belief } as any)}</p>}
               <p className="text-[11px] text-text-muted mt-1">
-                来源：{event.sourceChapterId == null ? '基线' : chapters.find(chapter => chapter.id === event.sourceChapterId)?.title ?? `章节#${event.sourceChapterId}`}
+                {t('facts.knowledge.source' as any, { source: event.sourceChapterId == null ? t('facts.knowledge.sourceBaseline' as any) : chapters.find(chapter => chapter.id === event.sourceChapterId)?.title ?? t('facts.knowledge.sourceChapter' as any, { id: event.sourceChapterId } as any) } as any)}
               </p>
             </div>
             {REVIEWABLE.includes(event.status) && event.id != null && (
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => void confirmEvent(project.id!, event.id!)} title="确认事件"
+                <button onClick={() => void confirmEvent(project.id!, event.id!)} title={t('facts.knowledge.confirmAria' as any)}
                   className="p-1.5 text-emerald-400 hover:bg-emerald-500/15 rounded"><Check className="w-4 h-4" /></button>
-                <button onClick={() => void rejectEvent(project.id!, event.id!)} title="否决事件"
+                <button onClick={() => void rejectEvent(project.id!, event.id!)} title={t('facts.knowledge.rejectAria' as any)}
                   className="p-1.5 text-rose-400 hover:bg-rose-500/15 rounded"><X className="w-4 h-4" /></button>
               </div>
             )}

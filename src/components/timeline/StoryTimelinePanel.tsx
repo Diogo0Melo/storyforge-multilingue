@@ -5,6 +5,7 @@
  * 与「历史年表（世界背景）」「故事线（结构）」严格区分。
  */
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CalendarClock, Sparkles, Loader2, Trash2, Plus, BookOpen, Flag } from 'lucide-react'
 import { useStoryTimelineStore } from '../../stores/story-timeline'
 import { useChapterStore } from '../../stores/chapter'
@@ -33,6 +34,7 @@ const IMPORTANCE_STYLE: Record<number, string> = {
 }
 
 export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
+  const { t } = useTranslation('panels')
   const { events, loading, loadAll, addEvent, updateEvent, deleteEvent, deleteByChapter } = useStoryTimelineStore()
   const { chapters, loadAll: loadChapters } = useChapterStore()
   const aiConfig = useAIConfigStore(s => s.config)
@@ -66,7 +68,7 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
   const handleExtract = async () => {
     const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'story.timeline' }).config
     if (!isAIConfigReady(effectiveConfig)) { setError(getAIConfigRequiredMessage(effectiveConfig)); return }
-    if (writtenChapters.length === 0) { setError('还没有已写正文的章节，先去写作再提取'); return }
+    if (writtenChapters.length === 0) { setError(t('timeline.story.noWrittenChapters' as any)); return }
     setExtracting(true)
     setError(null)
     setProgress({ done: 0, total: writtenChapters.length })
@@ -121,7 +123,7 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
   const handleManualAdd = async () => {
     await addEvent({
       projectId: project.id!,
-      title: '新事件',
+      title: t('timeline.story.newEvent' as any),
       importance: 2,
       order: events.length,
     })
@@ -133,21 +135,21 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-              <CalendarClock className="w-5 h-5" /> 故事进程年表
+              <CalendarClock className="w-5 h-5" /> {t('timeline.story.title' as any)}
             </h2>
             <p className="text-xs text-text-muted mt-0.5">
-              AI 从已写正文中提取剧情大事，按故事进程排列。区别于「历史年表」（世界背景）和「故事线」（结构）。
+              {t('timeline.story.subtitle' as any)}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={handleManualAdd}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-bg-elevated text-text-secondary border border-border hover:text-text-primary transition-colors">
-              <Plus className="w-3.5 h-3.5" /> 手动添加
+              <Plus className="w-3.5 h-3.5" /> {t('timeline.story.manualAdd' as any)}
             </button>
             <button onClick={handleExtract} disabled={extracting}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-accent text-white hover:bg-accent-hover disabled:opacity-50 transition-colors">
               {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {extracting ? `提取中 ${progress?.done}/${progress?.total}` : '从正文提取年表'}
+              {extracting ? t('timeline.story.extracting' as any, { done: progress?.done, total: progress?.total } as any) : t('timeline.story.extractFromText' as any)}
             </button>
           </div>
         </div>
@@ -158,7 +160,7 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
       {extracting && progress && (
         <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
           <div className="flex items-center gap-2 text-sm text-accent mb-1.5">
-            <Loader2 className="w-4 h-4 animate-spin" /> 正在逐章提取剧情大事…（{progress.done}/{progress.total}）
+            <Loader2 className="w-4 h-4 animate-spin" /> {t('timeline.story.extractingProgress' as any, { done: progress.done, total: progress.total } as any)}
           </div>
           <div className="h-1.5 bg-bg-base rounded-full overflow-hidden">
             <div className="h-full bg-accent transition-all" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
@@ -167,12 +169,12 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
       )}
 
       {loading ? (
-        <div className="text-text-muted text-sm py-8 text-center">加载中...</div>
+        <div className="text-text-muted text-sm py-8 text-center">{t('timeline.story.loading' as any)}</div>
       ) : sorted.length === 0 ? (
         <div className="text-center py-12 text-text-muted">
           <CalendarClock className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">还没有故事年表</p>
-          <p className="text-xs mt-1">写完一些章节后，点「从正文提取年表」让 AI 自动梳理剧情大事</p>
+          <p className="text-sm">{t('timeline.story.empty' as any)}</p>
+          <p className="text-xs mt-1">{t('timeline.story.emptyHint' as any)}</p>
         </div>
       ) : (
         <div className="relative pl-6 border-l border-border/80 space-y-3 ml-2">
@@ -194,7 +196,7 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
                       onClick={() => e.chapterId != null && onOpenChapter?.(e.chapterId)}
                       disabled={e.chapterId == null || !onOpenChapter}
                       className="inline-flex items-center gap-1 text-[10px] text-accent hover:underline disabled:text-text-muted disabled:no-underline"
-                      title="跳转到关联章节"
+                      title={t('timeline.story.jumpToChapter' as any)}
                     >
                       <BookOpen className="w-3 h-3" /> {e.chapterTitle}
                     </button>
@@ -205,9 +207,9 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
                       onChange={ev => updateEvent(e.id!, { importance: Number(ev.target.value) })}
                       className="bg-bg-base border border-border rounded text-[10px] px-1 py-0.5 text-text-secondary"
                     >
-                      <option value={1}>次要</option>
-                      <option value={2}>重要</option>
-                      <option value={3}>关键</option>
+                      <option value={1}>{t('timeline.story.minor' as any)}</option>
+                      <option value={2}>{t('timeline.story.important' as any)}</option>
+                      <option value={3}>{t('timeline.story.key' as any)}</option>
                     </select>
                     <button onClick={() => deleteEvent(e.id!)} className="p-0.5 text-text-muted hover:text-red-400">
                       <Trash2 className="w-3 h-3" />

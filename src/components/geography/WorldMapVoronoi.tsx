@@ -4,6 +4,7 @@
  */
 
 import { useRef, useEffect, useState, useCallback, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Loader2, RefreshCw, Download, Info, Settings2, Map } from 'lucide-react'
 import { generateMap, renderMap, STYLE_PRESET_LABELS } from '../../lib/world-map/engine'
 import { BIOMES } from '../../lib/world-map/engine/climate'
@@ -17,22 +18,23 @@ interface Props {
   onConfigChange?: (patch: Partial<MapGenConfig>) => void | Promise<void>
 }
 
-// ── 图层名称 ──
-const LAYER_LABELS: Record<keyof LayerVisibility, string> = {
-  terrain: '地形',
-  coastlines: '海岸线',
-  rivers: '河流',
-  borders: '国界',
-  provinces: '省界',
-  roads: '道路',
-  stateLabels: '国名',
-  burgIcons: '城镇',
-  burgLabels: '地名',
-  scaleBar: '比例尺',
-  vignette: '暗角',
+// ── 图层名称 i18n 键 ──
+const LAYER_I18N_KEYS: Record<keyof LayerVisibility, string> = {
+  terrain: 'geography.layerTerrain',
+  coastlines: 'geography.layerCoastlines',
+  rivers: 'geography.layerRivers',
+  borders: 'geography.layerBorders',
+  provinces: 'geography.layerProvinces',
+  roads: 'geography.layerRoads',
+  stateLabels: 'geography.layerStateLabels',
+  burgIcons: 'geography.layerBurgIcons',
+  burgLabels: 'geography.layerBurgLabels',
+  scaleBar: 'geography.layerScaleBar',
+  vignette: 'geography.layerVignette',
 }
 
 export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange }: Props) {
+  const { t } = useTranslation('panels')
   const containerRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const offscreenRef = useRef<HTMLCanvasElement | null>(null)
@@ -305,10 +307,9 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1a1f2e]">
           <div className="text-center max-w-sm text-text-muted">
             <Map className="w-12 h-12 mx-auto mb-3 opacity-30" />
-            <p className="text-sm mb-1">还没有地图数据</p>
+            <p className="text-sm mb-1">{t('geography.noMapData')}</p>
             <p className="text-xs opacity-60">
-              点击右上角「AI 生成地图」，系统会根据世界观设定自动生成。
-              <br />先在「世界起源」「自然环境」中填写内容，效果更好。
+              {t('geography.noMapDataDescription')}
             </p>
           </div>
         </div>
@@ -318,7 +319,7 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1a1f2e]">
           <div className="text-center text-text-muted">
             <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-accent" />
-            <p className="text-sm">正在生成地图...</p>
+            <p className="text-sm">{t('geography.generatingMap')}</p>
           </div>
         </div>
       )}
@@ -326,9 +327,9 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
       {error && (
         <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1a1f2e]">
           <div className="text-center text-red-400 max-w-sm">
-            <p className="text-sm mb-3">生成失败</p>
+            <p className="text-sm mb-3">{t('geography.generationFailed')}</p>
             <p className="text-xs text-text-muted mb-4">{error}</p>
-            <button onClick={() => doGenerate(mergedConfig)} className="px-4 py-2 bg-accent text-white text-sm rounded-lg hover:bg-accent-hover">重试</button>
+            <button onClick={() => doGenerate(mergedConfig)} className="px-4 py-2 bg-accent text-white text-sm rounded-lg hover:bg-accent-hover">{t('geography.retry')}</button>
           </div>
         </div>
       )}
@@ -340,20 +341,17 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
         <div className="absolute top-3 left-3 text-xs bg-[#1e2230] text-gray-300 rounded-lg px-2.5 py-1.5 shadow-lg border border-gray-700/50 space-y-0.5">
           <div className="font-medium text-white">{mapData.name}</div>
           <div className="text-gray-400">
-            {mapData.states.filter(s => s.i > 0).length} 国 ·{' '}
-            {mapData.burgs.filter(b => b.i > 0).length} 城 ·{' '}
-            {mapData.rivers.length} 河 ·{' '}
-            {mapData.roads.length} 路
+            {t('geography.infoStatsFormat' as any, { states: mapData.states.filter(s => s.i > 0).length, cities: mapData.burgs.filter(b => b.i > 0).length, rivers: mapData.rivers.length, roads: mapData.roads.length })}
           </div>
           {mapData.scaleResolution && (
             <div className="text-gray-500">
-              比例尺：{scaleSourceLabel(mapData.scaleResolution.source)}
-              {mapData.scaleResolution.travelEstimate ? '（旅行里程估算）' : ''}
+              {t('geography.scalePrefix' as any)}{scaleSourceLabel(mapData.scaleResolution.source, t)}
+              {mapData.scaleResolution.travelEstimate ? t('geography.travelEstimate' as any) : ''}
             </div>
           )}
           {(mapData.spatialDiagnostics?.violations.length ?? 0) > 0 && (
             <div className="text-amber-400">
-              {mapData.spatialDiagnostics!.violations.length} 条空间关系存在冲突
+              {t('geography.spatialConflict' as any, { count: mapData.spatialDiagnostics!.violations.length })}
             </div>
           )}
         </div>
@@ -371,7 +369,7 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
             }`}
           >
             <Settings2 className="w-3.5 h-3.5" />
-            设置
+            {t('geography.settings')}
           </button>
           <button
             onClick={handleExportHD}
@@ -379,14 +377,14 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e2230] text-gray-300 hover:text-white text-xs rounded-lg shadow-lg border border-gray-700/50 hover:border-gray-600 transition-colors disabled:opacity-50"
           >
             {exporting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-            {exporting ? '导出中...' : '导出高清'}
+            {exporting ? t('geography.exporting') : t('geography.exportHD')}
           </button>
           <button
             onClick={() => doGenerate({ ...mergedConfig, seed: undefined })}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-[#1e2230] text-gray-300 hover:text-white text-xs rounded-lg shadow-lg border border-gray-700/50 hover:border-gray-600 transition-colors"
           >
             <RefreshCw className="w-3.5 h-3.5" />
-            重新生成
+            {t('geography.regenerate')}
           </button>
         </div>
       )}
@@ -394,11 +392,11 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
       {/* 设置面板 — 只有渲染选项 */}
       {mapData && !generating && showSettings && (
         <div className="absolute top-12 right-3 bg-[#1e2230] rounded-lg shadow-xl border border-gray-700/50 p-3 w-52 max-h-[75vh] overflow-y-auto z-20">
-          <h4 className="text-[11px] font-medium text-white mb-3">渲染设置</h4>
+          <h4 className="text-[11px] font-medium text-white mb-3">{t('geography.renderSettings')}</h4>
 
           {/* 渲染风格 */}
           <div className="mb-3">
-            <label className="text-[10px] text-gray-400 block mb-1.5">渲染风格</label>
+            <label className="text-[10px] text-gray-400 block mb-1.5">{t('geography.renderStyle')}</label>
             <div className="grid grid-cols-2 gap-1">
               {(Object.entries(STYLE_PRESET_LABELS) as [MapStylePreset, string][]).map(([k, v]) => (
                 <button
@@ -418,9 +416,9 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
 
           {/* 图层开关 */}
           <div>
-            <label className="text-[10px] text-gray-400 block mb-1.5">图层显隐</label>
+            <label className="text-[10px] text-gray-400 block mb-1.5">{t('geography.layerVisibility')}</label>
             <div className="space-y-0.5">
-              {(Object.entries(LAYER_LABELS) as [keyof LayerVisibility, string][]).map(([key, label]) => (
+              {(Object.entries(LAYER_I18N_KEYS) as [keyof LayerVisibility, string][]).map(([key, labelKey]) => (
                 <label key={key} className="flex items-center gap-2 cursor-pointer py-0.5 group">
                   <input
                     type="checkbox"
@@ -428,7 +426,7 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
                     onChange={() => toggleLayer(key)}
                     className="accent-accent w-3 h-3"
                   />
-                  <span className="text-[10px] text-gray-400 group-hover:text-gray-200">{label}</span>
+                  <span className="text-[10px] text-gray-400 group-hover:text-gray-200">{t(labelKey as any)}</span>
                 </label>
               ))}
             </div>
@@ -458,15 +456,15 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
               }`}
             >
               <Info className="w-3 h-3" />
-              图例
+              {t('geography.legend')}
             </button>
             <div className="flex gap-2 text-[10px] text-gray-500 bg-[#1e2230] rounded-lg px-2 py-1 border border-gray-700/50 shadow-lg">
-              <span>滚轮缩放</span>
-              <span>拖拽平移</span>
+              <span>{t('geography.scrollZoom')}</span>
+              <span>{t('geography.dragPan')}</span>
             </div>
           </div>
           <div className="flex items-center gap-1.5 bg-[#1e2230] rounded-lg border border-gray-700/50 px-2 py-1 shadow-lg">
-            <span className="text-[10px] text-gray-400 whitespace-nowrap">比例尺</span>
+            <span className="text-[10px] text-gray-400 whitespace-nowrap">{t('geography.scaleBarLabel')}</span>
             <select
               value={kmPerPixel}
               onChange={e => handleKmPerPixelChange(Number(e.target.value))}
@@ -494,12 +492,12 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
 
 const STANDARD_KM_PER_PIXEL = [0.1, 0.5, 1, 2, 5, 10, 50]
 
-function scaleSourceLabel(source: NonNullable<VoronoiMapData['scaleResolution']>['source']): string {
+function scaleSourceLabel(source: NonNullable<VoronoiMapData['scaleResolution']>['source'], t: (key: any) => string): string {
   switch (source) {
-    case 'manual': return '手动设定'
-    case 'map-width': return '用户疆域尺寸'
-    case 'explicit-distance': return '用户明确距离'
-    case 'estimated': return '系统估算'
+    case 'manual': return t('geography.scaleManual')
+    case 'map-width': return t('geography.scaleMapWidth')
+    case 'explicit-distance': return t('geography.scaleExplicitDistance')
+    case 'estimated': return t('geography.scaleEstimated')
   }
 }
 
@@ -511,36 +509,37 @@ function formatKm(value: number): string {
 // ── 图例 ──
 
 function MapLegend() {
+  const { t } = useTranslation('panels')
   return (
     <div className="absolute bottom-14 left-3 bg-[#1e2230] rounded-lg shadow-xl border border-gray-700/50 p-3 max-h-[60vh] overflow-y-auto w-40 z-20">
-      <h4 className="text-[11px] font-medium text-white mb-2">地图图例</h4>
+      <h4 className="text-[11px] font-medium text-white mb-2">{t('geography.mapLegend')}</h4>
 
-      <LegendSection title="水域">
-        <LegendColor color="#2b6da8" label="深海" />
-        <LegendColor color="#6baed6" label="浅海" />
-        <LegendColor color="#b3d7ea" label="近岸" />
-        <LegendLine color="#4a96d0" label="河流" />
+      <LegendSection title={t('geography.legendWater')}>
+        <LegendColor color="#2b6da8" label={t('geography.legendDeepSea')} />
+        <LegendColor color="#6baed6" label={t('geography.legendShallowSea')} />
+        <LegendColor color="#b3d7ea" label={t('geography.legendShore')} />
+        <LegendLine color="#4a96d0" label={t('geography.legendRiver')} />
       </LegendSection>
 
-      <LegendSection title="生态群落">
+      <LegendSection title={t('geography.legendBiome')}>
         {BIOMES.filter(b => b.id > 0).map(b => (
           <LegendColor key={b.id} color={b.color} label={b.name} />
         ))}
       </LegendSection>
 
-      <LegendSection title="海拔">
-        <LegendColor color="rgb(160,130,80)" label="丘陵" />
-        <LegendColor color="rgb(190,160,120)" label="山地" />
-        <LegendColor color="rgb(220,200,160)" label="高山" />
-        <LegendColor color="rgb(240,220,180)" label="雪线" />
+      <LegendSection title={t('geography.legendElevation')}>
+        <LegendColor color="rgb(160,130,80)" label={t('geography.legendHill')} />
+        <LegendColor color="rgb(190,160,120)" label={t('geography.legendMountain')} />
+        <LegendColor color="rgb(220,200,160)" label={t('geography.legendHighMountain')} />
+        <LegendColor color="rgb(240,220,180)" label={t('geography.legendSnowLine')} />
       </LegendSection>
 
-      <LegendSection title="标记" noBorder>
-        <LegendIcon type="capital" label="首都" />
-        <LegendIcon type="town" label="城镇" />
-        <LegendLine color="rgba(120,80,40,0.6)" label="主干道" />
-        <LegendLine color="rgba(140,110,70,0.4)" label="支路" dashed />
-        <LegendLine color="rgba(100,100,100,0.3)" label="省界" dashed />
+      <LegendSection title={t('geography.legendMarker')} noBorder>
+        <LegendIcon type="capital" label={t('geography.legendCapital')} />
+        <LegendIcon type="town" label={t('geography.legendTown')} />
+        <LegendLine color="rgba(120,80,40,0.6)" label={t('geography.legendMainRoad')} />
+        <LegendLine color="rgba(140,110,70,0.4)" label={t('geography.legendSideRoad')} dashed />
+        <LegendLine color="rgba(100,100,100,0.3)" label={t('geography.legendProvinceBorder')} dashed />
       </LegendSection>
     </div>
   )

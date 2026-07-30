@@ -1,11 +1,12 @@
+import { useTranslation } from 'react-i18next'
 import { useForeshadowStore } from '../../stores/foreshadow'
 import type { Foreshadow, ForeshadowStatus, ForeshadowType } from '../../lib/types'
 
-const STATUS_COLUMNS: { key: ForeshadowStatus; label: string; dot: string; accent: string; border: string }[] = [
-  { key: 'planned', label: '已计划', dot: 'bg-text-muted', accent: 'text-text-primary', border: 'border-l-border' },
-  { key: 'planted', label: '已埋设', dot: 'bg-error', accent: 'text-text-primary', border: 'border-l-error' },
-  { key: 'echoed', label: '已呼应', dot: 'bg-warning', accent: 'text-text-primary', border: 'border-l-warning' },
-  { key: 'resolved', label: '已回收', dot: 'bg-success', accent: 'text-text-primary', border: 'border-l-success' },
+const STATUS_COLUMNS: { key: ForeshadowStatus; labelKey: string; dot: string; accent: string; border: string }[] = [
+  { key: 'planned', labelKey: 'foreshadow.kanban.planned', dot: 'bg-text-muted', accent: 'text-text-primary', border: 'border-l-border' },
+  { key: 'planted', labelKey: 'foreshadow.kanban.planted', dot: 'bg-error', accent: 'text-text-primary', border: 'border-l-error' },
+  { key: 'echoed', labelKey: 'foreshadow.kanban.echoed', dot: 'bg-warning', accent: 'text-text-primary', border: 'border-l-warning' },
+  { key: 'resolved', labelKey: 'foreshadow.kanban.resolved', dot: 'bg-success', accent: 'text-text-primary', border: 'border-l-success' },
 ]
 
 const TYPE_EMOJI: Record<ForeshadowType, string> = {
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function ForeshadowKanban({ onSelectForeshadow }: Props) {
+  const { t } = useTranslation('panels')
   const { foreshadows, updateStatus } = useForeshadowStore()
 
   const getColumnItems = (status: ForeshadowStatus) =>
@@ -50,7 +52,7 @@ export default function ForeshadowKanban({ onSelectForeshadow }: Props) {
             <div className="flex items-center justify-between border-b border-border bg-bg-elevated/60 px-4 py-3">
               <div className="flex items-center gap-2">
                 <span className={`h-2.5 w-2.5 rounded-full ${col.dot}`} />
-                <span className={`text-sm font-semibold ${col.accent}`}>{col.label}</span>
+                <span className={`text-sm font-semibold ${col.accent}`}>{t(col.labelKey as any)}</span>
               </div>
               <span className="rounded-full bg-bg-base px-2 py-0.5 text-xs text-text-muted">
                 {items.length}
@@ -61,7 +63,7 @@ export default function ForeshadowKanban({ onSelectForeshadow }: Props) {
             <div className="min-h-[520px] space-y-3 px-3 py-4">
               {items.length === 0 ? (
                 <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border text-xs text-text-muted/50">
-                  暂无伏笔
+                  {t('foreshadow.kanban.empty' as any)}
                 </div>
               ) : (
                 items.map(f => (
@@ -91,17 +93,17 @@ export default function ForeshadowKanban({ onSelectForeshadow }: Props) {
                         onClick={(e) => { e.stopPropagation(); handleRevert(f) }}
                         disabled={f.status === 'planned'}
                         className="text-xs text-text-muted hover:text-text-primary disabled:opacity-20 disabled:cursor-default"
-                        title="回退状态"
+                        title={t('foreshadow.kanban.revertTitle' as any)}
                       >
-                        ← 回退
+                        {t('foreshadow.kanban.revert' as any)}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleAdvance(f) }}
                         disabled={f.status === 'resolved'}
                         className="text-xs text-accent hover:text-accent-hover disabled:opacity-20 disabled:cursor-default"
-                        title="推进状态"
+                        title={t('foreshadow.kanban.advanceTitle' as any)}
                       >
-                        推进 →
+                        {t('foreshadow.kanban.advance' as any)}
                       </button>
                     </div>
                   </div>

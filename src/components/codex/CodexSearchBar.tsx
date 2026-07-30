@@ -7,6 +7,7 @@
  */
 import { useMemo, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { useCodexStore } from '../../stores/codex'
 import { parseEntryFields } from '../../lib/types/codex'
 import { scoreCodexEntry } from '../../lib/codex/search'
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export default function CodexSearchBar({ categoryKeys, onJump }: Props) {
+  const { t } = useTranslation('panels')
   const { categories, entries } = useCodexStore()
   const [q, setQ] = useState('')
 
@@ -44,7 +46,7 @@ export default function CodexSearchBar({ categoryKeys, onJump }: Props) {
       const fieldsText = Object.values(parseEntryFields(e.fields)).join(' ')
       const score = scoreCodexEntry(name, e.summary || '', fieldsText, query)
       if (score === 0) continue
-      scored.push({ id: e.id!, name: name || '未命名', cat: info.name, catKey: info.key, summary: e.summary || '', score })
+      scored.push({ id: e.id!, name: name || t('codex.search.unnamed'), cat: info.name, catKey: info.key, summary: e.summary || '', score })
     }
     return scored.sort((a, b) => b.score - a.score).slice(0, 12)
   }, [q, entries, catInfo])
@@ -56,7 +58,7 @@ export default function CodexSearchBar({ categoryKeys, onJump }: Props) {
         <input
           value={q}
           onChange={e => setQ(e.target.value)}
-          placeholder="搜索本面板词条（支持全字匹配 / 单字模糊定位）"
+          placeholder={t('codex.search.placeholder')}
           className="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
         />
         {q && (
@@ -68,7 +70,7 @@ export default function CodexSearchBar({ categoryKeys, onJump }: Props) {
       {q.trim() && (
         <div className="absolute z-20 mt-1 w-full max-h-80 overflow-y-auto bg-bg-surface border border-border rounded-lg shadow-lg">
           {results.length === 0 ? (
-            <p className="px-3 py-3 text-xs text-text-muted text-center">没有匹配的词条</p>
+            <p className="px-3 py-3 text-xs text-text-muted text-center">{t('codex.search.noMatch')}</p>
           ) : (
             results.map(r => (
               <button

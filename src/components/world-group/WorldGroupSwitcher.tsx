@@ -3,11 +3,13 @@
  * 多世界模式下嵌入世界观/力量/地理/历史等面板的标题栏
  */
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { WORLD_GROUP_TYPE_LABELS } from '../../lib/types/world-group'
 
 export default function WorldGroupSwitcher() {
+  const { t } = useTranslation('panels')
   const { groups, activeGroupId, setActiveGroup } = useWorldGroupStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -33,7 +35,7 @@ export default function WorldGroupSwitcher() {
         className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border border-border bg-bg-base text-text-secondary hover:border-accent/50 hover:text-text-primary transition-colors"
       >
         <span>{active?.icon || '🌐'}</span>
-        <span className="max-w-[120px] truncate">{active?.name || '选择世界'}</span>
+        <span className="max-w-[120px] truncate">{active?.name || t('worldGroup.selectWorld')}</span>
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 

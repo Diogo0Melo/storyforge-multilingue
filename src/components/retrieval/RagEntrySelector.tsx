@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Check, Database, Loader2, RefreshCw, Search } from 'lucide-react'
 import { buildRagLibrary } from '../../lib/retrieval/rag-library'
 import type { RagLibraryEntry } from '../../lib/types'
@@ -16,6 +17,7 @@ export default function RagEntrySelector(props: {
   selectedKeys: string[]
   onChange: (keys: string[]) => void
 }) {
+  const { t } = useTranslation('panels')
   const [entries, setEntries] = useState<RagLibraryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -76,14 +78,14 @@ export default function RagEntrySelector(props: {
     <section>
       <div className="mb-2 flex items-center justify-between">
         <div>
-          <p className="text-[10px] font-medium text-text-secondary">精确资料字段</p>
+          <p className="text-[10px] font-medium text-text-secondary">{t('retrieval.rag.title' as any)}</p>
           <p className="text-[9px] leading-4 text-text-muted">
-            已选 {props.selectedKeys.length} 项；执行时按资料库权重和预算冻结真实召回。
+            {t('retrieval.rag.selectedCount' as any, { count: props.selectedKeys.length } as any)}
           </p>
         </div>
         <button
           type="button"
-          title="刷新资料"
+          title={t('retrieval.rag.refreshAria' as any)}
           onClick={() => void load()}
           className="rounded p-1 text-text-muted hover:bg-bg-hover hover:text-accent"
         >
@@ -93,22 +95,22 @@ export default function RagEntrySelector(props: {
       <label className="mb-2 flex items-center gap-1.5 rounded border border-border bg-bg-base px-2 py-1">
         <Search className="h-3 w-3 text-text-muted" />
         <input
-          aria-label="搜索资料字段"
+          aria-label={t('retrieval.rag.searchAria' as any)}
           value={query}
           onChange={event => setQuery(event.target.value)}
-          placeholder="搜索角色、章节、设定或字段"
+          placeholder={t('retrieval.rag.searchPlaceholder' as any)}
           className="min-w-0 flex-1 bg-transparent text-[10px] text-text-primary outline-none"
         />
       </label>
       <div className="max-h-[27rem] space-y-1.5 overflow-y-auto rounded border border-border bg-bg-base p-2">
         {loading && !entries.length ? (
           <p className="flex items-center justify-center gap-1 py-6 text-[10px] text-text-muted">
-            <Loader2 className="h-3 w-3 animate-spin" /> 正在建立可见资料投影…
+            <Loader2 className="h-3 w-3 animate-spin" /> {t('retrieval.rag.buildingProjection' as any)}
           </p>
         ) : error ? (
           <p className="rounded bg-error/10 p-2 text-[10px] text-error">{error}</p>
         ) : !groups.length ? (
-          <p className="py-6 text-center text-[10px] text-text-muted">当前世界没有匹配的资料字段。</p>
+          <p className="py-6 text-center text-[10px] text-text-muted">{t('retrieval.rag.noMatch' as any)}</p>
         ) : groups.map(group => {
           const selectedCount = group.fields.filter(entry => selected.has(entry.key)).length
           return (
@@ -131,7 +133,7 @@ export default function RagEntrySelector(props: {
                     onClick={() => toggle(entry.key)}
                     title={entry.enabled
                       ? `${entry.tokenEstimate} tokens · 权重 ${entry.weight} · 上限 ${entry.tokenCap}`
-                      : '该字段已在资料库停用'}
+                      : t('retrieval.rag.fieldDisabled' as any)}
                     className={`flex w-full items-start gap-1.5 rounded px-1.5 py-1 text-left ${
                       selected.has(entry.key)
                         ? 'bg-accent/10 text-accent'
@@ -146,7 +148,7 @@ export default function RagEntrySelector(props: {
                     <span className="min-w-0">
                       <span className="block text-[10px]">{entry.fieldLabel}</span>
                       <span className="block truncate text-[9px] opacity-70">
-                        {entry.tokenEstimate} tokens · {entry.vectorState === 'ready' ? '向量就绪' : entry.vectorState === 'keyword' ? '本地关键词' : '未建索引'}
+                        {entry.tokenEstimate} tokens · {entry.vectorState === 'ready' ? t('retrieval.rag.vectorReady' as any) : entry.vectorState === 'keyword' ? t('retrieval.rag.vectorKeyword' as any) : t('retrieval.rag.vectorNone' as any)}
                       </span>
                     </span>
                   </button>

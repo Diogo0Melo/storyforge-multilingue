@@ -2,6 +2,7 @@
  * 世界总览面板 — 管理多个世界组 + 世界关系
  */
 import { useState, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Plus, Trash2, GripVertical, ArrowRight, ChevronRight, Sparkles, Loader2, Check } from 'lucide-react'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIStream } from '../../hooks/useAIStream'
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export default function WorldGroupOverview({ project }: Props) {
+  const { t } = useTranslation('panels')
   const { groups, links, loading, loadAll, createGroup, deleteGroup, ensurePrimaryGroup, createLink, deleteLink } = useWorldGroupStore()
   const [editingGroup, setEditingGroup] = useState<WorldGroup | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null)
@@ -130,35 +132,35 @@ export default function WorldGroupOverview({ project }: Props) {
       {/* 顶部标题 */}
       <div className="pb-4 border-b border-border/40">
         <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-          🌐 世界总览
+          {t('worldGroup.title')}
         </h2>
         <p className="text-xs text-text-muted mt-0.5">
-          管理多个世界的设定，定义世界间的穿越关系。每个世界拥有独立的世界观、力量体系、地理和历史。
+          {t('worldGroup.subtitle')}
         </p>
       </div>
 
       {loading ? (
-        <div className="text-text-muted text-sm py-8 text-center">加载中...</div>
+        <div className="text-text-muted text-sm py-8 text-center">{t('worldGroup.loading')}</div>
       ) : (
         <>
           {/* 世界列表 */}
           <section className="space-y-2">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-text-primary">世界列表 ({groups.length})</h3>
+              <h3 className="text-sm font-semibold text-text-primary">{t('worldGroup.worldList')} ({groups.length})</h3>
               <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setShowSuggest(v => !v)}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-bg-elevated text-text-secondary border border-border hover:text-accent hover:border-accent/50 transition-colors"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
-                  AI 建议世界
+                  {t('worldGroup.aiSuggestWorlds')}
                 </button>
                 <button
                   onClick={handleAddWorld}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-accent text-white hover:bg-accent-hover transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  添加世界
+                  {t('worldGroup.addWorld')}
                 </button>
               </div>
             </div>
@@ -169,7 +171,7 @@ export default function WorldGroupOverview({ project }: Props) {
                 <textarea
                   value={concept}
                   onChange={e => setConcept(e.target.value)}
-                  placeholder="描述你的整体故事概念，例如：主角带着诸天系统穿越各个世界，每个世界完成任务后获得奖励...（留空则用项目简介）"
+                  placeholder={t('worldGroup.conceptPlaceholder')}
                   rows={2}
                   className="w-full px-3 py-2 bg-bg-base border border-border rounded text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent resize-none"
                 />
@@ -180,10 +182,10 @@ export default function WorldGroupOverview({ project }: Props) {
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-accent text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
                   >
                     {ai.isStreaming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-                    {ai.isStreaming ? 'AI 思考中...' : '生成建议'}
+                    {ai.isStreaming ? t('worldGroup.aiThinking') : t('worldGroup.generateSuggestions')}
                   </button>
                   {ai.isStreaming && (
-                    <button onClick={ai.stop} className="text-xs text-text-muted hover:text-red-500">停止</button>
+                    <button onClick={ai.stop} className="text-xs text-text-muted hover:text-red-500">{t('worldGroup.stop')}</button>
                   )}
                 </div>
                 {ai.error && <div className="text-xs text-red-400">{ai.error}</div>}
@@ -200,11 +202,11 @@ export default function WorldGroupOverview({ project }: Props) {
                               {WORLD_GROUP_TYPE_LABELS[w.type]}
                             </span>
                             {w.plannedChapterCount > 0 && (
-                              <span className="text-[10px] text-text-muted">{w.plannedChapterCount} 章</span>
+                              <span className="text-[10px] text-text-muted">{t('worldGroup.chapters', { count: w.plannedChapterCount })}</span>
                             )}
                           </div>
                           <p className="text-xs text-text-muted mt-0.5">{w.description}</p>
-                          {w.entryCondition && <p className="text-[10px] text-text-muted mt-0.5">进入：{w.entryCondition}</p>}
+                          {w.entryCondition && <p className="text-[10px] text-text-muted mt-0.5">{t('worldGroup.enterCondition', { condition: w.entryCondition })}</p>}
                         </div>
                         <button
                           onClick={() => handleAdoptSuggested(i)}
@@ -215,14 +217,14 @@ export default function WorldGroupOverview({ project }: Props) {
                               : 'bg-accent/10 text-accent hover:bg-accent/20'
                           }`}
                         >
-                          {adoptedIdx.has(i) ? <><Check className="w-3 h-3" /> 已采纳</> : '采纳'}
+                          {adoptedIdx.has(i) ? <><Check className="w-3 h-3" /> {t('worldGroup.adopted')}</> : t('worldGroup.adopt')}
                         </button>
                       </div>
                     ))}
                   </div>
                 )}
                 {suggested && suggested.length === 0 && (
-                  <p className="text-xs text-text-muted">AI 未返回有效建议，请重试或调整概念描述。</p>
+                  <p className="text-xs text-text-muted">{t('worldGroup.noValidSuggestions')}</p>
                 )}
               </div>
             )}
@@ -261,7 +263,7 @@ export default function WorldGroupOverview({ project }: Props) {
                     <button
                       onClick={() => setEditingGroup(g)}
                       className="p-1.5 rounded text-text-muted hover:text-accent hover:bg-accent/10 transition-colors"
-                      title="编辑"
+                      title={t('worldGroup.edit')}
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -272,20 +274,20 @@ export default function WorldGroupOverview({ project }: Props) {
                             onClick={() => handleDelete(g.id!)}
                             className="px-2 py-0.5 text-xs bg-red-500/20 text-red-400 rounded hover:bg-red-500/30 transition-colors"
                           >
-                            确认删除
+                            {t('worldGroup.confirmDelete')}
                           </button>
                           <button
                             onClick={() => setConfirmDeleteId(null)}
                             className="px-2 py-0.5 text-xs text-text-muted hover:text-text-primary transition-colors"
                           >
-                            取消
+                            {t('worldGroup.cancel')}
                           </button>
                         </div>
                       ) : (
                         <button
                           onClick={() => setConfirmDeleteId(g.id!)}
                           className="p-1.5 rounded text-text-muted hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                          title="删除世界"
+                          title={t('worldGroup.deleteWorld')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -298,7 +300,7 @@ export default function WorldGroupOverview({ project }: Props) {
 
             {groups.length === 0 && (
               <div className="text-center py-8 text-text-muted text-sm">
-                暂无世界组，点击上方按钮添加
+                {t('worldGroup.noWorldGroups')}
               </div>
             )}
           </section>
@@ -307,13 +309,13 @@ export default function WorldGroupOverview({ project }: Props) {
           {groups.length > 1 && (
             <section className="space-y-2">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-semibold text-text-primary">世界关系</h3>
+                <h3 className="text-sm font-semibold text-text-primary">{t('worldGroup.worldRelations')}</h3>
                 <button
                   onClick={() => setShowLinkForm(v => !v)}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-bg-elevated text-text-secondary border border-border hover:text-accent hover:border-accent/50 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  添加关系
+                  {t('worldGroup.addRelation')}
                 </button>
               </div>
 
@@ -325,7 +327,7 @@ export default function WorldGroupOverview({ project }: Props) {
                     onChange={e => setLinkForm(f => ({ ...f, from: e.target.value ? Number(e.target.value) : '' }))}
                     className="px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
                   >
-                    <option value="">起点世界</option>
+                    <option value="">{t('worldGroup.sourceWorld')}</option>
                     {groups.map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
                   </select>
                   <ArrowRight className="w-3.5 h-3.5 text-text-muted" />
@@ -334,7 +336,7 @@ export default function WorldGroupOverview({ project }: Props) {
                     onChange={e => setLinkForm(f => ({ ...f, to: e.target.value ? Number(e.target.value) : '' }))}
                     className="px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
                   >
-                    <option value="">目标世界</option>
+                    <option value="">{t('worldGroup.targetWorld')}</option>
                     {groups.map(g => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
                   </select>
                   <select
@@ -349,7 +351,7 @@ export default function WorldGroupOverview({ project }: Props) {
                   <input
                     value={linkForm.name}
                     onChange={e => setLinkForm(f => ({ ...f, name: e.target.value }))}
-                    placeholder="通道名称（可选）"
+                    placeholder={t('worldGroup.channelName')}
                     className="px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent w-32"
                   />
                   <button
@@ -357,7 +359,7 @@ export default function WorldGroupOverview({ project }: Props) {
                     disabled={linkForm.from === '' || linkForm.to === '' || linkForm.from === linkForm.to}
                     className="px-3 py-1.5 text-xs rounded-lg bg-accent text-white hover:bg-accent-hover disabled:opacity-40 transition-colors"
                   >
-                    创建
+                    {t('worldGroup.create')}
                   </button>
                 </div>
               )}
@@ -382,7 +384,7 @@ export default function WorldGroupOverview({ project }: Props) {
                         <button
                           onClick={() => deleteLink(l.id!)}
                           className="ml-auto p-1 rounded text-text-muted hover:text-red-400 opacity-0 group-hover:opacity-100 transition-all"
-                          title="删除关系"
+                          title={t('worldGroup.deleteRelation')}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -397,16 +399,16 @@ export default function WorldGroupOverview({ project }: Props) {
           {/* 穿越总览 */}
           {groups.filter(g => g.type !== 'primary').length > 0 && (
             <section className="space-y-2">
-              <h3 className="text-sm font-semibold text-text-primary">穿越总览</h3>
+              <h3 className="text-sm font-semibold text-text-primary">{t('worldGroup.traversalOverview')}</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-border">
-                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">世界</th>
-                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">类型</th>
-                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">预计章节</th>
-                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">进入条件</th>
-                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">能力限制</th>
+                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">{t('worldGroup.world')}</th>
+                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">{t('worldGroup.type')}</th>
+                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">{t('worldGroup.plannedChapters')}</th>
+                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">{t('worldGroup.entryCondition')}</th>
+                      <th className="text-left py-2 px-3 text-xs font-medium text-text-muted">{t('worldGroup.powerRestriction')}</th>
                     </tr>
                   </thead>
                   <tbody>

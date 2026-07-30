@@ -16,10 +16,11 @@ import type { AgentEvent, Project } from '../../lib/types'
 import { parseAgentEventPayload } from '../../lib/types'
 import { AgentTeamBudgetTracker } from '../../lib/agent/team-budget'
 import { useAIConfigStore } from '../../stores/ai-config'
+import i18n from '../../i18n/i18n'
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) return error.message
-  return '操作失败，请稍后重试。'
+  return i18n.t('panels:agent.master.errorGeneric' as any)
 }
 
 export interface PendingMasterCandidate {
@@ -65,7 +66,7 @@ export function useMasterCopilot(input: {
           conversationId: conversation.id!,
           kind: 'message',
           role: 'assistant',
-          content: '直接告诉我你想完成什么。我会理解目标、调用需要的领域 Agent，并把结果统一交给你确认。',
+          content: i18n.t('panels:agent.master.greeting' as any),
         })
         rows = await readAgentEvents(conversation.id!)
       }
@@ -146,7 +147,7 @@ export function useMasterCopilot(input: {
         conversationId,
         kind: 'message',
         role: 'assistant',
-        content: `${plan.summary} 我会在后台完成 ${plan.tasks.length} 个领域任务。`,
+          content: i18n.t('panels:agent.master.planSummary' as any, { summary: plan.summary, count: plan.tasks.length }),
       })
       await reload(conversationId)
 
@@ -186,11 +187,8 @@ export function useMasterCopilot(input: {
         kind: 'message',
         role: 'assistant',
         content: [
-          `后台领域 Agent 已完成，生成了 ${candidates.length} 份候选。请检查、编辑并决定是否采纳。`,
-          `本轮团队约使用 ${teamBudget.snapshot().usedTokens.toLocaleString()} / `
-          + `${teamBudget.snapshot().maxTokens.toLocaleString()} tokens，`
-          + `${teamBudget.snapshot().calls} 次调用，`
-          + `Canon 受控打回 ${teamBudget.snapshot().canonRetries} 次。`,
+          i18n.t('panels:agent.master.completedSummary' as any, { count: candidates.length }),
+          i18n.t('panels:agent.master.budgetSummary' as any, { used: teamBudget.snapshot().usedTokens.toLocaleString(), max: teamBudget.snapshot().maxTokens.toLocaleString(), calls: teamBudget.snapshot().calls, retries: teamBudget.snapshot().canonRetries }),
         ].join(' '),
       })
     } catch (error) {
@@ -207,7 +205,7 @@ export function useMasterCopilot(input: {
           conversationId,
           kind: 'message',
           role: 'assistant',
-          content: `本轮没有完成：${message}`,
+          content: i18n.t('panels:agent.master.notCompleted' as any, { message }),
         })
       }
     } finally {
@@ -237,7 +235,7 @@ export function useMasterCopilot(input: {
     if (busy || conversationId == null || candidate.event.id == null) return
     setBusy(true)
     try {
-      let message = '候选已拒绝，没有写入项目。'
+      let message = i18n.t('panels:agent.master.rejected' as any)
       if (decision === 'adopted') {
         message = await adoptMasterCandidate({
           projectId: project.id!,

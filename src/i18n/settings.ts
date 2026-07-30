@@ -7,7 +7,7 @@ export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 export const FALLBACK_LNG = 'zh-CN'
 export const DEFAULT_NS = 'common'
-export const NAMESPACES = ['common', 'nav', 'project', 'editor', 'outline', 'characters', 'worlds', 'settings', 'import'] as const
+export const NAMESPACES = ['common', 'nav', 'project', 'editor', 'outline', 'characters', 'worlds', 'settings', 'import', 'panels'] as const
 export type AppNamespace = (typeof NAMESPACES)[number]
 
 export const LANGUAGE_LABELS: Record<SupportedLanguage, string> = {

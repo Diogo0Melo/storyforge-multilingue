@@ -8,6 +8,7 @@ import type characters from '../../public/locales/zh-CN/characters.json'
 import type worlds from '../../public/locales/zh-CN/worlds.json'
 import type settings from '../../public/locales/zh-CN/settings.json'
 import type importNs from '../../public/locales/zh-CN/import.json'
+import type panels from '../../public/locales/zh-CN/panels.json'
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -23,6 +24,7 @@ declare module 'i18next' {
       worlds: typeof worlds
       settings: typeof settings
       import: typeof importNs
+      panels: typeof panels
     }
   }
 }

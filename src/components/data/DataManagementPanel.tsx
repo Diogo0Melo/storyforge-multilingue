@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Download, Upload, FileJson, FileText, FileType,
   Loader2, CheckCircle, AlertCircle, FolderOpen, X,
@@ -28,18 +29,19 @@ interface Props {
 }
 
 export default function DataManagementPanel({ project, onImported }: Props) {
+  const { t } = useTranslation('panels')
   const [activeTab, setActiveTab] = useState<Tab>('export')
 
-  const TABS: { id: Tab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-    { id: 'export',    label: '导出 / 导入', icon: FileJson },
-    { id: 'backup',    label: '版本历史',    icon: History },
+  const TABS: { id: Tab; labelKey: string; icon: React.ComponentType<{ className?: string }> }[] = [
+    { id: 'export',    labelKey: 'data.mgmt.tabExport', icon: FileJson },
+    { id: 'backup',    labelKey: 'data.mgmt.tabBackup', icon: History },
   ]
 
   return (
     <div className="max-w-2xl space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-text-primary mb-1">数据管理</h2>
-        <p className="text-sm text-text-muted">备份、恢复、导出正文。（AI 解析导入请用左侧「文档导入」面板。）</p>
+        <h2 className="text-xl font-bold text-text-primary mb-1">{t('data.mgmt.title' as any)}</h2>
+        <p className="text-sm text-text-muted">{t('data.mgmt.subtitle' as any)}</p>
       </div>
 
       {/* Tab 切换 */}
@@ -57,7 +59,7 @@ export default function DataManagementPanel({ project, onImported }: Props) {
               }`}
             >
               <Icon className="w-3.5 h-3.5" />
-              {tab.label}
+              {t(tab.labelKey as any)}
             </button>
           )
         })}
@@ -71,6 +73,7 @@ export default function DataManagementPanel({ project, onImported }: Props) {
 
 // ── 导出/导入 Tab ────────────────────────────────────────────
 function ExportTab({ project, onImported }: Props) {
+  const { t } = useTranslation('panels')
   const [status, setStatus] = useState<ExportStatus>('idle')
   const [message, setMessage] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -101,56 +104,56 @@ function ExportTab({ project, onImported }: Props) {
 
   const handleExportJSON = async () => {
     try {
-      show('loading', '正在导出 JSON...')
+      show('loading', t('data.mgmt.exportingJson' as any))
       const data = await exportProjectJSON(project.id!)
       downloadJSON(data, `${project.name}_${new Date().toISOString().slice(0, 10)}.json`)
-      show('success', 'JSON 导出成功！')
-    } catch (e) { show('error', `导出失败：${(e as Error).message}`) }
+      show('success', t('data.mgmt.jsonExportSuccess' as any))
+    } catch (e) { show('error', t('data.mgmt.exportFailed' as any, { error: (e as Error).message })) }
   }
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      show('loading', '正在导入项目...')
+      show('loading', t('data.mgmt.importing' as any))
       const data: ProjectExportData = JSON.parse(await file.text())
       const newId = await importProjectJSON(data)
-      show('success', '导入成功！')
+      show('success', t('data.mgmt.importSuccess' as any))
       onImported?.(newId)
-    } catch (err) { show('error', `导入失败：${(err as Error).message}`) }
+    } catch (err) { show('error', t('data.mgmt.importFailed' as any, { error: (err as Error).message })) }
     e.target.value = ''
   }
 
   const handleExportMarkdown = async () => {
     try {
-      show('loading', '正在导出 Markdown...')
+      show('loading', t('data.mgmt.exportingMarkdown' as any))
       const md = await exportProjectMarkdown(project.id!)
       downloadTextFile(md, `${project.name}_${new Date().toISOString().slice(0, 10)}.md`, 'text/markdown')
-      show('success', 'Markdown 导出成功！')
-    } catch (e) { show('error', `导出失败：${(e as Error).message}`) }
+      show('success', t('data.mgmt.markdownExportSuccess' as any))
+    } catch (e) { show('error', t('data.mgmt.exportFailed' as any, { error: (e as Error).message })) }
   }
 
   const handleExportTXT = async () => {
     try {
-      show('loading', '正在导出 TXT...')
+      show('loading', t('data.mgmt.exportingTxt' as any))
       const txt = await exportProjectTXT(project.id!)
       downloadTextFile(txt, `${project.name}_${new Date().toISOString().slice(0, 10)}.txt`)
-      show('success', 'TXT 导出成功！')
-    } catch (e) { show('error', `导出失败：${(e as Error).message}`) }
+      show('success', t('data.mgmt.txtExportSuccess' as any))
+    } catch (e) { show('error', t('data.mgmt.exportFailed' as any, { error: (e as Error).message })) }
   }
 
   const handleDownloadDiagnostics = async () => {
     try {
-      show('loading', '正在整理本地诊断信息...')
+      show('loading', t('data.mgmt.gatheringDiagnostics' as any))
       const report = await buildLocalDiagnosticReport()
       downloadTextFile(
         JSON.stringify(report, null, 2),
         `storyforge-diagnostics-${new Date().toISOString().slice(0, 10)}.json`,
         'application/json',
       )
-      show('success', '诊断信息已下载，不含作品内容与 API Key。')
+      show('success', t('data.mgmt.diagnosticsSuccess' as any))
     } catch (e) {
-      show('error', `诊断信息生成失败：${(e as Error).message}`)
+      show('error', t('data.mgmt.diagnosticsFailed' as any, { error: (e as Error).message }))
     }
   }
 
@@ -161,13 +164,13 @@ function ExportTab({ project, onImported }: Props) {
     setFolderBusy(true)
     try {
       const ok = await ensureFolderPermission(h)
-      if (!ok) { show('error', '未授予文件夹写入权限'); return }
+      if (!ok) { show('error', t('data.mgmt.noFolderPermission' as any)); return }
       await saveFolderHandle(projFolderKey(project.id!), h)
       await saveFolderHandle(LAST_FOLDER_KEY, h)
       setFolderHandle(h); setFolderName(h.name); setFolderNeedsAuth(false)
       const wrote = await writeProjectJSONToFolder(h, project.id!)
-      show(wrote ? 'success' : 'error', wrote ? `已绑定并保存到 / ${h.name}` : '绑定成功但写入失败')
-    } catch (e) { show('error', `绑定失败：${(e as Error).message}`) }
+      show(wrote ? 'success' : 'error', wrote ? t('data.mgmt.boundAndSaved' as any, { name: h.name }) : t('data.mgmt.bindSuccessWriteFail' as any))
+    } catch (e) { show('error', t('data.mgmt.bindFailed' as any, { error: (e as Error).message })) }
     finally { setFolderBusy(false) }
   }
 
@@ -177,11 +180,11 @@ function ExportTab({ project, onImported }: Props) {
     setFolderBusy(true)
     try {
       const ok = await ensureFolderPermission(folderHandle)
-      if (!ok) { show('error', '仍未获授权'); return }
+      if (!ok) { show('error', t('data.mgmt.notAuthorized' as any)); return }
       setFolderNeedsAuth(false)
       await writeProjectJSONToFolder(folderHandle, project.id!)
-      show('success', '已重新授权，本项目会自动写入该文件夹')
-    } catch (e) { show('error', `授权失败：${(e as Error).message}`) }
+      show('success', t('data.mgmt.reauthSuccess' as any))
+    } catch (e) { show('error', t('data.mgmt.reauthFailed' as any, { error: (e as Error).message })) }
     finally { setFolderBusy(false) }
   }
 
@@ -189,11 +192,11 @@ function ExportTab({ project, onImported }: Props) {
     if (!folderHandle) return
     setFolderBusy(true)
     try {
-      show('loading', '正在写入本地文件夹...')
-      if (!(await ensureFolderPermission(folderHandle))) { show('error', '未获授权，无法写入'); setFolderNeedsAuth(true); return }
+      show('loading', t('data.mgmt.writingFolder' as any))
+      if (!(await ensureFolderPermission(folderHandle))) { show('error', t('data.mgmt.notAuthorizedCannotWrite' as any)); setFolderNeedsAuth(true); return }
       const ok = await writeProjectJSONToFolder(folderHandle, project.id!)
-      show(ok ? 'success' : 'error', ok ? '已保存到本地文件夹' : '写入失败，请重新绑定文件夹')
-    } catch (e) { show('error', `写入失败：${(e as Error).message}`) }
+      show(ok ? 'success' : 'error', ok ? t('data.mgmt.savedToFolder' as any) : t('data.mgmt.writeFailedRebind' as any))
+    } catch (e) { show('error', t('data.mgmt.writeFailed' as any, { error: (e as Error).message })) }
     finally { setFolderBusy(false) }
   }
 
@@ -211,15 +214,15 @@ function ExportTab({ project, onImported }: Props) {
       {/* JSON */}
       <SectionCard
         icon={<FileJson className="w-5 h-5 text-accent" />}
-        title="JSON（完整备份）"
-        desc="导出包含所有数据的完整备份文件，可用于恢复项目。"
+        title={t('data.mgmt.jsonFullBackup' as any)}
+        desc={t('data.mgmt.jsonFullBackupDesc' as any)}
       >
         <div className="flex gap-3 flex-wrap">
           <ActionButton onClick={handleExportJSON} disabled={status === 'loading'} variant="accent">
-            <Download className="w-4 h-4" /> 导出 JSON
+            <Download className="w-4 h-4" /> {t('data.mgmt.exportJson' as any)}
           </ActionButton>
           <ActionButton onClick={() => fileInputRef.current?.click()} disabled={status === 'loading'} variant="default">
-            <Upload className="w-4 h-4" /> 导入 JSON
+            <Upload className="w-4 h-4" /> {t('data.mgmt.importJson' as any)}
           </ActionButton>
           <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileSelected} className="hidden" />
         </div>
@@ -231,44 +234,44 @@ function ExportTab({ project, onImported }: Props) {
       {/* Markdown */}
       <SectionCard
         icon={<FileText className="w-5 h-5 text-blue-400" />}
-        title="Markdown（正文导出）"
-        desc="按大纲结构导出所有章节正文。"
+        title={t('data.mgmt.markdownExport' as any)}
+        desc={t('data.mgmt.markdownExportDesc' as any)}
       >
         <ActionButton onClick={handleExportMarkdown} disabled={status === 'loading'} variant="blue">
-          <Download className="w-4 h-4" /> 导出 Markdown
+          <Download className="w-4 h-4" /> {t('data.mgmt.exportMarkdown' as any)}
         </ActionButton>
       </SectionCard>
 
       {/* TXT */}
       <SectionCard
         icon={<FileType className="w-5 h-5 text-yellow-400" />}
-        title="纯文本 TXT"
-        desc="适合直接发布到小说平台。"
+        title={t('data.mgmt.txtExport' as any)}
+        desc={t('data.mgmt.txtExportDesc' as any)}
       >
         <ActionButton onClick={handleExportTXT} disabled={status === 'loading'} variant="yellow">
-          <Download className="w-4 h-4" /> 导出 TXT
+          <Download className="w-4 h-4" /> {t('data.mgmt.exportTxt' as any)}
         </ActionButton>
       </SectionCard>
 
       {/* 本地文件夹 */}
       <SectionCard
         icon={<FolderOpen className="w-5 h-5 text-orange-400" />}
-        title="本地文件夹自动备份"
-        desc="绑定后，进入本项目会自动把完整数据写入该文件夹（打开时 + 每 5 分钟）。绑定跨刷新/更新保留；换设备或数据重置后，可在首页「从本地文件夹恢复」。"
-        badge={!isFSASupported() ? '仅 Chrome/Edge 支持' : undefined}
+        title={t('data.mgmt.folderBackup' as any)}
+        desc={t('data.mgmt.folderBackupDesc' as any)}
+        badge={!isFSASupported() ? t('data.mgmt.chromeEdgeOnly' as any) : undefined}
       >
         {folderHandle ? (
           <div className="space-y-2">
             {folderNeedsAuth ? (
               <div className="flex items-center gap-2 text-sm text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg">
                 <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span className="flex-1 truncate">已绑定「{folderName}」，但浏览器需重新授权才能自动写入</span>
+                <span className="flex-1 truncate">{t('data.mgmt.boundButReauth' as any, { name: folderName })}</span>
                 <button onClick={handleUnbindFolder} className="text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 px-3 py-2 rounded-lg">
                 <FolderOpen className="w-4 h-4 shrink-0" />
-                <span className="flex-1 truncate">已绑定：{folderName}（自动写入已生效）</span>
+                <span className="flex-1 truncate">{t('data.mgmt.bound' as any, { name: folderName })}</span>
                 <button onClick={handleUnbindFolder} className="text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
               </div>
             )}
@@ -276,29 +279,29 @@ function ExportTab({ project, onImported }: Props) {
               {folderNeedsAuth && (
                 <ActionButton onClick={handleReauthFolder} disabled={folderBusy} variant="orange">
                   {folderBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />}
-                  重新授权
+                  {t('data.mgmt.reauthorize' as any)}
                 </ActionButton>
               )}
               <ActionButton onClick={handleSaveToFolder} disabled={folderBusy || status === 'loading'} variant={folderNeedsAuth ? 'default' : 'orange'}>
                 {folderBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {folderBusy ? '写入中...' : '立即保存'}
+                {folderBusy ? t('data.mgmt.writing' as any) : t('data.mgmt.saveNow' as any)}
               </ActionButton>
             </div>
           </div>
         ) : (
           <ActionButton onClick={handleBindFolder} disabled={!isFSASupported() || folderBusy || status === 'loading'} variant="orange">
-            {folderBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />} 选择本地文件夹
+            {folderBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />} {t('data.mgmt.selectFolder' as any)}
           </ActionButton>
         )}
       </SectionCard>
 
       <SectionCard
         icon={<Stethoscope className="w-5 h-5 text-teal-400" />}
-        title="本地诊断信息"
-        desc="仅包含应用/浏览器版本、数据库表记录数量和本次页面会话的错误位置；不包含作品正文、设定、API Key 或 localStorage 内容，也不会自动上传。"
+        title={t('data.mgmt.diagnostics' as any)}
+        desc={t('data.mgmt.diagnosticsDesc' as any)}
       >
         <ActionButton onClick={handleDownloadDiagnostics} disabled={status === 'loading'} variant="default">
-          <Download className="w-4 h-4" /> 下载诊断信息
+          <Download className="w-4 h-4" /> {t('data.mgmt.downloadDiagnostics' as any)}
         </ActionButton>
       </SectionCard>
     </div>
@@ -307,6 +310,7 @@ function ExportTab({ project, onImported }: Props) {
 
 // ── 版本历史 Tab ─────────────────────────────────────────────
 function BackupTab({ project }: Props) {
+  const { t } = useTranslation('panels')
   const { snapshots, loading, loadSnapshots, createSnapshot, deleteSnapshot, restoreSnapshot } = useBackupStore()
   const toast = useToast()
   const dialog = useDialog()
@@ -320,26 +324,26 @@ function BackupTab({ project }: Props) {
   const handleCreate = async () => {
     setCreating(true)
     try {
-      await createSnapshot(project.id!, label.trim() || `手动备份 ${new Date().toLocaleString('zh-CN')}`, 'manual')
-      toast.success('快照创建成功')
+      await createSnapshot(project.id!, label.trim() || t('data.mgmt.manualBackup' as any, { date: new Date().toLocaleString('zh-CN') }), 'manual')
+      toast.success(t('data.mgmt.snapshotCreated' as any))
       setLabel(''); setShowForm(false)
     } catch (err) {
-      toast.error('快照创建失败: ' + (err as Error).message)
+      toast.error(t('data.mgmt.snapshotCreateFailed' as any, { error: (err as Error).message }))
     } finally { setCreating(false) }
   }
 
   const handleRestore = async (snap: Snapshot) => {
     const ok = await dialog.confirm({
-      title: `恢复快照「${snap.label}」？`,
-      message: '将创建一个新项目，不会覆盖当前项目。',
-      confirmText: '恢复为新项目',
+      title: t('data.mgmt.restoreSnapshotTitle' as any, { label: snap.label }),
+      message: t('data.mgmt.restoreSnapshotMsg' as any),
+      confirmText: t('data.backup.restoreAsNew' as any),
     })
     if (!ok) return
     setRestoring(snap.id!)
     try {
       await restoreSnapshot(snap.id!)
-      toast.success('恢复成功，已创建新项目')
-    } catch (err) { toast.error('恢复失败: ' + (err as Error).message) }
+      toast.success(t('data.mgmt.restoreSuccess' as any))
+    } catch (err) { toast.error(t('data.mgmt.restoreFailed' as any, { error: (err as Error).message })) }
     finally { setRestoring(null) }
   }
 
@@ -350,13 +354,13 @@ function BackupTab({ project }: Props) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-text-primary">创建快照</span>
+            <span className="text-sm font-medium text-text-primary">{t('data.mgmt.createSnapshot' as any)}</span>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
             className="text-xs text-accent hover:text-accent-hover transition-colors"
           >
-            {showForm ? '收起' : '+ 新建'}
+            {showForm ? t('data.mgmt.collapse' as any) : t('data.mgmt.addNew' as any)}
           </button>
         </div>
         {showForm && (
@@ -364,7 +368,7 @@ function BackupTab({ project }: Props) {
             <input
               value={label}
               onChange={e => setLabel(e.target.value)}
-              placeholder="快照备注（可选）"
+              placeholder={t('data.mgmt.snapshotPlaceholder' as any)}
               className="flex-1 px-3 py-1.5 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
             />
             <button
@@ -373,7 +377,7 @@ function BackupTab({ project }: Props) {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
               {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-              创建
+              {t('data.mgmt.create' as any)}
             </button>
           </div>
         )}
@@ -383,13 +387,13 @@ function BackupTab({ project }: Props) {
       <div className="space-y-2">
         {loading && (
           <div className="flex items-center justify-center py-8 text-text-muted">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" /> 加载中...
+            <Loader2 className="w-5 h-5 animate-spin mr-2" /> {t('data.mgmt.loading' as any)}
           </div>
         )}
         {!loading && snapshots.length === 0 && (
           <div className="text-center text-text-muted text-sm py-10">
             <History className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            暂无快照，创建第一个吧
+            {t('data.mgmt.noSnapshots' as any)}
           </div>
         )}
         {snapshots.map(snap => (
@@ -402,14 +406,14 @@ function BackupTab({ project }: Props) {
               <button
                 onClick={() => handleRestore(snap)}
                 disabled={restoring === snap.id}
-                title="从此快照恢复"
+                title={t('data.mgmt.restoreFromSnapshotAria' as any)}
                 className="p-1.5 text-text-muted hover:text-accent rounded hover:bg-accent/10 transition-colors disabled:opacity-50"
               >
                 {restoring === snap.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
               </button>
               <button
                 onClick={() => deleteSnapshot(snap.id!)}
-                title="删除快照"
+                title={t('data.mgmt.deleteSnapshotAria' as any)}
                 className="p-1.5 text-text-muted hover:text-error rounded hover:bg-error/10 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />

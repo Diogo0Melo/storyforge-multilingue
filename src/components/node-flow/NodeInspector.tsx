@@ -1,4 +1,5 @@
 import { Plus, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { nanoid } from 'nanoid'
 import { CONTEXT_SOURCES } from '../../lib/registry/context-sources'
 import type { NodeFlowGraph, NodeFlowNode, NodeValueType } from '../../lib/types'
@@ -33,11 +34,12 @@ export default function NodeInspector(props: {
   node: NodeFlowNode | null
   onGraphChange: (graph: NodeFlowGraph) => void
 }) {
+  const { t } = useTranslation('panels')
   const { node } = props
   if (!node) {
     return (
       <aside className="flex h-full items-center justify-center border-l border-border bg-bg-surface p-6 text-center text-xs text-text-muted">
-        选择节点后，可在这里编辑来源、字段范围、动态输入槽、创作指令和输出目标。
+        {t('nodeFlow.inspectorEmpty')}
       </aside>
     )
   }
@@ -66,7 +68,7 @@ export default function NodeInspector(props: {
     <aside className="h-full overflow-y-auto border-l border-border bg-bg-surface p-4">
       <div className="space-y-4">
         <label className="block">
-          <span className="mb-1 block text-[10px] font-medium text-text-secondary">节点名称</span>
+          <span className="mb-1 block text-[10px] font-medium text-text-secondary">{t('nodeFlow.nodeName')}</span>
           <input
             value={node.title}
             onChange={event => updateNode({ title: event.target.value })}
@@ -76,7 +78,7 @@ export default function NodeInspector(props: {
 
         {node.kind === 'input.text' && (
           <TextArea
-            label="作者输入"
+            label={t('nodeFlow.authorInput')}
             value={String(node.config.text ?? '')}
             rows={10}
             onChange={value => updateConfig('text', value)}
@@ -91,14 +93,14 @@ export default function NodeInspector(props: {
                 onClick={() => updateConfig('selectionMode', 'exact')}
                 className={`rounded px-2 py-1 ${selectionMode === 'exact' ? 'bg-accent text-white' : 'text-text-muted hover:bg-bg-hover'}`}
               >
-                精确资料
+                {t('nodeFlow.exactData')}
               </button>
               <button
                 type="button"
                 onClick={() => updateConfig('selectionMode', 'registered')}
                 className={`rounded px-2 py-1 ${selectionMode === 'registered' ? 'bg-accent text-white' : 'text-text-muted hover:bg-bg-hover'}`}
               >
-                注册来源
+                {t('nodeFlow.registeredSources')}
               </button>
             </div>
             {selectionMode === 'exact' ? (
@@ -110,9 +112,9 @@ export default function NodeInspector(props: {
               />
             ) : <section>
               <div className="mb-2">
-                <p className="text-[10px] font-medium text-text-secondary">项目元素来源</p>
+                <p className="text-[10px] font-medium text-text-secondary">{t('nodeFlow.projectElementSources')}</p>
                 <p className="text-[9px] leading-4 text-text-muted">
-                  可同时接入多个登记来源；只选本次创作真正需要的材料。
+                  {t('nodeFlow.projectElementDescription')}
                 </p>
               </div>
               <div className="max-h-64 space-y-1 overflow-y-auto rounded border border-border bg-bg-base p-2">
@@ -142,7 +144,7 @@ export default function NodeInspector(props: {
             <div className={selectionMode === 'registered' ? 'grid grid-cols-2 gap-2' : ''}>
               {selectionMode === 'registered' && (
                 <label>
-                  <span className="mb-1 block text-[10px] text-text-secondary">章节 ID</span>
+                  <span className="mb-1 block text-[10px] text-text-secondary">{t('nodeFlow.chapterId')}</span>
                   <input
                     type="number"
                     min={0}
@@ -153,7 +155,7 @@ export default function NodeInspector(props: {
                 </label>
               )}
               <label>
-                <span className="mb-1 block text-[10px] text-text-secondary">Token 上限</span>
+                <span className="mb-1 block text-[10px] text-text-secondary">{t('nodeFlow.tokenLimit')}</span>
                 <input
                   type="number"
                   min={100}
@@ -166,13 +168,13 @@ export default function NodeInspector(props: {
             {selectionMode === 'registered' && (
               <>
                 <TextArea
-                  label="只保留包含这些关键词的行（逗号或换行）"
+                  label={t('nodeFlow.includeKeywords')}
                   value={String(node.config.include ?? '')}
                   rows={3}
                   onChange={value => updateConfig('include', value)}
                 />
                 <TextArea
-                  label="排除包含这些关键词的行"
+                  label={t('nodeFlow.excludeKeywords')}
                   value={String(node.config.exclude ?? '')}
                   rows={2}
                   onChange={value => updateConfig('exclude', value)}
@@ -184,7 +186,7 @@ export default function NodeInspector(props: {
 
         {node.kind === 'transform.compose' && (
           <TextArea
-            label="组合模板（可用 {{输入槽名称}}；留空则按优先级自动分段）"
+            label={t('nodeFlow.composeTemplate')}
             value={String(node.config.template ?? '')}
             rows={9}
             onChange={value => updateConfig('template', value)}
@@ -194,19 +196,19 @@ export default function NodeInspector(props: {
         {node.kind === 'generation.freeform' && (
           <>
             <TextArea
-              label="创作指令"
+              label={t('nodeFlow.creationInstruction')}
               value={String(node.config.instruction ?? '')}
               rows={7}
               onChange={value => updateConfig('instruction', value)}
             />
             <TextArea
-              label="节点系统约束"
+              label={t('nodeFlow.nodeSystemConstraint')}
               value={String(node.config.systemPrompt ?? '')}
               rows={5}
               onChange={value => updateConfig('systemPrompt', value)}
             />
             <label className="block">
-              <span className="mb-1 block text-[10px] text-text-secondary">最大输出 Tokens</span>
+              <span className="mb-1 block text-[10px] text-text-secondary">{t('nodeFlow.maxOutputTokens')}</span>
               <input
                 type="number"
                 min={100}
@@ -221,13 +223,13 @@ export default function NodeInspector(props: {
         {node.kind === 'validation.required' && (
           <>
             <TextArea
-              label="必含内容（逗号或换行）"
+              label={t('nodeFlow.requiredContent')}
               value={String(node.config.requiredTerms ?? '')}
               rows={3}
               onChange={value => updateConfig('requiredTerms', value)}
             />
             <TextArea
-              label="禁用内容"
+              label={t('nodeFlow.forbiddenContent')}
               value={String(node.config.forbiddenTerms ?? '')}
               rows={3}
               onChange={value => updateConfig('forbiddenTerms', value)}
@@ -237,15 +239,15 @@ export default function NodeInspector(props: {
 
         {node.kind === 'output.preview' && (
           <label className="block">
-            <span className="mb-1 block text-[10px] text-text-secondary">确认写入目标</span>
+            <span className="mb-1 block text-[10px] text-text-secondary">{t('nodeFlow.confirmWriteTarget')}</span>
             <select
               value={String(node.config.adoptTarget ?? 'none')}
               onChange={event => updateConfig('adoptTarget', event.target.value)}
               className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-[11px]"
             >
-              <option value="none">仅保存为节点输出</option>
-              <option value="world-origin">世界观 · 世界来源</option>
-              <option value="create-character">新增角色（输出须为角色 JSON）</option>
+              <option value="none">{t('nodeFlow.saveAsNodeOutput')}</option>
+              <option value="world-origin">{t('nodeFlow.worldOrigin')}</option>
+              <option value="create-character">{t('nodeFlow.createCharacter')}</option>
             </select>
           </label>
         )}
@@ -254,15 +256,15 @@ export default function NodeInspector(props: {
           <section className="border-t border-border/70 pt-4">
             <div className="mb-2 flex items-center justify-between">
               <div>
-                <p className="text-[10px] font-medium text-text-secondary">动态输入槽</p>
-                <p className="text-[9px] text-text-muted">每条路径可独立命名、定优先级和预算。</p>
+                <p className="text-[10px] font-medium text-text-secondary">{t('nodeFlow.dynamicInputSlots')}</p>
+                <p className="text-[9px] text-text-muted">{t('nodeFlow.dynamicSlotDescription')}</p>
               </div>
               <button
                 type="button"
                 onClick={() => updateNode({
                   inputSlots: [...node.inputSlots, {
                     id: nanoid(),
-                    label: `输入 ${node.inputSlots.length + 1}`,
+                    label: t('nodeFlow.inputSlot', { index: node.inputSlots.length + 1 }),
                     type: 'any',
                     required: false,
                     priority: 50,
@@ -271,7 +273,7 @@ export default function NodeInspector(props: {
                 })}
                 className="flex items-center gap-1 rounded px-2 py-1 text-[10px] text-accent hover:bg-accent/10"
               >
-                <Plus className="h-3 w-3" /> 添加
+                <Plus className="h-3 w-3" /> {t('nodeFlow.add')}
               </button>
             </div>
             <div className="space-y-2">
@@ -289,7 +291,7 @@ export default function NodeInspector(props: {
                     />
                     <button
                       type="button"
-                      aria-label={`删除输入槽 ${slot.label}`}
+                      aria-label={t('nodeFlow.deleteSlot', { label: slot.label })}
                       onClick={() => props.onGraphChange(removeSlotFromGraph(props.graph, node.id, slot.id))}
                       className="rounded p-1 text-text-muted hover:text-error"
                     >
@@ -310,7 +312,7 @@ export default function NodeInspector(props: {
                     </select>
                     <input
                       type="number"
-                      title="优先级"
+                      title={t('nodeFlow.priority')}
                       value={slot.priority}
                       onChange={event => updateNode({
                         inputSlots: node.inputSlots.map(item => item.id === slot.id
@@ -321,7 +323,7 @@ export default function NodeInspector(props: {
                     />
                     <input
                       type="number"
-                      title="Token 上限"
+                      title={t('nodeFlow.tokenLimit')}
                       value={slot.maxTokens ?? 0}
                       onChange={event => updateNode({
                         inputSlots: node.inputSlots.map(item => item.id === slot.id
@@ -341,7 +343,7 @@ export default function NodeInspector(props: {
                           : item),
                       })}
                     />
-                    运行时必需
+                    {t('nodeFlow.runtimeRequired')}
                   </label>
                 </div>
               ))}
@@ -350,7 +352,7 @@ export default function NodeInspector(props: {
         ) : null}
 
         <section className="border-t border-border/70 pt-3">
-          <p className="text-[10px] font-medium text-text-secondary">当前连线</p>
+          <p className="text-[10px] font-medium text-text-secondary">{t('nodeFlow.currentConnections')}</p>
           <div className="mt-1 space-y-1">
             {props.graph.edges.filter(edge => edge.targetNodeId === node.id).map(edge => {
               const source = props.graph.nodes.find(item => item.id === edge.sourceNodeId)
@@ -360,7 +362,7 @@ export default function NodeInspector(props: {
                   <span className="truncate">{source?.title ?? edge.sourceNodeId} → {slot?.label ?? edge.targetSlotId}</span>
                   <button
                     type="button"
-                    aria-label="删除连线"
+                    aria-label={t('nodeFlow.deleteConnection')}
                     onClick={() => props.onGraphChange({
                       ...props.graph,
                       edges: props.graph.edges.filter(item => item.id !== edge.id),
@@ -373,7 +375,7 @@ export default function NodeInspector(props: {
               )
             })}
             {!props.graph.edges.some(edge => edge.targetNodeId === node.id) && (
-              <p className="text-[9px] text-text-muted">暂无输入连线。</p>
+              <p className="text-[9px] text-text-muted">{t('nodeFlow.noInputConnections')}</p>
             )}
           </div>
         </section>

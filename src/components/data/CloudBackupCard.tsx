@@ -5,6 +5,7 @@
  * 需要用户提供一个带 `gist` 权限的 GitHub Personal Access Token（opt-in）。
  */
 import { useState } from 'react'
+import { useTranslation, Trans } from 'react-i18next'
 import { Cloud, CloudUpload, CloudDownload, Check, Loader2, LogOut, ExternalLink, History } from 'lucide-react'
 import { useGistStore } from '../../stores/gist'
 import type { GistBackupMeta, GistRevisionMeta } from '../../lib/export/gist-export'
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function CloudBackupCard({ projectId, onImported }: Props) {
+  const { t } = useTranslation('panels')
   const { pat, username, rememberPat, autoBackup, busy, error, connect, disconnect, backupProject, restoreFromGist, listBackups, listRevisions, setAutoBackup, projBackup } = useGistStore()
   const dialog = useDialog()
   const [patInput, setPatInput] = useState('')
@@ -28,12 +30,12 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
   const handleConnect = async () => {
     if (!patInput.trim()) return
     const ok = await connect(patInput, rememberPatInput)
-    if (ok) { setPatInput(''); setRememberPatInput(false); setMsg('已连接 GitHub') }
+    if (ok) { setPatInput(''); setRememberPatInput(false); setMsg(t('data.backup.connected' as any)) }
   }
   const handleBackup = async () => {
     setMsg(null)
     const r = await backupProject(projectId)
-    if (r) setMsg('✓ 已备份到云端')
+    if (r) setMsg(t('data.backup.success' as any))
   }
   const handleShowRestore = async () => {
     setMsg(null)
@@ -42,42 +44,42 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
   }
   const handleRestore = async (gistId: string, title: string) => {
     const ok = await dialog.confirm({
-      title: `从云端恢复「${title}」？`,
-      message: '将新建一个项目，不会覆盖当前项目。',
-      confirmText: '恢复为新项目',
+      title: t('data.backup.restoreTitle' as any, { title }),
+      message: t('data.backup.restoreMsg' as any),
+      confirmText: t('data.backup.restoreAsNew' as any),
     })
     if (!ok) return
     const newId = await restoreFromGist(gistId)
-    if (newId) { setMsg('✓ 已从云端恢复为新项目'); setBackups(null); onImported?.(newId) }
+    if (newId) { setMsg(t('data.backup.restoredSuccess' as any)); setBackups(null); onImported?.(newId) }
   }
   const handleShowRevisions = async () => {
     setMsg(null)
     setBackups(null)
     const list = await listRevisions(projectId)
     setRevisions(list)
-    if (list.length === 0) setMsg('该项目暂无云端历史版本（先备份一次，之后每次备份都会自动留一版）。')
+    if (list.length === 0) setMsg(t('data.backup.noHistory' as any))
   }
   const handleRestoreRevision = async (rev: GistRevisionMeta) => {
     if (!proj?.gistId) return
     const when = new Date(rev.committedAt).toLocaleString('zh-CN')
     const ok = await dialog.confirm({
-      title: `恢复 ${when} 这一版？`,
-      message: '将新建一个项目，不会覆盖当前项目。',
-      confirmText: '恢复为新项目',
+      title: t('data.backup.restoreVersionTitle' as any, { when }),
+      message: t('data.backup.restoreMsg' as any),
+      confirmText: t('data.backup.restoreAsNew' as any),
     })
     if (!ok) return
     const newId = await restoreFromGist(proj.gistId, rev.version)
-    if (newId) { setMsg(`✓ 已恢复 ${when} 的版本为新项目`); setRevisions(null); onImported?.(newId) }
+    if (newId) { setMsg(t('data.backup.restoredVersionSuccess' as any, { when })); setRevisions(null); onImported?.(newId) }
   }
 
   return (
     <div className="bg-bg-surface border border-border rounded-lg p-4">
       <div className="flex items-center gap-2 mb-1">
         <Cloud className="w-5 h-5 text-sky-400" />
-        <h3 className="text-sm font-semibold text-text-primary">云备份（GitHub）</h3>
+        <h3 className="text-sm font-semibold text-text-primary">{t('data.backup.title' as any)}</h3>
       </div>
       <p className="text-xs text-text-muted mb-3">
-        备份到你的 GitHub 私密 Gist —— 数据存在云端，<strong>清浏览器 / 换设备都不丢</strong>，可一键拉回。
+        <Trans i18nKey="data.backup.desc" ns="panels" components={[<strong key="hl" />]} />
       </p>
 
       {!pat ? (
@@ -87,17 +89,17 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
             type="password"
             value={patInput}
             onChange={e => setPatInput(e.target.value)}
-            placeholder="粘贴 GitHub Personal Access Token（需 gist 权限）"
+            placeholder={t('data.backup.patPlaceholder' as any)}
             className="w-full px-3 py-2 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
           />
           <div className="flex items-center gap-2">
             <button onClick={handleConnect} disabled={busy || !patInput.trim()}
               className="px-3 py-1.5 rounded bg-sky-500/80 text-white text-sm hover:bg-sky-500 disabled:opacity-50 flex items-center gap-1.5">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cloud className="w-4 h-4" />} 连接 GitHub
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Cloud className="w-4 h-4" />} {t('data.backup.connectGithub' as any)}
             </button>
             <a href="https://github.com/settings/tokens/new?scopes=gist&description=storyforge-backup" target="_blank" rel="noreferrer"
               className="text-xs text-sky-400 hover:underline flex items-center gap-0.5">
-              如何创建 Token <ExternalLink className="w-3 h-3" />
+              {t('data.backup.howCreateToken' as any)} <ExternalLink className="w-3 h-3" />
             </a>
           </div>
           <label className="flex items-start gap-2 text-[11px] text-text-secondary cursor-pointer">
@@ -107,10 +109,10 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
               onChange={e => setRememberPatInput(e.target.checked)}
               className="mt-0.5 accent-sky-400"
             />
-            <span>在本机记住 Token（写入 localStorage）。不勾选时仅本次浏览器会话有效。</span>
+            <span>{t('data.backup.rememberToken' as any)}</span>
           </label>
           <p className="text-[11px] text-text-muted">
-            云备份会把完整项目 JSON 明文上传到你的 GitHub 私密 Gist；Private Gist 不是端到端加密保险箱。
+            {t('data.backup.securityNote' as any)}
           </p>
         </div>
       ) : (
@@ -118,54 +120,54 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-text-secondary flex items-center gap-1.5">
-              <Check className="w-3.5 h-3.5 text-success" /> 已连接 <strong>@{username}</strong>
+              <Check className="w-3.5 h-3.5 text-success" /> {t('data.backup.connectedTo' as any)} <strong>@{username}</strong>
               <em className="not-italic text-[10px] text-text-muted">
-                {rememberPat ? '已在本机记住' : '仅本会话'}
+                {rememberPat ? t('data.backup.rememberedThisDevice' as any) : t('data.backup.thisSessionOnly' as any)}
               </em>
             </span>
             <button onClick={() => { disconnect(); setBackups(null) }} className="text-[11px] text-text-muted hover:text-error flex items-center gap-0.5">
-              <LogOut className="w-3 h-3" /> 断开
+              <LogOut className="w-3 h-3" /> {t('data.backup.disconnect' as any)}
             </button>
           </div>
           <p className="text-[11px] text-text-muted">
-            备份内容会作为完整项目 JSON 明文上传到 GitHub 私密 Gist；Token {rememberPat ? '保存在本机 localStorage' : '仅保存在本次浏览器会话'}。
+            {t('data.backup.tokenStorage' as any, { remembered: rememberPat ? t('data.backup.tokenSavedLocal' as any) : t('data.backup.tokenSessionOnly' as any) })}
           </p>
 
           <div className="flex flex-wrap gap-2">
             <button onClick={handleBackup} disabled={busy}
               className="px-3 py-1.5 rounded bg-sky-500/80 text-white text-sm hover:bg-sky-500 disabled:opacity-50 flex items-center gap-1.5">
-              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />} 立即备份到云端
+              {busy ? <Loader2 className="w-4 h-4 animate-spin" /> : <CloudUpload className="w-4 h-4" />} {t('data.backup.backupNow' as any)}
             </button>
             <button onClick={handleShowRestore} disabled={busy}
               className="px-3 py-1.5 rounded border border-border text-text-secondary text-sm hover:bg-bg-hover disabled:opacity-50 flex items-center gap-1.5">
-              <CloudDownload className="w-4 h-4" /> 从云端恢复
+              <CloudDownload className="w-4 h-4" /> {t('data.backup.restoreFromCloud' as any)}
             </button>
             {proj?.gistId && (
               <button onClick={handleShowRevisions} disabled={busy}
                 className="px-3 py-1.5 rounded border border-border text-text-secondary text-sm hover:bg-bg-hover disabled:opacity-50 flex items-center gap-1.5">
-                <History className="w-4 h-4" /> 本项目历史版本
+                <History className="w-4 h-4" /> {t('data.backup.projectHistory' as any)}
               </button>
             )}
           </div>
 
           <label className="flex items-center gap-2 text-xs text-text-secondary cursor-pointer">
             <input type="checkbox" checked={autoBackup} onChange={e => setAutoBackup(e.target.checked)} className="accent-sky-400" />
-            自动备份（每隔几分钟把改动推到云端）
+            {t('data.backup.autoBackup' as any)}
           </label>
 
           {proj?.lastBackupAt && (
-            <p className="text-[11px] text-text-muted">本项目上次云备份：{new Date(proj.lastBackupAt).toLocaleString('zh-CN')}</p>
+            <p className="text-[11px] text-text-muted">{t('data.backup.lastBackup' as any, { date: new Date(proj.lastBackupAt).toLocaleString('zh-CN') })}</p>
           )}
 
           {backups && (
             <div className="border border-border rounded p-2 space-y-1 max-h-48 overflow-y-auto bg-bg-base">
               {backups.length === 0 ? (
-                <p className="text-xs text-text-muted">云端暂无备份。</p>
+                <p className="text-xs text-text-muted">{t('data.backup.noCloudBackup' as any)}</p>
               ) : backups.map(b => (
                 <button key={b.gistId} onClick={() => handleRestore(b.gistId, b.description || b.filename)}
                   className="w-full text-left px-2 py-1.5 rounded hover:bg-bg-hover text-xs">
                   <div className="text-text-primary truncate">{b.description || b.filename}</div>
-                  <div className="text-[10px] text-text-muted">更新于 {new Date(b.updatedAt).toLocaleString('zh-CN')}</div>
+                  <div className="text-[10px] text-text-muted">{t('data.backup.updatedAt' as any, { date: new Date(b.updatedAt).toLocaleString('zh-CN') })}</div>
                 </button>
               ))}
             </div>
@@ -175,7 +177,7 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
             <div className="border border-border rounded bg-bg-base">
               <div className="px-2 py-1.5 border-b border-border flex items-center gap-1.5">
                 <History className="w-3.5 h-3.5 text-sky-400" />
-                <span className="text-[11px] text-text-secondary">本项目历史版本（每次备份留一版，最新在上 · 选一版恢复为新项目）</span>
+                <span className="text-[11px] text-text-secondary">{t('data.backup.historyDesc' as any)}</span>
               </div>
               <div className="p-2 space-y-1 max-h-56 overflow-y-auto">
                 {revisions.map((rev, i) => (
@@ -183,7 +185,7 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
                     className="w-full text-left px-2 py-1.5 rounded hover:bg-bg-hover text-xs disabled:opacity-50 flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5">
                       <span className="text-text-primary">{new Date(rev.committedAt).toLocaleString('zh-CN')}</span>
-                      {i === 0 && <span className="text-[10px] px-1 rounded bg-sky-500/20 text-sky-400">最新</span>}
+                      {i === 0 && <span className="text-[10px] px-1 rounded bg-sky-500/20 text-sky-400">{t('data.backup.latest' as any)}</span>}
                     </span>
                     <span className="text-[10px] text-text-muted shrink-0">
                       {rev.additions != null && rev.deletions != null ? `+${rev.additions} / -${rev.deletions}` : ''}

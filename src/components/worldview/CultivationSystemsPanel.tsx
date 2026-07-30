@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { GitBranch, Plus, Trash2 } from 'lucide-react'
 import type { Project } from '../../lib/types'
 import {
@@ -20,6 +21,7 @@ function nextStageId(): string {
 }
 
 export default function CultivationSystemsPanel({ project }: { project: Project }) {
+  const { t } = useTranslation('panels')
   const dialog = useDialog()
   const toast = useToast()
   const { systems, loadAll, addSystem, updateSystem, deleteSystem } = useCultivationStore()
@@ -46,12 +48,12 @@ export default function CultivationSystemsPanel({ project }: { project: Project 
 
   const handleAdd = async () => {
     if (worldGroupId === undefined) {
-      toast.error('世界数据尚未加载完成，请稍后再试。')
+      toast.error(t('cultivation.error.loadFailed' as any))
       return
     }
     const name = (await dialog.prompt({
-      title: '新增修炼体系',
-      placeholder: '如：剑修、武夫、召唤师',
+      title: t('cultivation.dialog.addTitle' as any),
+      placeholder: t('cultivation.dialog.addPlaceholder' as any),
     }))?.trim()
     if (!name) return
     const id = await addSystem({
@@ -66,9 +68,9 @@ export default function CultivationSystemsPanel({ project }: { project: Project 
 
   const handleDelete = async (system: CultivationSystem) => {
     if (!await dialog.confirm({
-      title: `删除修炼体系「${system.name}」？`,
-      message: '角色和异兽对它的关联会被安全置空；此操作不可恢复。',
-      confirmText: '删除',
+      title: t('cultivation.dialog.deleteTitle' as any, { name: system.name }),
+      message: t('cultivation.dialog.deleteMessage' as any),
+      confirmText: t('cultivation.dialog.confirmDelete' as any),
       tone: 'danger',
     })) return
     await deleteSystem(system.id!)

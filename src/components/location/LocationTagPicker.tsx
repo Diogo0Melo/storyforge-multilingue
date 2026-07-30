@@ -3,6 +3,7 @@
  * 支持多选组合
  */
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, ChevronDown, ChevronUp } from 'lucide-react'
 import {
   TAG_CATEGORIES,
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function LocationTagPicker({ selected, onChange }: Props) {
+  const { t } = useTranslation('panels')
   const [expanded, setExpanded] = useState(false)
 
   const toggle = (tag: LocationTag) => {
@@ -31,7 +33,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
       {/* 已选标签展示 */}
       <div className="flex flex-wrap gap-1.5 mb-2 min-h-[28px]">
         {selected.length === 0 && (
-          <span className="text-xs text-text-muted">点击下方添加标签…</span>
+          <span className="text-xs text-text-muted">{t('location.addTags')}</span>
         )}
         {selected.map(tag => (
           <span
@@ -55,7 +57,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
         className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary transition-colors mb-2"
       >
         {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        {expanded ? '收起标签' : '展开标签选择'}
+        {expanded ? t('location.collapseTags') : t('location.expandTags')}
       </button>
 
       {/* 标签面板 */}

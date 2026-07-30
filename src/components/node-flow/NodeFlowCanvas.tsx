@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { CheckCircle2, Circle, Loader2, Play, Trash2 } from 'lucide-react'
 import type {
   NodeExecutionResultMap,
@@ -22,6 +23,7 @@ export default function NodeFlowCanvas(props: {
   onRemoveNode: (nodeId: string) => void
   onRunNode: (nodeId: string) => void
 }) {
+  const { t } = useTranslation('panels')
   const dragRef = useRef<{
     nodeId: string
     startX: number
@@ -44,7 +46,7 @@ export default function NodeFlowCanvas(props: {
         style={{ transform: `scale(${zoom})` }}
       >
         <svg
-          aria-label="节点连线"
+          aria-label={t('nodeFlow.canvasAriaLabel')}
           className="pointer-events-none absolute inset-0 h-full w-full overflow-visible"
         >
           {props.graph.edges.map(edge => {
@@ -128,8 +130,8 @@ export default function NodeFlowCanvas(props: {
                   <button
                     key={slot.id}
                     type="button"
-                    aria-label={`连接到 ${node.title}.${slot.label}`}
-                    title={`${slot.label} · ${slot.type}${slot.required ? ' · 必需' : ''}`}
+                    aria-label={t('nodeFlow.connectTo', { title: node.title, label: slot.label })}
+                    title={`${slot.label} · ${slot.type}${slot.required ? ` · ${t('nodeFlow.required')}` : ''}`}
                     onClick={event => {
                       event.stopPropagation()
                       props.onFinishConnection(node.id, slot.id)
@@ -152,12 +154,12 @@ export default function NodeFlowCanvas(props: {
                   ))}
                 </div>
                 <div className="line-clamp-4 whitespace-pre-wrap text-[10px] leading-4 text-text-secondary">
-                  {result?.error || preview || definition?.description || '在右侧检查器配置节点'}
+                  {result?.error || preview || definition?.description || t('nodeFlow.configureNode')}
                 </div>
                 <button
                   type="button"
-                  aria-label={`从 ${node.title} 开始连线`}
-                  title="点击后再点击目标输入端口"
+                  aria-label={t('nodeFlow.startConnection', { title: node.title })}
+                  title={t('nodeFlow.clickThenClickTarget')}
                   onClick={event => {
                     event.stopPropagation()
                     props.onStartConnection(node.id)
@@ -168,7 +170,7 @@ export default function NodeFlowCanvas(props: {
                       : 'border-accent bg-bg-surface hover:bg-accent/20'
                   }`}
                 >
-                  <span className="sr-only">输出端口</span>
+                  <span className="sr-only">{t('nodeFlow.outputPort')}</span>
                 </button>
               </div>
 
@@ -177,7 +179,7 @@ export default function NodeFlowCanvas(props: {
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
-                    aria-label={`运行到 ${node.title}`}
+                    aria-label={t('nodeFlow.runTo', { title: node.title })}
                     onClick={event => {
                       event.stopPropagation()
                       props.onRunNode(node.id)
@@ -188,7 +190,7 @@ export default function NodeFlowCanvas(props: {
                   </button>
                   <button
                     type="button"
-                    aria-label={`删除节点 ${node.title}`}
+                    aria-label={t('nodeFlow.deleteNode', { title: node.title })}
                     onClick={event => {
                       event.stopPropagation()
                       props.onRemoveNode(node.id)

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useCallback, useMemo, type ComponentRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import ForceGraph2D from 'react-force-graph-2d'
 
 type ForceGraphHandle = ComponentRef<typeof ForceGraph2D>
@@ -20,9 +21,16 @@ const RELATION_COLORS: Record<string, string> = {
 }
 
 const RELATION_LABELS: Record<string, string> = {
-  family:'亲属', lover:'恋人', friend:'朋友', rival:'对手',
-  enemy:'敌人', master:'师父', student:'弟子', ally:'盟友',
-  subordinate:'上下级', other:'其他',
+  family: 'relations.graph.family',
+  lover: 'relations.graph.lover',
+  friend: 'relations.graph.friend',
+  rival: 'relations.graph.rival',
+  enemy: 'relations.graph.enemy',
+  master: 'relations.graph.master',
+  student: 'relations.graph.student',
+  ally: 'relations.graph.ally',
+  subordinate: 'relations.graph.subordinate',
+  other: 'relations.graph.other',
 }
 
 interface GraphNode { id: string; name: string; role: string; color: string }
@@ -43,6 +51,7 @@ interface Props {
 }
 
 export default function RelationGraph({ characters, relations, width = 700, height = 480 }: Props) {
+  const { t } = useTranslation('panels')
   const graphRef = useRef<ForceGraphHandle | undefined>(undefined)
 
   const graphData = useMemo(() => {
@@ -58,7 +67,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
       target: String(r.toCharacterId),
       type: r.relationType,
       bidirectional: r.isBidirectional,
-      label: r.label ?? RELATION_LABELS[r.relationType] ?? r.relationType,
+      label: r.label ?? t(RELATION_LABELS[r.relationType] as any) ?? r.relationType,
       color: RELATION_COLORS[r.relationType] ?? '#6b7280',
     }))
 
@@ -122,7 +131,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
   if (characters.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-text-muted">
-        <p className="text-sm">暂无角色数据，请先在「角色」模块添加角色</p>
+        <p className="text-sm">{t('relations.graph.noCharacters' as any)}</p>
       </div>
     )
   }
@@ -130,7 +139,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
   if (relations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-text-muted">
-        <p className="text-sm">暂无关系数据，请在下方添加角色关系</p>
+        <p className="text-sm">{t('relations.graph.noRelations' as any)}</p>
       </div>
     )
   }
@@ -160,7 +169,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
         {Object.entries(RELATION_COLORS).map(([key, color]) => (
           <div key={key} className="flex items-center gap-1 text-xs text-text-muted">
             <span className="w-3 h-0.5 inline-block rounded" style={{ backgroundColor: color }} />
-            {RELATION_LABELS[key]}
+            {t(RELATION_LABELS[key] as any)}
           </div>
         ))}
       </div>
