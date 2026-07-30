@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Play, Square } from 'lucide-react'
 import { usePromptStore } from '../../../stores/prompt'
 import { useWorldviewStore } from '../../../stores/worldview'
@@ -61,6 +62,7 @@ async function findExistingOutlineNode(
  * 从 PromptWorkflowsPanel.tsx 抽出。
  */
 export default function WorkflowRunner({ workflow, project, onClose }: RunnerProps) {
+  const { t } = useTranslation('settings')
   const toast = useToast()
   const ai = useAIStream()
   const { loadAll: loadWorldview } = useWorldviewStore()
@@ -111,7 +113,7 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
   /** 写入对应模块 */
   const handleSaveTarget = async (stepId: string, output: string, target: SaveTarget) => {
     if (!project?.id) {
-      toast.error('未关联项目，无法自动保存。请进入某个项目后再运行。')
+      toast.error(t('prompt.workflow.runner.noProject'))
       return
     }
     const projectId = project.id
@@ -142,13 +144,15 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
         await loadCreativeRules(projectId)
       } else if (target.type === 'create-characters') {
         const parsed = extractJSON(output) as unknown[]
-        if (!Array.isArray(parsed)) throw new Error('AI 输出不是 JSON 数组')
+        if (!Array.isArray(parsed)) throw new Error(t('prompt.workflow.runner.notJsonArray'))
         const result = await adopt({ projectId, target: 'characters', mode: 'add-many', data: parsed as Record<string, unknown>[] })
         await loadCharacters(projectId)
-        toast.success(`已写入 ${result.written.length} 个角色${result.skipped.length ? `，跳过 ${result.skipped.length} 个` : ''}`)
+        toast.success(result.skipped.length
+          ? t('prompt.workflow.runner.writeSuccessWithSkipped', { written: result.written.length, skipped: result.skipped.length })
+          : t('prompt.workflow.runner.writeSuccess', { count: result.written.length }))
       } else if (target.type === 'create-outline-nodes') {
         const parsed = extractJSON(output) as unknown[]
-        if (!Array.isArray(parsed)) throw new Error('AI 输出不是 JSON 数组')
+        if (!Array.isArray(parsed)) throw new Error(t('prompt.workflow.runner.notJsonArray'))
         let order = 0, n = 0
         const writeNode = async (raw: Record<string, unknown>, parentId: number | null): Promise<number | null> => {
           if (typeof raw.title !== 'string') return null
@@ -180,10 +184,10 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
           if (typeof x === 'object' && x) await writeNode(x as Record<string, unknown>, null)
         }
         await loadOutline(projectId)
-        toast.success(`已写入 ${n} 个大纲节点`)
+        toast.success(t('prompt.workflow.runner.writeOutlineSuccess', { count: n }))
       } else if (target.type === 'create-foreshadows') {
         const parsed = extractJSON(output) as unknown[]
-        if (!Array.isArray(parsed)) throw new Error('AI 输出不是 JSON 数组')
+        if (!Array.isArray(parsed)) throw new Error(t('prompt.workflow.runner.notJsonArray'))
         const normalized = parsed
           .filter((raw): raw is Record<string, unknown> => typeof raw === 'object' && raw !== null)
           .map(f => ({
@@ -197,11 +201,13 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
           }))
         const result = await adopt({ projectId, target: 'foreshadows', mode: 'add-many', data: normalized })
         await loadForeshadows(projectId)
-        toast.success(`已写入 ${result.written.length} 个伏笔${result.skipped.length ? `，跳过 ${result.skipped.length} 个` : ''}`)
+        toast.success(result.skipped.length
+          ? t('prompt.workflow.runner.writeForeshadowSuccessWithSkipped', { written: result.written.length, skipped: result.skipped.length })
+          : t('prompt.workflow.runner.writeForeshadowSuccess', { count: result.written.length }))
       }
       setSavedSteps(prev => new Set(prev).add(stepId))
     } catch (e) {
-      toast.error(`保存失败：${e instanceof Error ? e.message : String(e)}。角色/大纲/伏笔类目标需 AI 输出 JSON。可用 import.parse-* 类提示词预先调好。`)
+      toast.error(t('prompt.workflow.runner.saveFailed', { error: e instanceof Error ? e.message : String(e) }))
     }
   }
 
@@ -339,10 +345,10 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
           parameterValues: step.parameterValues,
         })
         if (bound.missingScopes.length) {
-          throw new Error(`当前模板需要${bound.missingScopes.join('、')}范围，请先补齐对应项目/章节选择`)
+          throw new Error(t('prompt.workflow.runner.missingScopes', { scopes: bound.missingScopes.join('、') }))
         }
         if (bound.missingVariables.length) {
-          throw new Error(`请填写必填字段：${bound.missingVariables.join('、')}`)
+          throw new Error(t('prompt.workflow.runner.missingVariables', { variables: bound.missingVariables.join('、') }))
         }
         messages = bound.messages
       } else {
@@ -418,7 +424,7 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
     <div className="p-5 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-text-primary">▶ 运行：{workflow.name}</h2>
+          <h2 className="text-base font-semibold text-text-primary">{t('prompt.workflow.runner.title', { name: workflow.name })}</h2>
           <p className="mt-0.5 text-xs text-text-muted">{workflow.description}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -428,7 +434,7 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
               disabled={!graphCompilation.compiled || executionSteps.length === 0}
               className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white text-sm rounded hover:bg-accent-hover"
             >
-              <Play className="w-4 h-4" /> 开始
+              <Play className="w-4 h-4" /> {t('prompt.workflow.runner.start')}
             </button>
           )}
           {globalStatus === 'running' && (
@@ -436,7 +442,7 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
               onClick={handleAbort}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-error/10 text-error text-sm rounded hover:bg-error/20"
             >
-              <Square className="w-4 h-4" /> 中止
+              <Square className="w-4 h-4" /> {t('prompt.workflow.runner.abort')}
             </button>
           )}
           {globalStatus === 'paused' && (
@@ -444,21 +450,21 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
               onClick={handleContinue}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded hover:bg-accent-hover"
             >
-              <Play className="w-4 h-4" /> 继续
+              <Play className="w-4 h-4" /> {t('prompt.workflow.runner.continue')}
             </button>
           )}
           <button
             onClick={onClose}
             className="px-3 py-1.5 text-text-secondary text-sm rounded hover:bg-bg-hover"
           >
-            返回列表
+            {t('prompt.workflow.runner.backToList')}
           </button>
         </div>
       </div>
 
       {graphCompilation.error && (
         <div role="alert" className="px-3 py-2 rounded bg-error/10 text-error text-xs whitespace-pre-wrap">
-          工作流图无法执行：{graphCompilation.error}
+          {t('prompt.workflow.runner.graphError', { error: graphCompilation.error })}
         </div>
       )}
 
@@ -470,10 +476,10 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
           globalStatus === 'paused' ? 'bg-warning/10 text-warning' :
           'bg-info/10 text-info'
         }`}>
-          {globalStatus === 'running' && `▶ 正在运行第 ${currentIndex + 1} / ${executionSteps.length} 步...`}
-          {globalStatus === 'paused' && `⏸ 已暂停（第 ${currentIndex + 1} 步等待你审核）`}
-          {globalStatus === 'completed' && `✓ 工作流完成`}
-          {globalStatus === 'aborted' && `✗ 已中止`}
+          {globalStatus === 'running' && t('prompt.workflow.runner.running', { current: currentIndex + 1, total: executionSteps.length })}
+          {globalStatus === 'paused' && t('prompt.workflow.runner.paused', { current: currentIndex + 1 })}
+          {globalStatus === 'completed' && t('prompt.workflow.runner.completed')}
+          {globalStatus === 'aborted' && t('prompt.workflow.runner.aborted')}
         </div>
       )}
 
@@ -514,10 +520,9 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
 
       {globalStatus === 'completed' && (
         <div className="bg-bg-surface border border-success/30 rounded-xl p-4">
-          <h3 className="text-sm font-semibold text-success mb-2">✓ 全部完成</h3>
+          <h3 className="text-sm font-semibold text-success mb-2">{t('prompt.workflow.runner.allDone')}</h3>
           <p className="text-xs text-text-secondary mb-3">
-            可以把每步输出复制到对应模块（角色 / 大纲 / 章节正文等）。
-            后续 Phase 可以做"一键写入"自动化。
+            {t('prompt.workflow.runner.allDoneDescription')}
           </p>
         </div>
       )}

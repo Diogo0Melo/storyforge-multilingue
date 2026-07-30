@@ -6,6 +6,8 @@ import type editor from '../../public/locales/zh-CN/editor.json'
 import type outline from '../../public/locales/zh-CN/outline.json'
 import type characters from '../../public/locales/zh-CN/characters.json'
 import type worlds from '../../public/locales/zh-CN/worlds.json'
+import type settings from '../../public/locales/zh-CN/settings.json'
+import type importNs from '../../public/locales/zh-CN/import.json'
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -19,6 +21,8 @@ declare module 'i18next' {
       outline: typeof outline
       characters: typeof characters
       worlds: typeof worlds
+      settings: typeof settings
+      import: typeof importNs
     }
   }
 }

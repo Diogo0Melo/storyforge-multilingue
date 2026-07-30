@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import { X, CheckCircle2, AlertTriangle, RotateCcw, FileText, Trash2, ArrowRight, BookOpenCheck } from 'lucide-react'
 import type { ImportSession } from '../../../lib/types/import-session'
 
@@ -24,6 +25,7 @@ interface Props {
 export default function ImportReportModal({
   session, onRetryFailed, onClose, onDiscard, onNavigate, onReviewCodex,
 }: Props) {
+  const { t } = useTranslation('import')
   const toReference = session.importTarget === 'reference'
   const { done, failed, totalWv, totalChars, totalOl, failedChunks } = useMemo(() => {
     const done = session.chunks.filter(c => c.status === 'done').length
@@ -56,7 +58,7 @@ export default function ImportReportModal({
               ? <CheckCircle2 className="w-5 h-5 text-success" />
               : <AlertTriangle className="w-5 h-5 text-warning" />}
             <h3 className="text-base font-semibold text-text-primary">
-              {allSuccess ? '✓ 全部解析完成' : `⚠ 解析完成（${failed} 块失败）`}
+              {allSuccess ? t('report.allSuccess') : t('report.partialSuccess', { failed })}
             </h3>
           </div>
           <button onClick={onClose} className="p-1 hover:bg-bg-hover rounded">
@@ -68,25 +70,24 @@ export default function ImportReportModal({
           {/* 文件信息 */}
           <div className="bg-bg-base border border-border rounded-lg p-3">
             <div className="flex items-center gap-1.5 text-xs text-text-muted mb-1">
-              <FileText className="w-3 h-3" /> 文件
+              <FileText className="w-3 h-3" /> {t('report.file')}
             </div>
             <div className="text-sm text-text-primary font-medium break-all">{session.filename}</div>
             <div className="text-xs text-text-muted mt-1">
-              {session.totalChars.toLocaleString()} 字 · {session.totalChunks} 块 ·
-              每块 {session.chunkSize.toLocaleString()} 字
+              {t('report.fileInfo', { chars: session.totalChars.toLocaleString(), chunks: session.totalChunks, chunkSize: session.chunkSize.toLocaleString() })}
             </div>
           </div>
 
           {/* 结果摘要 */}
           <div className="grid grid-cols-5 gap-2">
-            <StatCard label="成功块" value={done} color="text-success" />
-            <StatCard label="失败块" value={failed} color={failed > 0 ? 'text-error' : 'text-text-muted'} />
-            <StatCard label="世界观字段+" value={totalWv} color="text-accent" />
-            <StatCard label="累计角色+" value={totalChars} color="text-accent" />
-            <StatCard label="词条候选" value={codexCandidates} color="text-accent" />
+            <StatCard label={t('report.successChunks')} value={done} color="text-success" />
+            <StatCard label={t('report.failedChunks')} value={failed} color={failed > 0 ? 'text-error' : 'text-text-muted'} />
+            <StatCard label={t('report.worldviewFields')} value={totalWv} color="text-accent" />
+            <StatCard label={t('report.characters')} value={totalChars} color="text-accent" />
+            <StatCard label={t('report.codexCandidates')} value={codexCandidates} color="text-accent" />
           </div>
           <div className="text-xs text-text-muted">
-            大纲节点累计 +{totalOl} 个（跨块合并已自动处理别名去重）。
+            {t('report.outlineNodes', { count: totalOl })}
           </div>
 
           {/* 已导入提示 —— 数据在解析时已实时入库,无需再点「导入」 */}
@@ -94,12 +95,12 @@ export default function ImportReportModal({
             <div className="bg-success/10 border border-success/30 rounded-lg p-3 text-sm">
               <div className="flex items-center gap-1.5 text-success font-medium mb-1">
                 <CheckCircle2 className="w-4 h-4" />
-                {toReference ? '已存入「项目参考」' : '已导入当前项目'}
+                {toReference ? t('report.importedToReference') : t('report.importedToProject')}
               </div>
               <div className="text-text-secondary text-xs leading-relaxed">
                 {toReference
-                  ? '解析结果已作为创作参照保存到「项目参考」页，不影响当前项目。无需再点导入；关闭后可在「项目参考」中查看，并按需采用到项目。'
-                  : '解析出的世界观、角色、大纲已在解析过程中实时写入对应模块——无需再点导入。关闭本窗口后，即可在左侧「设定库 / 角色设计 / 大纲」中查看与编辑。'}
+                  ? t('report.importedToReferenceDesc')
+                  : t('report.importedToProjectDesc')}
               </div>
             </div>
           )}
@@ -117,11 +118,11 @@ export default function ImportReportModal({
                   }`}>
                     <BookOpenCheck className="w-4 h-4" />
                     {session.codexAdoption
-                      ? `词条审查已完成：新增 ${session.codexAdoption.imported}、补全 ${session.codexAdoption.updated}、跳过 ${session.codexAdoption.skipped}`
-                      : `${codexCandidates} 条 Codex 候选等待作者审查`}
+                      ? t('report.codexReviewComplete', { imported: session.codexAdoption.imported, updated: session.codexAdoption.updated, skipped: session.codexAdoption.skipped })
+                      : t('report.codexPending', { count: codexCandidates })}
                   </div>
                   <div className="text-xs text-text-secondary mt-1">
-                    AI 分类不会自动写库；可逐条取消、改名或改分类后再确认。
+                    {t('report.codexNote')}
                   </div>
                 </div>
                 {onReviewCodex && !session.codexAdoption && (
@@ -129,7 +130,7 @@ export default function ImportReportModal({
                     onClick={onReviewCodex}
                     className="px-3 py-2 bg-accent text-white text-xs rounded hover:bg-accent-hover shrink-0"
                   >
-                    审查并选择
+                    {t('report.reviewAndSelect')}
                   </button>
                 )}
               </div>
@@ -139,7 +140,7 @@ export default function ImportReportModal({
           {/* finalReport 详文 */}
           {session.finalReport && (
             <div className="bg-bg-base border border-border rounded-lg p-3">
-              <div className="text-xs text-text-secondary mb-1.5">任务汇报</div>
+              <div className="text-xs text-text-secondary mb-1.5">{t('report.taskReport')}</div>
               <pre className="text-xs text-text-primary font-mono whitespace-pre-wrap max-h-64 overflow-y-auto leading-relaxed">
                 {session.finalReport}
               </pre>
@@ -151,22 +152,22 @@ export default function ImportReportModal({
             <div className="bg-error/5 border border-error/30 rounded-lg p-3">
               <div className="flex items-center gap-1.5 text-xs text-error mb-2">
                 <AlertTriangle className="w-3.5 h-3.5" />
-                <strong>{failedChunks.length} 个块重试 3 次后仍失败</strong>
+                <strong>{t('report.failedAfterRetries', { count: failedChunks.length })}</strong>
               </div>
               <div className="max-h-40 overflow-y-auto space-y-1 text-xs">
                 {failedChunks.map(c => (
                   <div key={c.index} className="bg-bg-base p-2 rounded border border-error/20">
                     <div className="text-text-primary font-medium">
-                      第 {c.index + 1} 块{c.label ? ` · ${c.label}` : ''}
+                      {t('report.chunkLabel', { index: c.index + 1 })}{c.label ? ` · ${c.label}` : ''}
                     </div>
                     <div className="text-text-muted mt-0.5 break-all">
-                      {c.errorMessage || '未知错误'}
+                      {c.errorMessage || t('report.unknownError')}
                     </div>
                   </div>
                 ))}
               </div>
               <div className="mt-2 text-[11px] text-text-muted leading-relaxed">
-                点击下方「重试失败块」，仅会重新解析这 {failedChunks.length} 个块；已成功的块不会重复写入。
+                {t('report.retryNote', { count: failedChunks.length })}
               </div>
             </div>
           )}
@@ -184,9 +185,9 @@ export default function ImportReportModal({
           <button
             onClick={onDiscard}
             className="flex items-center gap-1.5 px-3 py-2 text-xs text-text-muted hover:text-error hover:bg-error/10 rounded"
-            title="删除本次会话记录（不影响已入库的数据）"
+            title={t('report.discardTitle')}
           >
-            <Trash2 className="w-3.5 h-3.5" /> 清理会话
+            <Trash2 className="w-3.5 h-3.5" /> {t('report.clearSession')}
           </button>
           <div className="flex items-center gap-2">
             {failedChunks.length > 0 && (
@@ -194,7 +195,7 @@ export default function ImportReportModal({
                 onClick={onRetryFailed}
                 className="flex items-center gap-1.5 px-4 py-2 bg-warning text-white text-sm rounded hover:bg-warning/90"
               >
-                <RotateCcw className="w-4 h-4" /> 重试失败块（{failedChunks.length}）
+                <RotateCcw className="w-4 h-4" /> {t('report.retryFailed', { count: failedChunks.length })}
               </button>
             )}
             {onNavigate && done > 0 && (
@@ -202,7 +203,7 @@ export default function ImportReportModal({
                 onClick={onNavigate}
                 className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white text-sm rounded hover:bg-accent-hover"
               >
-                {toReference ? '前往项目参考' : '前往设定库查看'}
+                {toReference ? t('report.goToReference') : t('report.goToProject')}
                 <ArrowRight className="w-4 h-4" />
               </button>
             )}
@@ -214,7 +215,7 @@ export default function ImportReportModal({
                   : 'bg-accent text-white hover:bg-accent-hover'
               }`}
             >
-              完成
+              {t('report.done')}
             </button>
           </div>
         </div>

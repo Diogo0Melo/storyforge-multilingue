@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { Upload, Sparkles, AlertTriangle, FileText, Wand2 } from 'lucide-react'
 import { ACCEPT_ATTR } from '../../../lib/doc-parser'
 import type { ChunkPlan } from '../../../lib/import/chunker'
@@ -31,17 +32,18 @@ export default function ImportUploadZone({
   onRawTextChange,
   onStart,
 }: Props) {
+  const { t } = useTranslation('import')
   return (
     <div>
       <div className="flex items-center justify-between mb-1.5">
-        <label className="text-xs text-text-secondary">文档内容</label>
+        <label className="text-xs text-text-secondary">{t('upload.documentContent')}</label>
         <label
           className={`flex items-center gap-1 px-2 py-1 text-xs rounded cursor-pointer ${
             loadingFile ? 'text-text-muted bg-bg-hover' : 'text-accent hover:bg-accent/10'
           }`}
         >
           <Upload className="w-3 h-3" />
-          {loadingFile ? '正在提取...' : '上传文件'}
+          {loadingFile ? t('upload.extracting') : t('upload.uploadFile')}
           <input
             type="file"
             accept={ACCEPT_ATTR}
@@ -68,7 +70,7 @@ export default function ImportUploadZone({
       <textarea
         value={rawText}
         onChange={e => onRawTextChange(e.target.value)}
-        placeholder="把文档内容粘贴在这里，或上方点「上传文件」——AI 会自己判断是设定集 / 成品小说 / 大纲，哪怕千万字也没事。"
+        placeholder={t('upload.placeholder')}
         rows={10}
         className="w-full px-3 py-2 bg-bg-base border border-border rounded text-sm text-text-primary font-mono resize-y focus:outline-none focus:border-accent"
       />
@@ -77,8 +79,7 @@ export default function ImportUploadZone({
       {previewPlans && previewPlans.length > 0 && (
         <div className="mt-2 text-xs text-text-muted flex items-center gap-1">
           <Wand2 className="w-3 h-3 text-accent" />
-          预计拆成 <strong className="text-accent">{previewPlans.length}</strong> 块
-          （每块约 {chunkSize.toLocaleString()} 字 · 共 {rawText.length.toLocaleString()} 字）
+          {t('upload.previewChunks', { count: previewPlans.length, chunkSize: chunkSize.toLocaleString(), totalChars: rawText.length.toLocaleString() })}
         </div>
       )}
 
@@ -90,7 +91,7 @@ export default function ImportUploadZone({
           className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white text-sm rounded hover:bg-accent-hover disabled:opacity-50"
         >
           <Sparkles className="w-4 h-4" />
-          开始解析
+          {t('upload.startParsing')}
         </button>
       </div>
     </div>

@@ -2,13 +2,13 @@ import { useTranslation } from 'react-i18next'
 import { SUPPORTED_LANGUAGES, LANGUAGE_LABELS } from '../../i18n/settings'
 
 export default function LanguageSelector() {
-  const { i18n } = useTranslation()
+  const { i18n, t } = useTranslation('settings')
   const currentLang = i18n.language
 
   return (
     <div className="bg-bg-surface border border-border rounded-xl p-5">
-      <h3 className="text-base font-semibold text-text-primary mb-1">界面语言</h3>
-      <p className="text-xs text-text-muted mb-4">切换界面显示语言</p>
+      <h3 className="text-base font-semibold text-text-primary mb-1">{t('language.title')}</h3>
+      <p className="text-xs text-text-muted mb-4">{t('language.description')}</p>
       <div className="flex flex-col gap-3">
         {SUPPORTED_LANGUAGES.map((lang: string) => {
           const isActive = currentLang === lang
@@ -26,7 +26,7 @@ export default function LanguageSelector() {
                 <p className="text-xs text-text-muted">{lang}</p>
               </div>
               {isActive && (
-                <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center flex-shrink-0" aria-label="当前语言">
+                <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center flex-shrink-0" aria-label={t('language.currentLanguage')}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M20 6 9 17 4 12"/>
                   </svg>

@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useImportStatusStore } from '../../../stores/import-status'
 import { Loader2, CheckCircle2, AlertTriangle, PauseCircle, Sparkles } from 'lucide-react'
 
@@ -5,6 +6,7 @@ import { Loader2, CheckCircle2, AlertTriangle, PauseCircle, Sparkles } from 'luc
  * 顶部常驻状态条 —— 用户切到其它 Tab 再回来，能一眼看到导入流水线当前在做什么。
  */
 export default function ImportStatusBar() {
+  const { t } = useTranslation('import')
   const s = useImportStatusStore()
   if (s.phase === 'idle') return null
 
@@ -14,12 +16,12 @@ export default function ImportStatusBar() {
 
   const cfg = (() => {
     switch (s.phase) {
-      case 'preparing': return { Icon: Loader2, color: 'text-accent', text: '准备中...', spin: true }
-      case 'running':   return { Icon: Sparkles, color: 'text-accent', text: `解析中 ${s.finishedChunks + s.failedChunks}/${s.totalChunks}（${pct}%）`, spin: false }
-      case 'merging':   return { Icon: Sparkles, color: 'text-warning', text: '🔀 跨块角色合并中...', spin: true }
-      case 'paused':    return { Icon: PauseCircle, color: 'text-warning', text: `已暂停（${pct}%）`, spin: false }
-      case 'failed':    return { Icon: AlertTriangle, color: 'text-error', text: `失败（${s.failedChunks} 块）`, spin: false }
-      case 'done':      return { Icon: CheckCircle2, color: 'text-success', text: '✓ 已完成', spin: false }
+      case 'preparing': return { Icon: Loader2, color: 'text-accent', text: t('status.preparing'), spin: true }
+      case 'running':   return { Icon: Sparkles, color: 'text-accent', text: t('status.running', { current: s.finishedChunks + s.failedChunks, total: s.totalChunks, pct }), spin: false }
+      case 'merging':   return { Icon: Sparkles, color: 'text-warning', text: t('status.merging'), spin: true }
+      case 'paused':    return { Icon: PauseCircle, color: 'text-warning', text: t('status.paused', { pct }), spin: false }
+      case 'failed':    return { Icon: AlertTriangle, color: 'text-error', text: t('status.failed', { count: s.failedChunks }), spin: false }
+      case 'done':      return { Icon: CheckCircle2, color: 'text-success', text: t('status.done'), spin: false }
       default:          return null
     }
   })()

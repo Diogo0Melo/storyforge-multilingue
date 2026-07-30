@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { Plus, Upload, Download, Layers, FileText, Workflow } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import i18n from '../../../i18n/i18n'
 import { usePromptStore } from '../../../stores/prompt'
 import type { PromptTemplate } from '../../../lib/types/prompt'
 import type { Project } from '../../../lib/types'
@@ -17,6 +19,7 @@ interface Props {
 }
 
 export default function PromptManagerPanel({ project }: Props = {}) {
+  const { t } = useTranslation('settings')
   const toast = useToast()
   const templates = usePromptStore(s => s.templates)
   const saveTemplate = usePromptStore(s => s.saveTemplate)
@@ -75,7 +78,7 @@ export default function PromptManagerPanel({ project }: Props = {}) {
       scope: 'user',
       moduleKey: 'worldview.dimension',
       promptType: 'generate',
-      name: '未命名模板',
+      name: t('prompt.unnamedTemplate'),
       description: '',
       systemPrompt: '',
       userPromptTemplate: '',
@@ -121,9 +124,9 @@ export default function PromptManagerPanel({ project }: Props = {}) {
         }
       }
       await reload()
-      toast.success(`成功导入 ${count} 条模板`)
+      toast.success(t('prompt.importSuccess', { count }))
     } catch (err) {
-      toast.error(`导入失败：${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('prompt.importFailed', { error: err instanceof Error ? err.message : String(err) }))
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -141,7 +144,7 @@ export default function PromptManagerPanel({ project }: Props = {}) {
               : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          <FileText className="w-3.5 h-3.5" /> 模板
+          <FileText className="w-3.5 h-3.5" /> {t('prompt.templates')}
         </button>
         <button
           onClick={() => setTab('workflows')}
@@ -151,7 +154,7 @@ export default function PromptManagerPanel({ project }: Props = {}) {
               : 'border-transparent text-text-secondary hover:text-text-primary'
           }`}
         >
-          <Workflow className="w-3.5 h-3.5" /> 工作流
+          <Workflow className="w-3.5 h-3.5" /> {t('prompt.workflows')}
         </button>
       </div>
 
@@ -205,13 +208,14 @@ function PromptTemplatesView({
   genrePack, handleGenrePackChange, handleNew, handleImportClick,
   handleExportAll, handleImportFile, fileInputRef, reload,
 }: TemplatesViewProps) {
+  const { t } = useTranslation('settings')
   return (
     <div className="flex-1 flex flex-col overflow-hidden">
       {/* 题材包切换器（一级显著位置） */}
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border flex-shrink-0 bg-bg-elevated/30">
         <div className="flex items-center gap-2 flex-1 min-w-0">
           <Layers className="w-4 h-4 text-accent flex-shrink-0" />
-          <span className="text-xs text-text-secondary flex-shrink-0">题材包</span>
+          <span className="text-xs text-text-secondary flex-shrink-0">{t('prompt.genrePack')}</span>
           <select
             value={genrePack}
             onChange={e => handleGenrePackChange(e.target.value)}
@@ -230,18 +234,18 @@ function PromptTemplatesView({
       {/* 工具栏 */}
       <div className="flex items-center justify-between gap-3 px-5 py-3 border-b border-border flex-shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-xs text-text-secondary">作用域</span>
+          <span className="text-xs text-text-secondary">{t('prompt.scope')}</span>
           <select
             value={scopeFilter}
             onChange={e => setScopeFilter(e.target.value as ScopeFilter)}
             className="px-2 py-1 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
           >
-            <option value="all">全部</option>
-            <option value="system">系统内置</option>
-            <option value="user">我的</option>
+            <option value="all">{t('prompt.scopeAll')}</option>
+            <option value="system">{t('prompt.scopeSystem')}</option>
+            <option value="user">{t('prompt.scopeUser')}</option>
           </select>
           <span className="ml-3 text-xs text-text-muted">
-            共 {filtered.length} 条
+            {t('prompt.totalCount', { count: filtered.length })}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -249,19 +253,19 @@ function PromptTemplatesView({
             onClick={handleNew}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-accent text-sm rounded hover:bg-accent/20"
           >
-            <Plus className="w-3.5 h-3.5" /> 新建
+            <Plus className="w-3.5 h-3.5" /> {t('prompt.new')}
           </button>
           <button
             onClick={handleImportClick}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-hover text-text-primary text-sm rounded hover:bg-bg-elevated"
           >
-            <Upload className="w-3.5 h-3.5" /> 导入
+            <Upload className="w-3.5 h-3.5" /> {t('prompt.import')}
           </button>
           <button
             onClick={handleExportAll}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-hover text-text-primary text-sm rounded hover:bg-bg-elevated"
           >
-            <Download className="w-3.5 h-3.5" /> 导出全部
+            <Download className="w-3.5 h-3.5" /> {t('prompt.exportAll')}
           </button>
           <input
             ref={fileInputRef}
@@ -305,7 +309,7 @@ function validateTemplate(raw: unknown): Omit<PromptTemplate, 'id' | 'createdAt'
     scope: 'user',
     moduleKey: r.moduleKey as PromptTemplate['moduleKey'],
     promptType: typeof r.promptType === 'string' ? r.promptType : 'generate',
-    name: typeof r.name === 'string' ? r.name : '导入的模板',
+    name: typeof r.name === 'string' ? r.name : i18n.t('settings:prompt.importedTemplate'),
     description: typeof r.description === 'string' ? r.description : '',
     systemPrompt: r.systemPrompt,
     userPromptTemplate: r.userPromptTemplate,

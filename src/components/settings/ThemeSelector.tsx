@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { THEME_OPTIONS, type StoryForgeTheme } from '../../lib/theme'
 
 interface Props {
@@ -6,9 +7,10 @@ interface Props {
 }
 
 export default function ThemeSelector({ value, onChange }: Props) {
+  const { t } = useTranslation('settings')
   return (
     <div className="bg-bg-surface border border-border rounded-xl p-5">
-      <h3 className="text-base font-semibold text-text-primary mb-4">主题</h3>
+      <h3 className="text-base font-semibold text-text-primary mb-4">{t('theme.title')}</h3>
       <div className="flex flex-col gap-3">
         {THEME_OPTIONS.map(theme => {
           const isActive = value === theme.value
@@ -35,7 +37,7 @@ export default function ThemeSelector({ value, onChange }: Props) {
                 <p className="text-xs text-text-muted">{theme.desc}</p>
               </div>
               {isActive && (
-                <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center flex-shrink-0" aria-label="当前主题">
+                <div className="w-5 h-5 rounded-full bg-accent flex items-center justify-center flex-shrink-0" aria-label={t('theme.currentTheme')}>
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M20 6 9 17 4 12"/>
                   </svg>

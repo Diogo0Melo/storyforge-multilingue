@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import type { PromptWorkflow } from '../../../lib/types/workflow'
 import {
   WORKFLOW_NODE_HEIGHT,
@@ -11,28 +12,31 @@ interface Props {
   results: Map<string, StepResult>
 }
 
-const STATUS_STYLES: Record<StepResult['status'], { label: string; className: string }> = {
-  pending: { label: '等待', className: 'border-border text-text-muted' },
-  running: { label: '运行中', className: 'border-accent bg-accent/10 text-accent' },
-  done: { label: '候选完成', className: 'border-success/70 bg-success/10 text-success' },
-  failed: { label: '失败', className: 'border-error/70 bg-error/10 text-error' },
-  skipped: { label: '已跳过', className: 'border-warning/70 bg-warning/10 text-warning' },
-}
-
 export default function WorkflowExecutionGraph({ workflow, results }: Props) {
+  const { t } = useTranslation('settings')
   const graph = workflowGraphFor(workflow)
   const stepById = new Map(workflow.steps.map(step => [step.stepId, step]))
   const maxX = Math.max(920, ...graph.nodes.map(node => node.x + WORKFLOW_NODE_WIDTH + 80))
   const maxY = Math.max(340, ...graph.nodes.map(node => node.y + WORKFLOW_NODE_HEIGHT + 60))
 
+  const STATUS_STYLES: Record<StepResult['status'], { label: string; className: string }> = {
+    pending: { label: t('prompt.workflow.executionGraph.status.pending'), className: 'border-border text-text-muted' },
+    running: { label: t('prompt.workflow.executionGraph.status.running'), className: 'border-accent bg-accent/10 text-accent' },
+    done: { label: t('prompt.workflow.executionGraph.status.done'), className: 'border-success/70 bg-success/10 text-success' },
+    failed: { label: t('prompt.workflow.executionGraph.status.failed'), className: 'border-error/70 bg-error/10 text-error' },
+    skipped: { label: t('prompt.workflow.executionGraph.status.skipped'), className: 'border-warning/70 bg-warning/10 text-warning' },
+  }
+
   return (
     <section className="rounded-xl border border-border bg-bg-base">
       <div className="flex items-center justify-between border-b border-border px-3 py-2">
         <div>
-          <h3 className="text-xs font-medium text-text-primary">执行图</h3>
-          <p className="text-[10px] text-text-muted">连线决定数据依赖；实际调用按稳定拓扑顺序逐个执行。</p>
+          <h3 className="text-xs font-medium text-text-primary">{t('prompt.workflow.executionGraph.title')}</h3>
+          <p className="text-[10px] text-text-muted">{t('prompt.workflow.executionGraph.description')}</p>
         </div>
-        <span className="text-[10px] text-text-muted">{graph.nodes.length} 节点 · {graph.edges.length} 连线</span>
+        <span className="text-[10px] text-text-muted">
+          {t('prompt.workflow.executionGraph.stats', { nodes: graph.nodes.length, edges: graph.edges.length })}
+        </span>
       </div>
       <div className="max-h-[360px] overflow-auto">
         <div className="relative origin-top-left" style={{ width: maxX, height: maxY }}>
@@ -87,7 +91,7 @@ export default function WorkflowExecutionGraph({ workflow, results }: Props) {
                   {step.promptModuleKey}
                 </div>
                 <p className="mt-2 line-clamp-3 text-[10px] text-text-muted">
-                  {result.error || result.output || '尚未生成候选'}
+                  {result.error || result.output || t('prompt.workflow.executionGraph.noOutput')}
                 </p>
               </div>
             )

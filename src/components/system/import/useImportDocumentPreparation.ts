@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { extractTextFromFile } from '../../../lib/doc-parser'
 import { chunkDocument, type ChunkPlan } from '../../../lib/import/chunker'
 import { detectVolumeStructure, type VolumeDetectResult } from '../../../lib/import/volume-detector'
+import i18n from '../../../i18n/i18n'
 
 const DEFAULT_CHUNK_SIZE = 50000
 
@@ -32,10 +33,13 @@ export default function useImportDocumentPreparation() {
       const result = await extractTextFromFile(file)
       setRawText(result.text)
       const parts = [
-        `文件 ${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        `抽取 ${result.rawChars.toLocaleString()} 字符`,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        i18n.t('import:prep.fileSize', { size: (file.size / 1024 / 1024).toFixed(2) }) as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        i18n.t('import:prep.extractedChars', { count: result.rawChars.toLocaleString() }) as any,
       ]
-      if (result.pageCount) parts.push(`${result.pageCount} 页`)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      if (result.pageCount) parts.push(i18n.t('import:prep.pages', { count: result.pageCount }) as any)
       setExtractInfo(parts.join(' · '))
     } catch (error) {
       setFilename('')
@@ -66,7 +70,8 @@ export default function useImportDocumentPreparation() {
 
   const sourceBlob = () => ({
     blob: lastUploadedFile.current ?? new Blob([rawText], { type: 'text/plain;charset=utf-8' }),
-    filename: lastUploadedFile.current?.name || filename || '粘贴内容.txt',
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    filename: lastUploadedFile.current?.name || filename || (i18n.t('import:prep.pastedContent') as any),
   })
 
   const previewPlans = useMemo(() => {

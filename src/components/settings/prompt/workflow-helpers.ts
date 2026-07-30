@@ -15,6 +15,7 @@ import {
   formatWorkflowUpstreamContext,
   groupWorkflowInputsByVariable,
 } from '../../../lib/workflow/graph'
+import i18n from '../../../i18n/i18n'
 
 /**
  * FB-1 修复 · 工作流步骤上下文整形(纯函数,可单测)。
@@ -101,21 +102,21 @@ export const ALL_MODULE_KEYS_FOR_WORKFLOW = [
 
 /** WorkflowEditor "自动保存目标" 下拉预设 */
 export const SAVE_TARGET_PRESETS = [
-  { label: '不自动保存（仅复制）', value: '' },
-  { label: '世界观.世界起源', value: 'worldview-field:worldOrigin' },
-  { label: '世界观.力量体系', value: 'worldview-field:powerHierarchy' },
-  { label: '世界观.世界历史线', value: 'worldview-field:historyLine' },
-  { label: '世界观.世界观摘要', value: 'worldview-field:summary' },
-  { label: '故事.一句话故事', value: 'storyCore-field:logline' },
-  { label: '故事.故事概念', value: 'storyCore-field:concept' },
-  { label: '故事.主题', value: 'storyCore-field:theme' },
-  { label: '故事.核心冲突', value: 'storyCore-field:centralConflict' },
-  { label: '故事.故事主线', value: 'storyCore-field:mainPlot' },
-  { label: '创作规则.写作风格', value: 'creativeRules-field:writingStyle' },
-  { label: '创作规则.基调氛围', value: 'creativeRules-field:toneAndMood' },
-  { label: '⚡ 批量创建：角色库（要求 AI 输出 JSON 数组）', value: 'create-characters:_' },
-  { label: '⚡ 批量创建：大纲节点（要求 AI 输出 JSON 数组）', value: 'create-outline-nodes:_' },
-  { label: '⚡ 批量创建：伏笔（要求 AI 输出 JSON 数组）', value: 'create-foreshadows:_' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.noAutoSave'), value: '' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.worldOrigin'), value: 'worldview-field:worldOrigin' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.powerHierarchy'), value: 'worldview-field:powerHierarchy' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.historyLine'), value: 'worldview-field:historyLine' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.summary'), value: 'worldview-field:summary' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.logline'), value: 'storyCore-field:logline' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.concept'), value: 'storyCore-field:concept' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.theme'), value: 'storyCore-field:theme' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.centralConflict'), value: 'storyCore-field:centralConflict' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.mainPlot'), value: 'storyCore-field:mainPlot' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.writingStyle'), value: 'creativeRules-field:writingStyle' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.toneAndMood'), value: 'creativeRules-field:toneAndMood' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.createCharacters'), value: 'create-characters:_' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.createOutlineNodes'), value: 'create-outline-nodes:_' },
+  { label: i18n.t('settings:prompt.workflow.saveTarget.createForeshadows'), value: 'create-foreshadows:_' },
 ] as const
 
 /** SaveTarget 转 select value 字符串（`type:field` 或 `type:_`） */
@@ -149,24 +150,25 @@ export function valueToSaveTarget(v: string): SaveTarget | undefined {
   }
 }
 
-/** 字段 key → 中文标签的映射，供 targetLabel 使用 */
-const SAVE_TARGET_FIELD_LABELS: Record<string, string> = {
-  worldOrigin: '世界起源', powerHierarchy: '力量体系',
-  historyLine: '世界历史线', summary: '世界观摘要',
-  logline: '一句话故事', concept: '故事概念', theme: '主题',
-  centralConflict: '核心冲突', mainPlot: '故事主线',
-  writingStyle: '写作风格', toneAndMood: '基调氛围',
+/** 字段 key → i18n key 的映射，供 targetLabel 使用 */
+const SAVE_TARGET_FIELD_I18N_KEYS: Record<string, string> = {
+  worldOrigin: 'worldOrigin', powerHierarchy: 'powerHierarchy',
+  historyLine: 'historyLine', summary: 'summary',
+  logline: 'logline', concept: 'concept', theme: 'theme',
+  centralConflict: 'centralConflict', mainPlot: 'mainPlot',
+  writingStyle: 'writingStyle', toneAndMood: 'toneAndMood',
 }
 
-/** 把 SaveTarget 格式化成运行时 UI 里展示的中文标签 */
+/** 把 SaveTarget 格式化成运行时 UI 里展示的标签（国际化） */
 export function targetLabel(target: SaveTarget): string {
-  if (target.type === 'create-characters') return '角色库（批量创建）'
-  if (target.type === 'create-outline-nodes') return '大纲（批量创建）'
-  if (target.type === 'create-foreshadows') return '伏笔库（批量创建）'
+  if (target.type === 'create-characters') return i18n.t('settings:prompt.workflow.editor.targetLabels.characters')
+  if (target.type === 'create-outline-nodes') return i18n.t('settings:prompt.workflow.editor.targetLabels.outlineNodes')
+  if (target.type === 'create-foreshadows') return i18n.t('settings:prompt.workflow.editor.targetLabels.foreshadows')
   const field = (target as { field?: string }).field || ''
-  const label = SAVE_TARGET_FIELD_LABELS[field] || field
-  if (target.type === 'worldview-field') return `世界观.${label}`
-  if (target.type === 'storyCore-field') return `故事.${label}`
-  if (target.type === 'creativeRules-field') return `创作规则.${label}`
+  const fieldKey = SAVE_TARGET_FIELD_I18N_KEYS[field]
+  const label = fieldKey ? (i18n.t as any)(`settings:prompt.workflow.editor.targetLabels.fields.${fieldKey}`) : field
+  if (target.type === 'worldview-field') return i18n.t('settings:prompt.workflow.editor.targetLabels.worldview', { field: label })
+  if (target.type === 'storyCore-field') return i18n.t('settings:prompt.workflow.editor.targetLabels.storyCore', { field: label })
+  if (target.type === 'creativeRules-field') return i18n.t('settings:prompt.workflow.editor.targetLabels.creativeRules', { field: label })
   return ''
 }

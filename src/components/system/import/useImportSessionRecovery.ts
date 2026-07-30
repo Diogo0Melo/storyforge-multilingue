@@ -4,6 +4,7 @@ import { chunkDocument } from '../../../lib/import/chunker'
 import type { ImportSession } from '../../../lib/types/import-session'
 import { useImportSessionStore } from '../../../stores/import-session'
 import { hasChunkTexts, registerChunkTexts } from '../../../lib/import/pipeline'
+import i18n from '../../../i18n/i18n'
 
 export default function useImportSessionRecovery(projectId: number) {
   const [unfinished, setUnfinished] = useState<ImportSession | null>(null)
@@ -60,7 +61,8 @@ export default function useImportSessionRecovery(projectId: number) {
           setBlobRestored(false)
         }
       } catch (error) {
-        console.error('[import] 从 Blob 恢复失败：', error)
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        console.error(`[import] ${(i18n.t('import:panel.blobRestoreFailedToast') as any)}：`, error)
         setBlobRestored(false)
       } finally {
         if (!cancelled) setRestoringBlob(false)

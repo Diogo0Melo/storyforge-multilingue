@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Save, Trash2, Copy, Download, CheckCircle2, Lock, Plus, X,
 } from 'lucide-react'
@@ -11,53 +12,30 @@ import PromptExamplesEditor from './PromptExamplesEditor'
 import { useDialog } from '../../shared/Dialog'
 import { useToast } from '../../shared/Toast'
 
-const ALL_MODULE_KEYS: { value: PromptModuleKey; label: string }[] = [
-  { value: 'worldview.dimension',         label: '世界观 · 维度生成' },
-  { value: 'worldview.generate',          label: '世界观 · 完整生成（待启用）' },
-  { value: 'worldview.worldbuilding',     label: '世界观 · 阶段任务' },
-  { value: 'character.generate',          label: '角色 · 完整设计' },
-  { value: 'character.dimension',         label: '角色 · 维度补全' },
-  { value: 'character.design',            label: '角色 · 创作阶段' },
-  { value: 'story.generate',              label: '故事 · 整体生成（待启用）' },
-  { value: 'story.brief',                 label: '故事 · 立项简报' },
-  { value: 'story.ideation',              label: '故事 · 灵感' },
-  { value: 'story.positioning',           label: '故事 · 定位' },
-  { value: 'story.core',                  label: '故事 · 故事核心' },
-  { value: 'story.packaging',             label: '故事 · 作品包装' },
-  { value: 'rules.generate',              label: '创作规则 · 生成（待启用）' },
-  { value: 'research.method',             label: '研究考证 · 研究方法' },
-  { value: 'prompt.operations',           label: 'Prompt · 管理与评测' },
-  { value: 'outline.volume',              label: '大纲 · 卷级' },
-  { value: 'outline.chapter',             label: '大纲 · 章节级' },
-  { value: 'outline.plot',                label: '大纲 · 剧情设计' },
-  { value: 'outline.structure',           label: '大纲 · 结构设计' },
-  { value: 'outline.long-form',           label: '大纲 · 长篇架构' },
-  { value: 'outline.short-story',         label: '大纲 · 短篇架构' },
-  { value: 'outline.serialization',       label: '大纲 · 连载架构' },
-  { value: 'detail.scene',                label: '细纲 · 场景（待启用）' },
-  { value: 'detail.chapter-planning',     label: '细纲 · 章场规划' },
-  { value: 'chapter.content',             label: '章节 · 正文生成' },
-  { value: 'chapter.continue',            label: '章节 · 续写' },
-  { value: 'chapter.drafting',            label: '章节 · 正文创作' },
-  { value: 'chapter.continuity',          label: '章节 · 连续性' },
-  { value: 'chapter.line-editing',        label: '章节 · 语言修订' },
-  { value: 'chapter.memory',              label: '章节 · 连续性记忆抽取' },
-  { value: 'chapter.polish',              label: '章节 · 润色' },
-  { value: 'chapter.expand',              label: '章节 · 扩写' },
-  { value: 'chapter.de-ai',               label: '章节 · 去 AI 味' },
-  { value: 'review.developmental',        label: '审校 · 宏观修订' },
-  { value: 'review.line-editing',         label: '审校 · 语言修订' },
-  { value: 'review.reader-validation',    label: '审校 · 读者验证' },
-  { value: 'foreshadow.generate',         label: '伏笔 · 建议' },
-  { value: 'geography.concept-map',       label: '地理 · 概念地图 SVG' },
-  { value: 'geography.image-map-prompt',  label: '地理 · 图像 Prompt' },
-  { value: 'import.parse-all',            label: '导入 · 智能统一解析' },
-  { value: 'import.parse-character',      label: '导入 · 角色解析（旧版）' },
-  { value: 'import.parse-worldview',      label: '导入 · 世界观解析（旧版）' },
-  { value: 'import.parse-outline',        label: '导入 · 大纲解析（旧版）' },
-  { value: 'style.learn',                 label: '文风 · 画像学习' },
-  { value: 'style.calibrate',             label: '文风 · 互动校准' },
+const MODULE_KEY_VALUES: PromptModuleKey[] = [
+  'worldview.dimension', 'worldview.generate', 'worldview.worldbuilding',
+  'character.generate', 'character.dimension', 'character.design',
+  'story.generate', 'story.brief', 'story.ideation', 'story.positioning', 'story.core', 'story.packaging',
+  'rules.generate', 'research.method', 'prompt.operations',
+  'outline.volume', 'outline.chapter', 'outline.plot', 'outline.structure',
+  'outline.long-form', 'outline.short-story', 'outline.serialization',
+  'detail.scene', 'detail.chapter-planning',
+  'chapter.content', 'chapter.continue', 'chapter.drafting', 'chapter.continuity',
+  'chapter.line-editing', 'chapter.memory', 'chapter.polish', 'chapter.expand', 'chapter.de-ai',
+  'review.developmental', 'review.line-editing', 'review.reader-validation',
+  'foreshadow.generate',
+  'geography.concept-map', 'geography.image-map-prompt',
+  'import.parse-all', 'import.parse-character', 'import.parse-worldview', 'import.parse-outline',
+  'style.learn', 'style.calibrate',
 ]
+
+function useModuleKeys() {
+  const { t } = useTranslation('settings')
+  return MODULE_KEY_VALUES.map(value => ({
+    value,
+    label: (t as any)(`prompt.templateEditor.moduleKeys.${value}`),
+  }))
+}
 
 interface Props {
   template: PromptTemplate | null
@@ -66,8 +44,10 @@ interface Props {
 }
 
 export default function PromptTemplateEditor({ template, onChanged, onDeleted }: Props) {
+  const { t } = useTranslation('settings')
   const dialog = useDialog()
   const toast = useToast()
+  const ALL_MODULE_KEYS = useModuleKeys()
   const saveTemplate = usePromptStore(s => s.saveTemplate)
   const cloneTemplate = usePromptStore(s => s.cloneTemplate)
   const setActive = usePromptStore(s => s.setActive)
@@ -89,7 +69,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
       const previewVars = { ...PREVIEW_VARS }
       for (const binding of draft.variableBindings ?? []) {
         if (previewVars[binding.variable] == null || previewVars[binding.variable] === '') {
-          previewVars[binding.variable] = `（示例：${binding.label}）`
+          previewVars[binding.variable] = t('prompt.templateEditor.previewExample', { label: binding.label })
         }
       }
       return renderPrompt(draft, previewVars)
@@ -101,7 +81,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
   if (!template || !draft) {
     return (
       <div className="h-full flex items-center justify-center text-text-muted text-sm">
-        从左侧选择一个模板查看 / 编辑
+        {t('prompt.templateEditor.emptyState')}
       </div>
     )
   }
@@ -125,7 +105,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
     if (!draft.id) return
     const newId = await cloneTemplate(draft.id)
     onChanged()
-    toast.success(`已克隆为「我的」模板（id=${newId}），请在左侧列表中查看。`)
+    toast.success(t('prompt.templateEditor.cloneSuccess', { id: newId }))
   }
 
   const handleSetActive = async () => {
@@ -137,9 +117,9 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
   const handleDelete = async () => {
     if (!draft.id) return
     const ok = await dialog.confirm({
-      title: `删除模板「${draft.name}」？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('prompt.templateEditor.deleteTitle', { name: draft.name }),
+      message: t('prompt.templateEditor.deleteMessage'),
+      confirmText: t('prompt.templateEditor.delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -163,9 +143,9 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
   /** 变量列表的增删 */
   const addVariable = async () => {
     const name = (await dialog.prompt({
-      title: '新增变量',
-      message: '变量名仅支持字母、数字、下划线。',
-      placeholder: 'variable_name',
+      title: t('prompt.templateEditor.addVariableTitle'),
+      message: t('prompt.templateEditor.addVariableMessage'),
+      placeholder: t('prompt.templateEditor.addVariablePlaceholder'),
     }))?.trim()
     if (!name || !/^[a-zA-Z0-9_]+$/.test(name)) return
     if (draft.variables.includes(name)) return
@@ -185,12 +165,12 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-text-muted" />
                 <h3 className="text-base font-semibold text-text-primary truncate">{draft.name}</h3>
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">系统</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">{t('prompt.templateEditor.systemBadge')}</span>
                 {draft.isDefault && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/15 text-accent">★ 默认</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/15 text-accent">{t('prompt.templateEditor.defaultBadge')}</span>
                 )}
                 {draft.isActive && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success">激活</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success">{t('prompt.templateEditor.activeBadge')}</span>
                 )}
               </div>
             ) : (
@@ -201,9 +181,9 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
                   onChange={e => update({ name: e.target.value })}
                   className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-base font-semibold text-text-primary focus:outline-none focus:border-accent"
                 />
-                <span className="text-[10px] px-1.5 py-0.5 rounded bg-info/15 text-info">我的</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-info/15 text-info">{t('prompt.templateEditor.userBadge')}</span>
                 {draft.isActive && (
-                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success">激活</span>
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-success/15 text-success">{t('prompt.templateEditor.activeBadge')}</span>
                 )}
               </div>
             )}
@@ -213,7 +193,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
                   type="text"
                   value={draft.description}
                   onChange={e => update({ description: e.target.value })}
-                  placeholder="模板描述..."
+                  placeholder={t('prompt.templateEditor.descriptionPlaceholder')}
                   className="w-full px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
               )}
@@ -223,7 +203,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
 
         {/* moduleKey 选择 */}
         <div className="flex items-center gap-2 text-xs">
-          <label className="text-text-secondary flex-shrink-0">所属模块</label>
+          <label className="text-text-secondary flex-shrink-0">{t('prompt.templateEditor.moduleKeyLabel')}</label>
           {isSystem ? (
             <span className="text-text-primary">{ALL_MODULE_KEYS.find(o => o.value === draft.moduleKey)?.label || draft.moduleKey}</span>
           ) : (
@@ -241,7 +221,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
 
         {(draft.moduleKey === 'chapter.content' || draft.moduleKey === 'chapter.continue') && (
           <div className="flex items-center gap-2 text-xs">
-            <label className="text-text-secondary flex-shrink-0">连续性上下文</label>
+            <label className="text-text-secondary flex-shrink-0">{t('prompt.templateEditor.continuityLabel')}</label>
             <select
               value={draft.continuityMode ?? 'inherit'}
               onChange={e => update({
@@ -250,9 +230,9 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
               disabled={isSystem}
               className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-text-primary disabled:opacity-60"
             >
-              <option value="inherit">继承默认注入</option>
-              <option value="required">强制注入</option>
-              <option value="off">关闭注入</option>
+              <option value="inherit">{t('prompt.templateEditor.continuityInherit')}</option>
+              <option value="required">{t('prompt.templateEditor.continuityRequired')}</option>
+              <option value="off">{t('prompt.templateEditor.continuityOff')}</option>
             </select>
           </div>
         )}
@@ -265,7 +245,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
               disabled={!dirty}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-bg-base text-sm rounded hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              <Save className="w-3.5 h-3.5" /> 保存{dirty && ' *'}
+              <Save className="w-3.5 h-3.5" /> {t('prompt.templateEditor.save')}{dirty && ' *'}
             </button>
           )}
           {!draft.isActive && (
@@ -273,27 +253,27 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
               onClick={handleSetActive}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-success/10 text-success text-sm rounded hover:bg-success/20"
             >
-              <CheckCircle2 className="w-3.5 h-3.5" /> 设为激活
+              <CheckCircle2 className="w-3.5 h-3.5" /> {t('prompt.templateEditor.setActive')}
             </button>
           )}
           <button
             onClick={handleClone}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-hover text-text-primary text-sm rounded hover:bg-bg-elevated"
           >
-            <Copy className="w-3.5 h-3.5" /> 克隆
+            <Copy className="w-3.5 h-3.5" /> {t('prompt.templateEditor.clone')}
           </button>
           <button
             onClick={handleExport}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-hover text-text-primary text-sm rounded hover:bg-bg-elevated"
           >
-            <Download className="w-3.5 h-3.5" /> 导出
+            <Download className="w-3.5 h-3.5" /> {t('prompt.templateEditor.export')}
           </button>
           {!isSystem && (
             <button
               onClick={handleDelete}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-error/10 text-error text-sm rounded hover:bg-error/20 ml-auto"
             >
-              <Trash2 className="w-3.5 h-3.5" /> 删除
+              <Trash2 className="w-3.5 h-3.5" /> {t('prompt.templateEditor.delete')}
             </button>
           )}
         </div>
@@ -301,7 +281,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
 
       {/* System Prompt */}
       <div className="bg-bg-surface border border-border rounded-xl p-4">
-        <label className="block text-sm font-medium text-text-primary mb-2">System Prompt</label>
+        <label className="block text-sm font-medium text-text-primary mb-2">{t('prompt.templateEditor.systemPromptLabel')}</label>
         <textarea
           value={draft.systemPrompt}
           onChange={e => update({ systemPrompt: e.target.value })}
@@ -316,9 +296,9 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
       {/* User Prompt Template */}
       <div className="bg-bg-surface border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-text-primary">User Prompt 模板</label>
+          <label className="text-sm font-medium text-text-primary">{t('prompt.templateEditor.userPromptLabel')}</label>
           <span className="text-xs text-text-muted">
-            支持 <code className="px-1 bg-bg-base rounded">{'{{var}}'}</code> 和 <code className="px-1 bg-bg-base rounded">{'{{#if var}}...{{/if}}'}</code>
+            {t('prompt.templateEditor.userPromptHint')}
           </span>
         </div>
         <textarea
@@ -349,19 +329,19 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
       {/* 变量列表 */}
       <div className="bg-bg-surface border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-text-primary">声明的变量（自描述用，不影响渲染）</label>
+          <label className="text-sm font-medium text-text-primary">{t('prompt.templateEditor.variablesLabel')}</label>
           {!isSystem && (
             <button
               onClick={addVariable}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-bg-hover text-text-primary rounded hover:bg-bg-elevated"
             >
-              <Plus className="w-3 h-3" /> 添加
+              <Plus className="w-3 h-3" /> {t('prompt.templateEditor.variablesAdd')}
             </button>
           )}
         </div>
         <div className="flex flex-wrap gap-1.5">
           {draft.variables.length === 0 && (
-            <span className="text-xs text-text-muted">（暂无）</span>
+            <span className="text-xs text-text-muted">{t('prompt.templateEditor.variablesEmpty')}</span>
           )}
           {draft.variables.map(v => (
             <span
@@ -382,7 +362,7 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
       {draft.variableBindings?.length ? (
         <div className="bg-bg-surface border border-border rounded-xl p-4">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-text-primary">变量字段绑定</label>
+            <label className="text-sm font-medium text-text-primary">{t('prompt.templateEditor.bindingsLabel')}</label>
             {draft.assetId && <span className="text-xs font-mono text-accent">{draft.assetId}</span>}
           </div>
           <div className="space-y-2">
@@ -391,18 +371,18 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <code className="text-accent">{binding.variable}</code>
                   <span className="text-text-primary">{binding.label}</span>
-                  {binding.required && <span className="text-error">必填</span>}
-                  {binding.manual && <span className="text-text-muted">可人工补充</span>}
+                  {binding.required && <span className="text-error">{t('prompt.templateEditor.bindingRequired')}</span>}
+                  {binding.manual && <span className="text-text-muted">{t('prompt.templateEditor.bindingManual')}</span>}
                 </div>
                 <div className="mt-1 flex flex-wrap gap-1 text-[10px] text-text-secondary">
                   {binding.projectField && (
-                    <span className="px-1.5 py-0.5 bg-bg-base rounded">项目字段：{binding.projectField}</span>
+                    <span className="px-1.5 py-0.5 bg-bg-base rounded">{t('prompt.templateEditor.bindingProjectField', { field: binding.projectField })}</span>
                   )}
                   {binding.sourceKeys?.map(sourceKey => (
-                    <span key={sourceKey} className="px-1.5 py-0.5 bg-bg-base rounded">上下文：{sourceKey}</span>
+                    <span key={sourceKey} className="px-1.5 py-0.5 bg-bg-base rounded">{t('prompt.templateEditor.bindingSourceKey', { key: sourceKey })}</span>
                   ))}
                   {!binding.projectField && !binding.sourceKeys?.length && (
-                    <span className="px-1.5 py-0.5 bg-bg-base rounded">人工输入</span>
+                    <span className="px-1.5 py-0.5 bg-bg-base rounded">{t('prompt.templateEditor.bindingManualInput')}</span>
                   )}
                 </div>
               </div>
@@ -414,17 +394,17 @@ export default function PromptTemplateEditor({ template, onChanged, onDeleted }:
       {/* 实时预览 */}
       <div className="bg-bg-surface border border-border rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
-          <label className="text-sm font-medium text-text-primary">实时预览（用样例变量字典渲染）</label>
-          <span className="text-xs text-text-muted">编辑模板时同步更新</span>
+          <label className="text-sm font-medium text-text-primary">{t('prompt.templateEditor.previewLabel')}</label>
+          <span className="text-xs text-text-muted">{t('prompt.templateEditor.previewHint')}</span>
         </div>
         {preview && 'error' in preview ? (
-          <div className="text-error text-sm">渲染错误：{preview.error}</div>
+          <div className="text-error text-sm">{t('prompt.templateEditor.previewError', { error: preview.error })}</div>
         ) : preview ? (
           <div className="space-y-2">
             {preview.messages.map((m, i) => (
               <div key={i} className="border border-border rounded">
                 <div className="px-3 py-1 bg-bg-base text-xs text-text-secondary border-b border-border">
-                  {m.role === 'system' ? '🛠 SYSTEM' : '💬 USER'}
+                  {m.role === 'system' ? t('prompt.templateEditor.previewSystem') : t('prompt.templateEditor.previewUser')}
                 </div>
                 <pre className="px-3 py-2 text-xs text-text-primary whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
                   {m.content}

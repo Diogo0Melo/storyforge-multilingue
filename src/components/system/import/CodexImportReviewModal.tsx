@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { AlertTriangle, BookOpenCheck, CheckSquare, Square, X } from 'lucide-react'
 import type { CodexImportCategoryOption } from '../../../lib/import/codex-classification'
 import type { CodexImportCandidate } from '../../../lib/types/import-session-data'
@@ -18,6 +19,7 @@ export default function CodexImportReviewModal({
   onConfirm,
   onCancel,
 }: Props) {
+  const { t } = useTranslation('import')
   const [drafts, setDrafts] = useState(() => candidates.map(candidate => ({
     ...candidate,
     fields: { ...candidate.fields },
@@ -63,10 +65,10 @@ export default function CodexImportReviewModal({
           <div>
             <div className="flex items-center gap-2 text-text-primary font-semibold">
               <BookOpenCheck className="w-5 h-5 text-accent" />
-              审查 Codex 词条候选
+              {t('codexReview.title')}
             </div>
             <div className="text-xs text-text-muted mt-1">
-              {filename} · AI 只做分类建议，点击确认前不会写入词条库
+              {t('codexReview.subtitle', { filename })}
             </div>
           </div>
           <button onClick={onCancel} className="p-1.5 rounded hover:bg-bg-hover">
@@ -76,7 +78,7 @@ export default function CodexImportReviewModal({
 
         <div className="px-5 py-3 border-b border-border bg-bg-base flex items-center justify-between gap-3">
           <div className="text-xs text-text-secondary">
-            已选择 {selectedCount} / {drafts.length} 条。分类、名称、摘要和描述都可在确认前修改。
+            {t('codexReview.selectedCount', { selected: selectedCount, total: drafts.length })}
           </div>
           <button
             onClick={() => setSelected(selectedCount === drafts.length
@@ -87,7 +89,7 @@ export default function CodexImportReviewModal({
             {selectedCount === drafts.length
               ? <CheckSquare className="w-3.5 h-3.5" />
               : <Square className="w-3.5 h-3.5" />}
-            {selectedCount === drafts.length ? '取消全选' : '全选'}
+            {selectedCount === drafts.length ? t('codexReview.deselectAll') : t('codexReview.selectAll')}
           </button>
         </div>
 
@@ -106,7 +108,7 @@ export default function CodexImportReviewModal({
                   <button
                     onClick={() => toggle(index)}
                     className="mt-1 text-accent"
-                    aria-label={`${checked ? '取消选择' : '选择'} ${candidate.name}`}
+                    aria-label={`${checked ? t('codexReview.deselect') : t('codexReview.select')} ${candidate.name}`}
                   >
                     {checked
                       ? <CheckSquare className="w-4 h-4" />
@@ -114,7 +116,7 @@ export default function CodexImportReviewModal({
                   </button>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-2 flex-1">
                     <label className="text-[11px] text-text-muted">
-                      词条名称
+                      {t('codexReview.entryName')}
                       <input
                         value={candidate.name}
                         onChange={event => updateDraft(index, { name: event.target.value })}
@@ -122,16 +124,16 @@ export default function CodexImportReviewModal({
                       />
                     </label>
                     <label className="text-[11px] text-text-muted">
-                      分类
+                      {t('codexReview.category')}
                       <select
                         value={category ? candidate.categoryRef : ''}
                         onChange={event => updateDraft(index, { categoryRef: event.target.value })}
                         className="mt-1 w-full px-2.5 py-2 bg-bg-base border border-border rounded text-sm text-text-primary"
                       >
-                        {!category && <option value="">原分类已不可用，请重新选择</option>}
+                        {!category && <option value="">{t('codexReview.categoryUnavailable')}</option>}
                         {categories.map(option => (
                           <option key={option.ref} value={option.ref}>
-                            {option.domain === 'natural' ? '自然' : option.domain === 'humanity' ? '人文' : '起源'}
+                            {option.domain === 'natural' ? t('codexReview.domain.natural') : option.domain === 'humanity' ? t('codexReview.domain.humanity') : t('codexReview.domain.origin')}
                             {' · '}{option.label}
                           </option>
                         ))}
@@ -143,13 +145,13 @@ export default function CodexImportReviewModal({
                       ? 'bg-success/10 text-success'
                       : 'bg-warning/10 text-warning'
                   }`}>
-                    置信度 {Math.round(candidate.confidence * 100)}%
+                    {t('codexReview.confidence', { value: Math.round(candidate.confidence * 100) })}
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2 pl-7">
                   <label className="text-[11px] text-text-muted">
-                    一句话简介
+                    {t('codexReview.summary')}
                     <textarea
                       value={candidate.summary}
                       onChange={event => updateDraft(index, { summary: event.target.value })}
@@ -158,7 +160,7 @@ export default function CodexImportReviewModal({
                     />
                   </label>
                   <label className="text-[11px] text-text-muted">
-                    详细描述
+                    {t('codexReview.description')}
                     <textarea
                       value={candidate.description}
                       onChange={event => updateDraft(index, { description: event.target.value })}
@@ -193,7 +195,7 @@ export default function CodexImportReviewModal({
         <div className="px-5 py-3 border-t border-border bg-bg-base flex items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 text-[11px] text-text-muted">
             <AlertTriangle className="w-3.5 h-3.5 text-warning" />
-            同名已有词条只补空字段，不覆盖作者的非空内容。
+            {t('codexReview.sameNameNote')}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -201,7 +203,7 @@ export default function CodexImportReviewModal({
               disabled={submitting}
               className="px-4 py-2 text-sm border border-border rounded text-text-secondary hover:bg-bg-hover disabled:opacity-50"
             >
-              暂不导入
+              {t('codexReview.notNow')}
             </button>
             <button
               onClick={submit}
@@ -209,7 +211,7 @@ export default function CodexImportReviewModal({
                 selected.has(index) && (!draft.name.trim() || !categoryByRef.has(draft.categoryRef)))}
               className="px-4 py-2 text-sm bg-accent text-white rounded hover:bg-accent-hover disabled:opacity-50"
             >
-              {submitting ? '正在写入…' : `确认导入 ${selectedCount} 条`}
+              {submitting ? t('codexReview.writing') : t('codexReview.confirmImport', { count: selectedCount })}
             </button>
           </div>
         </div>

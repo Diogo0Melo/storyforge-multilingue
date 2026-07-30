@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next'
 import { useImportStatusStore } from '../../../stores/import-status'
 import { Info, AlertTriangle, XCircle, CheckCircle2 } from 'lucide-react'
 import type { ImportLogLevel } from '../../../lib/types/import-session'
@@ -17,14 +18,15 @@ const COLORS: Record<ImportLogLevel, string> = {
 
 /** 滚动活动日志，仅展示内存里的最近 200 条（DB 里有完整归档） */
 export default function ImportActivityLog() {
+  const { t } = useTranslation('import')
   const activity = useImportStatusStore(s => s.activity)
   if (activity.length === 0) return null
 
   return (
     <div className="bg-bg-surface border border-border rounded-xl p-4">
       <div className="flex items-center justify-between mb-2">
-        <div className="text-sm font-semibold text-text-primary">活动日志</div>
-        <div className="text-xs text-text-muted">最近 {activity.length} 条</div>
+        <div className="text-sm font-semibold text-text-primary">{t('activityLog.title')}</div>
+        <div className="text-xs text-text-muted">{t('activityLog.recent', { count: activity.length })}</div>
       </div>
       <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
         {activity.map(entry => {

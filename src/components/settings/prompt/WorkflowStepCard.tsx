@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import {
   Check,
   ChevronRight,
@@ -49,6 +50,7 @@ export function WorkflowStepCard({
   hasProject,
   actionsDisabled = false,
 }: Props) {
+  const { t } = useTranslation('settings')
   const [expanded, setExpanded] = useState(true)
   const [copied, setCopied] = useState(false)
   const [userInput, setUserInput] = useState('')
@@ -87,12 +89,12 @@ export function WorkflowStepCard({
         <span className="text-sm font-medium text-text-primary">{step.label}</span>
         <span className="text-xs text-text-muted">→ {step.promptModuleKey}</span>
         {step.userConfirmRequired && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">⏸ 需确认</span>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">{t('prompt.workflow.stepCard.needsConfirm')}</span>
         )}
         <span className="ml-auto text-xs text-text-muted">
-          {result.status === 'done' && `${result.output.length} 字`}
-          {result.status === 'failed' && '失败'}
-          {result.status === 'skipped' && '已跳过'}
+          {result.status === 'done' && t('prompt.workflow.stepCard.chars', { count: result.output.length })}
+          {result.status === 'failed' && t('prompt.workflow.stepCard.failed')}
+          {result.status === 'skipped' && t('prompt.workflow.stepCard.skipped')}
         </span>
       </button>
 
@@ -106,13 +108,13 @@ export function WorkflowStepCard({
               onUserInputChange(event.target.value)
             }}
             rows={2}
-            placeholder="你的输入(可选)：在此写本步内容,AI 会在你写的基础上生成/扩展"
+            placeholder={t('prompt.workflow.stepCard.userInputPlaceholder')}
             className="w-full px-2 py-1.5 bg-bg-surface border border-border rounded text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
           />
-          {result.status === 'pending' && <p className="text-xs text-text-muted">待执行</p>}
+          {result.status === 'pending' && <p className="text-xs text-text-muted">{t('prompt.workflow.stepCard.pending')}</p>}
           {result.status === 'running' && (
             <p className="text-xs text-accent flex items-center gap-1">
-              <Sparkles className="w-3 h-3 animate-pulse" /> AI 生成中...
+              <Sparkles className="w-3 h-3 animate-pulse" /> {t('prompt.workflow.stepCard.generating')}
             </p>
           )}
           {result.status === 'done' && result.tokenUsage && (
@@ -132,7 +134,7 @@ export function WorkflowStepCard({
                 rows={8}
                 className="w-full max-h-72 resize-y rounded border border-border bg-bg-surface p-2 font-sans text-xs text-text-primary focus:border-accent focus:outline-none disabled:opacity-60"
               />
-              <p className="text-[10px] text-text-muted">AI 输出可直接编辑,保存/复制将使用编辑后的内容。</p>
+              <p className="text-[10px] text-text-muted">{t('prompt.workflow.stepCard.editHint')}</p>
             </>
           )}
           {result.error && <p className="text-xs text-error">⚠ {result.error}</p>}
@@ -144,14 +146,14 @@ export function WorkflowStepCard({
                 disabled={actionsDisabled}
                 className="text-xs text-accent hover:underline disabled:opacity-40"
               >
-                重新生成
+                {t('prompt.workflow.stepCard.regenerate')}
               </button>
               {result.status === 'done' && (
                 <>
                   <span className="text-text-muted">·</span>
                   <button onClick={handleCopy} className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary">
                     {copied ? <Check className="w-3 h-3 text-success" /> : <ClipboardCopy className="w-3 h-3" />}
-                    {copied ? '已复制' : '复制'}
+                    {copied ? t('prompt.workflow.stepCard.copied') : t('prompt.workflow.stepCard.copy')}
                   </button>
                   {step.saveTarget && (
                     <>
@@ -159,7 +161,7 @@ export function WorkflowStepCard({
                       <button
                         onClick={() => onSave(editedOutput, step.saveTarget!)}
                         disabled={saved || !hasProject || actionsDisabled}
-                        title={!hasProject ? '需先进入项目' : `自动写入 ${targetLabel(step.saveTarget)}`}
+                        title={!hasProject ? t('prompt.workflow.stepCard.needsProject') : t('prompt.workflow.stepCard.saveToTitle', { target: targetLabel(step.saveTarget) })}
                         className={`flex items-center gap-1 text-xs px-2 py-0.5 rounded ${
                           saved
                             ? 'bg-success/15 text-success'
@@ -169,7 +171,7 @@ export function WorkflowStepCard({
                         }`}
                       >
                         {saved ? <Check className="w-3 h-3" /> : <Save className="w-3 h-3" />}
-                        {saved ? `已存到 ${targetLabel(step.saveTarget)}` : `保存到 ${targetLabel(step.saveTarget)}`}
+                        {saved ? t('prompt.workflow.stepCard.savedTo', { target: targetLabel(step.saveTarget) }) : t('prompt.workflow.stepCard.saveTo', { target: targetLabel(step.saveTarget) })}
                       </button>
                     </>
                   )}
@@ -184,7 +186,7 @@ export function WorkflowStepCard({
                     disabled={actionsDisabled}
                     className="text-xs text-text-secondary hover:underline disabled:opacity-40"
                   >
-                    跳过此步
+                    {t('prompt.workflow.stepCard.skip')}
                   </button>
                 </>
               )}
@@ -197,7 +199,7 @@ export function WorkflowStepCard({
               disabled={actionsDisabled}
               className="text-xs text-text-secondary hover:underline disabled:opacity-40"
             >
-              跳过此步
+              {t('prompt.workflow.stepCard.skip')}
             </button>
           )}
         </div>
