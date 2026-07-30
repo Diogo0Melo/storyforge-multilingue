@@ -310,7 +310,7 @@ function ExportTab({ project, onImported }: Props) {
 
 // ── 版本历史 Tab ─────────────────────────────────────────────
 function BackupTab({ project }: Props) {
-  const { t } = useTranslation('panels')
+  const { t, i18n } = useTranslation('panels')
   const { snapshots, loading, loadSnapshots, createSnapshot, deleteSnapshot, restoreSnapshot } = useBackupStore()
   const toast = useToast()
   const dialog = useDialog()
@@ -324,7 +324,7 @@ function BackupTab({ project }: Props) {
   const handleCreate = async () => {
     setCreating(true)
     try {
-      await createSnapshot(project.id!, label.trim() || t('data.mgmt.manualBackup' as any, { date: new Date().toLocaleString('zh-CN') }), 'manual')
+      await createSnapshot(project.id!, label.trim() || t('data.mgmt.manualBackup' as any, { date: new Date().toLocaleString(i18n.language) }), 'manual')
       toast.success(t('data.mgmt.snapshotCreated' as any))
       setLabel(''); setShowForm(false)
     } catch (err) {
@@ -400,7 +400,7 @@ function BackupTab({ project }: Props) {
           <div key={snap.id} className="bg-bg-surface border border-border rounded-lg p-3 flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-text-primary truncate">{snap.label}</p>
-              <p className="text-xs text-text-muted">{new Date(snap.createdAt).toLocaleString('zh-CN')}</p>
+              <p className="text-xs text-text-muted">{new Date(snap.createdAt).toLocaleString(i18n.language)}</p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
