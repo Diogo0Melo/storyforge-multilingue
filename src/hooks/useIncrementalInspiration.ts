@@ -136,7 +136,7 @@ export function useIncrementalInspiration(
       ? parseReverseMultiWorldOutput(output)
       : parseReverseOutput(output)
     if (!parsed) {
-      setFusionError(i18n.t('common:inspiration.parseError' as any))
+      setFusionError(i18n.t('common:inspiration.parseError'))
       return
     }
     setFusionError('')
@@ -155,7 +155,7 @@ export function useIncrementalInspiration(
 
   const addCurrentFragment = async () => {
     if (inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS) {
-      setFusionError(i18n.t('common:inspiration.fragmentTooLong' as any, { count: MAX_INSPIRATION_FRAGMENT_CHARS }))
+      setFusionError(i18n.t('common:inspiration.fragmentTooLong', { count: MAX_INSPIRATION_FRAGMENT_CHARS }))
       return null
     }
     try {
@@ -169,14 +169,14 @@ export function useIncrementalInspiration(
       setSelectedFragmentIds(current => new Set(current).add(fragment.id))
       return fragment
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fragmentSaveFailed' as any))
+      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fragmentSaveFailed'))
       return null
     }
   }
 
   const generate = async () => {
     if (inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS) {
-      setFusionError(i18n.t('common:inspiration.fragmentTooLong' as any, { count: MAX_INSPIRATION_FRAGMENT_CHARS }))
+      setFusionError(i18n.t('common:inspiration.fragmentTooLong', { count: MAX_INSPIRATION_FRAGMENT_CHARS }))
       return
     }
     const selectedIds = new Set(selectedFragmentIds)
@@ -232,7 +232,7 @@ export function useIncrementalInspiration(
       setPendingFragmentIds([])
       setFusionError('')
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fusionSaveFailed' as any))
+      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fusionSaveFailed'))
     } finally {
       setConfirmingFusion(false)
     }
@@ -263,7 +263,7 @@ export function useIncrementalInspiration(
         return next
       })
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fragmentDeleteFailed' as any))
+      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fragmentDeleteFailed'))
     }
   }
 

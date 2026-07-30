@@ -14,6 +14,7 @@ import PromptRunPanel from '../shared/PromptRunPanel'
 import AIFieldModeTabs from '../shared/AIFieldModeTabs'
 import type { Project } from '../../lib/types'
 import type { FieldGenerationMode } from '../../lib/ai/field-generation-context'
+import type { WorldsKeys } from '../../i18n/generated-resources'
 
 async function buildRulesSourceContext(projectId: number, worldGroupId: number | null): Promise<string> {
   return (await assembleContext({
@@ -47,7 +48,7 @@ const FIELDS: FieldMeta[] = [
   { key: 'conflicts', field: 'internalConflicts',      emoji: '🔥', labelKey: 'humanity.fieldConflicts', descriptionKey: 'humanity.fieldConflictsDesc' },
   { key: 'items',     field: 'itemDesign',             emoji: '🗡', labelKey: 'humanity.fieldItems',     descriptionKey: 'humanity.fieldItemsDesc', hintKey: 'humanity.fieldItemsHint' },
 ]
-const HISTORY_NAV = { key: 'history', emoji: '📜', label: '历史年表' }
+const HISTORY_NAV = { key: 'history', emoji: '📜', labelKey: 'history.timelineNav' }
 
 // 每个方面(子页) → 其专属词条分类(builtInKey)。下方只显示该方面对应的词条。
 const HUMANITY_CODEX_KEYS: Record<string, string[] | undefined> = {
@@ -176,7 +177,7 @@ export default function WorldviewHumanityPanel({ project, onOpenHistory }: Props
           {[HISTORY_NAV, ...FIELDS].map(f => {
             const isActive = f.key === activeKey
             const isFieldStreaming = streamingKeys.has(f.key)
-            const label = 'label' in f ? f.label : t(f.labelKey as 'humanity.fieldRaces')
+            const displayLabel = 'labelKey' in f ? String(t(f.labelKey as WorldsKeys)) : ''
             return (
               <button
                 key={f.key}
@@ -187,7 +188,7 @@ export default function WorldviewHumanityPanel({ project, onOpenHistory }: Props
                     : 'border-transparent text-text-secondary hover:text-text-primary hover:bg-bg-elevated'
                 }`}
               >
-                <span className="flex-1">{f.emoji} {label}</span>
+                <span className="flex-1">{f.emoji} {displayLabel}</span>
                 {isFieldStreaming && !isActive && (
                   <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
                 )}
@@ -281,7 +282,7 @@ export default function WorldviewHumanityPanel({ project, onOpenHistory }: Props
               {f.key === 'politics' && (
                 <details className="mt-6 border border-border rounded-xl bg-bg-surface p-4">
                   <summary className="cursor-pointer text-sm font-medium text-text-secondary">
-                    旧版“政经文化”兼容资料
+                    {t('humanity.legacySocietyLabel')}
                   </summary>
                   <div className="mt-4 space-y-4">
                     <InlineTextarea
@@ -290,7 +291,7 @@ export default function WorldviewHumanityPanel({ project, onOpenHistory }: Props
                         setValues(prev => ({ ...prev, legacySociety: value }))
                         save('politicsEconomyCulture', value)
                       }}
-                      placeholder="旧版政经文化原文"
+                      placeholder={t('humanity.legacySocietyPlaceholder')}
                     />
                     <CodexPanel
                       project={project}

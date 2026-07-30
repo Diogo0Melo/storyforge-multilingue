@@ -52,8 +52,7 @@ export default function ImportProgressPanel() {
             chunk={c}
             isActive={status.activeChunkIndex === c.index}
             activeAttempts={status.activeChunkIndex === c.index ? status.activeAttempts : 0}
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            t={t as any}
+            t={t as (key: string, options?: Record<string, unknown>) => string}
           />
         ))}
       </div>

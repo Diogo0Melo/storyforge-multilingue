@@ -20,7 +20,7 @@ import i18n from '../../i18n/i18n'
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) return error.message
-  return i18n.t('panels:agent.master.errorGeneric' as any)
+  return i18n.t('panels:agent.master.errorGeneric')
 }
 
 export interface PendingMasterCandidate {
@@ -66,7 +66,7 @@ export function useMasterCopilot(input: {
           conversationId: conversation.id!,
           kind: 'message',
           role: 'assistant',
-          content: i18n.t('panels:agent.master.greeting' as any),
+          content: i18n.t('panels:agent.master.greeting'),
         })
         rows = await readAgentEvents(conversation.id!)
       }
@@ -147,7 +147,7 @@ export function useMasterCopilot(input: {
         conversationId,
         kind: 'message',
         role: 'assistant',
-          content: i18n.t('panels:agent.master.planSummary' as any, { summary: plan.summary, count: plan.tasks.length }),
+          content: i18n.t('panels:agent.master.planSummary', { summary: plan.summary, count: plan.tasks.length }),
       })
       await reload(conversationId)
 
@@ -187,8 +187,8 @@ export function useMasterCopilot(input: {
         kind: 'message',
         role: 'assistant',
         content: [
-          i18n.t('panels:agent.master.completedSummary' as any, { count: candidates.length }),
-          i18n.t('panels:agent.master.budgetSummary' as any, { used: teamBudget.snapshot().usedTokens.toLocaleString(), max: teamBudget.snapshot().maxTokens.toLocaleString(), calls: teamBudget.snapshot().calls, retries: teamBudget.snapshot().canonRetries }),
+          i18n.t('panels:agent.master.completedSummary', { count: candidates.length }),
+          i18n.t('panels:agent.master.budgetSummary', { used: teamBudget.snapshot().usedTokens.toLocaleString(), max: teamBudget.snapshot().maxTokens.toLocaleString(), calls: teamBudget.snapshot().calls, retries: teamBudget.snapshot().canonRetries }),
         ].join(' '),
       })
     } catch (error) {
@@ -205,7 +205,7 @@ export function useMasterCopilot(input: {
           conversationId,
           kind: 'message',
           role: 'assistant',
-          content: i18n.t('panels:agent.master.notCompleted' as any, { message }),
+          content: i18n.t('panels:agent.master.notCompleted', { message }),
         })
       }
     } finally {
@@ -235,7 +235,7 @@ export function useMasterCopilot(input: {
     if (busy || conversationId == null || candidate.event.id == null) return
     setBusy(true)
     try {
-      let message = i18n.t('panels:agent.master.rejected' as any)
+      let message: string = i18n.t('panels:agent.master.rejected')
       if (decision === 'adopted') {
         message = await adoptMasterCandidate({
           projectId: project.id!,

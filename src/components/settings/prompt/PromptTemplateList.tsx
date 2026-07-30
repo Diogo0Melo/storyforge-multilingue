@@ -61,7 +61,7 @@ export default function PromptTemplateList({ templates, selectedId, onSelect }: 
     <div className="py-2">
       {sortedGroups.map(([groupKey, items]) => {
         const emoji = GROUP_EMOJIS[groupKey] || '📁'
-        const label = (t as any)(`prompt.groups.${groupKey}`) || groupKey
+        const label = (t as (key: string) => string)(`prompt.groups.${groupKey}`) || groupKey
         const isCollapsed = collapsed.has(groupKey)
         return (
           <div key={groupKey} className="mb-1">
@@ -109,7 +109,7 @@ function TemplateRow({
 }) {
   const { t } = useTranslation('settings')
   const subKey = template.moduleKey.split('.').slice(1).join('.')
-  const subLabel = (t as any)(`prompt.subLabels.${subKey}`) || subKey
+  const subLabel = (t as (key: string) => string)(`prompt.subLabels.${subKey}`) || subKey
 
   return (
     <button

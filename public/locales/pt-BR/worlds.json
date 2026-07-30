@@ -94,7 +94,14 @@
     "resourcesEntriesTitle": "📚 Recursos Naturais · Entradas Específicas",
     "resourcesOverview": "Aves e feras raras / Ervas espirituais / Minérios e gemas / Outros produtos especiais",
     "subtitle": "Defina a geografia, clima e recursos naturais do mundo. Para declarar regras de realidade e fantasia, vá ao painel «⚖️ Realidade e Fantasia».",
-    "title": "🏔️ Ambiente Natural e Geografia"
+    "title": "🏔️ Ambiente Natural e Geografia",
+    "ctxLabels": {
+      "structure": "Estrutura do mundo",
+      "territory": "Dimensão territorial",
+      "landform": "Distribuição do relevo",
+      "mountains": "Montanhas e rios",
+      "climate": "Clima e ambiente"
+    }
   },
   "origin": {
     "aiGenerate": "Gerar com IA",
@@ -189,5 +196,31 @@
     "fieldThemeDesc": "Tema de natureza humana / valores a explorar.",
     "hintPlaceholder": "Dica adicional (opcional)",
     "placeholder": "Clique para preencher {{label}}…"
+  },
+  "ruleEditor": {
+    "deleteNode": "Excluir nó",
+    "clearEntry": "Limpar",
+    "realAnchor": "📜 Baseado no real (pesquisa histórica / protótipo real)",
+    "realAnchorPlaceholder": "O que nesta dimensão é baseado em história ou realidade real? Ex: usar o sistema oficial real da Dinastia Tang",
+    "fictionAnchor": "✨ Adaptação ficcional (fictício / adaptado / configuração original)",
+    "fictionAnchorPlaceholder": "O que nesta dimensão é fictício ou adaptado? Ex: adicionar um Instituto de Cultivação ao sistema oficial real",
+    "conflictRule": "⚖️ Quando real e ficcional conflitam",
+    "emptyState": "Selecione uma subcategoria à esquerda para começar",
+    "emptyStateHint": "Ou clique em «Visão geral» para definir regras de nível superior"
+  },
+  "storyCore": {
+    "oneLineStory": "História em uma frase",
+    "concept": "Conceito da história",
+    "theme": "Tema da história",
+    "coreConflict": "Conflito central",
+    "storyMode": "Modo narrativo",
+    "mainPlot": "Enredo principal",
+    "subPlot": "Enredo secundário",
+    "fieldPlaceholder": "Clique para preencher {{label}}…",
+    "hintPlaceholder": "Dica adicional (opcional)",
+    "aiGenerate": "Gerar com IA"
+  },
+  "history": {
+    "timelineNav": "Linha do tempo histórica"
   }
 }

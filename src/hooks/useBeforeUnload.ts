@@ -6,7 +6,7 @@ import i18n from '../i18n/i18n'
  * @param enabled 是否启用（有未保存内容时为 true）
  * @param message 提示文字（部分浏览器会忽略自定义文字，显示默认提示）
  */
-export function useBeforeUnload(enabled: boolean, message = i18n.t('common:beforeUnload.confirm' as any)) {
+export function useBeforeUnload(enabled: boolean, message = i18n.t('common:beforeUnload.confirm')) {
   useEffect(() => {
     if (!enabled) return
 

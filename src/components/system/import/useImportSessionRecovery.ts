@@ -61,8 +61,7 @@ export default function useImportSessionRecovery(projectId: number) {
           setBlobRestored(false)
         }
       } catch (error) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        console.error(`[import] ${(i18n.t('import:panel.blobRestoreFailedToast') as any)}：`, error)
+        console.error(`[import] ${i18n.t('import:panel.blobRestoreFailedToast')}：`, error)
         setBlobRestored(false)
       } finally {
         if (!cancelled) setRestoringBlob(false)

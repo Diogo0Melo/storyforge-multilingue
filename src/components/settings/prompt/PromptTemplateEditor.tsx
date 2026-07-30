@@ -33,7 +33,7 @@ function useModuleKeys() {
   const { t } = useTranslation('settings')
   return MODULE_KEY_VALUES.map(value => ({
     value,
-    label: (t as any)(`prompt.templateEditor.moduleKeys.${value}`),
+    label: (t as (key: string) => string)(`prompt.templateEditor.moduleKeys.${value}`),
   }))
 }
 

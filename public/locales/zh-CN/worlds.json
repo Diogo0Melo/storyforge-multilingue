@@ -94,7 +94,14 @@
     "resourcesEntriesTitle": "📚 自然物产 · 具体词条",
     "resourcesOverview": "珍禽异兽 / 灵药草药 / 矿石宝石 / 其他特产",
     "subtitle": "定义世界的地理、气候与自然资源。如需声明真实与幻想的规则，请前往「⚖️ 真实与幻想」面板。",
-    "title": "🏔️ 自然环境与地理"
+    "title": "🏔️ 自然环境与地理",
+    "ctxLabels": {
+      "structure": "世界结构",
+      "territory": "疆域尺寸",
+      "landform": "地貌分布",
+      "mountains": "山川水系",
+      "climate": "气候环境"
+    }
   },
   "origin": {
     "aiGenerate": "AI 生成",
@@ -189,5 +196,31 @@
     "fieldThemeDesc": "想探讨的人性/价值观主题。",
     "hintPlaceholder": "补充提示（可选）",
     "placeholder": "点击填写{{label}}…"
+  },
+  "ruleEditor": {
+    "deleteNode": "删除节点",
+    "clearEntry": "清空",
+    "realAnchor": "📜 取自真实（历史考据 / 现实原型）",
+    "realAnchorPlaceholder": "这个维度中有哪些内容是取自真实历史或现实的？例如：使用唐朝开元年间真实官制三省六部",
+    "fictionAnchor": "✨ 架空改造（虚构 / 改编 / 原创设定）",
+    "fictionAnchorPlaceholder": "这个维度中有哪些内容是虚构或改编的？例如：在真实官制基础上增设灵修院，专管修士事务",
+    "conflictRule": "⚖️ 当真实与架空冲突时",
+    "emptyState": "选择左侧的子类开始设定",
+    "emptyStateHint": "或点击「总览」设定大类级别的规则"
+  },
+  "storyCore": {
+    "oneLineStory": "一句话故事",
+    "concept": "故事概念",
+    "theme": "故事主题",
+    "coreConflict": "核心冲突",
+    "storyMode": "故事模式",
+    "mainPlot": "故事主线",
+    "subPlot": "故事复线",
+    "fieldPlaceholder": "点击填写{{label}}…",
+    "hintPlaceholder": "补充提示（可选）",
+    "aiGenerate": "AI 生成"
+  },
+  "history": {
+    "timelineNav": "历史年表"
   }
 }

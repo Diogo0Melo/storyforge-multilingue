@@ -33,13 +33,10 @@ export default function useImportDocumentPreparation() {
       const result = await extractTextFromFile(file)
       setRawText(result.text)
       const parts = [
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        i18n.t('import:prep.fileSize', { size: (file.size / 1024 / 1024).toFixed(2) }) as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        i18n.t('import:prep.extractedChars', { count: result.rawChars.toLocaleString() }) as any,
+        i18n.t('import:prep.fileSize', { size: (file.size / 1024 / 1024).toFixed(2) }),
+        i18n.t('import:prep.extractedChars', { count: result.rawChars.toLocaleString() }),
       ]
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if (result.pageCount) parts.push(i18n.t('import:prep.pages', { count: result.pageCount }) as any)
+      if (result.pageCount) parts.push(i18n.t('import:prep.pages', { count: result.pageCount }))
       setExtractInfo(parts.join(' · '))
     } catch (error) {
       setFilename('')
@@ -70,8 +67,7 @@ export default function useImportDocumentPreparation() {
 
   const sourceBlob = () => ({
     blob: lastUploadedFile.current ?? new Blob([rawText], { type: 'text/plain;charset=utf-8' }),
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    filename: lastUploadedFile.current?.name || filename || (i18n.t('import:prep.pastedContent') as any),
+    filename: lastUploadedFile.current?.name || filename || i18n.t('import:prep.pastedContent'),
   })
 
   const previewPlans = useMemo(() => {

@@ -166,7 +166,7 @@ export function targetLabel(target: SaveTarget): string {
   if (target.type === 'create-foreshadows') return i18n.t('settings:prompt.workflow.editor.targetLabels.foreshadows')
   const field = (target as { field?: string }).field || ''
   const fieldKey = SAVE_TARGET_FIELD_I18N_KEYS[field]
-  const label = fieldKey ? (i18n.t as any)(`settings:prompt.workflow.editor.targetLabels.fields.${fieldKey}`) : field
+  const label = fieldKey ? (i18n.t as (key: string) => string)(`settings:prompt.workflow.editor.targetLabels.fields.${fieldKey}`) : field
   if (target.type === 'worldview-field') return i18n.t('settings:prompt.workflow.editor.targetLabels.worldview', { field: label })
   if (target.type === 'storyCore-field') return i18n.t('settings:prompt.workflow.editor.targetLabels.storyCore', { field: label })
   if (target.type === 'creativeRules-field') return i18n.t('settings:prompt.workflow.editor.targetLabels.creativeRules', { field: label })

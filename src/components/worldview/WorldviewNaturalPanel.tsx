@@ -30,11 +30,11 @@ interface Props { project: Project }
 // ── 字段定义（统一标签，兼容幻想与历史） ─────────────────────────
 
 const FIELDS = [
-  { key: 'worldStructure',   emoji: '🌐', labelKey: 'natural.fieldWorldStructure',   descKey: 'natural.fieldWorldStructureDesc',   ctxKey: 'structure',  ctxLabel: '世界结构' },
-  { key: 'worldDimensions',  emoji: '📐', labelKey: 'natural.fieldWorldDimensions',  descKey: 'natural.fieldWorldDimensionsDesc',  ctxKey: 'dim',       ctxLabel: '疆域尺寸' },
-  { key: 'continentLayout',  emoji: '🗺', labelKey: 'natural.fieldContinentLayout',  descKey: 'natural.fieldContinentLayoutDesc',  ctxKey: 'continent', ctxLabel: '地貌分布' },
-  { key: 'mountainsRivers',  emoji: '⛰', labelKey: 'natural.fieldMountainsRivers',  descKey: 'natural.fieldMountainsRiversDesc',  ctxKey: 'mountains', ctxLabel: '山川水系' },
-  { key: 'climateByRegion',  emoji: '🌦', labelKey: 'natural.fieldClimateByRegion',  descKey: 'natural.fieldClimateByRegionDesc',  ctxKey: 'climate',   ctxLabel: '气候环境' },
+  { key: 'worldStructure',   emoji: '🌐', labelKey: 'natural.fieldWorldStructure',   descKey: 'natural.fieldWorldStructureDesc',   ctxKey: 'structure',  ctxLabelKey: 'natural.ctxLabels.structure' },
+  { key: 'worldDimensions',  emoji: '📐', labelKey: 'natural.fieldWorldDimensions',  descKey: 'natural.fieldWorldDimensionsDesc',  ctxKey: 'dim',       ctxLabelKey: 'natural.ctxLabels.territory' },
+  { key: 'continentLayout',  emoji: '🗺', labelKey: 'natural.fieldContinentLayout',  descKey: 'natural.fieldContinentLayoutDesc',  ctxKey: 'continent', ctxLabelKey: 'natural.ctxLabels.landform' },
+  { key: 'mountainsRivers',  emoji: '⛰', labelKey: 'natural.fieldMountainsRivers',  descKey: 'natural.fieldMountainsRiversDesc',  ctxKey: 'mountains', ctxLabelKey: 'natural.ctxLabels.mountains' },
+  { key: 'climateByRegion',  emoji: '🌦', labelKey: 'natural.fieldClimateByRegion',  descKey: 'natural.fieldClimateByRegionDesc',  ctxKey: 'climate',   ctxLabelKey: 'natural.ctxLabels.climate' },
 ] as const
 
 type FieldKey = typeof FIELDS[number]['key'] | 'naturalResources'
@@ -93,7 +93,7 @@ export default function WorldviewNaturalPanel({ project }: Props) {
     // ── 本面板内互参 ──
     for (const f of FIELDS) {
       if (f.ctxKey !== skipCtxKey && values[f.key]) {
-        parts.push(`【${f.ctxLabel}】${values[f.key].slice(0, 150)}`)
+        parts.push(`【${t(f.ctxLabelKey as 'natural.ctxLabels.structure')}】${values[f.key].slice(0, 150)}`)
       }
     }
     // ── 人文环境面板关键字段 ──
@@ -231,7 +231,7 @@ export default function WorldviewNaturalPanel({ project }: Props) {
             </div>
             {/* 旧版自然资源(纯文本)——保留兼容 */}
             <details className="border-t border-border/60 pt-3">
-              <summary className="text-xs text-text-muted cursor-pointer hover:text-text-secondary">旧版「自然资源」纯文本(兼容保留,可继续编辑)</summary>
+              <summary className="text-xs text-text-muted cursor-pointer hover:text-text-secondary">{t('natural.legacyResourcesLabel')}</summary>
               <div className="mt-2">
                 <NaturalResourcesEditor
                   naturalResources={naturalResources}
@@ -336,11 +336,12 @@ function NaturalResourcesEditor({ naturalResources, setNaturalResources, save }:
   setNaturalResources: React.Dispatch<React.SetStateAction<NaturalResources>>
   save: (patch: Record<string, unknown>) => void
 }) {
-  const rows: { key: keyof NaturalResources; label: string; placeholder: string }[] = [
-    { key: 'rareCreatures', label: '🦅 珍禽异兽 / 牲畜', placeholder: '例：玄龟 / 火凤 / 战马 / 耕牛 ...' },
-    { key: 'herbs',         label: '🌿 灵药 / 粮食作物', placeholder: '例：千年雪莲 / 灵参 / 稻麦 ...' },
-    { key: 'minerals',      label: '💎 矿石 / 金属',     placeholder: '例：玄铁 / 灵石 / 盐铁矿 ...' },
-    { key: 'others',        label: '✨ 其他特产',         placeholder: '例：神木 / 蜀锦 / 茶叶 ...' },
+  const { t } = useTranslation('worlds')
+  const rows: { key: keyof NaturalResources; labelKey: string; placeholderKey: string }[] = [
+    { key: 'rareCreatures', labelKey: 'natural.rareCreatures', placeholderKey: 'natural.rareCreaturesPlaceholder' },
+    { key: 'herbs',         labelKey: 'natural.herbs',         placeholderKey: 'natural.herbsPlaceholder' },
+    { key: 'minerals',      labelKey: 'natural.minerals',      placeholderKey: 'natural.mineralsPlaceholder' },
+    { key: 'others',        labelKey: 'natural.others',        placeholderKey: 'natural.othersPlaceholder' },
   ]
 
   const update = (key: keyof NaturalResources, v: string) => {
@@ -352,15 +353,15 @@ function NaturalResourcesEditor({ naturalResources, setNaturalResources, save }:
   return (
     <div className="max-w-3xl space-y-4">
       <div>
-        <h3 className="text-lg font-semibold text-text-primary">🌿 自然资源</h3>
-        <p className="mt-1 text-sm text-text-muted">珍禽异兽 / 灵药草药 / 矿石宝石 / 其他特产</p>
+        <h3 className="text-lg font-semibold text-text-primary">{t('natural.fieldNaturalResources')}</h3>
+        <p className="mt-1 text-sm text-text-muted">{t('natural.resourcesOverview')}</p>
       </div>
       <div className="bg-bg-surface border border-border rounded-lg p-4 space-y-4">
         {rows.map(r => (
           <div key={r.key} className="flex items-start gap-3">
-            <span className="text-sm text-text-secondary w-28 flex-shrink-0 pt-0.5">{r.label}</span>
+            <span className="text-sm text-text-secondary w-28 flex-shrink-0 pt-0.5">{t(r.labelKey as 'natural.rareCreatures')}</span>
             <div className="flex-1">
-              <InlineTextarea value={naturalResources[r.key]} onChange={v => update(r.key, v)} placeholder={r.placeholder} />
+              <InlineTextarea value={naturalResources[r.key]} onChange={v => update(r.key, v)} placeholder={t(r.placeholderKey as 'natural.rareCreaturesPlaceholder')} />
             </div>
           </div>
         ))}

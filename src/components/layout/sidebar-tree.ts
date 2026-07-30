@@ -101,8 +101,7 @@ export interface ModuleContentTypeDefinition {
 
 /** Returns content type definitions with labels/descriptions resolved via i18n. */
 export function getModuleContentTypeDefinitions(): Record<ModuleContentType, ModuleContentTypeDefinition> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const t = (key: string): string => i18n.t(`nav:${key}` as any)
+  const t = (key: string): string => (i18n.t as (key: string) => string)(`nav:${key}`)
   return {
     upstream: {
       label: t('contentType.upstream'),
@@ -229,8 +228,7 @@ const leaf = (id: SidebarModule, label: string, icon: ComponentType<{ className?
 
 /** Build the navigation tree with labels resolved via i18n. Call on each render to pick up language changes. */
 export function buildNavTree(): TreeSection[] {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const t = (key: string): string => i18n.t(`nav:${key}` as any)
+  const t = (key: string): string => (i18n.t as (key: string) => string)(`nav:${key}`)
   return [
     {
       sectionId: 'project',

@@ -83,8 +83,7 @@ export default function AIConfigPanel() {
   // 订阅日志变化
   const logs = useSyncExternalStore(subscribeLogs, getLogs)
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const providerOptions = getProviderOptions(t as any)
+  const providerOptions = getProviderOptions(t as (key: string, options?: Record<string, unknown>) => string)
   const currentProviderInfo = providerOptions.find((p) => p.value === config.provider)
   const editingPreset = editingPresetId ? presets.find(p => p.id === editingPresetId) : null
 
