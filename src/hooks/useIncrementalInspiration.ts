@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useAIStream } from './useAIStream'
 import { createAISessionKey } from '../stores/ai-generation-session'
 import { useInspirationWorkspaceStore } from '../stores/inspiration-workspace'
+import i18n from '../i18n/i18n'
 import {
   buildInspirationReverseMultiWorldPrompt,
   buildInspirationReversePrompt,
@@ -135,7 +136,7 @@ export function useIncrementalInspiration(
       ? parseReverseMultiWorldOutput(output)
       : parseReverseOutput(output)
     if (!parsed) {
-      setFusionError('Agnes 返回内容无法解析，请检查原始输出后重试')
+      setFusionError(i18n.t('common:inspiration.parseError' as any))
       return
     }
     setFusionError('')
@@ -154,7 +155,7 @@ export function useIncrementalInspiration(
 
   const addCurrentFragment = async () => {
     if (inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS) {
-      setFusionError(`单条灵感最多 ${MAX_INSPIRATION_FRAGMENT_CHARS} 字，请拆成多个碎片`)
+      setFusionError(i18n.t('common:inspiration.fragmentTooLong' as any, { count: MAX_INSPIRATION_FRAGMENT_CHARS }))
       return null
     }
     try {
@@ -168,14 +169,14 @@ export function useIncrementalInspiration(
       setSelectedFragmentIds(current => new Set(current).add(fragment.id))
       return fragment
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : '灵感碎片保存失败')
+      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fragmentSaveFailed' as any))
       return null
     }
   }
 
   const generate = async () => {
     if (inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS) {
-      setFusionError(`单条灵感最多 ${MAX_INSPIRATION_FRAGMENT_CHARS} 字，请拆成多个碎片`)
+      setFusionError(i18n.t('common:inspiration.fragmentTooLong' as any, { count: MAX_INSPIRATION_FRAGMENT_CHARS }))
       return
     }
     const selectedIds = new Set(selectedFragmentIds)
@@ -231,7 +232,7 @@ export function useIncrementalInspiration(
       setPendingFragmentIds([])
       setFusionError('')
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : '融合版本保存失败')
+      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fusionSaveFailed' as any))
     } finally {
       setConfirmingFusion(false)
     }
@@ -262,7 +263,7 @@ export function useIncrementalInspiration(
         return next
       })
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : '灵感碎片删除失败')
+      setFusionError(error instanceof Error ? error.message : i18n.t('common:inspiration.fragmentDeleteFailed' as any))
     }
   }
 
