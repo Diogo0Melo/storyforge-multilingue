@@ -7,6 +7,7 @@
 import type { Table } from 'dexie'
 import { estimateTokens } from '../ai/context-budget'
 import { db } from '../db/schema'
+import i18n from '../../i18n/i18n'
 import {
   parseEntryFields,
   parseFieldSchema,
@@ -433,7 +434,7 @@ export async function buildRagLibrary(input: {
 
 function descriptorFor(tableName: string): RagDescriptor {
   const descriptor = descriptors().find(item => item.tableName === tableName)
-  if (!descriptor) throw new Error(`不支持的 RAG 资料表：${tableName}`)
+  if (!descriptor) throw new Error(i18n.t('errors:retrieval.unsupportedTable', { tableName }))
   return descriptor
 }
 
@@ -445,7 +446,7 @@ async function updatePolicy(input: {
 }): Promise<void> {
   const descriptor = descriptorFor(input.tableName)
   const row = await descriptor.table.get(input.recordId)
-  if (!row || row.projectId !== input.projectId) throw new Error('资料记录不存在或不属于当前项目。')
+  if (!row || row.projectId !== input.projectId) throw new Error(i18n.t('errors:retrieval.recordNotFound'))
   const next = input.transform(row.ragPolicy ?? {})
   await descriptor.table.update(input.recordId, {
     ragDocumentId: stableDocumentId(input.tableName, row),

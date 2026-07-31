@@ -74,16 +74,16 @@ describe('AUDIT-6 / HEALTH-4 · 真实与幻想受控视图', () => {
     await act(async () => period.click())
     expect(onSelectNode).toHaveBeenCalledWith('era.period')
 
-    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="删除子类自定子类"]')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="rules.l2DeleteAria"]')!.click())
     expect(onDeleteCustomNode).toHaveBeenCalledWith('custom_l2', '自定子类')
 
-    const addL1 = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('添加大类'))!
+    const addL1 = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('rules.l1AddButton'))!
     await act(async () => addL1.click())
-    const input = host.querySelector<HTMLInputElement>('input[placeholder="新大类名称"]')!
+    const input = host.querySelector<HTMLInputElement>('input[placeholder="rules.l1Placeholder"]')!
     await act(async () => setInputValue(input, '礼仪制度'))
-    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="确认添加大类"]')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>('button[aria-label="rules.l1ConfirmAdd"]')!.click())
     expect(onAddL1).toHaveBeenCalledWith('礼仪制度')
-    expect(host.querySelector('input[placeholder="新大类名称"]')).toBeNull()
+    expect(host.querySelector('input[placeholder="rules.l1Placeholder"]')).toBeNull()
   })
 
   it('编辑区转发双文本、优先级、清空与删除，不自行持久化', async () => {
@@ -115,8 +115,8 @@ describe('AUDIT-6 / HEALTH-4 · 真实与幻想受控视图', () => {
     await act(async () => fictional.click())
     expect(onFieldChange).toHaveBeenCalledWith('priority', 'fictional')
 
-    const clear = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('清空'))!
-    const remove = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('删除节点'))!
+    const clear = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('ruleEditor.clearEntry'))!
+    const remove = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('ruleEditor.deleteNode'))!
     await act(async () => { clear.click(); remove.click() })
     expect(onClearEntry).toHaveBeenCalledOnce()
     expect(onDeleteNode).toHaveBeenCalledOnce()
@@ -133,7 +133,7 @@ describe('AUDIT-6 / HEALTH-4 · 真实与幻想受控视图', () => {
       onDeleteNode: vi.fn(),
       onClearEntry: vi.fn(),
     }))
-    expect(host.textContent).toContain('选择左侧的子类开始设定')
+    expect(host.textContent).toContain('ruleEditor.emptyState')
     expect(host.querySelector('textarea')).toBeNull()
   })
 })

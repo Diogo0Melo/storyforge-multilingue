@@ -5,7 +5,19 @@ import type {
   PromptWorkflowGraphNode,
   PromptWorkflowStep,
 } from '../types/workflow'
-import { validateWorkflowGraph } from './graph'
+import { validateWorkflowGraph, WorkflowCompilationError } from './graph'
+import { WORKFLOW_ERRORS, type WorkflowValidationError } from './error-codes'
+
+/**
+ * Error thrown when workflow import/export validation fails.
+ * Contains structured error that can be translated by callers.
+ */
+export class WorkflowImportExportError extends Error {
+  constructor(public readonly error: WorkflowValidationError) {
+    super('Workflow import/export validation failed')
+    this.name = 'WorkflowImportExportError'
+  }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -38,12 +50,12 @@ function parseEdge(value: unknown): PromptWorkflowGraphEdge | null {
 function parseGraph(value: unknown): PromptWorkflowGraph | undefined {
   if (value == null) return undefined
   if (!isRecord(value) || value.version !== 1 || !Array.isArray(value.nodes) || !Array.isArray(value.edges)) {
-    throw new Error('工作流 graph 必须是 version=1 的节点图。')
+    throw new WorkflowImportExportError({ code: WORKFLOW_ERRORS.INVALID_GRAPH_VERSION })
   }
   const nodes = value.nodes.map(parseNode)
   const edges = value.edges.map(parseEdge)
   if (nodes.some(node => node == null) || edges.some(edge => edge == null)) {
-    throw new Error('工作流 graph 包含非法节点或连线。')
+    throw new WorkflowImportExportError({ code: WORKFLOW_ERRORS.INVALID_NODE_OR_EDGE })
   }
   const viewport = value.viewport
   let parsedViewport: PromptWorkflowGraph['viewport']
@@ -57,7 +69,7 @@ function parseGraph(value: unknown): PromptWorkflowGraph | undefined {
       !Number.isFinite(viewport.y) ||
       !Number.isFinite(viewport.zoom)
     ) {
-      throw new Error('工作流 graph.viewport 无效。')
+      throw new WorkflowImportExportError({ code: WORKFLOW_ERRORS.INVALID_VIEWPORT })
     }
     parsedViewport = { x: viewport.x, y: viewport.y, zoom: viewport.zoom }
   }
@@ -80,7 +92,7 @@ export function parseImportedWorkflow(value: unknown, now = Date.now()): PromptW
       typeof step.promptModuleKey !== 'string'
     )
   ) {
-    throw new Error(`工作流「${value.name}」包含非法步骤。`)
+    throw new WorkflowImportExportError({ code: WORKFLOW_ERRORS.INVALID_STEPS, params: { name: value.name } })
   }
   const workflow: PromptWorkflow = {
     scope: 'user',
@@ -97,7 +109,7 @@ export function parseImportedWorkflow(value: unknown, now = Date.now()): PromptW
   }
   const issues = validateWorkflowGraph(workflow)
   if (issues.length) {
-    throw new Error(`工作流「${workflow.name}」图无效：${issues.map(issue => issue.message).join('；')}`)
+    throw new WorkflowCompilationError(issues)
   }
   return workflow
 }

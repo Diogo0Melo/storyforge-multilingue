@@ -32,7 +32,7 @@
 
 ---
 
-## 命名空间（10 个）
+## 命名空间（12 个）
 
 ```ts
 // src/i18n/settings.ts
@@ -47,6 +47,8 @@ export const NAMESPACES = [
   'settings',   // 设置页
   'import',     // 导入
   'panels',     // 各创作面板（最大，1174+ keys）
+  'metadata',   // 元数据（流派、风格等 labelKey）
+  'errors',     // 结构化错误消息（{code, params} 模式）
 ] as const
 ```
 
@@ -68,11 +70,13 @@ public/locales/
 │   ├── worlds.json
 │   ├── settings.json
 │   ├── import.json
-│   └── panels.json
+│   ├── panels.json
+│   ├── metadata.json
+│   └── errors.json
 └── pt-BR/
     ├── common.json
-    ├── ... (同上 10 个)
-    └── panels.json
+    ├── ... (同上 12 个)
+    └── errors.json
 ```
 
 HTTP 加载路径：`/storyforge/locales/{{lng}}/{{ns}}.json`

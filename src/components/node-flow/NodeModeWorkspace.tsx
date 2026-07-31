@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { nanoid } from 'nanoid'
 import type { Project, NodeFlow, NodeFlowGraph, NodeFlowKind, NodeFlowNode, NodeRunRecord } from '../../lib/types'
-import { EMPTY_NODE_FLOW_GRAPH, parseNodeFlowGraph } from '../../lib/types'
+import { EMPTY_NODE_FLOW_GRAPH, parseNodeFlowGraph, NodeFlowGraphError } from '../../lib/types'
 import {
   adoptNodeRunOutput,
   runNodeFlow,
@@ -156,7 +156,16 @@ export default function NodeModeWorkspace(props: {
       const flow = flows.find(item => item.id === selectedFlowId)
       if (!flow || !active) return
       setDraft(flow)
-      setGraph(parseNodeFlowGraph(flow.graphJson))
+      try {
+        setGraph(parseNodeFlowGraph(flow.graphJson))
+      } catch (error) {
+        if (error instanceof NodeFlowGraphError) {
+          toast.error(i18n.t(`errors:${error.error.code}` as 'errors:workflow.unsupportedVersion', error.error.params))
+        } else {
+          toast.error(i18n.t('panels:nodeFlow.loadFailed', { error: error instanceof Error ? error.message : String(error) }))
+        }
+        setGraph(structuredClone(EMPTY_NODE_FLOW_GRAPH))
+      }
       setSelectedNodeId(null)
       setConnectingFrom(null)
       setDirty(false)

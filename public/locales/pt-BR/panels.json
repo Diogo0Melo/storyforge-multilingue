@@ -1048,6 +1048,7 @@
     "inputSlot": "Entrada {{index}}",
     "inspectorEmpty": "Após selecionar um nó, você pode editar fontes, escopo de campos, slots de entrada dinâmicos, instruções de criação e destinos de saída aqui.",
     "loadingNodeGraphs": "Carregando grafos de nós…",
+    "loadFailed": "Falha ao carregar grafo de nós: {{error}}",
     "maxOutputTokens": "Máximo de Tokens de Saída",
     "newNodeGraph": "Novo Grafo de Nós",
     "nodeGraph": "Grafo de Nós",

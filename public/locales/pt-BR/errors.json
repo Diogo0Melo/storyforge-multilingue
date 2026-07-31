@@ -1,0 +1,100 @@
+{
+  "workflow": {
+    "emptyStepId": "O fluxo de trabalho contém um stepId vazio.",
+    "duplicateStepId": "ID de passo duplicado: {{stepId}}",
+    "unsupportedVersion": "Versão do gráfico de fluxo de trabalho não suportada: {{version}}",
+    "unknownNode": "Nó do canvas referencia um passo inexistente: {{stepId}}",
+    "duplicateNode": "Nó do canvas duplicado: {{stepId}}",
+    "invalidPosition": "Coordenadas do nó inválidas: {{stepId}}",
+    "missingNode": "Passo sem nó no canvas: {{stepId}}",
+    "emptyEdgeId": "O fluxo de trabalho contém um edgeId vazio.",
+    "duplicateEdgeId": "ID de conexão duplicado: {{edgeId}}",
+    "unknownEdgeSource": "Origem da conexão inexistente: {{sourceStepId}}",
+    "unknownEdgeTarget": "Destino da conexão inexistente: {{targetStepId}}",
+    "selfEdge": "Nó não pode se conectar a si mesmo: {{stepId}}",
+    "emptyTargetVariable": "Conexão deve declarar variável de destino.",
+    "invalidTargetVariable": "Formato da variável de destino inválido: {{variable}}",
+    "duplicateEdge": "Conexão duplicada: {{sourceStepId}} → {{targetStepId}}.{{variable}}",
+    "cycleDetected": "Gráfico de fluxo de trabalho contém ciclo, execução bloqueada.",
+    "topologicalSortFailed": "Gráfico de fluxo de trabalho não pode completar ordenação topológica.",
+    "invalidGraphVersion": "Gráfico de fluxo de trabalho deve ser um gráfico de nós version=1.",
+    "invalidNodeOrEdge": "Gráfico de fluxo de trabalho contém nós ou conexões inválidas.",
+    "invalidViewport": "Viewport do gráfico de fluxo de trabalho inválida.",
+    "invalidSteps": "Fluxo de trabalho '{{name}}' contém passos inválidos.",
+    "invalidGraph": "Gráfico de fluxo de trabalho inválido: "
+  },
+  "nodeFlow": {
+    "noSourceSelected": "O nó de elemento do projeto ainda não tem campos de dados ou fontes registradas selecionadas.",
+    "missingInstruction": "O nó de criação livre não tem instrução de criação.",
+    "saveFirst": "Por favor, salve o gráfico de nós primeiro.",
+    "runNotFound": "Registro de execução do nó não existe.",
+    "flowNotFound": "Gráfico de nós não existe ou não pertence ao projeto atual.",
+    "noEditableOutput": "Este nó ainda não tem saída editável.",
+    "onlyOutputNode": "Apenas nós de 'saída de conteúdo' podem gravar no projeto.",
+    "noAdoptTarget": "Este nó de saída ainda não tem destino de gravação selecionado.",
+    "notCompleted": "Este nó de saída ainda não foi executado com sucesso.",
+    "emptyOutput": "Não é possível adotar saída vazia.",
+    "worldOriginLength": "O conteúdo de origem do mundo deve ter entre 4 e 12000 caracteres.",
+    "worldOriginWriteFailed": "Origem do mundo não foi gravada completamente, verifique o registro de dados do projeto.",
+    "characterDuplicate": "Já existe o personagem \"{{name}}\" no mundo atual.",
+    "characterWriteFailed": "Personagem não foi gravado completamente, verifique o JSON do personagem e o registro de dados do projeto.",
+    "worldOriginWriteSuccess": "Origem do mundo foi gravada com sucesso no projeto.",
+    "characterAdded": "Personagem \"{{name}}\" foi adicionado com sucesso ao projeto."
+  },
+  "cultivation": {
+    "chapterNotFound": "Capítulo de origem não existe ou não pertence ao projeto atual",
+    "characterNotFound": "Personagem não existe ou não pertence ao projeto atual",
+    "systemNotFound": "Sistema de cultivo não existe ou não pertence ao projeto atual",
+    "systemChanged": "O sistema principal de cultivo do personagem mudou, por favor reanalise",
+    "worldMismatchSystem": "Capítulo de origem e sistema de cultivo não estão no mesmo mundo",
+    "worldMismatchCharacter": "Capítulo de origem e mundo de归属 do personagem são inconsistentes",
+    "evidenceStale": "Evidência do texto mudou, está duplicada ou não existe, por favor reanalise",
+    "stageDeleted": "O estágio alvo foi removido do sistema, por favor reanalise",
+    "alreadyConfirmed": "Este evento de estágio já foi confirmado"
+  },
+  "generation": {
+    "noMessages": "O nó de geração não tem mensagens para enviar.",
+    "emptyMessage": "O nó de geração contém mensagem vazia, chamada ao modelo bloqueada.",
+    "snapshotMismatch": "Snapshot de entrada do nó de geração não corresponde ao nó atual."
+  },
+  "agent": {
+    "outlineItemNotObject": "Item {{index}} do candidato de outline deve ser um objeto.",
+    "outlineItemForbiddenFields": "Item {{index}} do candidato de outline contém campos não permitidos: {{fields}}.",
+    "outlineItemMissingTitle": "Item {{index}} do candidato de outline está faltando title.",
+    "outlineItemMissingSummary": "Item {{index}} do candidato de outline está faltando summary.",
+    "outlineTitleTooLong": "Título do candidato de outline \"{{title}}\" é muito longo.",
+    "outlineSummaryTooLong": "Resumo do candidato de outline \"{{title}}\" é muito longo.",
+    "outlineDuplicateTitles": "Candidato de outline contém títulos duplicados.",
+    "rosterChanged": "Lista de personagens mudou, por favor regenere.",
+    "characterExists": "Personagem \"{{name}}\" já existe no mundo atual."
+  },
+  "export": {
+    "projectNotFound": "Projeto não existe",
+    "invalidFormat": "Formato de arquivo de exportação inválido",
+    "missingProjectsTable": "[derive{{op}}] PROJECT_TABLES sem tabela raiz projects",
+    "importCycleDetected": "[deriveImport] dependências de tabela contêm ciclo, ordenação topológica impossível",
+    "missingForeignKey": "[deriveImport] mapeamento obrigatório de chave estrangeira ausente: {{table}}.{{field}}={{value}}",
+    "githubApiError": "Erro da API do GitHub {{status}}"
+  },
+  "editor": {
+    "noReplaceMatches": "Nenhuma correspondência para substituir",
+    "chapterNotFound": "Capítulo inexistente: {{id}}",
+    "entityNotFound": "Entidade alvo não existe ou não pertence ao projeto atual",
+    "registryReject": "Registro rejeitou atualização de {{target}} #{{id}}",
+    "baselineChanged": "Dados do projeto mudaram, por favor visualize novamente antes de executar",
+    "snapshotDataChanged": "Dados do projeto mudaram após criação do snapshot, renomeação cancelada, por favor visualize novamente",
+    "recordGone": "Registro não existe mais: {{target}} #{{id}}",
+    "recordModified": "Registro foi modificado: {{target}} #{{id}}.{{field}}, por favor visualize novamente",
+    "nameRequired": "O novo nome não pode estar vazio",
+    "sameName": "O novo nome é igual ao atual",
+    "oldNameCollision": "O nome antigo '{{name}}' pertence a outras entidades ou itens, impossível determinar归属",
+    "newNameCollision": "O novo nome «{{name}}» já está em uso por outra entidade ou item",
+    "stateCardCollision": "O novo nome «{{name}}» já tem cartão de estado do mesmo tipo, impossível provar que os dois cartões devem ser mesclados",
+    "undoBlockers": "{{blockers}}, por favor use snapshot do projeto para restaurar",
+    "undoNewRecords": "Novos textos ou registros estruturados foram adicionados após a renomeação, por favor use snapshot do projeto para restaurar"
+  },
+  "retrieval": {
+    "unsupportedTable": "Tabela de dados RAG não suportada: {{tableName}}",
+    "recordNotFound": "Registro de dados não existe ou não pertence ao projeto atual."
+  }
+}

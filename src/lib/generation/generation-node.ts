@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../types'
+import i18n from '../../i18n/i18n'
 
 export type GenerationGateStatus = 'pass' | 'blocked'
 
@@ -51,9 +52,9 @@ function cloneMessages(messages: ChatMessage[]): ChatMessage[] {
 }
 
 function assertMessages(messages: ChatMessage[]): void {
-  if (messages.length === 0) throw new Error('生成节点没有可发送的消息。')
+  if (messages.length === 0) throw new Error(i18n.t('errors:generation.noMessages'))
   if (messages.some(message => !message.content.trim())) {
-    throw new Error('生成节点包含空消息，已阻止调用模型。')
+    throw new Error(i18n.t('errors:generation.emptyMessage'))
   }
 }
 
@@ -85,7 +86,7 @@ export async function runGenerationNode<TInput, TOutput, TAdoption>(
   } = {},
 ): Promise<GenerationNodeRunResult<TOutput, TAdoption>> {
   if (prepared.nodeId !== node.id || prepared.kind !== node.kind) {
-    throw new Error('生成节点输入快照与当前节点不匹配。')
+    throw new Error(i18n.t('errors:generation.snapshotMismatch'))
   }
   const messages = cloneMessages(options.messages ?? prepared.messages)
   assertMessages(messages)

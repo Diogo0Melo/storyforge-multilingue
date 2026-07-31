@@ -96,6 +96,57 @@
     "sceneGoalPlaceholder": "场景目标",
     "title": "情感节拍"
   },
+  "entityType": {
+    "character": "角色",
+    "location": "地点",
+    "codexEntry": "词条",
+    "importantLocation": "重要地点"
+  },
+  "worldGroup": {
+    "primaryOrUngrouped": "主世界/未分组",
+    "numbered": "世界组 #{{id}}"
+  },
+  "category": {
+    "numbered": "分类 #{{id}}"
+  },
+  "structuredType": {
+    "characters": "角色主档",
+    "importantLocations": "地点主档",
+    "codexEntries": "词条主档",
+    "stateCards": "状态卡",
+    "temporalFacts": "时序事实显示名",
+    "knowledgeLedger": "角色认知账本",
+    "cultivationProgress": "修炼进度",
+    "itemLedger": "物品流水持有人"
+  },
+  "suffix": {
+    "record": "档案",
+    "snapshot": "快照 #{{id}}"
+  },
+  "manualReview": {
+    "containsOldName": "描述性字段含旧名称",
+    "chapterBody": "章节正文",
+    "nonCanonicalChapter": "非规范/重复章节未自动修改",
+    "chapterNumbered": "章节 #{{id}}",
+    "outline": "大纲",
+    "outlineNodeNumbered": "大纲节点 #{{id}}",
+    "outlineContainsOldName": "标题或摘要含旧名称",
+    "detailedOutline": "详细大纲",
+    "detailedOutlineContainsOldName": "自由文本或场景内容含旧名称",
+    "storyCore": "故事核心",
+    "recordNumbered": "记录 #{{id}}",
+    "storyCoreContainsOldName": "主线、概念或其他自由文本含旧名称",
+    "factLedger": "事实账本",
+    "factNumbered": "事实 #{{id}}",
+    "factContainsOldName": "事实值或证据引文含旧名称",
+    "stateCardContent": "状态卡内容",
+    "stateCardContainsOldName": "状态字段值含旧名称",
+    "stateCardAutoUpdate": "同类型状态卡「{{name}}」的实体名已自动更新"
+  },
+  "warning": {
+    "manualReviewRequired": "另有 {{count}} 条自由文本或非规范记录需人工复核，未自动改写",
+    "snapshotsPreserved": "角色设计方案等历史快照继续保留当时名称，不随本次改名重写"
+  },
   "entityRename": {
     "chapterHitCount": "{{title}} · {{count}} 处",
     "confirmMessage": "正文将替换 {{replacementCount}} 处，结构化记录将更新 {{recordCount}} 条。\n另有 {{manualCount}} 条自由文本仅列入人工复核，不会自动改写。\n执行前会创建项目快照，正文、主档和冗余显示名将在同一事务中提交。",

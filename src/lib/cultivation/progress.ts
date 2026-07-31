@@ -12,6 +12,7 @@ import { adopt } from '../registry/adopt'
 import { resolveCanonicalChapterSequence } from '../ai/chapter-memory/canonical-chapter-sequence'
 import { walkOutlineChaptersInCanonicalOrder } from '../outline/canonical-outline-walk'
 import { htmlToPlainText } from '../utils/html'
+import i18n from '../../i18n/i18n'
 
 export interface CultivationProgressCandidate {
   characterId: number
@@ -151,24 +152,24 @@ export async function acceptCultivationProgressCandidate(args: {
     db.cultivationSystems.get(args.candidate.cultivationSystemId),
     db.outlineNodes.where('projectId').equals(args.projectId).toArray(),
   ])
-  if (!chapter || chapter.projectId !== args.projectId) throw new Error('来源章节不存在或不属于当前项目')
-  if (!character || character.projectId !== args.projectId) throw new Error('角色不存在或不属于当前项目')
-  if (!system || system.projectId !== args.projectId) throw new Error('修炼体系不存在或不属于当前项目')
-  if (character.cultivationSystemId !== system.id) throw new Error('角色主修体系已变化，请重新分析')
+  if (!chapter || chapter.projectId !== args.projectId) throw new Error(i18n.t('errors:cultivation.chapterNotFound'))
+  if (!character || character.projectId !== args.projectId) throw new Error(i18n.t('errors:cultivation.characterNotFound'))
+  if (!system || system.projectId !== args.projectId) throw new Error(i18n.t('errors:cultivation.systemNotFound'))
+  if (character.cultivationSystemId !== system.id) throw new Error(i18n.t('errors:cultivation.systemChanged'))
 
   const outline = outlineNodes.find(node => node.id === chapter.outlineNodeId)
   const chapterWorld = outline?.worldGroupId ?? null
-  if ((system.worldGroupId ?? null) !== chapterWorld) throw new Error('来源章节与修炼体系不在同一世界')
+  if ((system.worldGroupId ?? null) !== chapterWorld) throw new Error(i18n.t('errors:cultivation.worldMismatchSystem'))
   if (!character.isCrossWorld && (character.homeWorldGroupId ?? null) !== chapterWorld) {
-    throw new Error('来源章节与角色归属世界不一致')
+    throw new Error(i18n.t('errors:cultivation.worldMismatchCharacter'))
   }
 
   const plain = htmlToPlainText(chapter.content || '').trim()
   const sourceOffset = uniqueQuoteOffset(plain, args.candidate.evidenceQuote)
-  if (sourceOffset < 0) throw new Error('正文证据已变化、重复或不存在，请重新分析')
+  if (sourceOffset < 0) throw new Error(i18n.t('errors:cultivation.evidenceStale'))
   const stages = parseCultivationStages(system.stages)
   const stage = stages.find(item => item.id === args.candidate.stageId)
-  if (!stage) throw new Error('目标境界已从体系中删除，请重新分析')
+  if (!stage) throw new Error(i18n.t('errors:cultivation.stageDeleted'))
 
   const existing = await db.cultivationProgress
     .where('projectId').equals(args.projectId)
@@ -181,7 +182,7 @@ export async function acceptCultivationProgressCandidate(args: {
     row.sourceChapterId === chapter.id
     && row.stageId === stage.id
     && row.sourceQuote === args.candidate.evidenceQuote)) {
-    throw new Error('这条境界事件已经确认')
+    throw new Error(i18n.t('errors:cultivation.alreadyConfirmed'))
   }
 
   const candidateRow: CultivationProgress = {

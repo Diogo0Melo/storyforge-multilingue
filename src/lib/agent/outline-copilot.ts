@@ -244,7 +244,7 @@ export function parseOutlineCandidateDraft(draft: string): GeneratedOutlineItem[
     return { title, summary }
   })
   const titles = result.map(item => normalizeTitle(item.title))
-  if (new Set(titles).size !== titles.length) throw new Error('大纲候选包含重复标题。')
+  if (new Set(titles).size !== titles.length) throw new Error(i18n.t('errors:agent.outlineDuplicateTitles'))
   return result
 }
 

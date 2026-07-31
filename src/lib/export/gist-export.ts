@@ -59,7 +59,7 @@ export async function exportToGist(
 
   if (!response.ok) {
     const err = await response.json().catch(() => ({}))
-    throw new Error(err.message ?? `GitHub API 错误 ${response.status}`)
+    throw new Error(err.message ?? i18n.t('errors:export.githubApiError', { status: response.status }))
   }
 
   const json = await response.json()

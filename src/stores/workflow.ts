@@ -63,7 +63,8 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   save: async (w) => {
     const graphIssues = validateWorkflowGraph(w)
     if (graphIssues.length) {
-      throw new Error(`${i18n.t('errors.workflow.invalidGraph')}${graphIssues.map(issue => issue.message).join('；')}`)
+      const messages = graphIssues.map(issue => i18n.t(`errors:${issue.code}` as 'errors:workflow.emptyStepId', issue.params))
+      throw new Error(`${i18n.t('errors:workflow.invalidGraph')}${messages.join('；')}`)
     }
     const now = Date.now()
     const row: PromptWorkflow = { ...w, updatedAt: now, createdAt: w.createdAt || now }

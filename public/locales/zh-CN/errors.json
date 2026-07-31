@@ -1,0 +1,100 @@
+{
+  "workflow": {
+    "emptyStepId": "工作流包含空 stepId。",
+    "duplicateStepId": "步骤 ID 重复：{{stepId}}",
+    "unsupportedVersion": "不支持工作流图版本：{{version}}",
+    "unknownNode": "画布节点引用了不存在的步骤：{{stepId}}",
+    "duplicateNode": "画布节点重复：{{stepId}}",
+    "invalidPosition": "节点坐标无效：{{stepId}}",
+    "missingNode": "步骤缺少画布节点：{{stepId}}",
+    "emptyEdgeId": "工作流包含空 edgeId。",
+    "duplicateEdgeId": "连线 ID 重复：{{edgeId}}",
+    "unknownEdgeSource": "连线来源不存在：{{sourceStepId}}",
+    "unknownEdgeTarget": "连线目标不存在：{{targetStepId}}",
+    "selfEdge": "节点不能连接自己：{{stepId}}",
+    "emptyTargetVariable": "连线必须声明目标变量。",
+    "invalidTargetVariable": "目标变量格式无效：{{variable}}",
+    "duplicateEdge": "重复连线：{{sourceStepId}} → {{targetStepId}}.{{variable}}",
+    "cycleDetected": "工作流图包含环路，已阻止执行。",
+    "topologicalSortFailed": "工作流图无法完成拓扑排序。",
+    "invalidGraphVersion": "工作流 graph 必须是 version=1 的节点图。",
+    "invalidNodeOrEdge": "工作流 graph 包含非法节点或连线。",
+    "invalidViewport": "工作流 graph.viewport 无效。",
+    "invalidSteps": "工作流「{{name}}」包含非法步骤。",
+    "invalidGraph": "工作流图无效："
+  },
+  "nodeFlow": {
+    "noSourceSelected": "项目元素节点尚未选择任何资料字段或注册来源。",
+    "missingInstruction": "自由创作节点缺少创作指令。",
+    "saveFirst": "请先保存节点图。",
+    "runNotFound": "节点运行记录不存在。",
+    "flowNotFound": "节点图不存在或不属于当前项目。",
+    "noEditableOutput": "该节点尚无可编辑输出。",
+    "onlyOutputNode": "只有\"内容输出\"节点可以写入项目。",
+    "noAdoptTarget": "该输出节点尚未选择项目写入目标。",
+    "notCompleted": "该输出节点尚未成功运行。",
+    "emptyOutput": "不能采纳空输出。",
+    "worldOriginLength": "世界来源内容须为 4 到 12000 个字符。",
+    "worldOriginWriteFailed": "世界来源未能完整写入，请检查项目数据登记。",
+    "characterDuplicate": "当前世界已存在角色\"{{name}}\"。",
+    "characterWriteFailed": "角色未能完整写入，请检查角色 JSON 与项目数据登记。",
+    "worldOriginWriteSuccess": "世界来源已成功写入项目。",
+    "characterAdded": "角色\"{{name}}\"已成功添加到项目。"
+  },
+  "cultivation": {
+    "chapterNotFound": "来源章节不存在或不属于当前项目",
+    "characterNotFound": "角色不存在或不属于当前项目",
+    "systemNotFound": "修炼体系不存在或不属于当前项目",
+    "systemChanged": "角色主修体系已变化，请重新分析",
+    "worldMismatchSystem": "来源章节与修炼体系不在同一世界",
+    "worldMismatchCharacter": "来源章节与角色归属世界不一致",
+    "evidenceStale": "正文证据已变化、重复或不存在，请重新分析",
+    "stageDeleted": "目标境界已从体系中删除，请重新分析",
+    "alreadyConfirmed": "这条境界事件已经确认"
+  },
+  "generation": {
+    "noMessages": "生成节点没有可发送的消息。",
+    "emptyMessage": "生成节点包含空消息，已阻止调用模型。",
+    "snapshotMismatch": "生成节点输入快照与当前节点不匹配。"
+  },
+  "agent": {
+    "outlineItemNotObject": "大纲候选第 {{index}} 项必须是对象。",
+    "outlineItemForbiddenFields": "大纲候选第 {{index}} 项包含不允许的字段：{{fields}}。",
+    "outlineItemMissingTitle": "大纲候选第 {{index}} 项缺少 title。",
+    "outlineItemMissingSummary": "大纲候选第 {{index}} 项缺少 summary。",
+    "outlineTitleTooLong": "大纲候选标题\"{{title}}\"过长。",
+    "outlineSummaryTooLong": "大纲候选\"{{title}}\"的摘要过长。",
+    "outlineDuplicateTitles": "大纲候选包含重复标题。",
+    "rosterChanged": "角色主档已变化，请重新生成。",
+    "characterExists": "当前世界已存在角色\"{{name}}\"。"
+  },
+  "export": {
+    "projectNotFound": "项目不存在",
+    "invalidFormat": "无效的导出文件格式",
+    "missingProjectsTable": "[derive{{op}}] PROJECT_TABLES 缺少 projects 根表",
+    "importCycleDetected": "[deriveImport] 表依赖存在环，无法拓扑排序",
+    "missingForeignKey": "[deriveImport] 缺失必填外键映射：{{table}}.{{field}}={{value}}",
+    "githubApiError": "GitHub API 错误 {{status}}"
+  },
+  "editor": {
+    "noReplaceMatches": "没有可替换的命中",
+    "chapterNotFound": "章节不存在：{{id}}",
+    "entityNotFound": "目标实体不存在或不属于当前项目",
+    "registryReject": "注册表拒绝更新 {{target}} #{{id}}",
+    "baselineChanged": "项目数据已变化，请重新预览后再执行",
+    "snapshotDataChanged": "创建快照后项目数据发生变化，已取消改名，请重新预览",
+    "recordGone": "记录已不存在：{{target}} #{{id}}",
+    "recordModified": "记录已被修改：{{target}} #{{id}}.{{field}}，请重新预览",
+    "nameRequired": "新名称不能为空",
+    "sameName": "新名称与当前名称相同",
+    "oldNameCollision": "旧名称「{{name}}」同时属于其他实体或物品，正文命中无法可靠判定归属",
+    "newNameCollision": "新名称「{{name}}」已被其他实体或物品使用",
+    "stateCardCollision": "新名称「{{name}}」已有同类型状态卡，无法证明两张卡应当合并",
+    "undoBlockers": "{{blockers}}，请改用项目快照恢复",
+    "undoNewRecords": "改名后新增了相关正文或结构化记录，请改用项目快照恢复"
+  },
+  "retrieval": {
+    "unsupportedTable": "不支持的 RAG 资料表：{{tableName}}",
+    "recordNotFound": "资料记录不存在或不属于当前项目。"
+  }
+}

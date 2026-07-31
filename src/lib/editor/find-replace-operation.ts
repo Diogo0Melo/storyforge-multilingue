@@ -1,4 +1,5 @@
 import type { Chapter } from '../types'
+import i18n from '../../i18n/i18n'
 import {
   findChapterMatches,
   replaceChapterContent,
@@ -59,15 +60,15 @@ export async function executeFindReplace(args: ExecuteReplaceArgs): Promise<Exec
   const targetsWithMatches = args.targets
     .filter(target => (findChapterMatches(target, args.options)?.count ?? 0) > 0)
   if (!targetsWithMatches.length) {
-    throw new Error('没有可替换的命中')
+    throw new Error(i18n.t('errors:editor.noReplaceMatches'))
   }
 
   const snapshotId = await args.createSnapshot(args.projectId, args.label, 'manual')
   const undoPatch: FindReplaceUndoPatch = {
-    label: `${args.label} · 快照 #${snapshotId}`,
+    label: `${args.label} · ${i18n.t('editor:suffix.snapshot', { id: snapshotId })}`,
     chapters: targetsWithMatches.map(target => {
       const chapter = args.chapters.find(item => item.id === target.id)
-      if (!chapter) throw new Error(`章节不存在:${target.id}`)
+      if (!chapter) throw new Error(i18n.t('errors:editor.chapterNotFound', { id: target.id }))
       return {
         id: target.id,
         content: chapter.content || '',

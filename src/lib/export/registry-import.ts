@@ -17,6 +17,7 @@ import { migrateStateCardsToTemporalFactCandidates } from '../migrations/state-c
 import type { TableSpec } from '../registry/types'
 import type { ProjectExportData } from './json-export'
 import { normalizeCharacterAxes } from '../character/character-axes'
+import i18n from '../../i18n/i18n'
 import {
   parseCharacterDrivenPlanArcs,
   stringifyCharacterDrivenPlanArcs,
@@ -28,7 +29,7 @@ function deriveImportOrder(specs: TableSpec[]): TableSpec[] {
   const order: TableSpec[] = []
   let guard = 0
   while (order.length < specs.length) {
-    if (guard++ > specs.length + 2) throw new Error('[deriveImport] 表依赖存在环,无法拓扑排序')
+    if (guard++ > specs.length + 2) throw new Error(i18n.t('errors:export.importCycleDetected'))
     for (const spec of specs) {
       if (done.has(spec.name)) continue
       const fieldDeps = (spec.exportRemap ?? [])
@@ -91,12 +92,12 @@ function patchSelfIdPaths(obj: Record<string, any>, paths: string[], newId: numb
  * 与手写 importProjectJSON 行为一致(往返完整性由 R-export-fullcoverage 锁死)。
  */
 export async function deriveImportProjectJSON(data: ProjectExportData): Promise<number> {
-  if (!data.version || !data.project) throw new Error('无效的导出文件格式')
+  if (!data.version || !data.project) throw new Error(i18n.t('errors:export.invalidFormat'))
   const now = Date.now()
   const specs = PROJECT_TABLES.filter(s => s.exportable && s.name !== 'projects')
   const order = deriveImportOrder(specs)
   const projectSpec = PROJECT_TABLES.find(spec => spec.name === 'projects')
-  if (!projectSpec) throw new Error('[deriveImport] PROJECT_TABLES 缺少 projects 根表')
+  if (!projectSpec) throw new Error(i18n.t('errors:export.missingProjectsTable', { op: 'Import' }))
 
   return await db.transaction('rw', transactionTablesFor('importProject'), async () => {
     const projectData: Record<string, any> = { ...data.project }
@@ -159,7 +160,7 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
               }
               if (rm.onUnmapped === 'drop') { dropRow = true; break }
               if (rm.onUnmapped === 'require') {
-                throw new Error(`[deriveImport] 缺失必填外键映射:${spec.name}.${rm.field}=${exportVal}`)
+                throw new Error(i18n.t('errors:export.missingForeignKey', { table: spec.name, field: rm.field, value: exportVal }))
               }
             }
             mappedId = got ?? null

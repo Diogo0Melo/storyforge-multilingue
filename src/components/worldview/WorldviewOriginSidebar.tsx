@@ -3,9 +3,9 @@ import { useTranslation } from 'react-i18next'
 export type WorldviewOriginFieldKey = 'origin' | 'power' | 'divine'
 
 export const WORLDVIEW_ORIGIN_FIELDS = [
-  { key: 'origin' as WorldviewOriginFieldKey, label: '世界来源', icon: '🌌', desc: 'origin.fieldOriginDesc' as const },
-  { key: 'power' as WorldviewOriginFieldKey, label: '力量体系', icon: '⚡', desc: 'origin.fieldPowerDesc' as const },
-  { key: 'divine' as WorldviewOriginFieldKey, label: '神明与信仰', icon: '🌟', desc: 'origin.fieldDivineDesc' as const },
+  { key: 'origin' as WorldviewOriginFieldKey, icon: '🌌', desc: 'origin.fieldOriginDesc' as const },
+  { key: 'power' as WorldviewOriginFieldKey, icon: '⚡', desc: 'origin.fieldPowerDesc' as const },
+  { key: 'divine' as WorldviewOriginFieldKey, icon: '🌟', desc: 'origin.fieldDivineDesc' as const },
 ]
 
 const FIELD_LABEL_KEYS = {

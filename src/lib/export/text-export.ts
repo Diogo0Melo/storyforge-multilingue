@@ -2,6 +2,7 @@ import { db } from '../db/schema'
 import type { OutlineNode, Chapter } from '../types'
 import { isHtml, htmlToPlainText } from '../utils/html'
 import { buildBestChapterByOutlineMap } from '../chapters/selectors'
+import i18n from '../../i18n/i18n'
 
 /** HTML → Markdown（简化规则，覆盖 TipTap StarterKit 产出的常见结构） */
 function htmlToMarkdown(html: string): string {
@@ -51,7 +52,7 @@ function htmlToMarkdown(html: string): string {
 /** 导出为 Markdown 格式 */
 export async function exportProjectMarkdown(projectId: number): Promise<string> {
   const project = await db.projects.get(projectId)
-  if (!project) throw new Error('项目不存在')
+  if (!project) throw new Error(i18n.t('errors:export.projectNotFound'))
 
   const [outlineNodes, chapters] = await Promise.all([
     db.outlineNodes.where('projectId').equals(projectId).toArray(),
@@ -90,7 +91,7 @@ export async function exportProjectMarkdown(projectId: number): Promise<string> 
 /** 导出为纯文本格式 */
 export async function exportProjectTXT(projectId: number): Promise<string> {
   const project = await db.projects.get(projectId)
-  if (!project) throw new Error('项目不存在')
+  if (!project) throw new Error(i18n.t('errors:export.projectNotFound'))
 
   const [outlineNodes, chapters] = await Promise.all([
     db.outlineNodes.where('projectId').equals(projectId).toArray(),

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../../i18n/i18n'
 import { AlertTriangle, GitBranch, List, Plus, Save, Trash2, X } from 'lucide-react'
 import { nanoid } from 'nanoid'
 import { useWorkflowStore } from '../../../stores/workflow'
@@ -47,6 +48,10 @@ export default function WorkflowEditor({
     workflow.steps[0]?.stepId ?? null,
   )
   const graphIssues = useMemo(() => validateWorkflowGraph(draft), [draft])
+  const translatedIssues = useMemo(() =>
+    graphIssues.map(issue => i18n.t(`errors:${issue.code}`, issue.params)),
+    [graphIssues]
+  )
   const graph = useMemo(() => workflowGraphFor(draft), [draft])
   const selectedStep = draft.steps.find(step => step.stepId === selectedStepId) ?? null
   const selectedStepIndex = selectedStep
@@ -158,12 +163,12 @@ export default function WorkflowEditor({
     const nextDraft = { ...draft, graph: nextGraph }
     const errors = validateWorkflowGraph(nextDraft)
     const hardConnectionError = errors.find(issue =>
-      issue.code === 'duplicate-edge' ||
-      issue.code === 'self-edge' ||
-      issue.code === 'cycle'
+      issue.code === 'workflow.duplicateEdge' ||
+      issue.code === 'workflow.selfEdge' ||
+      issue.code === 'workflow.cycleDetected'
     )
     if (hardConnectionError) {
-      toast.error(hardConnectionError.message)
+      toast.error(i18n.t(`errors:${hardConnectionError.code}`, hardConnectionError.params))
       return
     }
     setDraft(nextDraft)
@@ -293,7 +298,7 @@ export default function WorkflowEditor({
       {graphIssues.length > 0 && (
         <div role="alert" className="flex items-start gap-2 border-b border-error/30 bg-error/10 px-4 py-2 text-xs text-error">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-          <span>{graphIssues.map(issue => issue.message).join('；')}</span>
+          <span>{translatedIssues.join('；')}</span>
         </div>
       )}
 

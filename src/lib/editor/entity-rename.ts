@@ -8,6 +8,7 @@ import type {
 } from '../types'
 import { adopt } from '../registry/adopt'
 import { transactionTablesFor } from '../registry/lifecycle'
+import i18n from '../../i18n/i18n'
 import {
   buildChapterSearchTargets,
   findChapterMatches,
@@ -91,10 +92,8 @@ export interface ExecuteEntityRenameResult {
   undoPatch: EntityRenameUndoPatch
 }
 
-const ENTITY_KIND_LABELS: Record<RenamableEntityKind, string> = {
-  character: '角色',
-  location: '地点',
-  codexEntry: '词条',
+function entityKindLabel(kind: RenamableEntityKind): string {
+  return i18n.t(`editor:entityType.${kind}`)
 }
 
 const TARGET_TABLE: Record<RenamableEntityKind, EntityRenameRecordChange['target']> = {
@@ -164,7 +163,7 @@ async function projectEntities(projectId: number): Promise<{
         id: character.id!,
         name: character.name,
         label: character.name,
-        detail: `角色 · ${character.homeWorldGroupId == null ? '主世界/未分组' : `世界组 #${character.homeWorldGroupId}`}`,
+        detail: `${i18n.t('editor:entityType.character')} · ${character.homeWorldGroupId == null ? i18n.t('editor:worldGroup.primaryOrUngrouped') : i18n.t('editor:worldGroup.numbered', { id: character.homeWorldGroupId })}`,
       })),
     ...locations
       .filter(location => location.id != null)
@@ -173,7 +172,7 @@ async function projectEntities(projectId: number): Promise<{
         id: location.id!,
         name: location.name,
         label: location.name,
-        detail: '重要地点',
+        detail: i18n.t('editor:entityType.importantLocation'),
       })),
     ...codexEntries
       .filter(entry => entry.id != null)
@@ -182,7 +181,7 @@ async function projectEntities(projectId: number): Promise<{
         id: entry.id!,
         name: entry.name,
         label: entry.name,
-        detail: `词条 · ${categoryById.get(entry.categoryId)?.name ?? `分类 #${entry.categoryId}`}`,
+        detail: `${i18n.t('editor:entityType.codexEntry')} · ${categoryById.get(entry.categoryId)?.name ?? i18n.t('editor:category.numbered', { id: entry.categoryId })}`,
       })),
   ]
   return { entities, characters, categories, codexEntries, locations }
@@ -227,14 +226,14 @@ function expectedStateCategory(
 
 function structuredCounts(changes: EntityRenameRecordChange[]): Array<{ label: string; count: number }> {
   const labels: Partial<Record<EntityRenameRecordChange['target'], string>> = {
-    characters: '角色主档',
-    importantLocations: '地点主档',
-    codexEntries: '词条主档',
-    stateCards: '状态卡',
-    temporalFacts: '时序事实显示名',
-    knowledgeLedger: '角色认知账本',
-    cultivationProgress: '修炼进度',
-    itemLedger: '物品流水持有人',
+    characters: i18n.t('editor:structuredType.characters'),
+    importantLocations: i18n.t('editor:structuredType.importantLocations'),
+    codexEntries: i18n.t('editor:structuredType.codexEntries'),
+    stateCards: i18n.t('editor:structuredType.stateCards'),
+    temporalFacts: i18n.t('editor:structuredType.temporalFacts'),
+    knowledgeLedger: i18n.t('editor:structuredType.knowledgeLedger'),
+    cultivationProgress: i18n.t('editor:structuredType.cultivationProgress'),
+    itemLedger: i18n.t('editor:structuredType.itemLedger'),
   }
   return Object.entries(labels)
     .map(([target, label]) => ({
@@ -262,7 +261,7 @@ export async function buildEntityRenamePreview(
   const newName = requestedName.normalize('NFKC').trim()
   const { entities, characters, categories, codexEntries, locations } = await projectEntities(projectId)
   const entity = targetEntity(entities, target)
-  if (!entity) throw new Error('目标实体不存在或不属于当前项目')
+  if (!entity) throw new Error(i18n.t('errors:editor.entityNotFound'))
 
   const blockers: string[] = []
   const warnings: string[] = []
@@ -271,8 +270,8 @@ export async function buildEntityRenamePreview(
   const oldKey = normalizedName(entity.name)
   const newKey = normalizedName(newName)
 
-  if (!newName) blockers.push('新名称不能为空')
-  if (newKey === oldKey) blockers.push('新名称与当前名称相同')
+  if (!newName) blockers.push(i18n.t('errors:editor.nameRequired'))
+  if (newKey === oldKey) blockers.push(i18n.t('errors:editor.sameName'))
 
   const itemRows = await db.itemLedger.where('projectId').equals(projectId).toArray()
   const itemNames = Array.from(new Set(itemRows.map(row => row.itemName.trim()).filter(Boolean)))
@@ -285,10 +284,10 @@ export async function buildEntityRenamePreview(
     && normalizedName(item.name) === newKey,
   )
   if (oldEntityCollisions.length || itemNames.some(name => normalizedName(name) === oldKey)) {
-    blockers.push(`旧名称「${entity.name}」同时属于其他实体或物品，正文命中无法可靠判定归属`)
+    blockers.push(i18n.t('errors:editor.oldNameCollision', { name: entity.name }))
   }
   if (newName && (newEntityCollisions.length || itemNames.some(name => normalizedName(name) === newKey))) {
-    blockers.push(`新名称「${newName}」已被其他实体或物品使用`)
+    blockers.push(i18n.t('errors:editor.newNameCollision', { name: newName }))
   }
 
   addChange(changes, TARGET_TABLE[entity.kind], entity.id, { name: entity.name }, { name: newName })
@@ -344,7 +343,7 @@ export async function buildEntityRenamePreview(
   const canonicalChapterIds = new Set(chapterTargets.map(chapter => chapter.id))
   for (const chapter of chapters) {
     if (chapter.id != null && !canonicalChapterIds.has(chapter.id) && hasText(chapter.content, entity.name)) {
-      pushManualReview(manualReview, '章节正文', chapter.title || `章节 #${chapter.id}`, '非规范/重复章节未自动修改')
+      pushManualReview(manualReview, i18n.t('editor:manualReview.chapterBody'), chapter.title || i18n.t('editor:manualReview.chapterNumbered', { id: chapter.id }), i18n.t('editor:manualReview.nonCanonicalChapter'))
     }
   }
 
@@ -355,7 +354,7 @@ export async function buildEntityRenamePreview(
       && normalizedName(card.entityName) === newKey
       && normalizedName(card.entityName) !== oldKey,
     )) {
-      blockers.push(`新名称「${newName}」已有同类型状态卡，无法证明两张卡应当合并`)
+      blockers.push(i18n.t('errors:editor.stateCardCollision', { name: newName }))
     }
     for (const card of stateCards.filter(card =>
       card.category === stateCategory && normalizedName(card.entityName) === oldKey,
@@ -363,7 +362,7 @@ export async function buildEntityRenamePreview(
       addChange(changes, 'stateCards', card.id, { entityName: card.entityName }, { entityName: newName })
     }
   } else if (stateCards.some(card => normalizedName(card.entityName) === oldKey)) {
-    warnings.push('该词条没有可证明的状态卡类型映射，同名状态卡仅列入人工复核')
+    warnings.push(i18n.t('editor:manualReview.stateCardNoMapping'))
   }
 
   if (entity.kind === 'character') {
@@ -391,27 +390,27 @@ export async function buildEntityRenamePreview(
 
   for (const node of outlineNodes) {
     if (hasText(node.title, entity.name) || hasText(node.summary, entity.name)) {
-      pushManualReview(manualReview, '大纲', node.title || `大纲节点 #${node.id}`, '标题或摘要含旧名称')
+      pushManualReview(manualReview, i18n.t('editor:manualReview.outline'), node.title || i18n.t('editor:manualReview.outlineNodeNumbered', { id: node.id }), i18n.t('editor:manualReview.outlineContainsOldName'))
     }
   }
   for (const row of detailedOutlines) {
     if (hasText(row, entity.name)) {
-      pushManualReview(manualReview, '详细大纲', `大纲节点 #${row.outlineNodeId}`, '自由文本或场景内容含旧名称')
+      pushManualReview(manualReview, i18n.t('editor:manualReview.detailedOutline'), i18n.t('editor:manualReview.outlineNodeNumbered', { id: row.outlineNodeId }), i18n.t('editor:manualReview.detailedOutlineContainsOldName'))
     }
   }
   for (const row of storyCores) {
     if (hasText(row, entity.name)) {
-      pushManualReview(manualReview, '故事核心', `记录 #${row.id}`, '主线、概念或其他自由文本含旧名称')
+      pushManualReview(manualReview, i18n.t('editor:manualReview.storyCore'), i18n.t('editor:manualReview.recordNumbered', { id: row.id }), i18n.t('editor:manualReview.storyCoreContainsOldName'))
     }
   }
   for (const fact of temporalFacts) {
     if (hasText(fact.value, entity.name) || hasText(fact.sourceQuote, entity.name)) {
-      pushManualReview(manualReview, '事实账本', `事实 #${fact.id}`, '事实值或证据引文含旧名称')
+      pushManualReview(manualReview, i18n.t('editor:manualReview.factLedger'), i18n.t('editor:manualReview.factNumbered', { id: fact.id }), i18n.t('editor:manualReview.factContainsOldName'))
     }
   }
   for (const card of stateCards) {
     if (hasText(card.fields, entity.name)) {
-      pushManualReview(manualReview, '状态卡内容', `${card.entityName} · ${card.category}`, '状态字段值含旧名称')
+      pushManualReview(manualReview, i18n.t('editor:manualReview.stateCardContent'), `${card.entityName} · ${card.category}`, i18n.t('editor:manualReview.stateCardContainsOldName'))
     }
   }
   const descriptiveEntities = [
@@ -424,17 +423,17 @@ export async function buildEntityRenamePreview(
     if (hasText(item.row, entity.name)) {
       pushManualReview(
         manualReview,
-        `${ENTITY_KIND_LABELS[item.kind]}档案`,
+        `${entityKindLabel(item.kind)}${i18n.t('editor:suffix.record')}`,
         item.row.name,
-        '描述性字段含旧名称',
+        i18n.t('editor:manualReview.containsOldName'),
       )
     }
   }
 
   if (manualReview.length) {
-    warnings.push(`另有 ${manualReview.length} 条自由文本或非规范记录需人工复核，未自动改写`)
+    warnings.push(i18n.t('editor:warning.manualReviewRequired', { count: manualReview.length }))
   }
-  warnings.push('角色设计方案等历史快照继续保留当时名称，不随本次改名重写')
+  warnings.push(i18n.t('editor:warning.snapshotsPreserved'))
 
   const sorted = sortedChanges(changes)
   const preview: EntityRenamePreview = {
@@ -462,11 +461,11 @@ async function getRecord(
 
 async function assertRecordState(change: EntityRenameRecordChange, side: 'before' | 'after'): Promise<void> {
   const current = await getRecord(change.target, change.id)
-  if (!current) throw new Error(`记录已不存在：${change.target} #${change.id}`)
+  if (!current) throw new Error(i18n.t('errors:editor.recordGone', { target: change.target, id: change.id }))
   const expected = change[side]
   for (const [field, value] of Object.entries(expected)) {
     if (!sameValue(current[field], value)) {
-      throw new Error(`记录已被修改：${change.target} #${change.id}.${field}，请重新预览`)
+      throw new Error(i18n.t('errors:editor.recordModified', { target: change.target, id: change.id, field }))
     }
   }
 }
@@ -489,7 +488,7 @@ async function applyChange(
     data,
   })
   if (result.written.length !== 1 || result.skipped.length || result.typeErrors.length || result.fkErrors.length) {
-    throw new Error(`注册表拒绝更新 ${change.target} #${change.id}`)
+    throw new Error(i18n.t('errors:editor.registryReject', { target: change.target, id: change.id }))
   }
 }
 
@@ -497,14 +496,14 @@ export async function executeEntityRename(
   args: ExecuteEntityRenameArgs,
 ): Promise<ExecuteEntityRenameResult> {
   const preview = await buildEntityRenamePreview(args.projectId, args.entity, args.newName)
-  if (preview.baseline !== args.expectedBaseline) throw new Error('项目数据已变化，请重新预览后再执行')
+  if (preview.baseline !== args.expectedBaseline) throw new Error(i18n.t('errors:editor.baselineChanged'))
   if (preview.blockers.length) throw new Error(preview.blockers.join('；'))
 
   const snapshotId = await args.createSnapshot(args.projectId, args.label, 'manual')
   await db.transaction('rw', transactionTablesFor('importProject'), async () => {
     const current = await buildEntityRenamePreview(args.projectId, args.entity, args.newName)
     if (current.baseline !== args.expectedBaseline || current.blockers.length) {
-      throw new Error('创建快照后项目数据发生变化，已取消改名，请重新预览')
+      throw new Error(i18n.t('errors:editor.snapshotDataChanged'))
     }
     for (const change of current.changes) await assertRecordState(change, 'before')
     for (const change of current.changes) await applyChange(args.projectId, change, 'after')
@@ -515,7 +514,7 @@ export async function executeEntityRename(
     changedRecords: preview.changes.length,
     chapterReplacements: preview.chapterReplacementCount,
     undoPatch: {
-      label: `${args.label} · 快照 #${snapshotId}`,
+      label: `${args.label} · ${i18n.t('editor:suffix.snapshot', { id: snapshotId })}`,
       snapshotId,
       projectId: args.projectId,
       entity: args.entity,
@@ -534,7 +533,7 @@ export async function undoEntityRename(patch: EntityRenameUndoPatch): Promise<nu
       patch.oldName,
     )
     if (reversePreview.blockers.length) {
-      throw new Error(`${reversePreview.blockers.join('；')}，请改用项目快照恢复`)
+      throw new Error(i18n.t('errors:editor.undoBlockers', { blockers: reversePreview.blockers.join('；') }))
     }
     const changeShape = (change: EntityRenameRecordChange) => JSON.stringify({
       target: change.target,
@@ -547,7 +546,7 @@ export async function undoEntityRename(patch: EntityRenameUndoPatch): Promise<nu
     const expectedShapes = patch.changes.map(changeShape).sort()
     const currentShapes = reversePreview.changes.map(changeShape).sort()
     if (!sameValue(expectedShapes, currentShapes)) {
-      throw new Error('改名后新增了相关正文或结构化记录，请改用项目快照恢复')
+      throw new Error(i18n.t('errors:editor.undoNewRecords'))
     }
     for (const change of patch.changes) await assertRecordState(change, 'after')
     for (const change of [...patch.changes].reverse()) await applyChange(patch.projectId, change, 'before')

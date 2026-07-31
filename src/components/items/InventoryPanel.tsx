@@ -33,11 +33,11 @@ interface Props {
   project: Project
 }
 
-const ROLE_WEIGHT_GROUPS: { weight: CharacterRoleWeight; label: string }[] = [
-  { weight: 'main', label: '主要角色' },
-  { weight: 'secondary', label: '次要角色' },
-  { weight: 'npc', label: 'NPC' },
-  { weight: 'extra', label: '路人' },
+const ROLE_WEIGHT_GROUPS: { weight: CharacterRoleWeight }[] = [
+  { weight: 'main' },
+  { weight: 'secondary' },
+  { weight: 'npc' },
+  { weight: 'extra' },
 ]
 
 export default function InventoryPanel({ project }: Props) {
@@ -94,7 +94,7 @@ export default function InventoryPanel({ project }: Props) {
 
   // 角色列表按 roleWeight 分组
   const groupedCharacters = useMemo(() => {
-    const result: { weight: CharacterRoleWeight; label: string; chars: typeof characters }[] = []
+    const result: { weight: CharacterRoleWeight; chars: typeof characters }[] = []
     for (const group of ROLE_WEIGHT_GROUPS) {
       const chars = characters.filter(c => c.roleWeight === group.weight)
       if (chars.length > 0) result.push({ ...group, chars })

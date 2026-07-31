@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Sparkles, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n/i18n'
 import { useWorldviewStore } from '../../stores/worldview'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIConfigStore } from '../../stores/ai-config'
@@ -259,8 +260,10 @@ function TextFieldEditor({
         userPromptTemplate: userOverride ?? undefined,
       } : undefined,
     }
+    const zhT = i18n.getFixedT('zh-CN', 'worlds')
+    const fieldLabelZh = field.key === 'origin' ? zhT('origin.fieldOrigin') : field.key === 'power' ? zhT('origin.fieldPower') : zhT('origin.fieldDivine')
     const messages = buildWorldviewPrompt(
-      field.label, project.name, project.genre || '', fullContext, hint, opts, value, mode,
+      fieldLabelZh, project.name, project.genre || '', fullContext, hint, opts, value, mode,
     )
     ai.start(messages, undefined, { category: 'worldview.dimension', projectId: project.id! })
   }
@@ -355,8 +358,9 @@ function DivineFieldEditor({
         userPromptTemplate: userOverride ?? undefined,
       } : undefined,
     }
+    const zhT = i18n.getFixedT('zh-CN', 'worlds')
     const messages = buildWorldviewPrompt(
-      '神明与信仰设定',
+      zhT('origin.fieldDivine'),
       project.name, project.genre || '', fullContext,
       hint || '请设计完整的信仰体系，包含：1）主流信仰与层级 2）主要神明/信仰名号与职司 3）规则、风俗与禁忌。分三个小节输出。',
       opts,
@@ -422,9 +426,9 @@ function DivineFieldEditor({
     <div className="space-y-4">
       <div>
         <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-          <span>{field.icon}</span> {field.label}
+          <span>{field.icon}</span> {t(field.key === 'origin' ? 'origin.fieldOrigin' : field.key === 'power' ? 'origin.fieldPower' : 'origin.fieldDivine')}
         </h2>
-        <p className="text-xs text-text-muted mt-0.5">{field.desc}</p>
+        <p className="text-xs text-text-muted mt-0.5">{t(field.desc)}</p>
       </div>
 
       {/* 存在神明/信仰 checkbox */}

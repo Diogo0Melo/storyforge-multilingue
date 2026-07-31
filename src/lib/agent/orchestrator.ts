@@ -1,4 +1,4 @@
-import JSON5 from 'json5'
+﻿import JSON5 from 'json5'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { AGENT_ROLE_CATEGORIES } from '../ai/task-routing'
 import { useChapterStore } from '../../stores/chapter'
@@ -736,7 +736,7 @@ export async function adoptMasterCandidate(input: {
   } else if (input.payload.agentId === 'character') {
     const base = input.payload.baseSnapshot as CharacterRosterSnapshot
     const current = await currentRosterSnapshot(input.projectId, input.worldGroupId)
-    if (base.serialized !== current.serialized) throw new Error('角色主档已变化，请重新生成。')
+    if (base.serialized !== current.serialized) throw new Error(i18n.t('errors:agent.rosterChanged'))
     const candidate = parseCharacterCandidateDraft(input.draft)
     const normalized = candidate.name.normalize('NFKC').trim().toLocaleLowerCase('zh-CN')
     if (current.visibleNames.includes(normalized)) throw new Error(`当前世界已存在角色“${candidate.name}”。`)

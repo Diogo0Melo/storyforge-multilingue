@@ -4,33 +4,28 @@ import type {
   PromptWorkflowGraphEdge,
   PromptWorkflowStep,
 } from '../types/workflow'
+import { WORKFLOW_ERRORS, type WorkflowErrorCode, type WorkflowValidationError } from './error-codes'
+
+export type { WorkflowValidationError } from './error-codes'
 
 export const WORKFLOW_GRAPH_VERSION = 1 as const
 export const WORKFLOW_NODE_WIDTH = 240
 export const WORKFLOW_NODE_HEIGHT = 164
 export const WORKFLOW_CANVAS_PADDING = 48
 
-export interface WorkflowGraphIssue {
-  code:
-    | 'empty-step-id'
-    | 'duplicate-step-id'
-    | 'unsupported-version'
-    | 'missing-node'
-    | 'unknown-node'
-    | 'duplicate-node'
-    | 'invalid-position'
-    | 'empty-edge-id'
-    | 'duplicate-edge-id'
-    | 'unknown-edge-source'
-    | 'unknown-edge-target'
-    | 'self-edge'
-    | 'empty-target-variable'
-    | 'invalid-target-variable'
-    | 'duplicate-edge'
-    | 'cycle'
-  message: string
-  stepId?: string
-  edgeId?: string
+export interface WorkflowGraphIssue extends WorkflowValidationError {
+  code: WorkflowErrorCode
+}
+
+/**
+ * Error thrown when workflow compilation fails.
+ * Contains structured issues that can be translated by callers.
+ */
+export class WorkflowCompilationError extends Error {
+  constructor(public readonly issues: WorkflowGraphIssue[]) {
+    super('Workflow compilation failed')
+    this.name = 'WorkflowCompilationError'
+  }
 }
 
 export interface CompiledWorkflowGraph {
@@ -98,14 +93,13 @@ export function validateWorkflowGraph(workflow: PromptWorkflow): WorkflowGraphIs
 
   for (const step of workflow.steps) {
     if (!step.stepId.trim()) {
-      issues.push({ code: 'empty-step-id', message: '工作流包含空 stepId。' })
+      issues.push({ code: WORKFLOW_ERRORS.EMPTY_STEP_ID })
       continue
     }
     if (stepIds.has(step.stepId)) {
       issues.push({
-        code: 'duplicate-step-id',
-        stepId: step.stepId,
-        message: `步骤 ID 重复：${step.stepId}`,
+        code: WORKFLOW_ERRORS.DUPLICATE_STEP_ID,
+        params: { stepId: step.stepId },
       })
     }
     stepIds.add(step.stepId)
@@ -113,8 +107,8 @@ export function validateWorkflowGraph(workflow: PromptWorkflow): WorkflowGraphIs
 
   if (graph.version !== WORKFLOW_GRAPH_VERSION) {
     issues.push({
-      code: 'unsupported-version',
-      message: `不支持工作流图版本：${String(graph.version)}`,
+      code: WORKFLOW_ERRORS.UNSUPPORTED_VERSION,
+      params: { version: String(graph.version) },
     })
   }
 
@@ -122,33 +116,29 @@ export function validateWorkflowGraph(workflow: PromptWorkflow): WorkflowGraphIs
   for (const node of graph.nodes) {
     if (!stepIds.has(node.stepId)) {
       issues.push({
-        code: 'unknown-node',
-        stepId: node.stepId,
-        message: `画布节点引用了不存在的步骤：${node.stepId}`,
+        code: WORKFLOW_ERRORS.UNKNOWN_NODE,
+        params: { stepId: node.stepId },
       })
     }
     if (graphNodeIds.has(node.stepId)) {
       issues.push({
-        code: 'duplicate-node',
-        stepId: node.stepId,
-        message: `画布节点重复：${node.stepId}`,
+        code: WORKFLOW_ERRORS.DUPLICATE_NODE,
+        params: { stepId: node.stepId },
       })
     }
     graphNodeIds.add(node.stepId)
     if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
       issues.push({
-        code: 'invalid-position',
-        stepId: node.stepId,
-        message: `节点坐标无效：${node.stepId}`,
+        code: WORKFLOW_ERRORS.INVALID_POSITION,
+        params: { stepId: node.stepId },
       })
     }
   }
   for (const stepId of stepIds) {
     if (!graphNodeIds.has(stepId)) {
       issues.push({
-        code: 'missing-node',
-        stepId,
-        message: `步骤缺少画布节点：${stepId}`,
+        code: WORKFLOW_ERRORS.MISSING_NODE,
+        params: { stepId },
       })
     }
   }
@@ -160,12 +150,11 @@ export function validateWorkflowGraph(workflow: PromptWorkflow): WorkflowGraphIs
 
   for (const edge of graph.edges) {
     if (!edge.edgeId.trim()) {
-      issues.push({ code: 'empty-edge-id', edgeId: edge.edgeId, message: '工作流包含空 edgeId。' })
+      issues.push({ code: WORKFLOW_ERRORS.EMPTY_EDGE_ID })
     } else if (edgeIds.has(edge.edgeId)) {
       issues.push({
-        code: 'duplicate-edge-id',
-        edgeId: edge.edgeId,
-        message: `连线 ID 重复：${edge.edgeId}`,
+        code: WORKFLOW_ERRORS.DUPLICATE_EDGE_ID,
+        params: { edgeId: edge.edgeId },
       })
     }
     edgeIds.add(edge.edgeId)
@@ -174,47 +163,41 @@ export function validateWorkflowGraph(workflow: PromptWorkflow): WorkflowGraphIs
     const hasTarget = stepIds.has(edge.targetStepId)
     if (!hasSource) {
       issues.push({
-        code: 'unknown-edge-source',
-        edgeId: edge.edgeId,
-        message: `连线来源不存在：${edge.sourceStepId}`,
+        code: WORKFLOW_ERRORS.UNKNOWN_EDGE_SOURCE,
+        params: { sourceStepId: edge.sourceStepId },
       })
     }
     if (!hasTarget) {
       issues.push({
-        code: 'unknown-edge-target',
-        edgeId: edge.edgeId,
-        message: `连线目标不存在：${edge.targetStepId}`,
+        code: WORKFLOW_ERRORS.UNKNOWN_EDGE_TARGET,
+        params: { targetStepId: edge.targetStepId },
       })
     }
     if (edge.sourceStepId === edge.targetStepId) {
       issues.push({
-        code: 'self-edge',
-        edgeId: edge.edgeId,
-        message: `节点不能连接自己：${edge.sourceStepId}`,
+        code: WORKFLOW_ERRORS.SELF_EDGE,
+        params: { stepId: edge.sourceStepId },
       })
     }
 
     const targetVariable = edge.targetVariable.trim()
     if (!targetVariable) {
       issues.push({
-        code: 'empty-target-variable',
-        edgeId: edge.edgeId,
-        message: '连线必须声明目标变量。',
+        code: WORKFLOW_ERRORS.EMPTY_TARGET_VARIABLE,
+        params: { edgeId: edge.edgeId },
       })
     } else if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(targetVariable)) {
       issues.push({
-        code: 'invalid-target-variable',
-        edgeId: edge.edgeId,
-        message: `目标变量格式无效：${edge.targetVariable}`,
+        code: WORKFLOW_ERRORS.INVALID_TARGET_VARIABLE,
+        params: { variable: edge.targetVariable },
       })
     }
 
     const edgeKey = `${edge.sourceStepId}\u0000${edge.targetStepId}\u0000${targetVariable}`
     if (edgeKeys.has(edgeKey)) {
       issues.push({
-        code: 'duplicate-edge',
-        edgeId: edge.edgeId,
-        message: `重复连线：${edge.sourceStepId} → ${edge.targetStepId}.${targetVariable}`,
+        code: WORKFLOW_ERRORS.DUPLICATE_EDGE,
+        params: { sourceStepId: edge.sourceStepId, targetStepId: edge.targetStepId, variable: targetVariable },
       })
     }
     edgeKeys.add(edgeKey)
@@ -240,7 +223,7 @@ export function validateWorkflowGraph(workflow: PromptWorkflow): WorkflowGraphIs
   }
   for (const stepId of stepIds) visit(stepId)
   if (cycleFound) {
-    issues.push({ code: 'cycle', message: '工作流图包含环路，已阻止执行。' })
+    issues.push({ code: WORKFLOW_ERRORS.CYCLE_DETECTED })
   }
 
   return issues
@@ -257,7 +240,7 @@ export function compileWorkflowGraph(workflow: PromptWorkflow): CompiledWorkflow
   const graph = workflowGraphFor(workflow)
   const issues = validateWorkflowGraph({ ...workflow, graph })
   if (issues.length) {
-    throw new Error(issues.map(issue => issue.message).join('\n'))
+    throw new WorkflowCompilationError(issues)
   }
 
   const authorOrder = new Map(workflow.steps.map((step, index) => [step.stepId, index]))
@@ -293,7 +276,7 @@ export function compileWorkflowGraph(workflow: PromptWorkflow): CompiledWorkflow
     }
   }
   if (orderedIds.length !== workflow.steps.length) {
-    throw new Error('工作流图无法完成拓扑排序。')
+    throw new WorkflowCompilationError([{ code: WORKFLOW_ERRORS.TOPOLOGICAL_SORT_FAILED }])
   }
 
   return {

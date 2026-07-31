@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../../i18n/i18n'
 import { Play, Square } from 'lucide-react'
 import { usePromptStore } from '../../../stores/prompt'
 import { useWorldviewStore } from '../../../stores/worldview'
@@ -32,6 +33,7 @@ import {
   compileWorkflowGraph,
   formatWorkflowUpstreamContext,
   groupWorkflowInputsByVariable,
+  WorkflowCompilationError,
 } from '../../../lib/workflow/graph'
 
 export { WorkflowStepCard as StepCard } from './WorkflowStepCard'
@@ -76,6 +78,13 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
     try {
       return { compiled: compileWorkflowGraph(workflow), error: null as string | null }
     } catch (error) {
+      if (error instanceof WorkflowCompilationError) {
+        const messages = error.issues.map(issue => i18n.t(`errors:${issue.code}`, issue.params))
+        return {
+          compiled: null,
+          error: messages.join('；'),
+        }
+      }
       return {
         compiled: null,
         error: error instanceof Error ? error.message : String(error),

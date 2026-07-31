@@ -108,6 +108,57 @@
     "sceneGoalPlaceholder": "Objetivo da cena",
     "title": "Batidas emocionais"
   },
+  "entityType": {
+    "character": "Personagem",
+    "location": "Local",
+    "codexEntry": "Verbete",
+    "importantLocation": "Local importante"
+  },
+  "worldGroup": {
+    "primaryOrUngrouped": "Mundo principal/Sem grupo",
+    "numbered": "Grupo de mundo #{{id}}"
+  },
+  "category": {
+    "numbered": "Categoria #{{id}}"
+  },
+  "structuredType": {
+    "characters": "Registro de personagens",
+    "importantLocations": "Registro de locais",
+    "codexEntries": "Registro de verbetes",
+    "stateCards": "Cartões de estado",
+    "temporalFacts": "Nomes de fatos temporais",
+    "knowledgeLedger": "Livro-razão de conhecimento",
+    "cultivationProgress": "Progresso de cultivo",
+    "itemLedger": "Portadores de itens"
+  },
+  "suffix": {
+    "record": "registro",
+    "snapshot": "Snapshot #{{id}}"
+  },
+  "manualReview": {
+    "containsOldName": "Campo descritivo contém nome antigo",
+    "chapterBody": "Texto do capítulo",
+    "nonCanonicalChapter": "Capítulos não canônicos/duplicados não são modificados automaticamente",
+    "chapterNumbered": "Capítulo #{{id}}",
+    "outline": "Estrutura",
+    "outlineNodeNumbered": "Nó de estrutura #{{id}}",
+    "outlineContainsOldName": "Título ou resumo contém nome antigo",
+    "detailedOutline": "Estrutura detalhada",
+    "detailedOutlineContainsOldName": "Texto livre ou conteúdo de cena contém nome antigo",
+    "storyCore": "Núcleo da história",
+    "recordNumbered": "Registro #{{id}}",
+    "storyCoreContainsOldName": "Trama principal, conceito ou outro texto livre contém nome antigo",
+    "factLedger": "Livro-razão de fatos",
+    "factNumbered": "Fato #{{id}}",
+    "factContainsOldName": "Valor do fato ou citação de evidência contém nome antigo",
+    "stateCardContent": "Conteúdo do cartão de estado",
+    "stateCardContainsOldName": "Valor do campo de estado contém nome antigo",
+    "stateCardAutoUpdate": "Nome da entidade no cartão de estado do mesmo tipo «{{name}}» foi atualizado automaticamente"
+  },
+  "warning": {
+    "manualReviewRequired": "Mais {{count}} textos livres ou registros não padronizados precisam de revisão manual, não serão reescritos automaticamente",
+    "snapshotsPreserved": "Snapshots históricos como designs de personagens mantêm o nome da época, não são reescritos com esta renomeação"
+  },
   "entityRename": {
     "chapterHitCount": "{{title}} · {{count}} lugares",
     "chapterHitCount_one": "{{title}} · {{count}} lugar",

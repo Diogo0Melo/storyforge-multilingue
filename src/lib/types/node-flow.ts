@@ -1,3 +1,5 @@
+import { WORKFLOW_ERRORS, type WorkflowValidationError } from '../workflow/error-codes'
+
 export const NODE_FLOW_KINDS = [
   'input.text',
   'source.context',
@@ -78,11 +80,22 @@ export const EMPTY_NODE_FLOW_GRAPH: NodeFlowGraph = {
   viewport: { x: 0, y: 0, zoom: 1 },
 }
 
+/**
+ * Error thrown when node flow graph validation fails.
+ * Contains structured error that can be translated by callers.
+ */
+export class NodeFlowGraphError extends Error {
+  constructor(public readonly error: WorkflowValidationError) {
+    super('Node flow graph validation failed')
+    this.name = 'NodeFlowGraphError'
+  }
+}
+
 export function parseNodeFlowGraph(value: string | null | undefined): NodeFlowGraph {
   if (!value?.trim()) return structuredClone(EMPTY_NODE_FLOW_GRAPH)
   const parsed = JSON.parse(value) as Partial<NodeFlowGraph>
   if (parsed.version !== 1 || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.edges)) {
-    throw new Error('节点图不是受支持的 version=1 结构。')
+    throw new NodeFlowGraphError({ code: WORKFLOW_ERRORS.UNSUPPORTED_VERSION })
   }
   return {
     version: 1,

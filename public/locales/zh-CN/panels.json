@@ -1034,6 +1034,8 @@
     "inputSlot": "输入 {{index}}",
     "inspectorEmpty": "选择节点后，可在这里编辑来源、字段范围、动态输入槽、创作指令和输出目标。",
     "loadingNodeGraphs": "加载节点图…",
+    "loadFailed": "加载节点图失败：{{error}}",
+    "loadFailed": "加载节点图失败：{{error}}",
     "maxOutputTokens": "最大输出 Tokens",
     "newNodeGraph": "新建节点图",
     "nodeGraph": "节点图",

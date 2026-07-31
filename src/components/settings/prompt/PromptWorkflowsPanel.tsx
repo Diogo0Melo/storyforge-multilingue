@@ -4,6 +4,7 @@ import {
   Upload, Download, Plus, Edit3,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../../i18n/i18n'
 import { useWorkflowStore } from '../../../stores/workflow'
 import type { Project } from '../../../lib/types'
 import WorkflowEditor from './WorkflowEditor'
@@ -13,7 +14,9 @@ import { useToast } from '../../shared/Toast'
 import {
   parseImportedWorkflows,
   serializeWorkflows,
+  WorkflowImportExportError,
 } from '../../../lib/workflow/import-export'
+import { WorkflowCompilationError } from '../../../lib/workflow/graph'
 
 interface Props {
   project?: Project
@@ -64,7 +67,16 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
       await reloadWorkflows()
       toast.success(t('prompt.workflow.importSuccess', { count }))
     } catch (err) {
-      toast.error(t('prompt.workflow.importFailed', { error: err instanceof Error ? err.message : String(err) }))
+      let errorMessage: string
+      if (err instanceof WorkflowImportExportError) {
+        errorMessage = i18n.t(`errors:${err.error.code}`, err.error.params)
+      } else if (err instanceof WorkflowCompilationError) {
+        const messages = err.issues.map(issue => i18n.t(`errors:${issue.code}`, issue.params))
+        errorMessage = messages.join('；')
+      } else {
+        errorMessage = err instanceof Error ? err.message : String(err)
+      }
+      toast.error(t('prompt.workflow.importFailed', { error: errorMessage }))
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
