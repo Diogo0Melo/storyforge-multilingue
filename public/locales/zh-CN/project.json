@@ -117,7 +117,10 @@
       "synopsisLabel": "简介",
       "synopsisPlaceholder": "一句话描述你的故事…",
       "targetWords": "目标字数：{{count}} 万字",
-      "title": "新建项目"
+      "title": "新建项目",
+      "range10Wan": "10 万",
+      "range100Wan": "100 万",
+      "range300Wan": "300 万"
     },
     "myBooks": "{{year}}年 · 我的书稿",
     "newProject": "新建项目",

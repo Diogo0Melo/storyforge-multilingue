@@ -80,7 +80,9 @@
   "workspace": {
     "copilotLoading": "Carregando copiloto de IA…",
     "loading": "Carregando...",
-    "panelLoading": "Carregando painel…"
+    "noWorldSelected": "Nenhum mundo selecionado",
+    "panelLoading": "Carregando painel…",
+    "singleWorld": "Mundo único"
   },
   "worldview": {
     "humanity": "Ambiente Humano",

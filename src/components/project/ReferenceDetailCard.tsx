@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 
 /** Simplified t() signature — avoids TS2589 type recursion with large project.json */
 type SimpleT = (key: string, options?: Record<string, unknown>) => string
+import type { ProjectKeys } from '../../i18n/generated-resources'
 import {
   BookMarked,
   ChevronDown,
@@ -85,7 +86,7 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 text-xs mb-0.5">
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${config.color}`}>{config.label}</span>
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${config.color}`}>{t(config.labelKey as ProjectKeys)}</span>
             {data && (
               <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-400/30 text-blue-400 bg-blue-400/10">{t('refDetail.imported')}</span>
             )}

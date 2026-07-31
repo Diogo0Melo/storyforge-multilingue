@@ -685,7 +685,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     // Phase 21.3: 计算上下文预算
     const segments = analyzeContextSegments([
       { label: 'System Prompt', content: messages.find(m => m.role === 'system')?.content || '', layer: 'L0' },
-      { label: '章节大纲', content: outlineNode.summary || '', layer: 'L1' },
+      { label: t('floating.chapterOutlineContext'), content: outlineNode.summary || '', layer: 'L1' },
       ...assembledSegments,
       { label: 'User Prompt', content: messages.find(m => m.role === 'user')?.content || '', layer: 'L1' },
     ])

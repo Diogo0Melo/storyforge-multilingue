@@ -2,6 +2,8 @@ import type { Character } from '../../lib/types'
 import { dimensionsByGroup, type CharacterDimensionKey, type CharacterDimensionSpec } from '../../lib/character/character-dimensions'
 import { CTextarea } from '../shared/CompositionInput'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import type { CharactersKeys } from '../../i18n/generated-resources'
 
 interface Props {
   character: Character
@@ -17,6 +19,7 @@ interface DimensionFieldProps {
 }
 
 function CharacterDimensionField({ dimension, value, onCommit }: DimensionFieldProps) {
+  const { t } = useTranslation('characters')
   const [draft, setDraft] = useState(value)
   const draftRef = useRef(value)
   const dirtyRef = useRef(false)
@@ -68,7 +71,7 @@ function CharacterDimensionField({ dimension, value, onCommit }: DimensionFieldP
         timerRef.current = setTimeout(flushDraft, 400)
       }}
       onBlur={flushDraft}
-      placeholder={`${dimension.label}…`}
+      placeholder={`${dimension.labelKey ? t(dimension.labelKey as CharactersKeys, dimension.label) : dimension.label}…`}
       rows={dimension.rows}
       className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
     />
@@ -81,6 +84,7 @@ function CharacterDimensionField({ dimension, value, onCommit }: DimensionFieldP
  * 加一个维度只改 CHARACTER_DIMENSIONS + FIELD_REGISTRY,这里自动出现。
  */
 export default function CharacterDimensionFields({ character, onChange, exclude = [] }: Props) {
+  const { t } = useTranslation('characters')
   const skip = new Set<CharacterDimensionKey>(exclude)
 
   return (
@@ -88,13 +92,14 @@ export default function CharacterDimensionFields({ character, onChange, exclude 
       {dimensionsByGroup().map(({ group, dims }) => {
         const shown = dims.filter(d => !skip.has(d.key))
         if (!shown.length) return null
+        const groupLabel = dims[0]?.groupKey ? t(dims[0].groupKey as CharactersKeys, group) : group
         return (
           <div key={group}>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-text-muted/70">{group}</div>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-text-muted/70">{groupLabel as React.ReactNode}</div>
             <div className="space-y-1.5">
               {shown.map(d => (
                 <div key={d.key} className="flex gap-2">
-                  <span className="w-20 flex-shrink-0 pt-1.5 text-xs text-text-muted">{d.label}</span>
+                  <span className="w-20 flex-shrink-0 pt-1.5 text-xs text-text-muted">{d.labelKey ? t(d.labelKey as CharactersKeys, d.label) : d.label}</span>
                   <CharacterDimensionField
                     key={`${character.id ?? 'draft'}:${d.key}`}
                     dimension={d}

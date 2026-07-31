@@ -1,6 +1,7 @@
 import { dimensionsByGroup, defaultDimensionsForWeight, CHARACTER_DIMENSIONS, type CharacterDimensionKey } from '../../lib/character/character-dimensions'
 import type { CharacterRoleWeight } from '../../lib/types/character'
 import { useTranslation } from 'react-i18next'
+import type { CharactersKeys } from '../../i18n/generated-resources'
 
 type PresetKey = 'picker.presetMain' | 'picker.presetSecondary' | 'picker.presetNPC' | 'picker.presetExtra'
 
@@ -49,12 +50,12 @@ export default function CharacterDimensionPicker({ selected, onChange }: Props) 
       <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
         {dimensionsByGroup().map(({ group, dims }) => (
           <div key={group}>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-text-muted/70">{group}</div>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-text-muted/70">{dims[0]?.groupKey ? t(dims[0].groupKey as CharactersKeys, group) : group}</div>
             <div className="grid grid-cols-2 gap-x-3 gap-y-1">
               {dims.map(d => (
                 <label key={d.key} className="flex items-center gap-1.5 text-xs text-text-secondary cursor-pointer">
                   <input type="checkbox" checked={selected.has(d.key)} onChange={() => toggle(d.key)} className="accent-accent" />
-                  {d.label}
+                  {d.labelKey ? t(d.labelKey as CharactersKeys, d.label) : d.label}
                 </label>
               ))}
             </div>

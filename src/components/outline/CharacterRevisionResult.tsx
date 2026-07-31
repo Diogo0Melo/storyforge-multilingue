@@ -142,13 +142,13 @@ export default function CharacterRevisionResult({
                       )}
                       <div className="mt-1 grid gap-1 text-xs md:grid-cols-2">
                         <p className="rounded bg-red-500/5 p-2 text-text-muted whitespace-pre-wrap">
-                          原：{patch.currentSummary || '无摘要'}
+                          {t('revision.original', { text: patch.currentSummary || t('revision.noSummary') })}
                         </p>
                         <p className="rounded bg-green-500/5 p-2 text-text-primary whitespace-pre-wrap">
-                          新：{patch.proposedSummary || '无摘要'}
+                          {t('revision.proposed', { text: patch.proposedSummary || t('revision.noSummary') })}
                         </p>
                       </div>
-                      {patch.reason && <p className="mt-1 text-[11px] text-text-muted">原因：{patch.reason}</p>}
+                      {patch.reason && <p className="mt-1 text-[11px] text-text-muted">{t('revision.reasonPrefix', { reason: patch.reason })}</p>}
                     </div>
                   </div>
                 </label>

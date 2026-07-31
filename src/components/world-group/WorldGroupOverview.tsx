@@ -255,7 +255,7 @@ export default function WorldGroupOverview({ project }: Props) {
 
                   {/* 预计章节 */}
                   {g.plannedChapterCount ? (
-                    <span className="text-xs text-text-muted shrink-0">{g.plannedChapterCount} 章</span>
+                    <span className="text-xs text-text-muted shrink-0">{t('worldGroup.chapters', { count: g.plannedChapterCount })}</span>
                   ) : null}
 
                   {/* 操作按钮 */}

@@ -184,7 +184,8 @@
     "wholeWord": "全字匹配"
   },
   "floating": {
-    "cancel": "取消",
+  "cancel": "取消",
+  "chapterOutlineContext": "章节大纲",
     "check": "查漏",
     "checkDesc": "检查问题",
     "condense": "缩写",

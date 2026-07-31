@@ -648,6 +648,10 @@
     "title": "主题"
   },
   "title": "设置",
+  "headerTitle": "设置",
+  "headerDescription": "配置 AI 服务商、模型和本地偏好。",
+  "backToHome": "返回首页",
+  "loading": "设置加载中…",
   "usage": {
     "callCount": "（{{count}} 次调用）",
     "category": "消耗类型",

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { Library, Upload } from 'lucide-react'
 import { useReferenceStore } from '../../stores/reference'
 import type { Project, Reference, ReferenceType } from '../../lib/types'
+import type { ProjectKeys } from '../../i18n/generated-resources'
 import { useDialog } from '../shared/Dialog'
 import ReferenceDetailCard from './ReferenceDetailCard'
 import {
@@ -113,7 +114,7 @@ export default function ReferencePanel({ project }: Props) {
                   <p className={`text-sm font-medium truncate ${active ? 'text-accent' : 'text-text-primary'}`}>{ref.title}</p>
                   <div className="flex items-center gap-1 mt-0.5">
                     <span className={`text-[10px] px-1 py-0.5 rounded border ${cfg.color}`}>
-                      {cfg.label}
+                      {t(cfg.labelKey as ProjectKeys)}
                     </span>
                     {hasImported && (
                       <span className="text-[10px] px-1 py-0.5 rounded border border-blue-400/30 text-blue-400 bg-blue-400/10">

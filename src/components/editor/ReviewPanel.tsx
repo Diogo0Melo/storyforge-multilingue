@@ -304,8 +304,9 @@ export default function ReviewPanel(props: Props) {
 }
 
 function ConsistencyResultView({ result }: { result: ConsistencyAuditResult }) {
+  const { t } = useTranslation('editor')
   if (!result.findings.length) {
-    return <p className="text-sm text-success">未发现有证据支持的一致性问题。</p>
+    return <p className="text-sm text-success">{t('review.noConsistencyIssues')}</p>
   }
   return (
     <div className="space-y-3">
@@ -316,18 +317,18 @@ function ConsistencyResultView({ result }: { result: ConsistencyAuditResult }) {
               finding.severity === 'hard' ? 'text-error'
                 : finding.severity === 'risk' ? 'text-warning' : 'text-text-muted'
             }>
-              {finding.severity === 'hard' ? '硬冲突' : finding.severity === 'risk' ? '软风险' : '信息不足'}
+              {finding.severity === 'hard' ? t('review.hardConflict') : finding.severity === 'risk' ? t('review.softRisk') : t('review.insufficientInfo')}
             </span>
             <span className="text-text-muted">{finding.category}</span>
           </div>
           <p className="mt-1 text-xs text-text-primary">{finding.reason}</p>
-          <p className="mt-1 text-[11px] text-text-muted border-l-2 border-border pl-2">正文：“{finding.quote}”</p>
+          <p className="mt-1 text-[11px] text-text-muted border-l-2 border-border pl-2">{t('review.textQuote', { quote: finding.quote })}</p>
           {finding.evidence.map((evidence, evidenceIndex) => (
             <p key={evidenceIndex} className="mt-1 text-[11px] text-accent/80">
-              证据 {evidence.sourceType}#{evidence.sourceId}：“{evidence.quote}”
+              {t('review.evidenceQuote', { type: evidence.sourceType, id: evidence.sourceId, quote: evidence.quote })}
             </p>
           ))}
-          {finding.suggestion && <p className="mt-1 text-xs text-accent">建议：{finding.suggestion}</p>}
+          {finding.suggestion && <p className="mt-1 text-xs text-accent">{t('review.suggestion', { text: finding.suggestion })}</p>}
         </div>
       ))}
     </div>

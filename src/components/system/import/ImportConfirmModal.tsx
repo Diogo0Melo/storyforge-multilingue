@@ -272,8 +272,8 @@ export default function ImportConfirmModal({
               {showExample && (
                 <div className="mt-1 text-[10px] leading-relaxed bg-bg-surface rounded p-2 space-y-1.5 border border-border">
                   <div className="text-text-muted">{t('confirm.exampleIntro')}</div>
-                  <div><span className="text-green-400 font-medium">{t('confirm.shallowQuick')}</span>：用"天才陨落"制造反差钩子，黄金三章走完"被退婚→发现戒指有老爷爷→立誓打脸"的闭环，憋屈感拉满又立刻给希望。</div>
-                  <div><span className="text-red-400 font-medium">{t('confirm.deepTemplate')}</span>：① 钩子=高起点骤跌（"斗之力三段"钉耻辱柱）；② 情绪锚点=退婚戏+金句"莫欺少年穷"；③ 金手指先断后给、踩在最绝望处；④ 三章一个压抑→释放周期；⑤ 可复用套路：落差要狠、锚点要有金句、外挂别太早给。<span className="text-text-muted">（+原文引用佐证）</span></div>
+                  <div><span className="text-green-400 font-medium">{t('confirm.shallowQuick')}</span>：{t('confirm.shallowQuickExample')}</div>
+                  <div><span className="text-red-400 font-medium">{t('confirm.deepTemplate')}</span>：{t('confirm.deepTemplateExample')}<span className="text-text-muted">（+原文引用佐证）</span></div>
                 </div>
               )}
             </div>

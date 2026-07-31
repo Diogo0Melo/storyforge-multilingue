@@ -127,7 +127,10 @@
       "targetWords": "Meta de palavras: {{count}} mil",
       "targetWords_one": "Meta de palavras: {{count}} mil",
       "targetWords_other": "Meta de palavras: {{count}} mil",
-      "title": "Novo projeto"
+      "title": "Novo projeto",
+      "range10Wan": "100 mil",
+      "range100Wan": "1 milhão",
+      "range300Wan": "3 milhões"
     },
     "myBooks": "{{year}} · Meus manuscritos",
     "newProject": "Novo projeto",

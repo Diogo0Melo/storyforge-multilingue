@@ -259,8 +259,8 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
         </div>
 
         <div className="rounded-lg border border-border bg-bg-base p-3 text-[11px] leading-5 text-text-muted">
-          <p>物品不进入智能改名：当前物品以“持有人 + 名称”聚合，没有独立稳定 ID。贸然全局改名可能合并不同角色的同名物品。</p>
-          <p>大纲、档案描述、事实引文等自由文本只列入复核，不会在缺少语义判断时自动改写。</p>
+          <p>{t('entityRename.itemWarning1')}</p>
+          <p>{t('entityRename.itemWarning2')}</p>
         </div>
 
         {preview && (

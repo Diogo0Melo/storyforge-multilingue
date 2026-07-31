@@ -1,4 +1,4 @@
-﻿{
+{
   "cancel": "Cancelar",
   "chapter": {
     "aiAdvancedOptions": "Opções avançadas de geração IA",
@@ -208,7 +208,8 @@
     "wholeWord": "Palavra inteira"
   },
   "floating": {
-    "cancel": "Cancelar",
+  "cancel": "Cancelar",
+  "chapterOutlineContext": "Esboço do Capítulo",
     "check": "Verificar",
     "checkDesc": "Verificar problemas",
     "condense": "Resumir",

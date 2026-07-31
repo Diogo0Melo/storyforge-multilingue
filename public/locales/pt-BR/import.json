@@ -81,6 +81,8 @@
     "shallowQuick": "Superficial · Passada rápida",
     "shallowQuickCost": "Gratuito junto com a análise (¥0 extra)",
     "shallowQuickDesc": "50–100 caracteres por dimensão, leitura geral",
+    "shallowQuickExample": "Use uma \"queda do gênio\" para criar um gancho de contraste. Nos três capítulos de ouro, complete o ciclo \"rejeitado no noivado → descobre que o anel tem um mestre ancião → promete dar a cara de volta\", maximizando a frustração e dando esperança imediatamente.",
+    "deepTemplateExample": "① Gancho = queda abrupta de alto nível (\"Três segmentos de Poder de Luta\" no pilar da vergonha); ② Âncora emocional = cena do noivado quebrado + frase de efeito \"Não zombe do jovem pobre\"; ③ Benefício dourado primeiro negado depois dado, pisando no ponto mais desesperador; ④ Um ciclo de opressão → liberação a cada três capítulos; ⑤ Padrões reutilizáveis: contraste deve ser cruel, âncora deve ter frase de efeito, não dê o poder cedo demais.",
     "showExample": "Ver exemplo: superficial vs. profunda",
     "structureDetected": "📖 Estrutura do documento detectada:",
     "targetWorld": "Mundo alvo",

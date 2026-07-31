@@ -1,8 +1,15 @@
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { describe, expect, it, vi } from 'vitest'
-import CharacterDimensionFields from '../../src/components/character/CharacterDimensionFields'
 import type { Character } from '../../src/lib/types'
+
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, defaultValue?: string) => defaultValue ?? key,
+  }),
+}))
+
+import CharacterDimensionFields from '../../src/components/character/CharacterDimensionFields'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 

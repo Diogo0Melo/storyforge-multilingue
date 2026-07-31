@@ -80,7 +80,9 @@
   "workspace": {
     "copilotLoading": "AI 对话副驾加载中…",
     "loading": "加载中...",
-    "panelLoading": "面板加载中…"
+    "noWorldSelected": "未选择世界",
+    "panelLoading": "面板加载中…",
+    "singleWorld": "单世界"
   },
   "worldview": {
     "humanity": "人文环境",

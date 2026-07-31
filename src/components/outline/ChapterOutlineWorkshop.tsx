@@ -376,7 +376,7 @@ export default function ChapterOutlineWorkshop({
       ) : error && !evidence ? (
         <div className="mt-4 flex items-start justify-between gap-3 rounded border border-error/30 bg-error/10 p-3 text-xs text-error">
           <span>{error}</span>
-          <button onClick={() => { void initialize() }} className="shrink-0 underline">重试</button>
+          <button onClick={() => { void initialize() }} className="shrink-0 underline">{t('workshop.retry')}</button>
         </div>
       ) : evidence ? (
         <div className="mt-4 space-y-3">

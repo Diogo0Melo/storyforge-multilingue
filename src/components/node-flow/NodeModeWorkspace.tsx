@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import i18n from '../../i18n/i18n'
 import {
   Check,
   ChevronDown,
@@ -67,7 +68,7 @@ function defaultNode(kind: NodeFlowKind, index: number): NodeFlowNode {
   }
   const slot = {
     id: nanoid(),
-    label: '创作材料',
+    label: i18n.t('panels:nodeFlow.creationMaterial') as string,
     type: 'any' as const,
     required: kind !== 'transform.compose',
     priority: 100,
@@ -87,13 +88,13 @@ function defaultNode(kind: NodeFlowKind, index: number): NodeFlowNode {
     return {
       ...base,
       config: { requiredTerms: '', forbiddenTerms: '' },
-      inputSlots: [{ ...slot, label: '待校验内容', type: 'candidate' }],
+      inputSlots: [{ ...slot,   label: i18n.t('panels:nodeFlow.pendingSave') as string, type: 'candidate' }],
     }
   }
   return {
     ...base,
     config: { adoptTarget: 'none' },
-    inputSlots: [{ ...slot, label: '最终内容' }],
+    inputSlots: [{ ...slot,   label: i18n.t('panels:nodeFlow.finalContent') as string }],
   }
 }
 

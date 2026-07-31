@@ -687,6 +687,10 @@
     "title": "Tema"
   },
   "title": "Configurações",
+  "headerTitle": "Configurações",
+  "headerDescription": "Configure provedores de IA, modelos e preferências locais.",
+  "backToHome": "Voltar ao início",
+  "loading": "Carregando configurações…",
   "usage": {
     "callCount": "({{count}} chamadas)",
     "callCount_one": "usage.callCount",

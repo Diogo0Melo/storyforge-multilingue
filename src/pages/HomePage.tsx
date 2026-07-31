@@ -466,7 +466,7 @@ export default function HomePage() {
                   className="w-full accent-accent"
                 />
                 <div className="flex justify-between text-[10px] text-text-muted mt-0.5">
-                  <span>10万</span><span>100万</span><span>300万</span>
+                  <span>{t('home.modal.range10Wan')}</span><span>{t('home.modal.range100Wan')}</span><span>{t('home.modal.range300Wan')}</span>
                 </div>
               </div>
             </div>

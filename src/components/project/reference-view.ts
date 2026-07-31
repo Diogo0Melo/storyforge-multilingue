@@ -3,13 +3,13 @@ import { BookMarked, Library, Palette } from 'lucide-react'
 import type { ReferenceType } from '../../lib/types'
 
 export const REFERENCE_TYPE_CONFIG: Record<ReferenceType, {
-  label: string
+  labelKey: string
   icon: ComponentType<{ className?: string }>
   color: string
 }> = {
-  story: { label: '故事参考', icon: BookMarked, color: 'text-accent bg-accent/10 border-accent/30' },
-  style: { label: '风格参考', icon: Palette, color: 'text-purple-400 bg-purple-500/10 border-purple-400/30' },
-  historical: { label: '历史资料', icon: Library, color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
+  story: { labelKey: 'refDetail.typeStory', icon: BookMarked, color: 'text-accent bg-accent/10 border-accent/30' },
+  style: { labelKey: 'refDetail.typeStyle', icon: Palette, color: 'text-purple-400 bg-purple-500/10 border-purple-400/30' },
+  historical: { labelKey: 'refDetail.typeHistorical', icon: Library, color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
 }
 
 export const REFERENCE_GLYPH_COLORS = [

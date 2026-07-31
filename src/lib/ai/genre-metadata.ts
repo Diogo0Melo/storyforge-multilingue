@@ -8,6 +8,7 @@
 export interface GenreMetadata {
   id: string
   label: string
+  labelKey?: string
   emoji: string
   description: string
   /** AI 应避免的套路 */

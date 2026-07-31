@@ -184,8 +184,8 @@ export default function WorkspacePage() {
   const isImmersiveModule = immersiveModules.has(activeModule)
   const copilotWorldGroupId = project.enableMultiWorld ? activeWorldGroupId : null
   const copilotWorldName = project.enableMultiWorld
-    ? (worldGroups.find(group => group.id === activeWorldGroupId)?.name ?? '未选择世界')
-    : '单世界'
+    ? (worldGroups.find(group => group.id === activeWorldGroupId)?.name ?? t('workspace.noWorldSelected'))
+    : t('workspace.singleWorld')
 
   /** 根据当前模块渲染主面板内容 */
   const renderMainPanel = () => {

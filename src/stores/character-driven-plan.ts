@@ -75,7 +75,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
     const ts = now()
     const plan: CharacterDrivenPlan = {
       projectId,
-      name: name?.trim() || `角色驱动方案 ${get().plans.length + 1}`,
+      name: name?.trim() || i18n.t('common:characterDrivenPlanDefault', { n: get().plans.length + 1 }),
       arcs: '[]',
       userHint: '',
       generatedVolumes: '[]',

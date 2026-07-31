@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { db } from '../lib/db/schema'
 import { exportProjectJSON, importProjectJSON } from '../lib/export/json-export'
 import type { Snapshot } from '../lib/types'
+import i18n from '../i18n/i18n'
 
 /** 每个项目最多保留的快照数量 */
 const MAX_SNAPSHOTS_PER_PROJECT = 20
@@ -74,7 +75,7 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
 
   restoreSnapshot: async (snapshotId: number) => {
     const snap = await db.snapshots.get(snapshotId)
-    if (!snap) throw new Error('快照不存在')
+    if (!snap) throw new Error(i18n.t('common:backup.snapshotNotFound'))
 
     const exportData = JSON.parse(snap.data)
     const newProjectId = await importProjectJSON(exportData)

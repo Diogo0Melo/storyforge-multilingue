@@ -15,13 +15,13 @@ import { adopt } from '../../lib/registry/adopt'
 import type { WorldGroup, WorldGroupType } from '../../lib/types'
 import { WORLD_GROUP_TYPE_LABELS } from '../../lib/types/world-group'
 
-const TYPE_OPTIONS: { value: WorldGroupType; label: string }[] = [
-  { value: 'primary', label: '主世界' },
-  { value: 'traversal', label: '穿越目标' },
-  { value: 'instance', label: '副本世界' },
-  { value: 'parallel', label: '平行世界' },
-  { value: 'ascension', label: '上界/高维' },
-  { value: 'custom', label: '自定义' },
+const TYPE_OPTIONS: { value: WorldGroupType; labelKey: string }[] = [
+  { value: 'primary', labelKey: 'worldGroup.typePrimary' },
+  { value: 'traversal', labelKey: 'worldGroup.typeTraversal' },
+  { value: 'instance', labelKey: 'worldGroup.typeInstance' },
+  { value: 'parallel', labelKey: 'worldGroup.typeParallel' },
+  { value: 'ascension', labelKey: 'worldGroup.typeAscension' },
+  { value: 'custom', labelKey: 'worldGroup.typeCustom' },
 ]
 
 const EMOJI_OPTIONS = ['🏠', '🔥', '⭐', '🗡️', '🌊', '🏔️', '🌙', '⚡', '🎭', '🐉', '🌸', '💎', '🌍', '☀️', '🌑', '🏰']
@@ -178,7 +178,7 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
               className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:border-accent transition-colors disabled:opacity-50"
             >
               {TYPE_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <option key={opt.value} value={opt.value}>{t(opt.labelKey as any)}</option>
               ))}
             </select>
           </div>
