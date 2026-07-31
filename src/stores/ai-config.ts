@@ -19,6 +19,7 @@ import {
   sanitizeAgentTeamBudgetProfile,
   type AgentTeamBudgetProfile,
 } from '../lib/agent/team-budget'
+import i18n from '../i18n/i18n'
 
 const STORAGE_KEY = 'storyforge-ai-config'
 const PRESETS_KEY = 'storyforge-ai-presets'
@@ -114,51 +115,52 @@ function saveAgentTeamBudgetProfile(profile: AgentTeamBudgetProfile): void {
   localStorage.setItem(AGENT_TEAM_BUDGET_PROFILE_KEY, profile)
 }
 
-/** 根据 HTTP 状态码和英文错误信息，返回中文解释 */
-function getChineseExplanation(status: number, msg: string): string {
+/** 根据 HTTP 状态码和英文错误信息，返回翻译后的解释 */
+function getErrorExplanation(status: number, msg: string): string {
+  const t = i18n.t.bind(i18n)
   const lower = msg.toLowerCase()
 
   // 按 HTTP 状态码
-  if (status === 401) return 'API Key 无效或已过期'
-  if (status === 402) return '账户余额不足，请充值后使用'
-  if (status === 403) return 'API Key 权限不足，无权访问该模型'
-  if (status === 404) return 'API 地址或模型名称错误，请检查 Base URL 和模型名'
-  if (status === 429) return '请求频率超限，请稍后再试'
-  if (status === 500) return '服务器内部错误，请稍后重试'
-  if (status === 502) return '网关错误，服务暂时不可用'
-  if (status === 503) return '服务暂时不可用，可能正在维护'
+  if (status === 401) return t('errors.ai.http401')
+  if (status === 402) return t('errors.ai.http402')
+  if (status === 403) return t('errors.ai.http403')
+  if (status === 404) return t('errors.ai.http404')
+  if (status === 429) return t('errors.ai.http429')
+  if (status === 500) return t('errors.ai.http500')
+  if (status === 502) return t('errors.ai.http502')
+  if (status === 503) return t('errors.ai.http503')
 
   // 按错误信息关键词匹配
   if (lower.includes('insufficient balance') || lower.includes('insufficient_balance'))
-    return '账户余额不足，请充值'
+    return t('errors.ai.insufficientBalance')
   if (lower.includes('invalid api key') || lower.includes('invalid_api_key'))
-    return 'API Key 无效，请检查是否填写正确'
+    return t('errors.ai.invalidApiKey')
   if (lower.includes('authentication') || lower.includes('unauthorized'))
-    return '认证失败，API Key 无效或已过期'
+    return t('errors.ai.authFailed')
   if (lower.includes('rate limit') || lower.includes('rate_limit'))
-    return '请求频率超限，请稍后再试'
+    return t('errors.ai.rateLimit')
   if (lower.includes('model not found') || lower.includes('model_not_found'))
-    return '模型不存在，请检查模型名称是否正确'
+    return t('errors.ai.modelNotFound')
   if (lower.includes('context length') || lower.includes('context_length'))
-    return '输入内容超过模型最大上下文长度'
+    return t('errors.ai.contextLength')
   if (lower.includes('quota exceeded') || lower.includes('quota_exceeded'))
-    return '配额已用完'
+    return t('errors.ai.quotaExceeded')
   if (lower.includes('server error') || lower.includes('internal error'))
-    return '服务器内部错误'
+    return t('errors.ai.serverError')
   if (lower.includes('timeout'))
-    return '请求超时'
+    return t('errors.ai.timeout')
   if (lower.includes('bad request'))
-    return '请求格式错误，请检查参数'
+    return t('errors.ai.badRequest')
   if (lower.includes('not found'))
-    return '接口不存在，请检查 Base URL'
+    return t('errors.ai.endpointNotFound')
   if (lower.includes('permission denied'))
-    return '权限不足'
+    return t('errors.ai.permissionDenied')
   if (lower.includes('billing') || lower.includes('payment'))
-    return '账单/付款问题，请检查账户'
+    return t('errors.ai.billingIssue')
   if (lower.includes('overloaded') || lower.includes('capacity'))
-    return '服务过载，请稍后重试'
+    return t('errors.ai.serviceOverloaded')
   if (lower.includes('thinking') && lower.includes('budget'))
-    return '思考模式参数冲突，请不要手动传 thinking 相关参数'
+    return t('errors.ai.thinkingBudgetConflict')
 
   return ''
 }
@@ -416,8 +418,8 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
         if (bodyText.length < 200) rawErrorMsg += ': ' + bodyText
       }
 
-      // 常见英文错误 → 中文翻译映射
-      const cnExplanation = getChineseExplanation(response.status, rawErrorMsg)
+      // 常见英文错误 → 翻译映射
+      const cnExplanation = getErrorExplanation(response.status, rawErrorMsg)
 
       // HTTP 402 = 余额不足，但说明连接和认证都成功了
       if (response.status === 402) {
@@ -431,7 +433,7 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
         ? `；${normalized.warnings.join(' ')}`
         : ''
       const localHint = ['custom', 'ollama'].includes(config.provider)
-        ? '；本地 OpenAI 兼容服务的 Base URL 通常应填到 /v1，例如 LM Studio: http://主机:1234/v1，Ollama: http://localhost:11434/v1'
+        ? i18n.t('errors.ai.localProviderHint')
         : ''
       const errorMsg = `${cnExplanation ? `${rawErrorMsg}（${cnExplanation}）` : rawErrorMsg}${urlHint}${localHint}`
 
@@ -444,11 +446,11 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
       let errorMsg: string
 
       if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        errorMsg = '网络错误 — 可能原因：1) 网络不通 2) 该平台不支持浏览器直接调用(CORS) 3) Base URL 错误'
+        errorMsg = i18n.t('errors.ai.networkError')
       } else if (error.name === 'AbortError') {
-        errorMsg = '请求超时'
+        errorMsg = i18n.t('errors.ai.timeout')
       } else {
-        errorMsg = error.message || '未知错误'
+        errorMsg = error.message || i18n.t('errors.ai.unknown')
       }
 
       updateLog(log.id, { status: 'error', duration, errorMessage: errorMsg })

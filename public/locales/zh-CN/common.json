@@ -186,6 +186,8 @@
   "contextBudget.viewInjected": "点击查看本段实际注入内容",
   "copied": "已复制",
   "copy": "复制",
+  "copySuffix": "(副本)",
+  "sentenceJoiner": "。",
   "creation": {
     "chapters": "creation.chapters",
     "characterDriven": "creation.characterDriven",
@@ -221,6 +223,20 @@
   "dialog.backupFailedMessage": "强烈不建议在备份失败时继续高危操作。",
   "dialog.proceedAnyway": "仍要继续",
   "dialog.confirmContinue": "确认继续？",
+  "dialogs": {
+    "deleteWorld": {
+      "operation": "删除世界「{{name}}」",
+      "details": "此操作将清除该世界的全部设定数据(世界观、力量体系、地理、历史、词条等),不可恢复。"
+    },
+    "deleteProject": {
+      "operation": "删除项目",
+      "details": "此操作将清除该项目的全部数据(章节、世界观、角色、词条、状态卡等),不可恢复。"
+    },
+    "enableMultiWorld": {
+      "operation": "启用多世界模式",
+      "details": "此操作将把现有项目数据(世界观、力量体系、大纲、词条等)迁移到「主世界」归属。建议先导出备份。"
+    }
+  },
   "edit": "编辑",
   "errorBoundary.message": "发生了未知错误",
   "errorBoundary.retry": "重试",
@@ -365,6 +381,34 @@
       "worldOriginStale": "世界来源已在候选生成后发生变化。为避免覆盖新内容，请重新生成候选。"
     },
     "ai": {
+      "configureApiKey": "请先在「设置」中配置 AI API Key。",
+      "configureLocalModel": "请先在「设置」中配置模型服务地址和模型名称。",
+      "http401": "API Key 无效或已过期",
+      "http402": "账户余额不足，请充值后使用",
+      "http403": "API Key 权限不足，无权访问该模型",
+      "http404": "API 地址或模型名称错误，请检查 Base URL 和模型名",
+      "http429": "请求频率超限，请稍后再试",
+      "http500": "服务器内部错误，请稍后重试",
+      "http502": "网关错误，服务暂时不可用",
+      "http503": "服务暂时不可用，可能正在维护",
+      "insufficientBalance": "账户余额不足，请充值",
+      "invalidApiKey": "API Key 无效，请检查是否填写正确",
+      "authFailed": "认证失败，API Key 无效或已过期",
+      "rateLimit": "请求频率超限，请稍后再试",
+      "modelNotFound": "模型不存在，请检查模型名称是否正确",
+      "contextLength": "输入内容超过模型最大上下文长度",
+      "quotaExceeded": "配额已用完",
+      "serverError": "服务器内部错误",
+      "timeout": "请求超时",
+      "badRequest": "请求格式错误，请检查参数",
+      "endpointNotFound": "接口不存在，请检查 Base URL",
+      "permissionDenied": "权限不足",
+      "billingIssue": "账单/付款问题，请检查账户",
+      "serviceOverloaded": "服务过载，请稍后重试",
+      "thinkingBudgetConflict": "思考模式参数冲突，请不要手动传 thinking 相关参数",
+      "networkError": "网络错误 — 可能原因：1) 网络不通 2) 该平台不支持浏览器直接调用(CORS) 3) Base URL 错误",
+      "unknown": "未知错误",
+      "localProviderHint": "；本地 OpenAI 兼容服务的 Base URL 通常应填到 /v1，例如 LM Studio: http://主机:1234/v1，Ollama: http://localhost:11434/v1",
       "modelListConnectionFailed": "无法连接模型服务，请检查 Base URL、服务状态或 CORS 设置",
       "modelListFormatInvalid": "模型列表响应格式无效，服务需兼容 OpenAI /v1/models",
       "modelListRequestFailed": "模型列表请求失败（HTTP {{status}}）",
@@ -422,7 +466,14 @@
       "targetNotInFieldRegistry": "target {{target}} 未在 FIELD_REGISTRY 登记",
       "targetNotInProjectTables": "[adopt] target {{target}} 不在 PROJECT_TABLES"
     },
+    "db": {
+      "schemaIncomplete": "StoryForge 检测到本地数据库结构不完整,为保护你的小说数据,系统不会自动清空数据库。\n\n",
+      "missingTables": "缺失表:",
+      "exportBackup": "请先导出备份,然后刷新页面或联系维护者处理。"
+    },
     "simulation": {
+      "selectSessionFirst": "请先选择运行时会话。",
+      "sessionNotFound": "当前运行时会话不存在。",
       "attributeKeyInvalid": "运行时属性键无效。",
       "attributeMustBeScalar": "运行时属性 {{key}} 只能是标量。",
       "attributeNotFinite": "运行时属性 {{key}} 不是有限数字。",
@@ -474,6 +525,9 @@
       "unknownMemoryStatus": "未知运行时记忆状态: {{status}}",
       "unknownSessionKind": "未知模拟会话类型。",
       "unsupportedStateVersion": "不支持的运行时状态版本。"
+    },
+    "workflow": {
+      "invalidGraph": "工作流图无效："
     },
     "storyline": {
       "adoptionFailed": "{{label}}采纳失败：{{reason}}",
@@ -626,5 +680,9 @@
     "overview": "worldview.overview",
     "reality": "worldview.reality",
     "timeline": "worldview.timeline"
+  },
+  "worlds": {
+    "defaultPrimaryWorld": "主世界",
+    "migrationHistoricalMode": "【自动迁移提示】本项目原先使用「历史考证」模式。现已升级为维度级「真实与幻想」规则体系，请在左侧各维度中分别设定哪些内容取自真实、哪些是架空改造。"
   }
 }

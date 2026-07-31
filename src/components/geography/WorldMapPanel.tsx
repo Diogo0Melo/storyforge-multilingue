@@ -129,7 +129,7 @@ export default function WorldMapPanel({ project }: Props) {
       }
     } catch (err) {
       console.error('Failed to parse AI Voronoi config:', err)
-      setParseError(t('geography.aiParseError', { error: err instanceof Error ? err.message : '未知错误' }))
+      setParseError(t('geography.aiParseError', { error: err instanceof Error ? err.message : t('errors.ai.unknown', { ns: 'common' }) }))
     }
   }
 

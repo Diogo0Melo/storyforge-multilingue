@@ -3,6 +3,7 @@ import { db } from '../lib/db/schema'
 import type { PromptWorkflow } from '../lib/types/workflow'
 import { SYSTEM_WORKFLOW_SEEDS } from '../lib/ai/workflow-seeds'
 import { validateWorkflowGraph } from '../lib/workflow/graph'
+import i18n from '../i18n/i18n'
 
 interface WorkflowStore {
   workflows: PromptWorkflow[]
@@ -62,7 +63,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   save: async (w) => {
     const graphIssues = validateWorkflowGraph(w)
     if (graphIssues.length) {
-      throw new Error(`工作流图无效：${graphIssues.map(issue => issue.message).join('；')}`)
+      throw new Error(`${i18n.t('errors.workflow.invalidGraph')}${graphIssues.map(issue => issue.message).join('；')}`)
     }
     const now = Date.now()
     const row: PromptWorkflow = { ...w, updatedAt: now, createdAt: w.createdAt || now }
@@ -85,7 +86,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     const cloneRow: PromptWorkflow = {
       ...rest,
       scope: 'user',
-      name: newName || `${src.name} (副本)`,
+      name: newName || `${src.name} ${i18n.t('copySuffix')}`,
       isDefault: false,
       createdAt: now,
       updatedAt: now,

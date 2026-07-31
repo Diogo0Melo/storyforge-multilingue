@@ -189,6 +189,8 @@
   "contextBudget.viewInjected": "Clique para ver o conteúdo injetado nesta seção",
   "copied": "Copiado",
   "copy": "Copiar",
+  "copySuffix": "(cópia)",
+  "sentenceJoiner": ". ",
   "creation": {
     "chapters": "creation.chapters",
     "characterDriven": "creation.characterDriven",
@@ -224,6 +226,20 @@
   "dialog.backupFailedMessage": "É altamente desaconselhado continuar operações de risco sem backup.",
   "dialog.proceedAnyway": "Continuar mesmo assim",
   "dialog.confirmContinue": "Confirmar continuação?",
+  "dialogs": {
+    "deleteWorld": {
+      "operation": "Excluir mundo「{{name}}」",
+      "details": "Esta ação limpará todos os dados de configuração deste mundo (visão de mundo, sistema de poder, geografia, história, entradas, etc.), não pode ser desfeito."
+    },
+    "deleteProject": {
+      "operation": "Excluir projeto",
+      "details": "Esta ação limpará todos os dados deste projeto (capítulos, visão de mundo, personagens, entradas, cartões de estado, etc.), não pode ser desfeito."
+    },
+    "enableMultiWorld": {
+      "operation": "Ativar modo multi-mundo",
+      "details": "Esta ação migrará os dados existentes do projeto (visão de mundo, sistema de poder, outline, entradas, etc.) para a atribuição do「Mundo Primário」. Recomenda-se exportar um backup primeiro."
+    }
+  },
   "edit": "Editar",
   "errorBoundary.message": "Ocorreu um erro desconhecido",
   "errorBoundary.retry": "Tentar novamente",
@@ -368,6 +384,34 @@
       "worldOriginStale": "Origem do mundo mudou após a geração do candidato. Para evitar sobrescrever novo conteúdo, por favor regenere o candidato."
     },
     "ai": {
+      "configureApiKey": "Por favor, configure a API Key da IA em「Configurações」primeiro.",
+      "configureLocalModel": "Por favor, configure o endereço do serviço do modelo e o nome do modelo em「Configurações」primeiro.",
+      "http401": "API Key inválida ou expirada",
+      "http402": "Saldo insuficiente, por favor recarregue para usar",
+      "http403": "Permissões insuficientes da API Key para acessar este modelo",
+      "http404": "Endereço da API ou nome do modelo incorreto, verifique a Base URL e o nome do modelo",
+      "http429": "Limite de requisições excedido, tente novamente mais tarde",
+      "http500": "Erro interno do servidor, tente novamente mais tarde",
+      "http502": "Erro de gateway, serviço temporariamente indisponível",
+      "http503": "Serviço temporariamente indisponível, possivelmente em manutenção",
+      "insufficientBalance": "Saldo insuficiente, por favor recarregue",
+      "invalidApiKey": "API Key inválida, verifique se está preenchida corretamente",
+      "authFailed": "Falha na autenticação, API Key inválida ou expirada",
+      "rateLimit": "Limite de requisições excedido, tente novamente mais tarde",
+      "modelNotFound": "Modelo não existe, verifique se o nome está correto",
+      "contextLength": "Conteúdo de entrada excede o limite máximo de contexto do modelo",
+      "quotaExceeded": "Cota esgotada",
+      "serverError": "Erro interno do servidor",
+      "timeout": "Tempo limite da requisição",
+      "badRequest": "Formato de requisição inválido, verifique os parâmetros",
+      "endpointNotFound": "Endpoint não existe, verifique a Base URL",
+      "permissionDenied": "Permissões insuficientes",
+      "billingIssue": "Problema de cobrança/pagamento, verifique sua conta",
+      "serviceOverloaded": "Serviço sobrecarregado, tente novamente mais tarde",
+      "thinkingBudgetConflict": "Conflito de parâmetros do modo de pensamento, não passe parâmetros de thinking manualmente",
+      "networkError": "Erro de rede — possíveis causas: 1) Sem conexão 2) Plataforma não suporta chamada direta do navegador (CORS) 3) Base URL incorreta",
+      "unknown": "Erro desconhecido",
+      "localProviderHint": "; A Base URL do serviço compatível com OpenAI local geralmente deve ser preenchida até /v1, por exemplo LM Studio: http://host:1234/v1, Ollama: http://localhost:11434/v1",
       "modelListConnectionFailed": "Não foi possível conectar ao serviço de modelo, por favor verifique Base URL, status do serviço ou configurações de CORS",
       "modelListFormatInvalid": "Formato de resposta da lista de modelos inválido, serviço deve ser compatível com OpenAI /v1/models",
       "modelListRequestFailed": "Falha na requisição da lista de modelos (HTTP {{status}})",
@@ -425,7 +469,14 @@
       "targetNotInFieldRegistry": "target {{target}} não registrado em FIELD_REGISTRY",
       "targetNotInProjectTables": "[adopt] target {{target}} não está em PROJECT_TABLES"
     },
+    "db": {
+      "schemaIncomplete": "StoryForge detectou que a estrutura do banco de dados local está incompleta. Para proteger os dados do seu romance, o sistema não esvaziará automaticamente o banco de dados.\n\n",
+      "missingTables": "Tabelas ausentes:",
+      "exportBackup": "Por favor, exporte um backup primeiro, depois atualize a página ou entre em contato com o mantenedor."
+    },
     "simulation": {
+      "selectSessionFirst": "Por favor, selecione uma sessão de runtime primeiro.",
+      "sessionNotFound": "A sessão de runtime atual não existe.",
       "attributeKeyInvalid": "Chave de atributo de runtime inválida.",
       "attributeMustBeScalar": "Atributo de runtime {{key}} deve ser escalar.",
       "attributeNotFinite": "Atributo de runtime {{key}} não é um número finito.",
@@ -477,6 +528,9 @@
       "unknownMemoryStatus": "Status de memória de runtime desconhecido: {{status}}",
       "unknownSessionKind": "Tipo de sessão de simulação desconhecido.",
       "unsupportedStateVersion": "Versão de estado de runtime não suportada."
+    },
+    "workflow": {
+      "invalidGraph": "Gráfico de fluxo de trabalho inválido:"
     },
     "storyline": {
       "adoptionFailed": "Falha na adoção de {{label}}: {{reason}}",
@@ -632,5 +686,9 @@
     "overview": "worldview.overview",
     "reality": "worldview.reality",
     "timeline": "worldview.timeline"
+  },
+  "worlds": {
+    "defaultPrimaryWorld": "Mundo Primário",
+    "migrationHistoricalMode": "【Aviso de Migração Automática】Este projeto usava anteriormente o modo「Verificação Histórica」. Agora foi atualizado para o sistema de regras de dimensão「Realidade e Fantasia」. Por favor, defina separadamente em cada dimensão à esquerda qual conteúdo é retirado da realidade e qual é uma transformação fictícia."
   }
 }

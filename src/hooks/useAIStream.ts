@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { resolveRequestConfig, streamChat, type StreamResult, type AICallMeta } from '../lib/ai/client'
 import { getAIConfigRequiredMessage, isAIConfigReady } from '../lib/ai/config-readiness'
 import { useAIConfigStore } from '../stores/ai-config'
@@ -45,6 +46,7 @@ const sharedAbortControllers = new Map<string, AbortController>()
  * 一级标签切换导致组件卸载时，生成仍继续，重新挂载可恢复输出。
  */
 export function useAIStream(sessionKey?: string): UseAIStreamReturn {
+  const { t } = useTranslation('common')
   const [output, setOutput] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -154,7 +156,7 @@ export function useAIStream(sessionKey?: string): UseAIStreamReturn {
       if ((err as Error).name === 'AbortError') {
         // 用户主动停止，不算错误
       } else {
-        const errMsg = err instanceof Error ? err.message : '未知错误'
+        const errMsg = err instanceof Error ? err.message : t('errors.ai.unknown')
         if (sessionKey) patchShared({ error: errMsg })
         else setError(errMsg)
       }

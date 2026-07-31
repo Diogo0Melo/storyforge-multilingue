@@ -4,6 +4,7 @@ import type { Project, CreateProjectInput } from '../lib/types'
 import { migrateGenre } from '../lib/types'
 import { requireBackupBefore } from '../lib/safety/require-backup-before'
 import { cascadeDeleteProject } from '../lib/registry/lifecycle'
+import i18n from '../i18n/i18n'
 
 interface ProjectStore {
   projects: Project[]
@@ -65,9 +66,9 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   deleteProject: async (id: number) => {
     // 数据红线:删项目前强制提示备份(Pre-Phase 0 安全网)
     const proceed = await requireBackupBefore({
-      operation: '删除项目',
+      operation: i18n.t('dialogs.deleteProject.operation'),
       projectId: id,
-      details: '此操作将清除该项目的全部数据(章节、世界观、角色、词条、状态卡等),不可恢复。',
+      details: i18n.t('dialogs.deleteProject.details'),
     })
     if (!proceed) return  // 用户取消
 

@@ -1,4 +1,5 @@
 import type { AIConfig, AIProvider } from '../types'
+import i18n from '../../i18n/i18n'
 
 const EMPTY_KEY_COMPATIBLE_PROVIDERS = new Set<AIProvider>(['ollama', 'custom'])
 
@@ -12,6 +13,6 @@ export function isAIConfigReady(config: Pick<AIConfig, 'apiKey' | 'provider'>): 
 
 export function getAIConfigRequiredMessage(config: Pick<AIConfig, 'provider'>): string {
   return aiProviderAllowsEmptyKey(config.provider)
-    ? '请先在「设置」中配置模型服务地址和模型名称。'
-    : '请先在「设置」中配置 AI API Key。'
+    ? i18n.t('errors.ai.configureLocalModel')
+    : i18n.t('errors.ai.configureApiKey')
 }

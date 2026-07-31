@@ -10,6 +10,7 @@ import type {
   ConflictPriority,
 } from '../lib/types/world-rules'
 import { createEmptyEntry, isEntryEmpty, countFilledEntries } from '../lib/types/world-rules'
+import i18n from '../i18n/i18n'
 
 interface WorldRulesState {
   profile: WorldRulesProfile | null
@@ -68,7 +69,7 @@ export const useWorldRulesStore = create<WorldRulesState>((set, get) => ({
         const project = await db.projects.get(projectId)
         const wasHistorical = project?.creativeMode === 'historical'
         const migrationNote = wasHistorical
-          ? '【自动迁移提示】本项目原先使用「历史考证」模式。现已升级为维度级「真实与幻想」规则体系，请在左侧各维度中分别设定哪些内容取自真实、哪些是架空改造。'
+          ? i18n.t('worlds.migrationHistoricalMode')
           : ''
 
         const now = Date.now()

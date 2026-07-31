@@ -7,6 +7,8 @@
  * 3. 大纲标题/内容相似度检测
  */
 
+import i18n from '../../i18n/i18n'
+
 // ── 1. 世界观句子级去重 ──────────────────────────────────────
 
 /**
@@ -81,8 +83,9 @@ export function deduplicateWorldviewText(
   // 如果全部去重后为空，不追加
   if (unique.length === 0) return ''
 
-  // 用中文句号重新连接
-  return unique.join('。') + '。'
+  // 用 locale-aware 连接符重新连接
+  const joiner = i18n.t('sentenceJoiner')
+  return unique.join(joiner) + joiner
 }
 
 // ── 2. 角色同名检测 ──────────────────────────────────────────

@@ -17,6 +17,7 @@ import {
   type SimulationSession,
   type SimulationSessionKind,
 } from '../lib/types'
+import i18n from '../i18n/i18n'
 
 interface SimulationRuntimeStore {
   projectId: number | null
@@ -127,7 +128,7 @@ export const useSimulationRuntimeStore = create<SimulationRuntimeStore>((set, ge
 
     advanceTime: async amount => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(i18n.t('errors.simulation.selectSessionFirst'))
       await appendSimulationEvent({
         sessionId,
         type: 'time.advanced',
@@ -138,7 +139,7 @@ export const useSimulationRuntimeStore = create<SimulationRuntimeStore>((set, ge
 
     recordNarrative: async text => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(i18n.t('errors.simulation.selectSessionFirst'))
       await appendSimulationEvent({
         sessionId,
         type: 'narrative.recorded',
@@ -149,23 +150,23 @@ export const useSimulationRuntimeStore = create<SimulationRuntimeStore>((set, ge
 
     rollDice: async expression => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(i18n.t('errors.simulation.selectSessionFirst'))
       await resolveSimulationDice({ sessionId, expression })
       await refreshSelected()
     },
 
     checkpoint: async name => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(i18n.t('errors.simulation.selectSessionFirst'))
       await createSimulationCheckpoint({ sessionId, name })
       await refreshSelected()
     },
 
     branch: async title => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(i18n.t('errors.simulation.selectSessionFirst'))
       const parent = get().sessions.find(row => row.id === sessionId)
-      if (!parent) throw new Error('当前运行时会话不存在。')
+      if (!parent) throw new Error(i18n.t('errors.simulation.sessionNotFound'))
       const child = await branchSimulationSession({
         parentSessionId: sessionId,
         throughSequence: get().runtimeState.lastSequence,
