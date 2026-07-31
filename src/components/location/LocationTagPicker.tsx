@@ -8,6 +8,9 @@ import { X, ChevronDown, ChevronUp } from 'lucide-react'
 import {
   TAG_CATEGORIES,
   TAG_EMOJI,
+  TAG_I18N_KEY,
+  CATEGORY_I18N_KEYS,
+  TERRAIN_TAGS,
   type LocationTag,
 } from '../../lib/types/location'
 
@@ -40,7 +43,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
             key={tag}
             className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/15 text-accent text-xs rounded-full"
           >
-            {TAG_EMOJI[tag] || '📍'} {tag}
+            {TAG_EMOJI[tag] || '📍'} {t(TAG_I18N_KEY[tag], tag)}
             <button
               onClick={() => toggle(tag)}
               className="hover:text-red-400 transition-colors"
@@ -66,7 +69,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
           {TAG_CATEGORIES.map(cat => (
             <div key={cat.label}>
               <div className="text-xs font-medium mb-1.5" style={{ color: cat.color }}>
-                {cat.label}
+                {t(cat.tags === TERRAIN_TAGS ? CATEGORY_I18N_KEYS.terrain : CATEGORY_I18N_KEYS.place)}
               </div>
               <div className="flex flex-wrap gap-1">
                 {cat.tags.map(tag => {
@@ -81,7 +84,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
                           : 'bg-bg-surface border-border text-text-muted hover:text-text-primary hover:border-text-muted'
                       }`}
                     >
-                      {TAG_EMOJI[tag as LocationTag] || '📍'} {tag}
+                      {TAG_EMOJI[tag as LocationTag] || '📍'} {t(TAG_I18N_KEY[tag as LocationTag], tag)}
                     </button>
                   )
                 })}

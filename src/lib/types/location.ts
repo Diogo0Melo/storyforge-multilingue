@@ -28,6 +28,79 @@ export type LocationTag = TerrainTag | PlaceTag
 /** 所有标签（合并） */
 export const ALL_LOCATION_TAGS: readonly LocationTag[] = [...TERRAIN_TAGS, ...PLACE_TAGS]
 
+/** i18n key map — Chinese identifiers → translation keys (display only) */
+export const TAG_I18N_KEY: Record<LocationTag, string> = {
+  // 自然地形
+  '大陆': 'location.terrain.continent',
+  '半岛': 'location.terrain.peninsula',
+  '岛屿': 'location.terrain.island',
+  '群岛': 'location.terrain.archipelago',
+  '高原': 'location.terrain.plateau',
+  '平原': 'location.terrain.plain',
+  '盆地': 'location.terrain.basin',
+  '丘陵': 'location.terrain.hills',
+  '峡谷': 'location.terrain.canyon',
+  '山脉': 'location.terrain.mountainRange',
+  '山峰': 'location.terrain.peak',
+  '火山': 'location.terrain.volcano',
+  '戈壁': 'location.terrain.gobi',
+  '沙漠': 'location.terrain.desert',
+  '冰原': 'location.terrain.icefield',
+  '草原': 'location.terrain.grassland',
+  '森林': 'location.terrain.forest',
+  '雨林': 'location.terrain.rainforest',
+  '沼泽': 'location.terrain.swamp',
+  '绿洲': 'location.terrain.oasis',
+  '洞穴': 'location.terrain.cave',
+  '海洋': 'location.terrain.ocean',
+  '海峡': 'location.terrain.strait',
+  '海湾': 'location.terrain.bay',
+  '湖泊': 'location.terrain.lake',
+  '河流': 'location.terrain.river',
+  '瀑布': 'location.terrain.waterfall',
+  '温泉': 'location.terrain.hotspring',
+  '冰川': 'location.terrain.glacier',
+  '浮空岛': 'location.terrain.floatingIsland',
+  '虚空': 'location.terrain.void',
+  '异界裂隙': 'location.terrain.planarRift',
+  // 人文场所
+  '村庄': 'location.place.village',
+  '城镇': 'location.place.town',
+  '城市': 'location.place.city',
+  '都城': 'location.place.capital',
+  '部落': 'location.place.tribe',
+  '营地': 'location.place.camp',
+  '关隘': 'location.place.pass',
+  '要塞': 'location.place.fortress',
+  '军营': 'location.place.barracks',
+  '战场': 'location.place.battlefield',
+  '神殿': 'location.place.shrine',
+  '寺庙': 'location.place.temple',
+  '学院': 'location.place.academy',
+  '集市': 'location.place.market',
+  '酒楼': 'location.place.tavern',
+  '拍卖行': 'location.place.auctionHouse',
+  '黑市': 'location.place.blackMarket',
+  '矿场': 'location.place.mine',
+  '港口': 'location.place.port',
+  '驿站': 'location.place.relayStation',
+  '废墟': 'location.place.ruins',
+  '遗迹': 'location.place.relics',
+  '古墓': 'location.place.tomb',
+  '迷宫': 'location.place.labyrinth',
+  '禁地': 'location.place.forbiddenZone',
+  '秘境': 'location.place.secretRealm',
+  '宗门': 'location.place.sect',
+  '洞府': 'location.place.caveDwelling',
+  '灵脉': 'location.place.spiritVein',
+}
+
+/** i18n keys for category labels */
+export const CATEGORY_I18N_KEYS = {
+  terrain: 'location.categoryTerrain',
+  place: 'location.categoryPlace',
+} as const
+
 /** 标签分类信息 */
 export const TAG_CATEGORIES = [
   { label: '自然地形', tags: TERRAIN_TAGS, color: '#14b8a6' },
