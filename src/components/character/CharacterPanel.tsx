@@ -23,9 +23,9 @@ import { CHARACTER_DIMENSIONS, type CharacterDimensionKey } from '../../lib/char
 import CharacterAxesPicker from './CharacterAxesPicker'
 import CharacterDetailCard from './CharacterDetailCard'
 import {
-  MORAL_AXIS_LABELS,
-  ORDER_AXIS_LABELS,
-  ROLE_WEIGHT_LABELS,
+  MORAL_AXIS_LABEL_KEYS,
+  ORDER_AXIS_LABEL_KEYS,
+  ROLE_WEIGHT_LABEL_KEYS,
   filterCharactersByRoleWeight,
 } from '../../lib/character/character-axes'
 
@@ -127,7 +127,7 @@ export default function CharacterPanel({ project, view = 'generator' }: Props) {
     characters.forEach(c => { weightCounts[c.roleWeight]++ })
     const rosterGap = `当前阵容：主要 ${weightCounts.main}、次要 ${weightCounts.secondary}、NPC ${weightCounts.npc}、路人 ${weightCounts.extra}`
     const existing = characters.map(c =>
-      `${c.name}（${ROLE_WEIGHT_LABELS[c.roleWeight]} · ${ORDER_AXIS_LABELS[c.orderAxis]}${MORAL_AXIS_LABELS[c.moralAxis]}）`,
+      `${c.name}（${t(ROLE_WEIGHT_LABEL_KEYS[c.roleWeight])} · ${t(ORDER_AXIS_LABEL_KEYS[c.orderAxis])}${t(MORAL_AXIS_LABEL_KEYS[c.moralAxis])}）`,
     ).join('、')
     // B：维度指令——始终告诉 AI 要设计哪些维度(基础提示词只覆盖老字段,新维度靠这里点名才会生成)。
     // 全选→"完整设计全部"；部分→"只设计这些、其余留空"。走 CHARACTER_DIMENSIONS 单源,不动脆弱的基础模板。
@@ -363,7 +363,7 @@ export default function CharacterPanel({ project, view = 'generator' }: Props) {
                   <div className="min-w-0">
                     <p className={`text-sm font-medium truncate ${active ? 'text-accent' : 'text-text-primary'}`}>{c.name}</p>
                     <p className="text-[10px] text-text-muted truncate">
-                      {c.shortDescription?.slice(0, 10) || `${ROLE_WEIGHT_LABELS[c.roleWeight]} · ${MORAL_AXIS_LABELS[c.moralAxis]}`}
+                      {c.shortDescription?.slice(0, 10) || `${t(ROLE_WEIGHT_LABEL_KEYS[c.roleWeight])} · ${t(MORAL_AXIS_LABEL_KEYS[c.moralAxis])}`}
                     </p>
                   </div>
                 </button>

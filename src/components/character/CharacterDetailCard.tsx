@@ -3,9 +3,9 @@ import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { Character, WorldGroup } from '../../lib/types'
 import {
-  MORAL_AXIS_LABELS,
-  ORDER_AXIS_LABELS,
-  ROLE_WEIGHT_LABELS,
+  MORAL_AXIS_LABEL_KEYS,
+  ORDER_AXIS_LABEL_KEYS,
+  ROLE_WEIGHT_LABEL_KEYS,
 } from '../../lib/character/character-axes'
 import { InlineInput, InlineTextarea } from '../shared/InlineEdit'
 import CharacterAxesPicker from './CharacterAxesPicker'
@@ -50,10 +50,10 @@ export default function CharacterDetailCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 text-xs text-text-muted mb-0.5">
             <span className="px-1.5 py-0.5 rounded text-[10px] font-medium border border-border bg-bg-elevated text-text-secondary">
-              {ROLE_WEIGHT_LABELS[char.roleWeight]}
+              {t(ROLE_WEIGHT_LABEL_KEYS[char.roleWeight])}
             </span>
             <span className="px-1.5 py-0.5 rounded text-[10px] font-medium border border-border bg-bg-elevated text-text-secondary">
-              {ORDER_AXIS_LABELS[char.orderAxis]}{MORAL_AXIS_LABELS[char.moralAxis]}
+              {t(ORDER_AXIS_LABEL_KEYS[char.orderAxis])}{t(MORAL_AXIS_LABEL_KEYS[char.moralAxis])}
             </span>
 
             {multiWorld && (

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Trans } from 'react-i18next'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import type { Chapter, HistoricalEra, HistoricalTimelineEvent } from '../../lib/types'
-import { HISTORICAL_ERA_LABELS } from '../../lib/types/history'
+import { HISTORICAL_ERA_LABELS, HISTORICAL_ERA_LABEL_KEYS } from '../../lib/types/history'
 import { formatHistoricalYear } from '../../lib/history/year'
 import { CInput, CTextarea } from '../shared/CompositionInput'
 import HistoryAgentWorkspace, { type HistoryAgentViewState } from './HistoryAgentWorkspace'
@@ -50,7 +50,9 @@ export default function HistoryTimelineEventCard({
   onAcceptStorm,
 }: Props) {
   const { t } = useTranslation('panels')
-  const eraLabel = HISTORICAL_ERA_LABELS[event.era as HistoricalEra] || event.era
+  const eraKey = HISTORICAL_ERA_LABEL_KEYS[event.era as HistoricalEra]
+  const eraFallback = HISTORICAL_ERA_LABELS[event.era as HistoricalEra] || event.era
+  const eraLabel = eraKey ? t(eraKey, eraFallback) : eraFallback
   const yearText = formatHistoricalYear(event.year)
 
   return (
@@ -126,9 +128,12 @@ export default function HistoryTimelineEventCard({
                   onChange={change => onChange({ era: change.target.value as HistoricalEra })}
                   className="w-full px-2 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 >
-                  {Object.entries(HISTORICAL_ERA_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
-                  ))}
+                  {Object.entries(HISTORICAL_ERA_LABELS).map(([key, label]) => {
+                    const optKey = HISTORICAL_ERA_LABEL_KEYS[key as HistoricalEra]
+                    return (
+                      <option key={key} value={key}>{optKey ? t(optKey, label) : label}</option>
+                    )
+                  })}
                 </select>
               </div>
               <div>

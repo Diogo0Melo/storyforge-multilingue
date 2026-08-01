@@ -7,7 +7,7 @@ import type {
   HistoricalKeyword,
   HistoricalKeywordCategory,
 } from '../../lib/types'
-import { HISTORICAL_ERA_LABELS, KEYWORD_CATEGORY_LABELS } from '../../lib/types/history'
+import { HISTORICAL_ERA_LABELS, HISTORICAL_ERA_LABEL_KEYS, KEYWORD_CATEGORY_LABELS, KEYWORD_CATEGORY_LABEL_KEYS } from '../../lib/types/history'
 import { CInput, CTextarea } from '../shared/CompositionInput'
 import HistoryAgentWorkspace, { type HistoryAgentViewState } from './HistoryAgentWorkspace'
 import HistoryChapterPicker from './HistoryChapterPicker'
@@ -52,8 +52,12 @@ export default function HistoryKeywordCard({
   onAcceptStorm,
 }: Props) {
   const { t } = useTranslation('panels')
-  const eraLabel = HISTORICAL_ERA_LABELS[keyword.era as HistoricalEra] || keyword.era
-  const categoryLabel = KEYWORD_CATEGORY_LABELS[keyword.category] || keyword.category
+  const eraKey = HISTORICAL_ERA_LABEL_KEYS[keyword.era as HistoricalEra]
+  const eraFallback = HISTORICAL_ERA_LABELS[keyword.era as HistoricalEra] || keyword.era
+  const eraLabel = eraKey ? t(eraKey, eraFallback) : eraFallback
+  const catKey = KEYWORD_CATEGORY_LABEL_KEYS[keyword.category as HistoricalKeywordCategory]
+  const catFallback = KEYWORD_CATEGORY_LABELS[keyword.category as HistoricalKeywordCategory] || keyword.category
+  const categoryLabel = catKey ? t(catKey, catFallback) : catFallback
 
   return (
     <div className={`rounded-xl border bg-bg-surface transition-all ${
@@ -104,9 +108,12 @@ export default function HistoryKeywordCard({
                 onChange={event => onChange({ category: event.target.value as HistoricalKeywordCategory })}
                 className="w-full px-2 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
               >
-                {Object.entries(KEYWORD_CATEGORY_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+                {Object.entries(KEYWORD_CATEGORY_LABELS).map(([key, label]) => {
+                  const optKey = KEYWORD_CATEGORY_LABEL_KEYS[key as HistoricalKeywordCategory]
+                  return (
+                    <option key={key} value={key}>{optKey ? t(optKey, label) : label}</option>
+                  )
+                })}
               </select>
             </div>
             <div>
@@ -117,9 +124,12 @@ export default function HistoryKeywordCard({
                 onChange={event => onChange({ era: event.target.value as HistoricalEra })}
                 className="w-full px-2 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
               >
-                {Object.entries(HISTORICAL_ERA_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
+                {Object.entries(HISTORICAL_ERA_LABELS).map(([key, label]) => {
+                  const optKey = HISTORICAL_ERA_LABEL_KEYS[key as HistoricalEra]
+                  return (
+                    <option key={key} value={key}>{optKey ? t(optKey, label) : label}</option>
+                  )
+                })}
               </select>
             </div>
           </div>

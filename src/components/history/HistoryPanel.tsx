@@ -12,7 +12,7 @@ import { useAIConfigStore } from '../../stores/ai-config'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
 import type { Project, HistoricalTimelineEvent, HistoricalEra, HistoricalKeyword, HistoricalKeywordCategory } from '../../lib/types'
-import { HISTORICAL_ERA_LABELS, KEYWORD_CATEGORY_LABELS } from '../../lib/types/history'
+import { HISTORICAL_ERA_LABELS, HISTORICAL_ERA_LABEL_KEYS, KEYWORD_CATEGORY_LABELS, KEYWORD_CATEGORY_LABEL_KEYS } from '../../lib/types/history'
 import { useDialog } from '../shared/Dialog'
 import { useToast } from '../shared/Toast'
 import { KeywordHistoryHelp, TimelineHistoryHelp } from './HistoryHelpPanels'
@@ -394,9 +394,12 @@ export default function HistoryPanel({ project }: Props) {
                   className="px-2 py-1 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="all">{t('history.allCategories')}</option>
-                  {Object.entries(KEYWORD_CATEGORY_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
+                  {Object.entries(KEYWORD_CATEGORY_LABELS).map(([k, v]) => {
+                    const optKey = KEYWORD_CATEGORY_LABEL_KEYS[k as HistoricalKeywordCategory]
+                    return (
+                      <option key={k} value={k}>{optKey ? t(optKey, v) : v}</option>
+                    )
+                  })}
                 </select>
                 <select
                   value={filterEra}
@@ -404,9 +407,12 @@ export default function HistoryPanel({ project }: Props) {
                   className="px-2 py-1 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 >
                   <option value="all">{t('history.allEras')}</option>
-                  {Object.entries(HISTORICAL_ERA_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
+                  {Object.entries(HISTORICAL_ERA_LABELS).map(([k, v]) => {
+                    const optKey = HISTORICAL_ERA_LABEL_KEYS[k as HistoricalEra]
+                    return (
+                      <option key={k} value={k}>{optKey ? t(optKey, v) : v}</option>
+                    )
+                  })}
                 </select>
               </div>
 
