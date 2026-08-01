@@ -13,62 +13,69 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
  * 流派标签（多选字符串，取代旧的单选 NovelGenre 枚举）
  * 参考起点、纵横、晋江分类体系
  */
-export const GENRE_OPTIONS = [
+export interface GenreOption {
+  readonly group: string
+  readonly value: string
+  readonly label: string
+  readonly labelKey?: string
+}
+
+export const GENRE_OPTIONS: readonly GenreOption[] = [
   // 玄幻
-  { group: '玄幻', value: 'xuanhuan',       label: '玄幻' },
-  { group: '玄幻', value: 'dongfang',       label: '东方玄幻' },
-  { group: '玄幻', value: 'yishi',          label: '异世大陆' },
-  { group: '玄幻', value: 'wangchao',       label: '王朝争霸' },
-  { group: '玄幻', value: 'gaowu',          label: '高武世界' },
+  { group: '玄幻', value: 'xuanhuan',       label: '玄幻',       labelKey: 'metadata:genre.xuanhuan' },
+  { group: '玄幻', value: 'dongfang',       label: '东方玄幻',   labelKey: 'metadata:genre.dongfang' },
+  { group: '玄幻', value: 'yishi',          label: '异世大陆',   labelKey: 'metadata:genre.yishi' },
+  { group: '玄幻', value: 'wangchao',       label: '王朝争霸',   labelKey: 'metadata:genre.wangchao' },
+  { group: '玄幻', value: 'gaowu',          label: '高武世界',   labelKey: 'metadata:genre.gaowu' },
   // 仙侠
-  { group: '仙侠', value: 'xianxia',        label: '仙侠' },
-  { group: '仙侠', value: 'xiuzhen',        label: '修真文明' },
-  { group: '仙侠', value: 'huanxiu',        label: '幻想修仙' },
-  { group: '仙侠', value: 'gudian',         label: '古典仙侠' },
+  { group: '仙侠', value: 'xianxia',        label: '仙侠',       labelKey: 'metadata:genre.xianxia' },
+  { group: '仙侠', value: 'xiuzhen',        label: '修真文明',   labelKey: 'metadata:genre.xiuzhen' },
+  { group: '仙侠', value: 'huanxiu',        label: '幻想修仙',   labelKey: 'metadata:genre.huanxiu' },
+  { group: '仙侠', value: 'gudian',         label: '古典仙侠',   labelKey: 'metadata:genre.gudian' },
   // 武侠
-  { group: '武侠', value: 'wuxia',          label: '武侠' },
-  { group: '武侠', value: 'chuantong',      label: '传统武侠' },
-  { group: '武侠', value: 'xiandaiwu',      label: '现代武侠' },
+  { group: '武侠', value: 'wuxia',          label: '武侠',       labelKey: 'metadata:genre.wuxia' },
+  { group: '武侠', value: 'chuantong',      label: '传统武侠',   labelKey: 'metadata:genre.chuantong' },
+  { group: '武侠', value: 'xiandaiwu',      label: '现代武侠',   labelKey: 'metadata:genre.xiandaiwu' },
   // 科幻
-  { group: '科幻', value: 'kehuan',         label: '科幻' },
-  { group: '科幻', value: 'xingji',         label: '星际战争' },
-  { group: '科幻', value: 'weilai',         label: '未来世界' },
-  { group: '科幻', value: 'shikong',        label: '时空穿梭' },
-  { group: '科幻', value: 'chaoji',         label: '超级科技' },
-  { group: '科幻', value: 'moshi',          label: '末世危机' },
+  { group: '科幻', value: 'kehuan',         label: '科幻',       labelKey: 'metadata:genre.kehuan' },
+  { group: '科幻', value: 'xingji',         label: '星际战争',   labelKey: 'metadata:genre.xingji' },
+  { group: '科幻', value: 'weilai',         label: '未来世界',   labelKey: 'metadata:genre.weilai' },
+  { group: '科幻', value: 'shikong',        label: '时空穿梭',   labelKey: 'metadata:genre.shikong' },
+  { group: '科幻', value: 'chaoji',         label: '超级科技',   labelKey: 'metadata:genre.chaoji' },
+  { group: '科幻', value: 'moshi',          label: '末世危机',   labelKey: 'metadata:genre.moshi' },
   // 奇幻
-  { group: '奇幻', value: 'qihuan',         label: '奇幻' },
-  { group: '奇幻', value: 'xifang',         label: '西方魔幻' },
-  { group: '奇幻', value: 'shishi',         label: '史诗奇幻' },
-  { group: '奇幻', value: 'heian',          label: '黑暗奇幻' },
+  { group: '奇幻', value: 'qihuan',         label: '奇幻',       labelKey: 'metadata:genre.qihuan' },
+  { group: '奇幻', value: 'xifang',         label: '西方魔幻',   labelKey: 'metadata:genre.xifang' },
+  { group: '奇幻', value: 'shishi',         label: '史诗奇幻',   labelKey: 'metadata:genre.shishi' },
+  { group: '奇幻', value: 'heian',          label: '黑暗奇幻',   labelKey: 'metadata:genre.heian' },
   // 都市
-  { group: '都市', value: 'dushi',          label: '都市' },
-  { group: '都市', value: 'dushenghuo',     label: '都市生活' },
-  { group: '都市', value: 'duyineng',       label: '都市异能' },
-  { group: '都市', value: 'yule',           label: '娱乐明星' },
-  { group: '都市', value: 'shangzhan',      label: '商战职场' },
-  { group: '都市', value: 'yishu',          label: '异术超能' },
+  { group: '都市', value: 'dushi',          label: '都市',       labelKey: 'metadata:genre.dushi' },
+  { group: '都市', value: 'dushenghuo',     label: '都市生活',   labelKey: 'metadata:genre.dushenghuo' },
+  { group: '都市', value: 'duyineng',       label: '都市异能',   labelKey: 'metadata:genre.duyineng' },
+  { group: '都市', value: 'yule',           label: '娱乐明星',   labelKey: 'metadata:genre.yule' },
+  { group: '都市', value: 'shangzhan',      label: '商战职场',   labelKey: 'metadata:genre.shangzhan' },
+  { group: '都市', value: 'yishu',          label: '异术超能',   labelKey: 'metadata:genre.yishu' },
   // 历史
-  { group: '历史', value: 'lishi',          label: '历史' },
-  { group: '历史', value: 'jiakong',        label: '架空历史' },
-  { group: '历史', value: 'zhuanji',        label: '历史传记' },
-  { group: '历史', value: 'songmingqing',   label: '两宋元明' },
-  { group: '历史', value: 'qinhan',         label: '秦汉三国' },
+  { group: '历史', value: 'lishi',          label: '历史',       labelKey: 'metadata:genre.lishi' },
+  { group: '历史', value: 'jiakong',        label: '架空历史',   labelKey: 'metadata:genre.jiakong' },
+  { group: '历史', value: 'zhuanji',        label: '历史传记',   labelKey: 'metadata:genre.zhuanji' },
+  { group: '历史', value: 'songmingqing',   label: '两宋元明',   labelKey: 'metadata:genre.songmingqing' },
+  { group: '历史', value: 'qinhan',         label: '秦汉三国',   labelKey: 'metadata:genre.qinhan' },
   // 游戏
-  { group: '游戏', value: 'youxi',          label: '游戏' },
-  { group: '游戏', value: 'youxiyijie',     label: '游戏异界' },
-  { group: '游戏', value: 'dianjing',       label: '电子竞技' },
-  { group: '游戏', value: 'xuni',           label: '虚拟网游' },
+  { group: '游戏', value: 'youxi',          label: '游戏',       labelKey: 'metadata:genre.youxi' },
+  { group: '游戏', value: 'youxiyijie',     label: '游戏异界',   labelKey: 'metadata:genre.youxiyijie' },
+  { group: '游戏', value: 'dianjing',       label: '电子竞技',   labelKey: 'metadata:genre.dianjing' },
+  { group: '游戏', value: 'xuni',           label: '虚拟网游',   labelKey: 'metadata:genre.xuni' },
   // 轻小说
-  { group: '轻小说', value: 'qingxiaoshuo', label: '轻小说' },
-  { group: '轻小说', value: 'riben',        label: '日系轻小说' },
-  { group: '轻小说', value: 'xueyuan',      label: '校园青春' },
+  { group: '轻小说', value: 'qingxiaoshuo', label: '轻小说',     labelKey: 'metadata:genre.qingxiaoshuo' },
+  { group: '轻小说', value: 'riben',        label: '日系轻小说', labelKey: 'metadata:genre.riben' },
+  { group: '轻小说', value: 'xueyuan',      label: '校园青春',   labelKey: 'metadata:genre.xueyuan' },
   // 其他
-  { group: '其他', value: 'xuanyi',         label: '悬疑灵异' },
-  { group: '其他', value: 'zhentan',        label: '侦探推理' },
-  { group: '其他', value: 'kongbu',         label: '恐怖惊悚' },
-  { group: '其他', value: 'other',          label: '其他' },
-] as const
+  { group: '其他', value: 'xuanyi',         label: '悬疑灵异',   labelKey: 'metadata:genre.xuanyi' },
+  { group: '其他', value: 'zhentan',        label: '侦探推理',   labelKey: 'metadata:genre.zhentan' },
+  { group: '其他', value: 'kongbu',         label: '恐怖惊悚',   labelKey: 'metadata:genre.kongbu' },
+  { group: '其他', value: 'other',          label: '其他',       labelKey: 'metadata:genre.other' },
+]
 
 /** 旧的单选类型（保留兼容性） */
 export type NovelGenre = string

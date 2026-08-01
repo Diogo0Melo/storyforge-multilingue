@@ -128,7 +128,7 @@ function TemplateRow({
       <div className="flex-1 min-w-0">
         <div className="truncate flex items-center gap-1.5">
           <span className="text-xs text-text-muted">[{subLabel}]</span>
-          <span className="truncate">{template.name}</span>
+          <span className="truncate">{template.nameKey ? t(template.nameKey, { defaultValue: template.name }) : template.name}</span>
         </div>
       </div>
 

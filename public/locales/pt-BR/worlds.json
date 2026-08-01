@@ -24,7 +24,7 @@
     "prerequisitesLabel": "Estágios Prévios (selecione vários para formar convergência)",
     "stageNameLabel": "Nome do Estágio",
     "stagesCount": "{{count}} estágios",
-    "subtitle": "Aqui se definem as escolas e caminhos de境界 que «utilizam o poder»; o sistema de poder acima apenas descreve a energia base do mundo. Os estágios suportam bifurcação e convergência.",
+    "subtitle": "Aqui se definem as escolas e caminhos de fronteira que «utilizam o poder»; o sistema de poder acima apenas descreve a energia base do mundo. Os estágios suportam bifurcação e convergência.",
     "systemPlaceholder": "Clique para explicar o princípio central deste sistema, seus praticantes e custos…",
     "tierLevel": "Nível {{tier}}",
     "title": "🔀 Sistemas de Cultivo"
@@ -225,5 +225,224 @@
   },
   "history": {
     "timelineNav": "Linha do tempo histórica"
+  },
+  "worldRules": {
+    "categories": {
+      "era": "Contexto Histórico",
+      "events": "Eventos Importantes",
+      "geography": "Geografia e Território",
+      "climate": "Clima e Ambiente",
+      "politics": "Sistema Político",
+      "military": "Militar",
+      "economy": "Economia",
+      "society": "Estrutura Social",
+      "technology": "Tecnologia e Produtividade",
+      "culture": "Cultura e Pensamento",
+      "religion": "Religião e Crenças",
+      "ethnicity": "Etnias e Grupos",
+      "language": "Linguagem e Títulos",
+      "daily": "Vida Cotidiana",
+      "supernatural": "Poder e Sobrenatural"
+    },
+    "subcategories": {
+      "era": {
+        "period": "Período Histórico",
+        "divergence": "Ponto de Divergência",
+        "calendar": "Calendário e Tempo"
+      },
+      "geography": {
+        "admin": "Divisão Administrativa",
+        "terrain": "Terreno e Relevo",
+        "cities": "Cidades e Fortalezas",
+        "water": "Sistemas Hídricos",
+        "roads": "Estradas e Transporte"
+      },
+      "climate": {
+        "weather": "Características Climáticas",
+        "disaster": "Desastres Naturais",
+        "ecology": "Ecologia e Espécies"
+      },
+      "politics": {
+        "system": "Forma de Governo",
+        "central": "Governo Central",
+        "local": "Governo Local",
+        "selection": "Sistema de Seleção de Oficiais",
+        "nobility": "Títulos de Nobreza",
+        "law": "Lei e Punição",
+        "diplomacy": "Diplomacia"
+      },
+      "military": {
+        "organization": "Organização Militar",
+        "weapons": "Armas e Equipamentos",
+        "tactics": "Táticas e Estratégias",
+        "fortification": "Fortificações"
+      },
+      "economy": {
+        "tax": "Sistema Tributário",
+        "currency": "Moeda e Finanças",
+        "trade": "Comércio",
+        "agriculture": "Agricultura",
+        "crafts": "Artesanato",
+        "resources": "Recursos e Produtos"
+      },
+      "society": {
+        "hierarchy": "Hierarquia Social",
+        "clan": "Clãs e Famílias",
+        "gender": "Papéis de Gênero",
+        "servitude": "Servidão e Dependência",
+        "organizations": "Organizações Civis"
+      },
+      "technology": {
+        "engineering": "Engenharia e Construção",
+        "medicine": "Medicina",
+        "astronomy": "Astronomia e Calendário",
+        "transport": "Meios de Transporte",
+        "communication": "Comunicação",
+        "tools": "Ferramentas de Produção"
+      },
+      "culture": {
+        "philosophy": "Filosofia Principal",
+        "arts": "Literatura e Artes",
+        "education": "Educação"
+      },
+      "religion": {
+        "official": "Religião Oficial",
+        "folk": "Crenças Populares",
+        "funeral": "Rituais Funerários",
+        "taboo": "Tabus e Proibições"
+      },
+      "ethnicity": {
+        "main": "Grupo Étnico Principal",
+        "neighbors": "Povos Vizinhos",
+        "interaction": "Interação Étnica",
+        "foreign": "Potências Estrangeiras"
+      },
+      "language": {
+        "spoken": "Estilo de Fala",
+        "titles": "Sistema de Títulos",
+        "written": "Linguagem Escrita",
+        "taboo": "Palavras Proibidas"
+      },
+      "daily": {
+        "food": "Alimentação",
+        "clothing": "Vestuário",
+        "housing": "Habitação",
+        "travel": "Viagens",
+        "measures": "Sistema de Medidas",
+        "time": "Conceito de Tempo",
+        "entertainment": "Entretenimento",
+        "festivals": "Festivais",
+        "etiquette": "Etiqueta Social"
+      },
+      "supernatural": {
+        "system": "Sistema de Poder",
+        "beings": "Entidades Sobrenaturais",
+        "artifacts": "Artefatos Mágicos",
+        "impact": "Poder e Sociedade"
+      }
+    },
+    "priority": {
+      "historical": "Prioridade Histórica",
+      "balanced": "Equilibrado",
+      "fictional": "Prioridade Fictícia"
+    },
+    "hints": {
+      "era": {
+        "period": { "0": "Dinastias", "1": "Sistema de datação", "2": "Nomes de era" },
+        "divergence": { "0": "Limites do efeito borboleta", "1": "Ponto de divergência", "2": "Grau de ficção" },
+        "calendar": { "0": "Calendário", "1": "Termos solares", "2": "Horas tradicionais" }
+      },
+      "events": { "0": "Vinculado à linha do tempo histórica", "1": "📜 Eventos históricos tornam-se âncoras automaticamente", "2": "✨ Eventos fictícios são planejados pelo autor" },
+      "geography": {
+        "admin": { "0": "Província/Prefeitura/Condado", "1": "Fronteira e interior" },
+        "terrain": { "0": "Montanhas", "1": "Planícies", "2": "Bacias", "3": "Desertos", "4": "Planaltos" },
+        "cities": { "0": "Layout da capital", "1": "Fortalezas militares", "2": "Cidades comerciais", "3": "Muralhas e portões" },
+        "water": { "0": "Rios", "1": "Lagos", "2": "Canais", "3": "Rotas de transporte aquático", "4": "Projetos hidráulicos" },
+        "roads": { "0": "Estradas oficiais", "1": "Estações de correio", "2": "Caminhos de pranchas", "3": "Passos de fronteira", "4": "Rotas marítimas" }
+      },
+      "climate": {
+        "weather": { "0": "Estações", "1": "Temperatura", "2": "Precipitação" },
+        "disaster": { "0": "Secas e inundações", "1": "Terremotos", "2": "Pragas", "3": "Infestações de gafanhotos" },
+        "ecology": { "0": "Animais", "1": "Plantas", "2": "Produtos especiais" }
+      },
+      "politics": {
+        "system": { "0": "Monarquia/República", "1": "Grau de centralização", "2": "Freios e contrapesos" },
+        "central": { "0": "Primeiro-ministro", "1": "Ministérios", "2": "Templos e supervisões", "3": "Gabinete/Conselho militar" },
+        "local": { "0": "Governadores/Prefeitos", "1": "Comandantes regionais", "2": "Autonomia local" },
+        "selection": { "0": "Exames imperiais", "1": "Recomendações", "2": "Nove categorias", "3": "Hereditariedade" },
+        "nobility": { "0": "Duque/Marquês/Conde/Visconde/Barão", "1": "Reinos feudais", "2": "Rendas feudais" },
+        "law": { "0": "Códigos e regulamentos", "1": "Tipos de punição", "2": "Processo de julgamento", "3": "Prisões" },
+        "diplomacy": { "0": "Tributo", "1": "Relações diplomáticas", "2": "Casamentos políticos", "3": "Reféns", "4": "Documentos oficiais" }
+      },
+      "military": {
+        "organization": { "0": "Tipos de tropas", "1": "Patentes militares", "2": "Unidades organizacionais", "3": "Milícia/Recrutamento" },
+        "weapons": { "0": "Armas", "1": "Armaduras", "2": "Máquinas de cerco" },
+        "tactics": { "0": "Formações", "1": "Cavalaria/Infantaria/Marinha", "2": "Cerco/Defesa" },
+        "fortification": { "0": "Cidades fortificadas", "1": "Passos de fronteira", "2": "Muralhas", "3": "Torres de sinalização", "4": "Fortalezas" }
+      },
+      "economy": {
+        "tax": { "0": "Imposto territorial", "1": "Trabalho obrigatório", "2": "Imposto comercial", "3": "Sistema de dois impostos/Método de chicote único" },
+        "currency": { "0": "Moedas de cobre", "1": "Lingotes de prata", "2": "Notas de papel", "3": "Casas de câmbio", "4": "Moedas voadoras" },
+        "trade": { "0": "Mercados", "1": "Comerciantes ambulantes/lojistas", "2": "Rota da Seda/Comércio marítimo", "3": "Guildas" },
+        "agriculture": { "0": "Métodos de cultivo", "1": "Tipos de culturas", "2": "Irrigação", "3": "Sistema de terras" },
+        "crafts": { "0": "Tear", "1": "Fundição", "2": "Cerâmica", "3": "Fabricação de papel", "4": "Impressão" },
+        "resources": { "0": "Sal, ferro, chá, cavalos", "1": "Minerais", "2": "Produtos locais", "3": "Recursos estratégicos" }
+      },
+      "society": {
+        "hierarchy": { "0": "Estudantes, agricultores, artesãos, comerciantes", "1": "Nobreza/plebeus/intocáveis", "2": "Mobilidade social" },
+        "clan": { "0": "Árvores genealógicas", "1": "Templos ancestrais", "2": "Primogênito/concubinas", "3": "Divisão de propriedade/herança" },
+        "gender": { "0": "Sistema de casamento", "1": "Conceitos de castidade", "2": "Status das mulheres" },
+        "servitude": { "0": "Escravos", "1": "Arrendatários", "2": "Servos domésticos", "3": "Dependência pessoal" },
+        "organizations": { "0": "Guildas", "1": "Sociedades secretas", "2": "Associações comerciais", "3": "Salões de reunião" }
+      },
+      "technology": {
+        "engineering": { "0": "Arquitetura", "1": "Pontes", "2": "Hidráulica", "3": "Métodos de construção" },
+        "medicine": { "0": "Sistemas médicos", "1": "Ervas medicinais", "2": "Prevenção de pragas", "3": "Medicina xamânica" },
+        "astronomy": { "0": "Fenômenos celestes", "1": "Adivinhação", "2": "Matemática", "3": "Compilação de calendário" },
+        "transport": { "0": "Carruagens e cavalos", "1": "Embarcações", "2": "Liteiras", "3": "Tecnologia de construção naval" },
+        "communication": { "0": "Sistema de correio", "1": "Sinais de fogo", "2": "Pombos correio", "3": "Mensageiros" },
+        "tools": { "0": "Ferramentas agrícolas", "1": "Teares", "2": "Fornos de fundição", "3": "Limites tecnológicos" }
+      },
+      "culture": {
+        "philosophy": { "0": "Confucionismo", "1": "Budismo", "2": "Taoísmo", "3": "Legalismo", "4": "Moísmo", "5": "Neoconfucionismo/Escola da mente" },
+        "arts": { "0": "Poesia", "1": "Contos", "2": "Ópera", "3": "Caligrafia e pintura", "4": "Música" },
+        "education": { "0": "Escolas privadas", "1": "Escolas oficiais", "2": "Academias", "3": "Universidade imperial", "4": "Clássicos" }
+      },
+      "religion": {
+        "official": { "0": "Religião estatal", "1": "Sacrifícios ao céu", "2": "Templos ancestrais", "3": "Política religiosa" },
+        "folk": { "0": "Deus da terra", "1": "Deus do fogão", "2": "Mazu", "3": "Guandi", "4": "Orações e rituais" },
+        "funeral": { "0": "Sistemas de sepultamento", "1": "Culto aos ancestrais", "2": "Rituais de convocação da alma", "3": "Aniversário de morte", "4": "Mausoléus" },
+        "taboo": { "0": "Nomes proibidos", "1": "Estilos de cortesia", "2": "Inquisição literária", "3": "Conceitos de boa e má sorte" }
+      },
+      "ethnicity": {
+        "main": { "0": "Características étnicas", "1": "Identidade cultural" },
+        "neighbors": { "0": "Nômades/pescadores-caçadores", "1": "Relações civilizado-bárbaro" },
+        "interaction": { "0": "Guerra", "1": "Integração", "2": "Assimilação", "3": "Política de fronteira" },
+        "foreign": { "0": "Cultura estrangeira", "1": "Missionários", "2": "Comércio" }
+      },
+      "language": {
+        "spoken": { "0": "Sensibilidade temporal", "1": "Dialetos", "2": "Divisão erudito/popular" },
+        "titles": { "0": "Títulos oficiais", "1": "Títulos de parentesco", "2": "Autodenominação/títulos respeitosos/depreciativos" },
+        "written": { "0": "Chinês clássico/vernáculo", "1": "Formatos de memoriais/documentos/cartas" },
+        "taboo": { "0": "Caracteres proibidos", "1": "Eufemismos", "2": "Expressões específicas da época" }
+      },
+      "daily": {
+        "food": { "0": "Alimentos básicos", "1": "Pratos", "2": "Bebidas", "3": "Métodos de cozimento", "4": "Etiqueta à mesa" },
+        "clothing": { "0": "Materiais", "1": "Estilos", "2": "Cores", "3": "Identificadores de status" },
+        "housing": { "0": "Casas populares", "1": "Mansões", "2": "Palácios", "3": "Pousadas", "4": "Mobília" },
+        "travel": { "0": "Transporte diário", "1": "Etiqueta de viagem", "2": "Dinheiro de viagem" },
+        "measures": { "0": "Comprimento", "1": "Peso", "2": "Capacidade", "3": "Conversão monetária" },
+        "time": { "0": "Doze horas duplas", "1": "Tambores noturnos", "2": "Trabalhar ao nascer do sol" },
+        "entertainment": { "0": "Jogos de tabuleiro", "1": "Cuju", "2": "Lutas de galo", "3": "Banquetes" },
+        "festivals": { "0": "Ano Novo", "1": "Qingming", "2": "Dragon Boat", "3": "Lua", "4": "Chongyang" },
+        "etiquette": { "0": "Cartões de visita", "1": "Banquetes", "2": "Presentes", "3": "Etiqueta oficial/popular" }
+      },
+      "supernatural": {
+        "system": { "0": "Níveis de cultivo", "1": "Restrições de regras", "2": "Caminhos de promoção" },
+        "beings": { "0": "Deuses", "1": "Demônios", "2": "Fantasmas", "3": "Imortais" },
+        "artifacts": { "0": "Tesouros mágicos", "1": "Pílulas", "2": "Pedras espirituais", "3": "Formações" },
+        "impact": { "0": "Cultivadores vs mortais", "1": "Poder vs autoridade", "2": "Sistemas de gestão" }
+      }
+    }
   }
 }

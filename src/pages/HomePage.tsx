@@ -122,7 +122,7 @@ export default function HomePage() {
     if (!genres || genres.length === 0) return t('home.uncategorized')
     return genres
       .slice(0, 3)
-      .map(v => GENRE_OPTIONS.find(o => o.value === v)?.label ?? v)
+      .map(v => { const o = GENRE_OPTIONS.find(opt => opt.value === v); return o?.labelKey ? t(o.labelKey, o.label) : (o?.label ?? v) })
       .join(' · ') + (genres.length > 3 ? ` +${genres.length - 3}` : '')
   }
 
@@ -277,7 +277,7 @@ export default function HomePage() {
                         )}
                       </div>
                       <div className="text-text-muted text-xs">
-                        {genres.slice(0, 2).map(g => GENRE_OPTIONS.find(o => o.value === g)?.label ?? g).join(' · ')}
+                        {genres.slice(0, 2).map(g => { const o = GENRE_OPTIONS.find(opt => opt.value === g); return o?.labelKey ? t(o.labelKey, o.label) : (o?.label ?? g) }).join(' · ')}
                         {project.description && <> · <span className="truncate">{project.description.slice(0, 30)}</span></>}
                       </div>
                     </div>
@@ -377,7 +377,7 @@ export default function HomePage() {
                       const opt = GENRE_OPTIONS.find(o => o.value === g)
                       return (
                         <span key={g} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
-                          {opt?.label ?? g}
+                          {opt?.labelKey ? t(opt.labelKey, opt.label) : (opt?.label ?? g)}
                           <button onClick={() => toggleGenre(g)} className="hover:text-error"><X className="w-2.5 h-2.5" /></button>
                         </span>
                       )
@@ -410,7 +410,7 @@ export default function HomePage() {
                                     : 'bg-bg-base text-text-secondary hover:bg-bg-hover'
                                 }`}
                               >
-                                {opt.label}
+                                {opt.labelKey ? t(opt.labelKey, opt.label) : opt.label}
                               </button>
                             ))}
                           </div>

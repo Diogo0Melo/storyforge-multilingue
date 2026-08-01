@@ -153,7 +153,8 @@
     "factContainsOldName": "Valor do fato ou citação de evidência contém nome antigo",
     "stateCardContent": "Conteúdo do cartão de estado",
     "stateCardContainsOldName": "Valor do campo de estado contém nome antigo",
-    "stateCardAutoUpdate": "Nome da entidade no cartão de estado do mesmo tipo «{{name}}» foi atualizado automaticamente"
+    "stateCardAutoUpdate": "Nome da entidade no cartão de estado do mesmo tipo «{{name}}» foi atualizado automaticamente",
+    "stateCardNoMapping": "Cartão de estado sem mapeamento de entidade, não atualizado automaticamente"
   },
   "warning": {
     "manualReviewRequired": "Mais {{count}} textos livres ou registros não padronizados precisam de revisão manual, não serão reescritos automaticamente",

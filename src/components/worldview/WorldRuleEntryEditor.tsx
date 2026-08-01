@@ -2,6 +2,7 @@ import { Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
   CONFLICT_PRIORITY_LABELS,
+  CONFLICT_PRIORITY_LABEL_KEYS,
   isEntryEmpty,
 } from '../../lib/types/world-rules'
 import type { ConflictPriority, WorldRuleEntry } from '../../lib/types/world-rules'
@@ -102,7 +103,7 @@ export default function WorldRuleEntryEditor({
                   }`}
                 >
                   {value === 'historical' ? '📜 ' : value === 'fictional' ? '✨ ' : '⚖️ '}
-                  {label}
+                  {t(CONFLICT_PRIORITY_LABEL_KEYS[value], label)}
                 </button>
               ))}
             </div>

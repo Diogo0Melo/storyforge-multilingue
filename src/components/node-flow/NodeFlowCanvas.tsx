@@ -116,7 +116,9 @@ export default function NodeFlowCanvas(props: {
               >
                 <div className="min-w-0">
                   <p className="truncate text-xs font-semibold text-text-primary">{node.title}</p>
-                  <p className="truncate text-[9px] text-text-muted">{definition?.label ?? node.kind}</p>
+                  <p className="truncate text-[9px] text-text-muted">
+                    {definition?.labelKey ? t(definition.labelKey, definition.label) : definition?.label ?? node.kind}
+                  </p>
                 </div>
                 <div className="flex items-center gap-1">
                   {running && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
@@ -154,7 +156,7 @@ export default function NodeFlowCanvas(props: {
                   ))}
                 </div>
                 <div className="line-clamp-4 whitespace-pre-wrap text-[10px] leading-4 text-text-secondary">
-                  {result?.error || preview || definition?.description || t('nodeFlow.configureNode')}
+                  {result?.error || preview || (definition?.descriptionKey ? t(definition.descriptionKey, definition.description) : definition?.description) || t('nodeFlow.configureNode')}
                 </div>
                 <button
                   type="button"

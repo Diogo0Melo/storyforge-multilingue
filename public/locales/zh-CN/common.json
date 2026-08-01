@@ -129,19 +129,18 @@
   "aiStream.tokenUsageTitle": "输入 {{input}} + 输出 {{output}}",
   "aiStream.viewRaw": "查看原始数据",
   "backup": {
-    "snapshotNotFound": "backup.snapshotNotFound"
+    "snapshotNotFound": "快照不存在"
   },
-  "backup.snapshotNotFound": "快照不存在",
   "beforeUnload.confirm": "你有未保存的内容，确定要离开吗？",
   "cancel": "取消",
   "characters": {
-    "design": "characters.design",
-    "extras": "characters.extras",
-    "generate": "characters.generate",
-    "main": "characters.main",
-    "minor": "characters.minor",
-    "npc": "characters.npc",
-    "relations": "characters.relations"
+    "design": "角色设计",
+    "extras": "龙套",
+    "generate": "角色生成",
+    "main": "主角",
+    "minor": "配角",
+    "npc": "NPC",
+    "relations": "关系网"
   },
   "characterDrivenPlanDefault": "角色驱动方案 {{n}}",
   "close": "关闭",

@@ -388,8 +388,12 @@ export default function NodeModeWorkspace(props: {
                 }}
                 className="w-full rounded border border-border bg-bg-base p-2 text-left hover:border-accent hover:bg-bg-hover"
               >
-                <span className="block text-[11px] font-medium text-text-primary">{definition.label}</span>
-                <span className="mt-0.5 block text-[9px] leading-3 text-text-muted">{definition.description}</span>
+                <span className="block text-[11px] font-medium text-text-primary">
+                  {definition.labelKey ? t(definition.labelKey, definition.label) : definition.label}
+                </span>
+                <span className="mt-0.5 block text-[9px] leading-3 text-text-muted">
+                  {definition.descriptionKey ? t(definition.descriptionKey, definition.description) : definition.description}
+                </span>
               </button>
             ))}
           </div>

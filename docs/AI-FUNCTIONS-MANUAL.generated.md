@@ -204,7 +204,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `character.generate` | `src/components/character/CharacterPanel.tsx:162` |
 | `character.structure` | `src/lib/ai/parse-character-output.ts:80` |
 | `character.supplement` | `src/components/character/CharacterSupplementAction.tsx:82` |
-| `codex.extract` | `src/components/codex/CodexPanel.tsx:228` |
+| `codex.extract` | `src/components/codex/CodexPanel.tsx:229` |
 | `cultivation.progress` | `src/components/cultivation/CultivationProgressPanel.tsx:145` |
 | `detail.scene` | `src/components/outline/DetailedOutlinePanel.tsx:153`<br/>`src/components/outline/ScenePanel.tsx:128`<br/>`src/lib/ai/batch-detail-runner.ts:109` |
 | `emotion.beat` | `src/components/editor/EmotionBeatCard.tsx:68` |
@@ -262,4 +262,4 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ---
 
-生成时间基准:commit `074fd82`
+生成时间基准:commit `e8933b6`

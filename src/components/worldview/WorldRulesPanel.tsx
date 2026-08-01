@@ -43,12 +43,12 @@ function getL2Nodes(
   l1Id: string,
   predefined: WorldRuleNodeDef | undefined,
   customNodes: CustomWorldRuleNode[],
-): { id: string; label: string; icon: string; hints?: string[]; isCustom: boolean }[] {
+): WorldRuleNavigationNode[] {
   const result: WorldRuleNavigationNode[] = []
   // 预定义 L2
   if (predefined?.children) {
     for (const l2 of predefined.children) {
-      result.push({ id: l2.id, label: l2.label, icon: l2.icon, hints: l2.hints, isCustom: false })
+      result.push({ id: l2.id, label: l2.label, labelKey: l2.labelKey, icon: l2.icon, hints: l2.hints, hintKeys: l2.hintKeys, isCustom: false })
     }
   }
   // 自定义 L2（parentId = l1Id）
@@ -63,7 +63,7 @@ function getL2Nodes(
 // ── 主面板 ─────────────────────────────────────────────────────────
 
 export default function WorldRulesPanel({ project }: Props) {
-  const { t } = useTranslation('panels')
+  const { t } = useTranslation(['panels', 'worlds'])
   const dialog = useDialog()
   const {
     profile, loading, loadProfile,
@@ -144,7 +144,7 @@ export default function WorldRulesPanel({ project }: Props) {
   const l1Nodes = useMemo(() => {
     const nodes: WorldRuleNavigationNode[] = []
     for (const l1 of WORLD_RULE_TREE) {
-      nodes.push({ id: l1.id, label: l1.label, icon: l1.icon, isCustom: false, hints: l1.hints })
+      nodes.push({ id: l1.id, label: l1.label, labelKey: l1.labelKey, icon: l1.icon, isCustom: false, hints: l1.hints, hintKeys: l1.hintKeys })
     }
     // 自定义 L1（parentId = null）
     if (profile) {
@@ -174,34 +174,38 @@ export default function WorldRulesPanel({ project }: Props) {
     if (!selectedNode) return []
     // L1 级别
     const l1 = WORLD_RULE_TREE.find(n => n.id === selectedNode)
-    if (l1?.hints) return l1.hints
+    if (l1?.hints) {
+      return l1.hintKeys ? l1.hintKeys.map((key, i) => t(key, l1.hints![i])) : l1.hints
+    }
     // L2 预定义
     for (const l1Node of WORLD_RULE_TREE) {
       const l2 = l1Node.children?.find(n => n.id === selectedNode)
-      if (l2?.hints) return l2.hints
+      if (l2?.hints) {
+        return l2.hintKeys ? l2.hintKeys.map((key, i) => t(key, l2.hints![i])) : l2.hints
+      }
     }
     // 自定义
     const custom = profile?.customNodes.find(n => n.id === selectedNode)
     if (custom?.hints) return custom.hints
     return []
-  }, [selectedNode, profile])
+  }, [selectedNode, profile, t])
 
   // 当前选中节点的标签
   const currentLabel = useMemo<string>(() => {
     if (!selectedNode) return ''
     // L1
     const l1 = WORLD_RULE_TREE.find(n => n.id === selectedNode)
-    if (l1) return `${l1.icon} ${l1.label}`
+    if (l1) return `${l1.icon} ${l1.labelKey ? t(l1.labelKey, l1.label) : l1.label}`
     // L2 预定义
     for (const l1Node of WORLD_RULE_TREE) {
       const l2 = l1Node.children?.find(n => n.id === selectedNode)
-      if (l2) return `${l2.icon} ${l2.label}`
+      if (l2) return `${l2.icon} ${l2.labelKey ? t(l2.labelKey, l2.label) : l2.label}`
     }
     // 自定义
     const custom = profile?.customNodes.find(n => n.id === selectedNode)
     if (custom) return `${custom.icon || '🔖'} ${custom.label}`
     return selectedNode
-  }, [selectedNode, profile])
+  }, [selectedNode, profile, t])
 
   // 统计某个 L1 下已填节点数
   const countL1Filled = useCallback((l1Id: string): number => {

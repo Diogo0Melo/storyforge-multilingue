@@ -131,19 +131,18 @@
   "aiStream.tokenUsageTitle": "Entrada {{input}} + Saída {{output}}",
   "aiStream.viewRaw": "Ver dados brutos",
   "backup": {
-    "snapshotNotFound": "backup.snapshotNotFound"
+    "snapshotNotFound": "Snapshot não encontrado"
   },
-  "backup.snapshotNotFound": "Snapshot não encontrado",
   "beforeUnload.confirm": "Você tem conteúdo não salvo. Deseja realmente sair?",
   "cancel": "Cancelar",
   "characters": {
-    "design": "characters.design",
-    "extras": "characters.extras",
-    "generate": "characters.generate",
-    "main": "characters.main",
-    "minor": "characters.minor",
-    "npc": "characters.npc",
-    "relations": "characters.relations"
+    "design": "Design de Personagem",
+    "extras": "Figurante",
+    "generate": "Gerar Personagem",
+    "main": "Protagonista",
+    "minor": "Secundário",
+    "npc": "NPC",
+    "relations": "Relações"
   },
   "characterDrivenPlanDefault": "Plano de Personagem {{n}}",
   "close": "Fechar",

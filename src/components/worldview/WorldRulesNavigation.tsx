@@ -7,8 +7,10 @@ import type { WorldRuleEntry } from '../../lib/types/world-rules'
 export interface WorldRuleNavigationNode {
   id: string
   label: string
+  labelKey?: string
   icon: string
   hints?: string[]
+  hintKeys?: string[]
   isCustom: boolean
 }
 
@@ -110,7 +112,7 @@ export default function WorldRulesNavigation({
               }`}
             >
               <span className="text-base">{node.icon}</span>
-              <span className="flex-1 truncate">{node.label}</span>
+              <span className="flex-1 truncate">{node.labelKey ? t(node.labelKey, node.label) : node.label}</span>
               {count > 0 && (
                 <span className="text-[10px] bg-accent/20 text-accent px-1.5 py-0.5 rounded-full">{count}</span>
               )}
@@ -152,7 +154,7 @@ export default function WorldRulesNavigation({
           >
             <button onClick={() => onSelectNode(node.id)} className="min-w-0 flex-1 flex items-center gap-2 text-left">
               <span className="text-base">{node.icon}</span>
-              <span className="flex-1 truncate">{node.label}</span>
+              <span className="flex-1 truncate">{node.labelKey ? t(node.labelKey, node.label) : node.label}</span>
               {!isEntryEmpty(entries[node.id]) && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}
             </button>
             {node.isCustom && (

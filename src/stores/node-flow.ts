@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import { db } from '../lib/db/schema'
 import type { NodeFlow, NodeRunRecord } from '../lib/types'
 import { EMPTY_NODE_FLOW_GRAPH, parseNodeFlowGraph } from '../lib/types'
+import i18n from '../i18n/i18n'
 
 interface NodeFlowStore {
   projectId: number | null
@@ -33,7 +34,7 @@ export const useNodeFlowStore = create<NodeFlowStore>((set, get) => ({
     const row: NodeFlow = {
       projectId,
       worldGroupId,
-      name: '未命名节点图',
+      name: i18n.t('panels:nodeFlow.unnamedGraph'),
       description: '',
       graphJson: JSON.stringify(EMPTY_NODE_FLOW_GRAPH),
       createdAt: now,

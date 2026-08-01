@@ -74,7 +74,7 @@
     "deleteConfirmMessage": "A sinopse e o texto não serão excluídos; as subversões serão mantidas, mas não apontarão mais para este plano.",
     "deleteConfirmTitle": "Excluir plano «{{name}}»?",
     "deselectAll": "Desmarcar todos",
-    "extraPlaceholder": "Ex.: limitar a 3 volumes, focar em cenas de batalha, romance贯穿始终...",
+    "extraPlaceholder": "Ex.: limitar a 3 volumes, focar em cenas de batalha, romance do início ao fim...",
     "extraRequirements": "Requisitos extras (opcional)",
     "generatePlot": "Gerar Sinopse do Enredo",
     "generating": "Gerando...",

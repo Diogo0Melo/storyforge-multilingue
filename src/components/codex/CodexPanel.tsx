@@ -12,7 +12,8 @@ import {
 import { useTranslation } from 'react-i18next'
 import { useCodexStore } from '../../stores/codex'
 import {
-  CODEX_DOMAIN_LABELS, filterCodexEntriesByWorld, parseFieldSchema,
+  CODEX_DOMAIN_LABELS, CODEX_DOMAIN_LABEL_KEYS, BUILTIN_CATEGORIES,
+  filterCodexEntriesByWorld, parseFieldSchema,
   type CodexDomain, type CodexCategory, type CodexEntry,
 } from '../../lib/types/codex'
 import type { Project } from '../../lib/types'
@@ -147,7 +148,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
   // ── 分类操作 ──
   const handleAddCategory = async () => {
     const name = (await dialog.prompt({
-      title: t('codex.panel.addCategoryTitle', { domain: CODEX_DOMAIN_LABELS[domain] } as any),
+      title: t('codex.panel.addCategoryTitle', { domain: t(CODEX_DOMAIN_LABEL_KEYS[domain], CODEX_DOMAIN_LABELS[domain]) } as any),
       placeholder: t('codex.panel.addCategoryPlaceholder' as any),
     }))?.trim()
     if (!name) return
@@ -295,7 +296,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                     domain === d ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
                   }`}
                 >
-                  {CODEX_DOMAIN_LABELS[d]}
+                  {t(CODEX_DOMAIN_LABEL_KEYS[d], CODEX_DOMAIN_LABELS[d])}
                 </button>
               ))}
             </div>
@@ -327,7 +328,11 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                 } ${cat.hidden ? 'opacity-50' : ''}`}
               >
                 <span>{cat.icon || '📁'}</span>
-                <span className="truncate flex-1">{cat.name}</span>
+                <span className="truncate flex-1">
+                  {cat.builtInKey
+                    ? t(BUILTIN_CATEGORIES.find(c => c.builtInKey === cat.builtInKey)?.nameKey || '', cat.name)
+                    : cat.name}
+                </span>
                 <span className="text-[10px] text-text-muted">
                   {scopedEntries.filter(e => e.categoryId === cat.id).length || ''}
                 </span>

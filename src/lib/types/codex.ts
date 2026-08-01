@@ -17,6 +17,12 @@ export const CODEX_DOMAIN_LABELS: Record<CodexDomain, string> = {
   origin: '世界起源',
 }
 
+export const CODEX_DOMAIN_LABEL_KEYS: Record<CodexDomain, string> = {
+  natural: 'codex.domain.natural',
+  humanity: 'codex.domain.humanity',
+  origin: 'codex.domain.origin',
+}
+
 /** 字段类型 */
 export type CodexFieldType = 'text' | 'longtext' | 'select' | 'number' | 'ref'
 
@@ -187,7 +193,8 @@ export function filterCodexEntriesByWorld<T extends Pick<CodexEntry, 'worldGroup
 export interface BuiltInCategorySeed {
   domain: CodexDomain
   builtInKey: BuiltInCodexKey
-  name: string
+  name: string        // persisted to DB — do NOT change
+  nameKey?: string    // i18n key for UI display
   icon: string
   fields: CodexFieldDef[]
 }
@@ -197,7 +204,7 @@ const PIN_JI_OPTIONS = ['凡品', '下品', '中品', '上品', '极品', '神�
 export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   // ── 自然环境 ──
   {
-    domain: 'natural', builtInKey: 'mineral', name: '矿物灵材', icon: '⛏️',
+    domain: 'natural', builtInKey: 'mineral', name: '矿物灵材', nameKey: 'codex.builtIn.mineral', icon: '⛏️',
     fields: [
       { key: 'appearance', label: '外观', type: 'longtext', placeholder: '形状 / 颜色 / 质感' },
       { key: 'rank', label: '品级品阶', type: 'select', options: PIN_JI_OPTIONS },
@@ -208,7 +215,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'natural', builtInKey: 'herb', name: '灵植草药', icon: '🌿',
+    domain: 'natural', builtInKey: 'herb', name: '灵植草药', nameKey: 'codex.builtIn.herb', icon: '🌿',
     fields: [
       { key: 'form', label: '形态', type: 'longtext' },
       { key: 'effect', label: '药效', type: 'longtext' },
@@ -220,7 +227,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'natural', builtInKey: 'beast', name: '灵兽异兽', icon: '🐅',
+    domain: 'natural', builtInKey: 'beast', name: '灵兽异兽', nameKey: 'codex.builtIn.beast', icon: '🐅',
     fields: [
       { key: 'kind', label: '类别', type: 'select', options: ['走兽', '飞禽', '水族', '虫豸', '异种'] },
       // WORLD-1 已有结构化关联；保留这两个旧文本字段承载老项目无法自动推断的数据。
@@ -236,7 +243,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   },
   // ── 人文环境 ──
   {
-    domain: 'humanity', builtInKey: 'race', name: '种族民族', icon: '🧬',
+    domain: 'humanity', builtInKey: 'race', name: '种族民族', nameKey: 'codex.builtIn.race', icon: '🧬',
     fields: [
       { key: 'appearance', label: '外貌特征', type: 'longtext' },
       { key: 'talent', label: '种族天赋', type: 'longtext' },
@@ -250,7 +257,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'faction', name: '势力', icon: '⚔️',
+    domain: 'humanity', builtInKey: 'faction', name: '势力', nameKey: 'codex.builtIn.faction', icon: '⚔️',
     fields: [
       { key: 'type', label: '类型', type: 'select', options: ['门派', '朝廷', '商会', '部落', '教派', '世家', '其他'] },
       { key: 'territory', label: '势力范围', type: 'text' },
@@ -265,7 +272,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'city', name: '城池重镇', icon: '🏰',
+    domain: 'humanity', builtInKey: 'city', name: '城池重镇', nameKey: 'codex.builtIn.city', icon: '🏰',
     fields: [
       { key: 'faction', label: '所属势力', type: 'ref', refCategory: 'faction', refMulti: false },
       { key: 'locationNote', label: '位置备注（旧文本）', type: 'text', placeholder: '结构化位置请使用上方「重要地点」关联' },
@@ -278,7 +285,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'artifact', name: '人工器物', icon: '🗡️',
+    domain: 'humanity', builtInKey: 'artifact', name: '人工器物', nameKey: 'codex.builtIn.artifact', icon: '🗡️',
     fields: [
       { key: 'type', label: '类别', type: 'select', options: ['武器', '防具', '法器', '丹药', '功法秘籍', '阵法', '材料', '其他'] },
       { key: 'rank', label: '品级品阶', type: 'select', options: PIN_JI_OPTIONS },
@@ -293,7 +300,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
 
   // ── 自然环境各方面（全貌写在面板字段,这里逐条细化具体词条） ──
   {
-    domain: 'natural', builtInKey: 'natStructure', name: '世界结构', icon: '🌐',
+    domain: 'natural', builtInKey: 'natStructure', name: '世界结构', nameKey: 'codex.builtIn.natStructure', icon: '🌐',
     fields: [
       { key: 'type', label: '层级类型', type: 'text', placeholder: '如 星球 / 大陆 / 位面 / 平行空间' },
       { key: 'scope', label: '范围', type: 'text' },
@@ -301,14 +308,14 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'natural', builtInKey: 'natDimension', name: '疆域版图', icon: '📐',
+    domain: 'natural', builtInKey: 'natDimension', name: '疆域版图', nameKey: 'codex.builtIn.natDimension', icon: '📐',
     fields: [
       { key: 'scale', label: '尺度范围', type: 'text' },
       { key: 'feature', label: '区域特征', type: 'longtext' },
     ],
   },
   {
-    domain: 'natural', builtInKey: 'natTerrain', name: '地貌', icon: '🗺️',
+    domain: 'natural', builtInKey: 'natTerrain', name: '地貌', nameKey: 'codex.builtIn.natTerrain', icon: '🗺️',
     fields: [
       { key: 'type', label: '类型', type: 'select', options: ['大陆', '山脉', '高原', '平原', '盆地', '丘陵', '峡谷', '沙漠', '森林', '其他'] },
       { key: 'location', label: '位置', type: 'text' },
@@ -316,7 +323,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'natural', builtInKey: 'natWater', name: '山川水系', icon: '⛰️',
+    domain: 'natural', builtInKey: 'natWater', name: '山川水系', nameKey: 'codex.builtIn.natWater', icon: '⛰️',
     fields: [
       { key: 'type', label: '类型', type: 'select', options: ['山脉', '山峰', '河流', '湖泊', '海洋', '运河', '瀑布', '其他'] },
       { key: 'scale', label: '规模', type: 'text' },
@@ -324,7 +331,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'natural', builtInKey: 'natClimate', name: '气候带', icon: '🌦️',
+    domain: 'natural', builtInKey: 'natClimate', name: '气候带', nameKey: 'codex.builtIn.natClimate', icon: '🌦️',
     fields: [
       { key: 'region', label: '所在区域', type: 'text' },
       { key: 'type', label: '气候类型', type: 'text', placeholder: '如 温带 / 苦寒 / 湿热' },
@@ -334,14 +341,14 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
 
   // ── 人文环境各方面 ──
   {
-    domain: 'humanity', builtInKey: 'humEra', name: '历史时代', icon: '📜',
+    domain: 'humanity', builtInKey: 'humEra', name: '历史时代', nameKey: 'codex.builtIn.humEra', icon: '📜',
     fields: [
       { key: 'period', label: '时间/纪年', type: 'text' },
       { key: 'feature', label: '时代特征/大事', type: 'longtext' },
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'humEvent', name: '重大事件', icon: '📅',
+    domain: 'humanity', builtInKey: 'humEvent', name: '重大事件', nameKey: 'codex.builtIn.humEvent', icon: '📅',
     fields: [
       { key: 'type', label: '类型', type: 'select', options: ['战争', '王朝兴替', '灾劫', '变法', '发现', '其他'] },
       { key: 'time', label: '发生时间', type: 'text' },
@@ -349,14 +356,14 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'humSociety', name: '政经文化', icon: '🏛️',
+    domain: 'humanity', builtInKey: 'humSociety', name: '政经文化', nameKey: 'codex.builtIn.humSociety', icon: '🏛️',
     fields: [
       { key: 'type', label: '类别', type: 'select', options: ['政体', '货币', '赋税', '阶层制度', '宗教信仰', '风俗节庆', '其他'] },
       { key: 'detail', label: '说明', type: 'longtext' },
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'humPolitics', name: '政治制度', icon: '🏛️',
+    domain: 'humanity', builtInKey: 'humPolitics', name: '政治制度', nameKey: 'codex.builtIn.humPolitics', icon: '🏛️',
     fields: [
       { key: 'type', label: '制度类型', type: 'select', options: ['政体', '官制', '法律', '军事', '外交', '阶层', '其他'] },
       { key: 'scope', label: '适用范围', type: 'text' },
@@ -365,7 +372,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'humEconomy', name: '经济制度', icon: '💰',
+    domain: 'humanity', builtInKey: 'humEconomy', name: '经济制度', nameKey: 'codex.builtIn.humEconomy', icon: '💰',
     fields: [
       { key: 'type', label: '制度类型', type: 'select', options: ['货币', '税赋', '贸易', '产业', '资源分配', '金融', '其他'] },
       { key: 'scope', label: '流通范围', type: 'text' },
@@ -374,7 +381,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'humCulture', name: '文化制度', icon: '🎭',
+    domain: 'humanity', builtInKey: 'humCulture', name: '文化制度', nameKey: 'codex.builtIn.humCulture', icon: '🎭',
     fields: [
       { key: 'type', label: '文化类型', type: 'select', options: ['语言', '宗教', '教育', '礼仪', '节庆', '艺术', '习俗', '其他'] },
       { key: 'region', label: '流行区域/群体', type: 'text' },
@@ -383,7 +390,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'humanity', builtInKey: 'humConflict', name: '矛盾冲突', icon: '🔥',
+    domain: 'humanity', builtInKey: 'humConflict', name: '矛盾冲突', nameKey: 'codex.builtIn.humConflict', icon: '🔥',
     fields: [
       { key: 'type', label: '类型', type: 'text', placeholder: '如 阶级 / 种族 / 信仰 / 资源' },
       { key: 'sides', label: '对立方', type: 'text' },
@@ -393,7 +400,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
 
   // ── 世界起源：力量体系 / 神明信仰 ──
   {
-    domain: 'origin', builtInKey: 'originPower', name: '力量层级', icon: '⚡',
+    domain: 'origin', builtInKey: 'originPower', name: '力量层级', nameKey: 'codex.builtIn.originPower', icon: '⚡',
     fields: [
       { key: 'rank', label: '等级/层级', type: 'text' },
       { key: 'mark', label: '核心标志', type: 'longtext' },
@@ -401,7 +408,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     ],
   },
   {
-    domain: 'origin', builtInKey: 'originDeity', name: '神明信仰', icon: '🌟',
+    domain: 'origin', builtInKey: 'originDeity', name: '神明信仰', nameKey: 'codex.builtIn.originDeity', icon: '🌟',
     fields: [
       { key: 'type', label: '类型', type: 'select', options: ['主神', '次神', '半神', '国教', '民间信仰', '邪神', '其他'] },
       { key: 'title', label: '名号/职司', type: 'text' },
@@ -417,3 +424,10 @@ export const CODEX_COMMON_LABELS = {
   summary: '一句话简介',
   description: '详细描述',
 }
+
+export const CODEX_COMMON_LABEL_KEYS = {
+  name: 'codex.common.name',
+  icon: 'codex.common.icon',
+  summary: 'codex.common.summary',
+  description: 'codex.common.description',
+} as const

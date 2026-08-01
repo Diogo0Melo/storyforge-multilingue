@@ -23,6 +23,7 @@ interface ProjectInfoPanelProps {
 
 export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanelProps) {
   const { t } = useTranslation('project')
+  const { t: tm } = useTranslation('metadata')
   const { updateProject } = useProjectStore()
   const [form, setForm] = useState({
     name: project.name,
@@ -62,7 +63,10 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
     if (!genres || genres.length === 0) return t('info.genrePlaceholder')
     return genres
       .slice(0, 3)
-      .map(v => GENRE_OPTIONS.find(o => o.value === v)?.label ?? v)
+      .map(v => {
+        const opt = GENRE_OPTIONS.find(o => o.value === v)
+        return opt?.labelKey ? tm(opt.labelKey, opt.label) : (opt?.label ?? v)
+      })
       .join(' · ') + (genres.length > 3 ? ` +${genres.length - 3}` : '')
   }
 
@@ -103,7 +107,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
                 const opt = GENRE_OPTIONS.find(o => o.value === g)
                 return (
                   <span key={g} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
-                    {opt?.label ?? g}
+                    {opt?.labelKey ? tm(opt.labelKey, opt.label) : (opt?.label ?? g)}
                     <button onClick={() => toggleGenre(g)} className="hover:text-error"><X className="w-2.5 h-2.5" /></button>
                   </span>
                 )
@@ -139,7 +143,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
                               : 'bg-bg-base text-text-secondary hover:bg-bg-hover'
                           }`}
                         >
-                          {opt.label}
+                          {opt.labelKey ? tm(opt.labelKey, opt.label) : opt.label}
                         </button>
                       ))}
                     </div>

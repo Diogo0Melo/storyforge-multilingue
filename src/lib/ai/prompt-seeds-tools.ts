@@ -7,6 +7,7 @@ export const TOOL_PROMPT_SEEDS: PromptSeed[] = [
     moduleKey: 'import.parse-character',
     promptType: 'parse',
     name: '内置-角色文档解析',
+    nameKey: 'prompt.seed.characterDocParse',
     description: '从用户上传的角色设定文档中抽取结构化角色数据（JSON）。',
     systemPrompt: `你是一位精确的文档结构化抽取器。从用户提供的文档中识别出所有角色，并输出严格的 JSON 数组。
 
@@ -46,6 +47,7 @@ JSON 字段定义（每个角色对象）：
     moduleKey: 'import.parse-worldview',
     promptType: 'parse',
     name: '内置-世界观文档解析',
+    nameKey: 'prompt.seed.worldviewDocParse',
     description: '从世界观设定文档中抽取结构化字段（JSON）。',
     systemPrompt: `你是一位精确的文档结构化抽取器。从用户提供的世界观文档中抽取信息到 JSON 对象。
 
@@ -86,6 +88,7 @@ JSON 字段（按 v3 数据模型）：
     moduleKey: 'import.parse-outline',
     promptType: 'parse',
     name: '内置-大纲文档解析',
+    nameKey: 'prompt.seed.outlineDocParse',
     description: '从大纲文档中抽取结构化卷/章节树（JSON 数组）。',
     systemPrompt: `你是一位精确的文档结构化抽取器。从用户提供的大纲文档中抽取卷与章节，输出 JSON 数组。
 
@@ -117,6 +120,7 @@ JSON 节点字段：
     moduleKey: 'import.parse-all',
     promptType: 'parse',
     name: '内置-智能统一解析',
+    nameKey: 'prompt.seed.unifiedParse',
     description: '一次性从任意文档（设定文档或成品小说）中提取世界观 / 角色 / 大纲章节三类结构化数据。',
     systemPrompt: `你是一位顶级的小说结构化分析师。用户会给你一份文档，它可能是：
 A) 小说设定集（世界观 + 人物表 + 大纲混排）
@@ -231,6 +235,7 @@ D) 以上的混合
     moduleKey: 'import.parse-chunk',
     promptType: 'parse',
     name: '内置-分块解析（大文档流水线）',
+    nameKey: 'prompt.seed.chunkParse',
     description: '针对百万字级小说，把原文切成多块后逐块抽取世界观 / 角色 / 大纲，可带已识别上下文。',
     systemPrompt: `你是一位顶级的小说结构化分析师，正在分块处理一部大型长篇小说。
 
@@ -323,6 +328,7 @@ D) 以上的混合
     moduleKey: 'import.merge-characters',
     promptType: 'parse',
     name: '内置-角色跨块合并',
+    nameKey: 'prompt.seed.characterMerge',
     description: '检查分块导出的角色清单，判断哪些是同一人（别名 / 尊称 / 昵称）应合并。',
     systemPrompt: `你是一位精准的人物谱系分析师。下面给你一份来自长篇小说不同章节的角色清单，同一个人物可能被多个称呼重复登记（本名 / 字 / 尊称 / 外号 / 职务 / 昵称）。
 
@@ -362,6 +368,7 @@ D) 以上的混合
     moduleKey: 'detail.scene',
     promptType: 'generate',
     name: '内置-细纲场景生成',
+    nameKey: 'prompt.seed.sceneGenerate',
     description: '把单章大纲展开为若干场景（每个场景含人物 / 地点 / 冲突 / 节奏）。',
     systemPrompt: `你是一位经验丰富的小说场景拆分师，擅长把章节大纲拆解成精彩的场景节拍。
 
@@ -416,6 +423,7 @@ pace 只能取 slow / medium / fast / climax 四个值之一；estimatedWords �
     moduleKey: 'plot.character-driven',
     promptType: 'generate',
     name: '内置-角色驱动剧情',
+    nameKey: 'prompt.seed.characterDrivenPlot',
     description: '根据角色初始状态与目标状态，AI 生成中间情节推演（卷/章大纲结构）。',
     systemPrompt: `你是一位资深的网文/小说情节设计师，擅长从角色出发反推剧情线。
 
@@ -496,6 +504,7 @@ pace 只能取 slow / medium / fast / climax 四个值之一；estimatedWords �
     moduleKey: 'plot.character-revision',
     promptType: 'analyze',
     name: '内置-角色变更影响分析',
+    nameKey: 'prompt.seed.characterChangeImpact',
     description: '分析创作中途的角色变化，把已写区、过渡区和未写区分开，并输出可审查的大纲 patch。',
     systemPrompt: `你是一位长篇小说连续性编辑和结构策划师。你的任务是分析“创作中途发生的角色变化”，先保护已经写成的正文，再为未写大纲提出修订方案。
 
@@ -597,6 +606,7 @@ pace 只能取 slow / medium / fast / climax 四个值之一；estimatedWords �
     moduleKey: 'inspiration.reverse',
     promptType: 'generate',
     name: '内置-灵感反推',
+    nameKey: 'prompt.seed.inspirationReverse',
     description: '用户写碎片想法，AI 反向生成世界观草稿、故事核心、初始角色卡。',
     systemPrompt: `你是一位资深的小说策划师，擅长从碎片灵感中提炼出完整的故事框架。
 
@@ -679,6 +689,7 @@ pace 只能取 slow / medium / fast / climax 四个值之一；estimatedWords �
     moduleKey: 'inspiration.reverse.multiworld',
     promptType: 'generate',
     name: '内置-多世界灵感反推',
+    nameKey: 'prompt.seed.multiWorldInspiration',
     description: '多世界题材：用户给出带有多个世界意图的灵感，AI 顺着思路反推故事主线 + 多个世界 + 角色。',
     systemPrompt: `你是一位擅长诸天流/无限流/快穿/修仙多界等多世界题材的小说策划师。
 用户提供了带有"多个世界"意图的灵感，请**顺着用户的思路**反向推演出：一条贯穿的故事主线 + 多个世界的设定 + 初始角色。
@@ -755,6 +766,7 @@ pace 只能取 slow / medium / fast / climax 四个值之一；estimatedWords �
     moduleKey: 'world-group.suggest',
     promptType: 'generate',
     name: '内置-AI建议世界',
+    nameKey: 'prompt.seed.aiSuggestWorld',
     description: '诸天流/无限流等多世界题材，根据故事概念和已有世界建议新的世界组。',
     systemPrompt: `你是一位网文世界观架构师，擅长设计诸天流、无限流、快穿、修仙多界等多世界题材的世界格局。
 
@@ -802,6 +814,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'world-group.expand',
     promptType: 'generate',
     name: '内置-AI扩写世界',
+    nameKey: 'prompt.seed.aiExpandWorld',
     description: '根据世界的草稿描述，扩展出完整的世界观设定。',
     systemPrompt: `你是一位资深的世界观设计师。用户给了一个世界的草稿描述，请把它扩展成完整、自洽的世界观设定。
 
@@ -846,6 +859,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'codex.extract',
     promptType: 'generate',
     name: '内置-词条拆分提取',
+    nameKey: 'prompt.seed.codexEntryExtract',
     description: '把整段世界观内容拆成当前分类下可确认写入的结构化词条。',
     systemPrompt: `你是小说设定库整理器。把用户提供的整段设定拆成“当前分类”下的独立词条。
 
@@ -884,6 +898,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'location.extract',
     promptType: 'generate',
     name: '内置-重要地点提取',
+    nameKey: 'prompt.seed.locationExtract',
     description: '从已写正文中提取反复出现或推动剧情的重要地点候选。',
     systemPrompt: `你是小说地点档案整理器。阅读正文，只提取值得进入“重要地点”设定库的地点。
 
@@ -917,6 +932,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'inventory.extract',
     promptType: 'generate',
     name: '内置-物品栏提取',
+    nameKey: 'prompt.seed.inventoryExtract',
     description: '从章节正文提取各角色的物品获得/消耗事件，构建按角色归属的物品栏。',
     systemPrompt: `你是一个小说物品流水追踪器。阅读章节正文，提取**任意角色**实际发生的物品获得/消耗事件。
 
@@ -957,6 +973,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'story-timeline.extract',
     promptType: 'generate',
     name: '内置-故事年表提取',
+    nameKey: 'prompt.seed.timelineExtract',
     description: '从章节正文提取剧情大事，构建故事进程年表（区别于世界背景历史）。',
     systemPrompt: `你是一个小说剧情梳理器。阅读章节正文，提取本章发生的**剧情大事**（推动故事的关键事件、转折、冲突、相遇、突破等）。
 
@@ -987,6 +1004,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'scene.verify',
     promptType: 'generate',
     name: '内置-场景考证',
+    nameKey: 'prompt.seed.sceneResearch',
     description: '用户描述当前场景，AI 结合世界观/历史年表/世界规则给出符合背景的细节、时代错乱警示与情节灵感。',
     systemPrompt: `你是一位严谨的小说场景考证顾问，同时精通历史质感与世界观自洽。
 作者正在构思一个具体场景，需要你结合本作品的设定，提供符合背景的细节建议、纠错与情节灵感。
@@ -1035,6 +1053,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'style.learn',
     promptType: 'analyze',
     name: '内置-文风学习',
+    nameKey: 'prompt.seed.styleLearn',
     description: '从用户已定稿/润色的章节中,总结出其个人写作文风画像,供后续章节生成参考。',
     systemPrompt: `你是一位资深的文学编辑与文风分析师,擅长从作者的成稿中精准提炼其独特的写作习惯。
 
@@ -1093,6 +1112,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'style.calibrate',
     promptType: 'generate',
     name: '内置-文风互动校准',
+    nameKey: 'prompt.seed.styleCalibrate',
     description: '按现有文风画像和作者认可的改稿对照重写一段短文，供作者比较、反馈并沉淀新样本。',
     systemPrompt: `你是一位克制的文学改稿助手。请把作者提供的短文改写得更接近其个人文风。
 
@@ -1124,6 +1144,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'history.consult',
     promptType: 'analyze',
     name: '内置-历史考据 agent',
+    nameKey: 'prompt.seed.historyResearchAgent',
     description: '历史年表条目的考据 agent。挑剔但合作，绝不顺着作者的错误假设编造细节；尊重作者已声明的艺术改造/架空范围。',
     systemPrompt: `你是一位**专业、挑剔、但乐于合作**的历史考据顾问，正在协助小说作者打磨一条历史年表条目。
 
@@ -1191,6 +1212,7 @@ type 含义：traversal=穿越目标，instance=副本，parallel=平行世界�
     moduleKey: 'history.storm',
     promptType: 'analyze',
     name: '内置-头脑风暴 agent',
+    nameKey: 'prompt.seed.brainstormAgent',
     description: '历史年表条目的头脑风暴 agent。围绕作者已设定的方向发散可写素材，尊重作者声明的艺术改造范围。',
     systemPrompt: `你是一位精通全球物质文化史与小说创作的合作型顾问，正在为作者做【历史向头脑风暴】。
 

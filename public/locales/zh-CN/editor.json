@@ -141,7 +141,8 @@
     "factContainsOldName": "事实值或证据引文含旧名称",
     "stateCardContent": "状态卡内容",
     "stateCardContainsOldName": "状态字段值含旧名称",
-    "stateCardAutoUpdate": "同类型状态卡「{{name}}」的实体名已自动更新"
+    "stateCardAutoUpdate": "同类型状态卡「{{name}}」的实体名已自动更新",
+    "stateCardNoMapping": "状态卡无对应实体映射，未自动更新"
   },
   "warning": {
     "manualReviewRequired": "另有 {{count}} 条自由文本或非规范记录需人工复核，未自动改写",

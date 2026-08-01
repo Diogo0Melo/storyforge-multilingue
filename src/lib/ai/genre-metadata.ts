@@ -24,6 +24,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'xianxia',
     label: '仙侠修真',
+    labelKey: 'metadata:genre.xianxia',
     emoji: '☯️',
     description: '飞升体系、人间道义、正邪较量',
     antiPatterns: [
@@ -44,6 +45,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'yanqing',
     label: '言情',
+    labelKey: 'metadata:genre.yanqing',
     emoji: '💗',
     description: '情感细腻、双视角心理戏、CP张力',
     antiPatterns: [
@@ -63,6 +65,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'realism',
     label: '现实主义',
+    labelKey: 'metadata:genre.realism',
     emoji: '🌃',
     description: '日常感、内心戏与时代切片',
     antiPatterns: [
@@ -82,6 +85,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'suspense',
     label: '悬疑推理',
+    labelKey: 'metadata:genre.suspense',
     emoji: '🔍',
     description: '信息控制、不可靠叙事、伏笔密度高',
     antiPatterns: [
@@ -103,6 +107,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'xuanhuan',
     label: '玄幻',
+    labelKey: 'metadata:genre.xuanhuan',
     emoji: '🐉',
     description: '宏大世界观、天赋体系、热血升级',
     antiPatterns: [
@@ -122,6 +127,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'wuxia',
     label: '武侠',
+    labelKey: 'metadata:genre.wuxia',
     emoji: '⚔️',
     description: '江湖恩怨、侠义精神、门派纷争',
     antiPatterns: [
@@ -140,6 +146,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'dushi',
     label: '都市',
+    labelKey: 'metadata:genre.dushi',
     emoji: '🏙️',
     description: '现代都市背景、职场/商战/生活',
     antiPatterns: [
@@ -158,6 +165,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'lishi',
     label: '历史',
+    labelKey: 'metadata:genre.lishi',
     emoji: '📜',
     description: '历史背景、朝堂权谋、架空或考据',
     antiPatterns: [
@@ -176,6 +184,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'scifi',
     label: '科幻',
+    labelKey: 'metadata:genre.scifi',
     emoji: '🚀',
     description: '科学设定、未来社会、星际探索',
     antiPatterns: [
@@ -194,6 +203,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'moshi',
     label: '末世',
+    labelKey: 'metadata:genre.moshi',
     emoji: '☠️',
     description: '末日求生、人性考验、废土探索',
     antiPatterns: [
@@ -212,6 +222,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'chuanyue',
     label: '穿越',
+    labelKey: 'metadata:genre.chuanyue',
     emoji: '🌀',
     description: '穿越时空、利用先知优势、改变命运',
     antiPatterns: [
@@ -230,6 +241,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'chongsheng',
     label: '重生',
+    labelKey: 'metadata:genre.chongsheng',
     emoji: '🔄',
     description: '重回过去、弥补遗憾、逆转人生',
     antiPatterns: [
@@ -248,6 +260,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'xitong',
     label: '系统流',
+    labelKey: 'metadata:genre.xitong',
     emoji: '📱',
     description: '获得系统辅助、任务升级、数值成长',
     antiPatterns: [
@@ -266,6 +279,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'wuxian',
     label: '无限流',
+    labelKey: 'metadata:genre.wuxian',
     emoji: '🎮',
     description: '穿越不同世界/副本、团队协作、生存挑战',
     antiPatterns: [
@@ -284,6 +298,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'cyberpunk',
     label: '赛博朋克',
+    labelKey: 'metadata:genre.cyberpunk',
     emoji: '🤖',
     description: '高科技低生活、义体改造、公司阴谋',
     antiPatterns: [
@@ -302,6 +317,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'cthulhu',
     label: '克苏鲁',
+    labelKey: 'metadata:genre.cthulhu',
     emoji: '🐙',
     description: '未知恐惧、理智崩溃、不可名状之物',
     antiPatterns: [
@@ -320,6 +336,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'zhongtian',
     label: '种田',
+    labelKey: 'metadata:genre.zhongtian',
     emoji: '🌾',
     description: '经营建设、发展壮大、慢节奏成长',
     antiPatterns: [
@@ -338,6 +355,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'zhengba',
     label: '争霸',
+    labelKey: 'metadata:genre.zhengba',
     emoji: '👑',
     description: '权谋争斗、势力扩张、天下争霸',
     antiPatterns: [
@@ -356,6 +374,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'xifan',
     label: '西幻/奇幻',
+    labelKey: 'metadata:genre.xifan',
     emoji: '🧙',
     description: '魔法世界、种族纷争、史诗冒险',
     antiPatterns: [
@@ -374,6 +393,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'shishi',
     label: '史诗奇幻',
+    labelKey: 'metadata:genre.shishi',
     emoji: '🏰',
     description: '宏大世界、群像远征、文明与命运级冲突',
     antiPatterns: [
@@ -392,6 +412,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'heian',
     label: '黑暗奇幻',
+    labelKey: 'metadata:genre.heian',
     emoji: '🕯️',
     description: '残酷世界、道德灰度、诅咒与代价',
     antiPatterns: [
@@ -410,6 +431,7 @@ export const GENRE_METADATA: GenreMetadata[] = [
   {
     id: 'youxi',
     label: '游戏',
+    labelKey: 'metadata:genre.youxi',
     emoji: '🎯',
     description: '游戏世界、副本挑战、竞技对抗',
     antiPatterns: [

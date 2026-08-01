@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, Plus, Settings2, Trash2, X } from 'lucide-react
 import {
   parseFieldSchema,
   stringifyFieldSchema,
+  BUILTIN_CATEGORIES,
 } from '../../lib/types/codex'
 import type { CodexCategory, CodexFieldDef } from '../../lib/types/codex'
 
@@ -55,7 +56,10 @@ export default function CodexCategoryFieldsEditor({ category, onClose, onSave }:
       <div className="bg-bg-surface border border-border rounded-xl w-full max-w-lg max-h-[80vh] flex flex-col" onClick={event => event.stopPropagation()}>
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h3 className="text-sm font-bold text-text-primary flex items-center gap-2">
-            <Settings2 className="w-4 h-4 text-accent" /> {t('codex.fields.manageTitle' as any, { name: category.name })}
+            <Settings2 className="w-4 h-4 text-accent" /> {(() => {
+              const seed = category.builtInKey ? BUILTIN_CATEGORIES.find(c => c.builtInKey === category.builtInKey) : null
+              return t('codex.fields.manageTitle' as any, { name: seed?.nameKey ? t(seed.nameKey, category.name) : category.name })
+            })()}
           </h3>
           <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary" aria-label={t('codex.fields.closeAria' as any)}>
             <X className="w-4 h-4" />

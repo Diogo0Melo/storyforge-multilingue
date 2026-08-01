@@ -47,7 +47,7 @@
     "systemNotFound": "Sistema de cultivo não existe ou não pertence ao projeto atual",
     "systemChanged": "O sistema principal de cultivo do personagem mudou, por favor reanalise",
     "worldMismatchSystem": "Capítulo de origem e sistema de cultivo não estão no mesmo mundo",
-    "worldMismatchCharacter": "Capítulo de origem e mundo de归属 do personagem são inconsistentes",
+    "worldMismatchCharacter": "Capítulo de origem e mundo de pertencimento do personagem são inconsistentes",
     "evidenceStale": "Evidência do texto mudou, está duplicada ou não existe, por favor reanalise",
     "stageDeleted": "O estágio alvo foi removido do sistema, por favor reanalise",
     "alreadyConfirmed": "Este evento de estágio já foi confirmado"
@@ -87,7 +87,7 @@
     "recordModified": "Registro foi modificado: {{target}} #{{id}}.{{field}}, por favor visualize novamente",
     "nameRequired": "O novo nome não pode estar vazio",
     "sameName": "O novo nome é igual ao atual",
-    "oldNameCollision": "O nome antigo '{{name}}' pertence a outras entidades ou itens, impossível determinar归属",
+    "oldNameCollision": "O nome antigo '{{name}}' pertence a outras entidades ou itens, impossível determinar o pertencimento",
     "newNameCollision": "O novo nome «{{name}}» já está em uso por outra entidade ou item",
     "stateCardCollision": "O novo nome «{{name}}» já tem cartão de estado do mesmo tipo, impossível provar que os dois cartões devem ser mesclados",
     "undoBlockers": "{{blockers}}, por favor use snapshot do projeto para restaurar",

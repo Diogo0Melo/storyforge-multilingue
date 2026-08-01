@@ -160,6 +160,8 @@ export interface PromptTemplate {
   moduleKey: PromptModuleKey
   promptType: string
   name: string
+  /** i18n key for UI display name */
+  nameKey?: string
   description: string
   systemPrompt: string
   userPromptTemplate: string
