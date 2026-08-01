@@ -65,13 +65,10 @@
   "aiError.unnamedConfig": "未命名配置",
   "aiError.wrongUrlOrModel": "API 地址或模型名称错误，请检查 Base URL 和模型名",
   "aiField": {
-    "expand": "aiField.expand",
-    "polish": "aiField.polish",
-    "rewrite": "aiField.rewrite"
+    "expand": "扩写",
+    "polish": "润色",
+    "rewrite": "重写"
   },
-  "aiField.expand": "扩写",
-  "aiField.polish": "润色",
-  "aiField.rewrite": "重写",
   "aiStream": {
     "adopt": "aiStream.adopt",
     "charCount": "aiStream.charCount",

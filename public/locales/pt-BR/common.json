@@ -65,13 +65,10 @@
   "aiError.unnamedConfig": "Configuração sem nome",
   "aiError.wrongUrlOrModel": "Endereço da API ou nome do modelo incorreto, verifique a Base URL e o nome do modelo",
   "aiField": {
-    "expand": "aiField.expand",
-    "polish": "aiField.polish",
-    "rewrite": "aiField.rewrite"
+    "expand": "Expandir",
+    "polish": "Refinar",
+    "rewrite": "Reescrever"
   },
-  "aiField.expand": "Expandir",
-  "aiField.polish": "Refinar",
-  "aiField.rewrite": "Reescrever",
   "aiStream": {
     "adopt": "aiStream.adopt",
     "charCount_one": "{{count}} caractere",
