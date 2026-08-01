@@ -151,6 +151,8 @@ export type ContextLayer = 'L0' | 'L1' | 'L2' | 'L3'
 export interface ContextSegment {
   /** 段落标签（显示用） */
   label: string
+  /** i18n key for the label (optional; UI should prefer this over `label`) */
+  labelKey?: string
   /** 注入层级 */
   layer: ContextLayer
   /** 内容文本 */
@@ -163,7 +165,7 @@ export interface ContextSegment {
 
 /** 从 prompt messages 解析上下文段 */
 export function analyzeContextSegments(
-  parts: { label: string; content: string; layer: ContextLayer }[],
+  parts: { label: string; labelKey?: string; content: string; layer: ContextLayer }[],
 ): ContextSegment[] {
   return parts.map(p => ({
     ...p,

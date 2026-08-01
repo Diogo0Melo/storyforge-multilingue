@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../../i18n/i18n'
+import type { SettingsKeys } from '../../../i18n/generated-resources'
 import { Play, Square } from 'lucide-react'
 import { usePromptStore } from '../../../stores/prompt'
 import { useWorldviewStore } from '../../../stores/worldview'
@@ -433,8 +434,8 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
     <div className="p-5 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-text-primary">{t('prompt.workflow.runner.title', { name: workflow.name })}</h2>
-          <p className="mt-0.5 text-xs text-text-muted">{workflow.description}</p>
+          <h2 className="text-base font-semibold text-text-primary">{t('prompt.workflow.runner.title', { name: workflow.nameKey ? t(workflow.nameKey as SettingsKeys) : workflow.name })}</h2>
+          <p className="mt-0.5 text-xs text-text-muted">{workflow.descriptionKey ? t(workflow.descriptionKey as SettingsKeys) : workflow.description}</p>
         </div>
         <div className="flex items-center gap-2">
           {globalStatus === 'idle' && (

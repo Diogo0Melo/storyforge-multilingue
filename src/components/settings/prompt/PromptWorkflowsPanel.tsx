@@ -5,6 +5,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../../i18n/i18n'
+import type { SettingsKeys } from '../../../i18n/generated-resources'
 import { useWorkflowStore } from '../../../stores/workflow'
 import type { Project } from '../../../lib/types'
 import WorkflowEditor from './WorkflowEditor'
@@ -171,7 +172,7 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-text-primary truncate">{w.name}</h3>
+                    <h3 className="text-sm font-semibold text-text-primary truncate">{w.nameKey ? t(w.nameKey as SettingsKeys) : w.name}</h3>
                     {w.scope === 'system'
                       ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">{t('prompt.workflow.system')}</span>
                       : <span className="text-[10px] px-1.5 py-0.5 rounded bg-info/15 text-info">{t('prompt.workflow.user')}</span>}
@@ -179,7 +180,7 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/15 text-accent">{t('prompt.workflow.default')}</span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-xs text-text-secondary">{w.description}</p>
+                  <p className="mt-0.5 text-xs text-text-secondary">{w.descriptionKey ? t(w.descriptionKey as SettingsKeys) : w.description}</p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
@@ -228,7 +229,7 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
                 {w.steps.map((s, i) => (
                   <span key={s.stepId} className="flex items-center gap-1 text-xs">
                     <span className="px-2 py-0.5 bg-bg-elevated text-text-secondary rounded">
-                      {i + 1}. {s.label}
+                      {i + 1}. {s.labelKey ? t(s.labelKey as SettingsKeys) : s.label}
                     </span>
                     {i < w.steps.length - 1 && <ArrowRight className="w-3 h-3 text-text-muted" />}
                   </span>

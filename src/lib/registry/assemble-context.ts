@@ -76,6 +76,7 @@ export async function assembleContext(input: AssembleContextInput): Promise<Asse
       key: source.key,
       segment: {
         label: source.label,
+        labelKey: source.labelKey,
         layer: source.layer,
         content: capped,
         tokens: estimateTokens(capped),

@@ -1053,6 +1053,29 @@
     "totalInput": "Total de Tokens de Entrada",
     "totalOutput": "Total de Tokens de Saída"
   },
+  "genrePack": {
+    "general": { "label": "Geral / Xuanhuan (Padrão)", "description": "Pacote padrão, voltado para serialização longa, estilo Xuanhuan masculino." },
+    "lishi": { "label": "Histórico", "description": "Contexto histórico, intrigas políticas, ficção ou pesquisa." },
+    "xianxia": { "label": "Xianxia Cultivo", "description": "Sistema de ascensão, justiça humana, luta entre bem e mal. Prosa elegante." },
+    "yanqing": { "label": "Romance", "description": "Emoções delicadas, psicologia dual, tensão de CP como espinha dorsal." },
+    "realism": { "label": "Realismo", "description": "Cotidiano, sem evitar trivialidades, jogo interno e recortes da época." },
+    "suspense": { "label": "Suspense/Mistério", "description": "Controle de informação, narrador não confiável, alta densidade de presságios." },
+    "xuanhuan": { "label": "Xuanhuan", "description": "Mundo grandioso, sistema de talento, evolução sangrenta." },
+    "wuxia": { "label": "Wuxia", "description": "Rivalidades de jianghu, espírito de cavaleiro, disputas de seitas." },
+    "dushi": { "label": "Urbano", "description": "Cenário urbano moderno, carreira/negócios/vida." },
+    "scifi": { "label": "Ficção Científica", "description": "Configuração científica, sociedade futura, exploração interestelar." },
+    "moshi": { "label": "Pós-Apocalíptico", "description": "Sobrevivência ao apocalipse, teste da humanidade, exploração de terras devastadas." },
+    "chuanyue": { "label": "Viagem no Tempo", "description": "Atravessar o tempo, usar vantagem de conhecimento prévio, mudar o destino." },
+    "chongsheng": { "label": "Renascimento", "description": "Voltar ao passado, corrigir arrependimentos, reverter a vida." },
+    "xitong": { "label": "Sistema", "description": "Auxílio de sistema, missões de upgrade, crescimento numérico." },
+    "wuxian": { "label": "Fluxo Infinito", "description": "Atravessar mundos/dungeons, trabalho em equipe, desafios de sobrevivência." },
+    "cyberpunk": { "label": "Cyberpunk", "description": "Alta tecnologia, baixa vida, modificações corporais, conspirações corporativas." },
+    "cthulhu": { "label": "Cthulhu", "description": "Medo do desconhecido, colapso da sanidade, coisas inomináveis." },
+    "zhongtian": { "label": "Fazenda", "description": "Construção e gestão, crescimento, ritmo lento." },
+    "zhengba": { "label": "Disputa de Poder", "description": "Luta por poder, expansão de facções, domínio do mundo." },
+    "xifan": { "label": "Fantasia Ocidental", "description": "Mundo mágico, disputas de raças, aventura épica." },
+    "youxi": { "label": "Jogo", "description": "Mundo de jogo, desafios de dungeons, competição." }
+  },
   "workflow": {
     "seed": {
       "quickStart": {

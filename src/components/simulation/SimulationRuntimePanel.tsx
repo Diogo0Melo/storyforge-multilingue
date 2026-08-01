@@ -15,6 +15,7 @@ import type { Project, SimulationSessionKind } from '../../lib/types'
 import { useSimulationRuntimeStore } from '../../stores/simulation-runtime'
 import { useDialog } from '../shared/Dialog'
 import type { PanelsKeys } from '../../i18n/generated-resources'
+import type { TFunction } from 'i18next'
 
 const KIND_LABELS = {
   sandbox: 'simulation.kind.sandbox',
@@ -23,10 +24,10 @@ const KIND_LABELS = {
   chatgame: 'simulation.kind.chatgame',
 } as const satisfies Record<SimulationSessionKind, PanelsKeys>
 
-function eventSummary(type: string, payloadJson: string): string {
+function eventSummary(type: string, payloadJson: string, t: TFunction<'panels'>): string {
   try {
     const payload = JSON.parse(payloadJson) as Record<string, unknown>
-    if (type === 'time.advanced') return `时间 +${payload.amount}`
+    if (type === 'time.advanced') return t('simulation.runtime.timeAdvanced', { amount: String(payload.amount) })
     if (type === 'random.resolved') {
       const dice = Array.isArray(payload.dice) ? payload.dice.join(', ') : ''
       return `${payload.expression}: [${dice}] = ${payload.total}`
@@ -355,7 +356,7 @@ export default function SimulationRuntimePanel(props: {
                     <span className="w-10 shrink-0 font-mono text-xs text-text-muted">#{event.sequence}</span>
                     <span className="w-32 shrink-0 text-xs text-accent">{event.type}</span>
                     <span className="min-w-0 flex-1 break-words text-text-secondary">
-                      {eventSummary(event.type, event.payloadJson)}
+                      {eventSummary(event.type, event.payloadJson, t)}
                     </span>
                   </div>
                 ))}

@@ -16,6 +16,7 @@ import {
   type ContextBudget,
   type ContextLayer,
 } from '../../lib/ai/context-budget'
+import type { CommonKeys } from '../../i18n/generated-resources'
 
 interface Props {
   budget: ContextBudget
@@ -132,6 +133,7 @@ export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
               : '0'
             const open = openSeg === i
             const hasContent = !!seg.content?.trim()
+            const segLabel = seg.labelKey ? t(seg.labelKey as CommonKeys, seg.label) : seg.label
             return (
               <div key={i}>
                 <button
@@ -141,10 +143,10 @@ export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
                   className={`w-full flex items-center gap-2 text-[10px] rounded px-0.5 py-0.5 ${
                     hasContent ? 'hover:bg-bg-hover cursor-pointer' : 'cursor-default opacity-70'
                   }`}
-                  title={hasContent ? t('contextBudget.viewInjected') : seg.label}
+                  title={hasContent ? t('contextBudget.viewInjected') : segLabel}
                 >
                   <span className={`w-2 h-2 rounded-sm flex-shrink-0 ${LAYER_COLORS[seg.layer]}`} />
-                  <span className="flex-1 text-left text-text-secondary truncate">{seg.label}</span>
+                  <span className="flex-1 text-left text-text-secondary truncate">{segLabel}</span>
                   {hasContent && <Eye className={`w-3 h-3 flex-shrink-0 ${open ? 'text-accent' : 'text-text-muted'}`} />}
                   <span className="text-text-muted tabular-nums">{formatTokenCount(seg.tokens)}</span>
                   <span className="text-text-muted tabular-nums w-10 text-right">{segPct}%</span>

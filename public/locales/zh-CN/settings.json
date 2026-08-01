@@ -1047,6 +1047,29 @@
     "totalInput": "总输入 Token",
     "totalOutput": "总输出 Token"
   },
+  "genrePack": {
+    "general": { "label": "通用 / 玄幻爽文（默认）", "description": "默认包，长篇连载向，男频玄幻爽文风格基底。" },
+    "lishi": { "label": "历史", "description": "历史背景、朝堂权谋、架空或考据。" },
+    "xianxia": { "label": "仙侠修真", "description": "飞升体系、人间道义、正邪较量。文笔典雅。" },
+    "yanqing": { "label": "言情", "description": "情感细腻、双视角心理戏、CP 张力为骨。" },
+    "realism": { "label": "现实主义", "description": "日常感、不回避琐碎、内心戏与时代切片。" },
+    "suspense": { "label": "悬疑推理", "description": "信息控制、不可靠叙事、伏笔密度高。" },
+    "xuanhuan": { "label": "玄幻", "description": "宏大世界观、天赋体系、热血升级。" },
+    "wuxia": { "label": "武侠", "description": "江湖恩怨、侠义精神、门派纷争。" },
+    "dushi": { "label": "都市", "description": "现代都市背景、职场/商战/生活。" },
+    "scifi": { "label": "科幻", "description": "科学设定、未来社会、星际探索。" },
+    "moshi": { "label": "末世", "description": "末日求生、人性考验、废土探索。" },
+    "chuanyue": { "label": "穿越", "description": "穿越时空、利用先知优势、改变命运。" },
+    "chongsheng": { "label": "重生", "description": "重回过去、弥补遗憾、逆转人生。" },
+    "xitong": { "label": "系统流", "description": "获得系统辅助、任务升级、数值成长。" },
+    "wuxian": { "label": "无限流", "description": "穿越不同世界/副本、团队协作、生存挑战。" },
+    "cyberpunk": { "label": "赛博朋克", "description": "高科技低生活、义体改造、公司阴谋。" },
+    "cthulhu": { "label": "克苏鲁", "description": "未知恐惧、理智崩溃、不可名状之物。" },
+    "zhongtian": { "label": "种田", "description": "经营建设、发展壮大、慢节奏成长。" },
+    "zhengba": { "label": "争霸", "description": "权谋争斗、势力扩张、天下争霸。" },
+    "xifan": { "label": "西幻/奇幻", "description": "魔法世界、种族纷争、史诗冒险。" },
+    "youxi": { "label": "游戏", "description": "游戏世界、副本挑战、竞技对抗。" }
+  },
   "workflow": {
     "seed": {
       "quickStart": {

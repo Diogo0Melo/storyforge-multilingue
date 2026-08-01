@@ -1127,52 +1127,77 @@ export const GENRE_PACK_SEEDS: PromptSeed[] = [
 export interface GenrePackMeta {
   id: string
   label: string
+  /** i18n key for genre pack label (settings namespace) */
+  labelKey?: string
   description: string
+  /** i18n key for genre pack description (settings namespace) */
+  descriptionKey?: string
   emoji: string
 }
 
 export const GENRE_PACKS: GenrePackMeta[] = [
   { id: 'general',    label: '通用 / 玄幻爽文（默认）', emoji: '⚙️',
+    labelKey: 'genrePack.general.label', descriptionKey: 'genrePack.general.description',
     description: '默认包，长篇连载向，男频玄幻爽文风格基底。' },
   { id: 'lishi',      label: '历史',                  emoji: '📜',
+    labelKey: 'genrePack.lishi.label', descriptionKey: 'genrePack.lishi.description',
     description: '历史背景、朝堂权谋、架空或考据。' },
   { id: 'xianxia',    label: '仙侠修真',              emoji: '☯️',
+    labelKey: 'genrePack.xianxia.label', descriptionKey: 'genrePack.xianxia.description',
     description: '飞升体系、人间道义、正邪较量。文笔典雅。' },
   { id: 'yanqing',    label: '言情',                  emoji: '💗',
+    labelKey: 'genrePack.yanqing.label', descriptionKey: 'genrePack.yanqing.description',
     description: '情感细腻、双视角心理戏、CP 张力为骨。' },
   { id: 'realism',    label: '现实主义',              emoji: '🌃',
+    labelKey: 'genrePack.realism.label', descriptionKey: 'genrePack.realism.description',
     description: '日常感、不回避琐碎、内心戏与时代切片。' },
   { id: 'suspense',   label: '悬疑推理',              emoji: '🔍',
+    labelKey: 'genrePack.suspense.label', descriptionKey: 'genrePack.suspense.description',
     description: '信息控制、不可靠叙事、伏笔密度高。' },
   // Phase E1: 新增题材
   { id: 'xuanhuan',   label: '玄幻',                  emoji: '🐉',
+    labelKey: 'genrePack.xuanhuan.label', descriptionKey: 'genrePack.xuanhuan.description',
     description: '宏大世界观、天赋体系、热血升级。' },
   { id: 'wuxia',      label: '武侠',                  emoji: '⚔️',
+    labelKey: 'genrePack.wuxia.label', descriptionKey: 'genrePack.wuxia.description',
     description: '江湖恩怨、侠义精神、门派纷争。' },
   { id: 'dushi',      label: '都市',                  emoji: '🏙️',
+    labelKey: 'genrePack.dushi.label', descriptionKey: 'genrePack.dushi.description',
     description: '现代都市背景、职场/商战/生活。' },
   { id: 'scifi',      label: '科幻',                  emoji: '🚀',
+    labelKey: 'genrePack.scifi.label', descriptionKey: 'genrePack.scifi.description',
     description: '科学设定、未来社会、星际探索。' },
   { id: 'moshi',      label: '末世',                  emoji: '☠️',
+    labelKey: 'genrePack.moshi.label', descriptionKey: 'genrePack.moshi.description',
     description: '末日求生、人性考验、废土探索。' },
   { id: 'chuanyue',   label: '穿越',                  emoji: '🌀',
+    labelKey: 'genrePack.chuanyue.label', descriptionKey: 'genrePack.chuanyue.description',
     description: '穿越时空、利用先知优势、改变命运。' },
   { id: 'chongsheng', label: '重生',                  emoji: '🔄',
+    labelKey: 'genrePack.chongsheng.label', descriptionKey: 'genrePack.chongsheng.description',
     description: '重回过去、弥补遗憾、逆转人生。' },
   { id: 'xitong',     label: '系统流',                emoji: '📱',
+    labelKey: 'genrePack.xitong.label', descriptionKey: 'genrePack.xitong.description',
     description: '获得系统辅助、任务升级、数值成长。' },
   { id: 'wuxian',     label: '无限流',                emoji: '🎮',
+    labelKey: 'genrePack.wuxian.label', descriptionKey: 'genrePack.wuxian.description',
     description: '穿越不同世界/副本、团队协作、生存挑战。' },
   { id: 'cyberpunk',  label: '赛博朋克',              emoji: '🤖',
+    labelKey: 'genrePack.cyberpunk.label', descriptionKey: 'genrePack.cyberpunk.description',
     description: '高科技低生活、义体改造、公司阴谋。' },
   { id: 'cthulhu',    label: '克苏鲁',                emoji: '🐙',
+    labelKey: 'genrePack.cthulhu.label', descriptionKey: 'genrePack.cthulhu.description',
     description: '未知恐惧、理智崩溃、不可名状之物。' },
   { id: 'zhongtian',  label: '种田',                  emoji: '🌾',
+    labelKey: 'genrePack.zhongtian.label', descriptionKey: 'genrePack.zhongtian.description',
     description: '经营建设、发展壮大、慢节奏成长。' },
   { id: 'zhengba',    label: '争霸',                  emoji: '👑',
+    labelKey: 'genrePack.zhengba.label', descriptionKey: 'genrePack.zhengba.description',
     description: '权谋争斗、势力扩张、天下争霸。' },
   { id: 'xifan',      label: '西幻/奇幻',             emoji: '🧙',
+    labelKey: 'genrePack.xifan.label', descriptionKey: 'genrePack.xifan.description',
     description: '魔法世界、种族纷争、史诗冒险。' },
   { id: 'youxi',      label: '游戏',                  emoji: '🎯',
+    labelKey: 'genrePack.youxi.label', descriptionKey: 'genrePack.youxi.description',
     description: '游戏世界、副本挑战、竞技对抗。' },
 ]

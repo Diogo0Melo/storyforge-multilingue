@@ -222,11 +222,11 @@ function PromptTemplatesView({
             className="px-2 py-1 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
           >
             {GENRE_PACKS.map(p => (
-              <option key={p.id} value={p.id}>{p.emoji} {p.label}</option>
+              <option key={p.id} value={p.id}>{p.emoji} {p.labelKey ? t(p.labelKey, p.label) : p.label}</option>
             ))}
           </select>
           <span className="ml-2 text-xs text-text-muted truncate">
-            {GENRE_PACKS.find(p => p.id === genrePack)?.description}
+            {(() => { const gp = GENRE_PACKS.find(p => p.id === genrePack); return gp ? (gp.descriptionKey ? t(gp.descriptionKey, gp.description) : gp.description) : '' })()}
           </span>
         </div>
       </div>

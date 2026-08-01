@@ -34,6 +34,7 @@ import { formatCharacterKnowledgeContext, readProjectCharacterKnowledge } from '
 import { formatCanonAssertionsContext, readCanonAssertions } from '../fact-ledger/setting-assertions'
 import { readStorylineProgressContext } from '../storyline/storyline-progress'
 import { readCultivationProgressContext } from '../cultivation/progress'
+import i18n from '../../i18n/i18n'
 import type { Chapter, Character, OutlineNode, PowerSystem, Worldview } from '../types'
 import {
   parseCharacterDrivenPlanArcs,
@@ -232,10 +233,11 @@ async function readExistingVolumeOutlines(projectId: number): Promise<string> {
     .filter(node => node.type === 'volume' && node.parentId == null)
     .sort((a, b) => a.order - b.order)
   if (!volumes.length) return ''
+  const emptyPlaceholder = i18n.t('panels:contextSource.volumeOutlineEmpty')
   return [
     '【已有卷大纲（必须接续，禁止重复）】',
     ...volumes.map((volume, index) => (
-      `${index + 1}. ${volume.title}${volume.summary ? `\n   ${volume.summary}` : '\n   （尚未填写卷纲）'}`
+      `${index + 1}. ${volume.title}${volume.summary ? `\n   ${volume.summary}` : `\n   ${emptyPlaceholder}`}`
     )),
   ].join('\n')
 }

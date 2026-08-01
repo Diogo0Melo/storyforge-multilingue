@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import type { SettingsKeys } from '../../../i18n/generated-resources'
 import {
   Check,
   ChevronRight,
@@ -86,7 +87,7 @@ export function WorkflowStepCard({
       <button onClick={() => setExpanded(value => !value)} className="w-full flex items-center gap-2 p-3 hover:bg-bg-hover">
         {statusIcon}
         <span className="text-text-muted text-xs w-6">{index + 1}.</span>
-        <span className="text-sm font-medium text-text-primary">{step.label}</span>
+        <span className="text-sm font-medium text-text-primary">{step.labelKey ? t(step.labelKey as SettingsKeys) : step.label}</span>
         <span className="text-xs text-text-muted">→ {step.promptModuleKey}</span>
         {step.userConfirmRequired && (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">{t('prompt.workflow.stepCard.needsConfirm')}</span>
