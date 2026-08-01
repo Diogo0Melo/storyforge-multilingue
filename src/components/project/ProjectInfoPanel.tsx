@@ -5,7 +5,7 @@ import { Save, X, ChevronDown } from 'lucide-react'
 import { useProjectStore } from '../../stores/project'
 import { useWorldGroupStore } from '../../stores/world-group'
 import type { Project } from '../../lib/types'
-import { GENRE_OPTIONS } from '../../lib/types'
+import { GENRE_OPTIONS, GENRE_GROUP_LABEL_KEYS } from '../../lib/types'
 
 // 按 group 分组
 const GENRE_GROUPS = Array.from(
@@ -129,7 +129,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
                 {GENRE_GROUPS.map(([group, opts]) => (
                   <div key={group}>
                     <div className="px-3 py-1.5 text-[10px] font-semibold text-text-muted uppercase tracking-wider bg-bg-elevated border-b border-border/50">
-                      {group}
+                      {GENRE_GROUP_LABEL_KEYS[group] ? tm(GENRE_GROUP_LABEL_KEYS[group], group) : group}
                     </div>
                     <div className="flex flex-wrap gap-1 p-2">
                       {opts.map(opt => (

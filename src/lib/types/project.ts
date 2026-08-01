@@ -56,7 +56,7 @@ export const GENRE_OPTIONS: readonly GenreOption[] = [
   { group: '科幻', value: 'moshi',          label: '末世危机',   labelKey: 'metadata:genre.moshi' },
   // 奇幻
   { group: '奇幻', value: 'qihuan',         label: '奇幻',       labelKey: 'metadata:genre.qihuan' },
-  { group: '奇幻', value: 'xifang',         label: '西方魔幻',   labelKey: 'metadata:genre.xifang' },
+  { group: '奇幻', value: 'xifang',         label: '西方魔幻',   labelKey: 'metadata:genre.xifan' },
   { group: '奇幻', value: 'shishi',         label: '史诗奇幻',   labelKey: 'metadata:genre.shishi' },
   { group: '奇幻', value: 'heian',          label: '黑暗奇幻',   labelKey: 'metadata:genre.heian' },
   // 都市
@@ -87,6 +87,20 @@ export const GENRE_OPTIONS: readonly GenreOption[] = [
   { group: '其他', value: 'kongbu',         label: '恐怖惊悚',   labelKey: 'metadata:genre.kongbu' },
   { group: '其他', value: 'other',          label: '其他',       labelKey: 'metadata:genre.other' },
 ]
+
+/** Chinese group name → metadata.json genreGroup key */
+export const GENRE_GROUP_LABEL_KEYS: Record<string, string> = {
+  '玄幻': 'genreGroup.xuanhuan',
+  '仙侠': 'genreGroup.xianxia',
+  '武侠': 'genreGroup.wuxia',
+  '科幻': 'genreGroup.kehuan',
+  '奇幻': 'genreGroup.qihuan',
+  '都市': 'genreGroup.dushi',
+  '历史': 'genreGroup.lishi',
+  '游戏': 'genreGroup.youxi',
+  '轻小说': 'genreGroup.qingxiaoshuo',
+  '其他': 'genreGroup.other',
+}
 
 /** 旧的单选类型（保留兼容性） */
 export type NovelGenre = string

@@ -10,7 +10,7 @@ import {
 import { importProjectJSON } from '../lib/export/json-export'
 import { APP_BUILD_ID } from '../lib/version'
 import {
-  GENRE_OPTIONS, PROJECT_STATUS_LABELS,
+  GENRE_OPTIONS, GENRE_GROUP_LABEL_KEYS, PROJECT_STATUS_LABELS,
   type ProjectStatus, type CreateProjectInput,
 } from '../lib/types'
 
@@ -397,7 +397,7 @@ export default function HomePage() {
                     <div className="absolute top-full left-0 right-0 mt-1 bg-bg-surface border border-border rounded-lg shadow-lg z-30 max-h-60 overflow-y-auto">
                       {GENRE_GROUPS.map(([group, opts]) => (
                         <div key={group}>
-                          <div className="px-3 py-1.5 text-[10px] font-semibold text-text-muted uppercase tracking-wider bg-bg-elevated border-b border-border/50">{group}</div>
+                          <div className="px-3 py-1.5 text-[10px] font-semibold text-text-muted uppercase tracking-wider bg-bg-elevated border-b border-border/50">{GENRE_GROUP_LABEL_KEYS[group] ? t(`metadata:${GENRE_GROUP_LABEL_KEYS[group]}`, group) : group}</div>
                           <div className="flex flex-wrap gap-1 p-2">
                             {opts.map(opt => (
                               <button
