@@ -66,9 +66,9 @@ export default function CreativeRulesPanel({ project }: Props) {
   /** AI 生成某字段：调 rules.generate 模板 */
   const generateField = (target: 'writingStyle' | 'toneAndMood' | 'specialRequirements') => {
     const dimensionMap = {
-      writingStyle: t('rules.dimension.writingStyle' as any),
-      toneAndMood: t('rules.dimension.toneAndMood' as any),
-      specialRequirements: t('rules.dimension.specialRequirements' as any),
+      writingStyle: t('rules.dimension.writingStyle'),
+      toneAndMood: t('rules.dimension.toneAndMood'),
+      specialRequirements: t('rules.dimension.specialRequirements'),
     }
     setAiTarget(target)
     ai.setOperation(target)
@@ -156,11 +156,11 @@ export default function CreativeRulesPanel({ project }: Props) {
           className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          {t('rules.creative.add' as any)}
+          {t('rules.creative.add')}
         </button>
       </div>
       {list.length === 0 ? (
-        <p className="text-text-muted text-xs py-3 text-center border border-dashed border-border rounded-lg">{t('rules.creative.empty' as any)}</p>
+        <p className="text-text-muted text-xs py-3 text-center border border-dashed border-border rounded-lg">{t('rules.creative.empty')}</p>
       ) : (
         <div className="space-y-1.5">
           {list.map((item, idx) => (
@@ -187,25 +187,25 @@ export default function CreativeRulesPanel({ project }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-bold text-text-primary mb-4">{t('rules.creative.title' as any)}</h2>
+      <h2 className="text-xl font-bold text-text-primary mb-4">{t('rules.creative.title')}</h2>
 
       {/* 写作风格 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">
-          <label className="text-sm font-medium text-text-secondary">{t('rules.creative.writingStyle' as any)}</label>
+          <label className="text-sm font-medium text-text-secondary">{t('rules.creative.writingStyle')}</label>
           <button
             onClick={() => generateField('writingStyle')}
             disabled={ai.isStreaming}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
-            <Sparkles className="w-3 h-3" /> {t('rules.creative.aiSuggest' as any)}
+            <Sparkles className="w-3 h-3" /> {t('rules.creative.aiSuggest')}
           </button>
         </div>
         <CTextarea
           value={writingStyle}
           onChange={e => setWritingStyle(e.target.value)}
           onBlur={() => saveField({ writingStyle })}
-          placeholder={t('rules.creative.writingStylePlaceholder' as any)}
+          placeholder={t('rules.creative.writingStylePlaceholder')}
           className="w-full h-24 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
         {currentAITarget === 'writingStyle' && (ai.output || ai.isStreaming || ai.error) && (
@@ -221,7 +221,7 @@ export default function CreativeRulesPanel({ project }: Props) {
 
       {/* 叙事视角 */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-text-secondary mb-2">{t('rules.creative.narrativePOV' as any)}</label>
+        <label className="block text-sm font-medium text-text-secondary mb-2">{t('rules.creative.narrativePOV')}</label>
         <div className="grid grid-cols-2 gap-2">
           {POV_OPTIONS.map(opt => (
             <button
@@ -246,20 +246,20 @@ export default function CreativeRulesPanel({ project }: Props) {
       {/* 基调和氛围 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">
-          <label className="text-sm font-medium text-text-secondary">{t('rules.creative.toneAndMood' as any)}</label>
+          <label className="text-sm font-medium text-text-secondary">{t('rules.creative.toneAndMood')}</label>
           <button
             onClick={() => generateField('toneAndMood')}
             disabled={ai.isStreaming}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
-            <Sparkles className="w-3 h-3" /> {t('rules.creative.aiSuggest' as any)}
+            <Sparkles className="w-3 h-3" /> {t('rules.creative.aiSuggest')}
           </button>
         </div>
         <CTextarea
           value={toneAndMood}
           onChange={e => setToneAndMood(e.target.value)}
           onBlur={() => saveField({ toneAndMood })}
-          placeholder={t('rules.creative.tonePlaceholder' as any)}
+          placeholder={t('rules.creative.tonePlaceholder')}
           className="w-full h-20 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
         {currentAITarget === 'toneAndMood' && (ai.output || ai.isStreaming || ai.error) && (
@@ -274,23 +274,23 @@ export default function CreativeRulesPanel({ project }: Props) {
       </div>
 
       {/* 禁止事项 */}
-      {renderList(t('rules.creative.prohibitions' as any), t('rules.creative.prohibitionsPlaceholder' as any), prohibitions, setProhibitions, 'prohibitions')}
+      {renderList(t('rules.creative.prohibitions'), t('rules.creative.prohibitionsPlaceholder'), prohibitions, setProhibitions, 'prohibitions')}
 
       {/* 一致性规则 */}
-      {renderList(t('rules.creative.consistencyRules' as any), t('rules.creative.consistencyPlaceholder' as any), consistencyRules, setConsistencyRules, 'consistencyRules')}
+      {renderList(t('rules.creative.consistencyRules'), t('rules.creative.consistencyPlaceholder'), consistencyRules, setConsistencyRules, 'consistencyRules')}
 
       {/* 参考作品 */}
-      {renderList(t('rules.creative.referenceWorks' as any), t('rules.creative.referencePlaceholder' as any), referenceWorks, setReferenceWorks, 'referenceWorks')}
+      {renderList(t('rules.creative.referenceWorks'), t('rules.creative.referencePlaceholder'), referenceWorks, setReferenceWorks, 'referenceWorks')}
 
       {/* 引用手法 —— Phase 20 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium text-text-secondary flex items-center gap-1.5">
             <Microscope className="w-3.5 h-3.5 text-accent" />
-            {t('rules.creative.citationMethod' as any)}
+            {t('rules.creative.citationMethod')}
           </label>
           <span className="text-[10px] text-text-muted">
-            {t('rules.creative.citationDesc' as any)}
+            {t('rules.creative.citationDesc')}
           </span>
         </div>
         {(() => {
@@ -298,7 +298,7 @@ export default function CreativeRulesPanel({ project }: Props) {
           if (analyzedRefs.length === 0) {
             return (
               <p className="text-text-muted text-xs py-3 text-center border border-dashed border-border rounded-lg">
-                {t('rules.creative.noAnalyzedRefs' as any)}
+                {t('rules.creative.noAnalyzedRefs')}
               </p>
             )
           }
@@ -333,7 +333,7 @@ export default function CreativeRulesPanel({ project }: Props) {
                     </div>
                     {ref.totalChars && (
                       <span className="text-[10px] text-text-muted shrink-0">
-                        {t('rules.creative.charCount' as any, { count: (ref.totalChars / 10000).toFixed(1) } as any)}
+                        {t('rules.creative.charCount', { count: (ref.totalChars / 10000).toFixed(1) })}
                       </span>
                     )}
                   </button>
@@ -347,20 +347,20 @@ export default function CreativeRulesPanel({ project }: Props) {
       {/* 特殊创作要求 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">
-          <label className="text-sm font-medium text-text-secondary">{t('rules.creative.specialRequirements' as any)}</label>
+          <label className="text-sm font-medium text-text-secondary">{t('rules.creative.specialRequirements')}</label>
           <button
             onClick={() => generateField('specialRequirements')}
             disabled={ai.isStreaming}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
-            <Sparkles className="w-3 h-3" /> {t('rules.creative.aiSuggest' as any)}
+            <Sparkles className="w-3 h-3" /> {t('rules.creative.aiSuggest')}
           </button>
         </div>
         <CTextarea
           value={specialRequirements}
           onChange={e => setSpecialRequirements(e.target.value)}
           onBlur={() => saveField({ specialRequirements })}
-          placeholder={t('rules.creative.specialPlaceholder' as any)}
+          placeholder={t('rules.creative.specialPlaceholder')}
           className="w-full h-24 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
         {currentAITarget === 'specialRequirements' && (ai.output || ai.isStreaming || ai.error) && (

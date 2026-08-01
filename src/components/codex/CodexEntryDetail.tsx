@@ -62,27 +62,27 @@ export default function CodexEntryDetail({
         <CInput
           value={entry.icon || ''}
           onChange={event => onChange({ icon: event.target.value })}
-          placeholder={t('codex.entry.icon' as any)}
+          placeholder={t('codex.entry.icon')}
           className="w-14 text-center px-2 py-2 rounded-lg bg-bg-elevated border border-border text-sm"
         />
         <div className="flex-1">
           <CInput
             value={entry.name}
             onChange={event => onChange({ name: event.target.value })}
-            placeholder={t('codex.entry.name' as any)}
+            placeholder={t('codex.entry.name')}
             className={`w-full px-3 py-2 rounded-lg bg-bg-elevated border text-sm font-medium ${nameDuplicate ? 'border-amber-400/60' : 'border-border'}`}
           />
-          {nameDuplicate && <p className="mt-1 text-[11px] text-amber-400">{t('codex.entry.dupWarning' as any)}</p>}
+          {nameDuplicate && <p className="mt-1 text-[11px] text-amber-400">{t('codex.entry.dupWarning')}</p>}
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-text-muted w-12">{t('codex.entry.importance' as any)}</span>
+        <span className="text-xs text-text-muted w-12">{t('codex.entry.importance')}</span>
         <div className="flex items-center gap-0.5">
           {[1, 2, 3, 4, 5].map(value => (
             <button
               key={value}
               type="button"
-              title={t('codex.entry.starTitle' as any, { count: value } as any)}
+              title={t('codex.entry.starTitle', { count: value })}
               onClick={() => onChange({ importance: entry.importance === value ? 0 : value })}
               className="p-0.5 hover:scale-110 transition-transform"
             >
@@ -90,12 +90,12 @@ export default function CodexEntryDetail({
             </button>
           ))}
         </div>
-        {(entry.importance ?? 0) > 0 && <span className="text-[11px] text-amber-400/80">{t('codex.entry.stars' as any, { count: entry.importance ?? 0 } as any)}</span>}
+        {(entry.importance ?? 0) > 0 && <span className="text-[11px] text-amber-400/80">{t('codex.entry.stars', { count: entry.importance ?? 0 })}</span>}
       </div>
       <CInput
         value={entry.summary}
         onChange={event => onChange({ summary: event.target.value })}
-        placeholder={t('codex.entry.summaryPlaceholder' as any)}
+        placeholder={t('codex.entry.summaryPlaceholder')}
         className="w-full px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm"
       />
       <CInput
@@ -103,13 +103,13 @@ export default function CodexEntryDetail({
         onChange={event => onChange({
           tags: JSON.stringify(event.target.value.split(/[、,，]/).map(tag => tag.trim()).filter(Boolean)),
         })}
-        placeholder={t('codex.entry.tagsPlaceholder' as any)}
+        placeholder={t('codex.entry.tagsPlaceholder')}
         className="w-full px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm"
       />
       <CTextarea
         value={entry.description}
         onChange={event => onChange({ description: event.target.value })}
-        placeholder={t('codex.entry.descriptionPlaceholder' as any)}
+        placeholder={t('codex.entry.descriptionPlaceholder')}
         rows={3}
         className="w-full px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm resize-y"
       />
@@ -121,7 +121,7 @@ export default function CodexEntryDetail({
         <CodexImportantLocationLink entry={entry} onChange={onChange} />
       )}
 
-      {schema.length > 0 && <div className="border-t border-border pt-3 text-xs text-text-muted">{t('codex.entry.customProps' as any)}</div>}
+      {schema.length > 0 && <div className="border-t border-border pt-3 text-xs text-text-muted">{t('codex.entry.customProps')}</div>}
       {schema.map(definition => (
         <CodexFieldRow
           key={definition.key}
@@ -155,22 +155,22 @@ function CodexImportantLocationLink({
 
   return (
     <label className="block border-t border-border pt-3">
-      <span className="block text-xs text-text-muted mb-1">{t('codex.entry.structuredLocation' as any)}</span>
+      <span className="block text-xs text-text-muted mb-1">{t('codex.entry.structuredLocation')}</span>
       <select
-        aria-label={t('codex.entry.locationAria' as any)}
+        aria-label={t('codex.entry.locationAria')}
         value={entry.importantLocationId ?? ''}
         onChange={event => onChange({
           importantLocationId: event.target.value ? Number(event.target.value) : null,
         })}
         className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm"
       >
-        <option value="">{t('codex.entry.notLinked' as any)}</option>
+        <option value="">{t('codex.entry.notLinked')}</option>
         {projectLocations.map(location => (
           <option key={location.id} value={location.id}>{location.name}</option>
         ))}
       </select>
       <span className="block mt-1 text-[11px] text-text-muted">
-        {t('codex.entry.locationNote' as any)}
+        {t('codex.entry.locationNote')}
       </span>
     </label>
   )
@@ -194,9 +194,9 @@ function CodexCultivationLink({
   return (
     <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
       <label>
-        <span className="block text-xs text-text-muted mb-1">{t('codex.entry.structuredSystem' as any)}</span>
+        <span className="block text-xs text-text-muted mb-1">{t('codex.entry.structuredSystem')}</span>
         <select
-          aria-label={t('codex.entry.beastSystemAria' as any)}
+          aria-label={t('codex.entry.beastSystemAria')}
           value={entry.cultivationSystemId ?? ''}
           onChange={event => onChange({
             cultivationSystemId: event.target.value ? Number(event.target.value) : null,
@@ -204,20 +204,20 @@ function CodexCultivationLink({
           })}
           className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm"
         >
-          <option value="">{t('codex.entry.notLinked' as any)}</option>
+          <option value="">{t('codex.entry.notLinked')}</option>
           {visible.map(system => <option key={system.id} value={system.id}>{system.name}</option>)}
         </select>
       </label>
       <label>
-        <span className="block text-xs text-text-muted mb-1">{t('codex.entry.currentStage' as any)}</span>
+        <span className="block text-xs text-text-muted mb-1">{t('codex.entry.currentStage')}</span>
         <select
-          aria-label={t('codex.entry.beastStageAria' as any)}
+          aria-label={t('codex.entry.beastStageAria')}
           disabled={!selected}
           value={entry.cultivationStageId ?? ''}
           onChange={event => onChange({ cultivationStageId: event.target.value || null })}
           className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm disabled:opacity-40"
         >
-          <option value="">{t('codex.entry.notSpecified' as any)}</option>
+          <option value="">{t('codex.entry.notSpecified')}</option>
           {stages.map(stage => <option key={stage.id} value={stage.id}>{stage.name}</option>)}
         </select>
       </label>
@@ -258,7 +258,7 @@ function CodexFieldRow({
         {definition.type === 'select' && (
           <select value={value} onChange={event => onValue(event.target.value)} aria-label={definition.label}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm">
-            <option value="">{t('codex.entry.notSelected' as any)}</option>
+            <option value="">{t('codex.entry.notSelected')}</option>
             {(definition.options || []).map(option => <option key={option} value={option}>{option}</option>)}
           </select>
         )}
@@ -338,11 +338,11 @@ function CodexRefSelector({
               <span key={entry.id} className="px-1.5 py-0.5 rounded bg-accent/10 text-accent text-xs">{entry.icon} {entry.name}</span>
             ))}
           </span>
-        ) : <span className="text-text-muted">{t('codex.entry.clickToLink' as any)}</span>}
+        ) : <span className="text-text-muted">{t('codex.entry.clickToLink')}</span>}
       </button>
       {open && (
         <div className="border-t border-border max-h-48 overflow-y-auto p-1">
-          {candidates.length === 0 && <p className="text-xs text-text-muted px-2 py-2">{t('codex.entry.noLinkable' as any)}</p>}
+          {candidates.length === 0 && <p className="text-xs text-text-muted px-2 py-2">{t('codex.entry.noLinkable')}</p>}
           {candidates.map(entry => (
             <label key={entry.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-bg-hover cursor-pointer text-sm">
               <input type="checkbox" checked={value.includes(entry.id!)} onChange={() => toggle(entry.id!)} />

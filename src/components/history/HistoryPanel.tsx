@@ -147,9 +147,9 @@ export default function HistoryPanel({ project }: Props) {
       projectId: project.id!,
       era: 'custom',
       year: 0,
-      date: t('history.eventDateDefault' as any),
-      title: t('history.eventTitleDefault' as any),
-      description: t('history.eventDescriptionDefault' as any),
+      date: t('history.eventDateDefault'),
+      title: t('history.eventTitleDefault'),
+      description: t('history.eventDescriptionDefault'),
       isHistorical: true,
       ...(scopeGroupId != null ? { worldGroupId: scopeGroupId } : {}),
     })
@@ -161,10 +161,10 @@ export default function HistoryPanel({ project }: Props) {
     if (!canEdit) return
     const newId = await addKeyword({
       projectId: project.id!,
-      keyword: t('history.keywordDefault' as any),
+      keyword: t('history.keywordDefault'),
       category: 'technology',
       era: 'custom',
-      description: t('history.keywordDescriptionDefault' as any),
+      description: t('history.keywordDescriptionDefault'),
       ...(scopeGroupId != null ? { worldGroupId: scopeGroupId } : {}),
     })
     setExpandedKeywordId(newId)
@@ -338,7 +338,7 @@ export default function HistoryPanel({ project }: Props) {
                     ? groups.find(candidate => candidate.id === event.worldGroupId)
                     : undefined
                   const worldBadge = isMW && worldTab === 'all' && event.worldGroupId != null
-                    ? { icon: group?.icon || '🌐', name: group?.name || t('worldGroup.unnamedWorld' as any) }
+                    ? { icon: group?.icon || '🌐', name: group?.name || t('worldGroup.unnamedWorld') }
                     : undefined
                   return (
                     <HistoryTimelineEventCard

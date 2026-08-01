@@ -65,7 +65,7 @@ export default function ChatCopilotPanel({
 
   return (
     <aside
-      aria-label={t('agent.chat.ariaLabel' as any)}
+      aria-label={t('agent.chat.ariaLabel')}
       className="fixed inset-y-0 right-0 z-30 flex h-full w-[min(28rem,calc(100vw-2rem))] shrink-0 flex-col border-l border-border bg-bg-surface shadow-xl lg:static lg:z-auto lg:w-[28rem] lg:shadow-none"
     >
       <header className="border-b border-border/70 px-4 py-3">
@@ -73,9 +73,9 @@ export default function ChatCopilotPanel({
           <div className="min-w-0">
             <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
               <Bot className="h-4 w-4 text-accent" />
-              {t('agent.chat.title' as any)}
+              {t('agent.chat.title')}
               <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium text-accent">
-                {t('agent.chat.singleEntry' as any)}
+                {t('agent.chat.singleEntry')}
               </span>
             </div>
             <p className="mt-1 truncate text-[11px] text-text-muted" title={`${project.name} · ${worldName}`}>
@@ -84,7 +84,7 @@ export default function ChatCopilotPanel({
           </div>
           <button
             type="button"
-            aria-label={t('agent.chat.closeAria' as any)}
+            aria-label={t('agent.chat.closeAria')}
             onClick={onClose}
             className="rounded p-1 text-text-muted hover:bg-bg-hover hover:text-text-primary"
           >
@@ -93,7 +93,7 @@ export default function ChatCopilotPanel({
         </div>
         <div className="mt-3 flex items-start gap-2 rounded-md border border-accent/20 bg-accent/5 p-2 text-[11px] leading-4 text-text-secondary">
           <ShieldCheck className="mt-0.5 h-3.5 w-3.5 shrink-0 text-accent" />
-          {t('agent.chat.banner' as any)}
+          {t('agent.chat.banner')}
         </div>
       </header>
 
@@ -101,7 +101,7 @@ export default function ChatCopilotPanel({
         {copilot.loading && (
           <div className="flex items-center gap-2 text-xs text-text-muted">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {t('agent.chat.restoring' as any)}
+            {t('agent.chat.restoring')}
           </div>
         )}
 
@@ -128,7 +128,7 @@ export default function ChatCopilotPanel({
             >
               <span className="flex items-center gap-2 text-xs font-medium text-text-primary">
                 {copilot.busy && <Loader2 className="h-3.5 w-3.5 animate-spin text-accent" />}
-                {t('agent.chat.backgroundExec' as any)}
+                {t('agent.chat.backgroundExec')}
               </span>
               <span className="flex items-center gap-1 text-[10px] text-text-muted">
                 {latestTasks.filter(task => task.status === 'completed').length}/{latestTasks.length || '…'}
@@ -140,7 +140,7 @@ export default function ChatCopilotPanel({
             {showDetails && (
               <div className="space-y-1 border-t border-border/60 px-3 py-2">
                 {latestTasks.length === 0 && (
-                  <p className="text-[10px] text-text-muted">{t('agent.chat.understanding' as any)}</p>
+                  <p className="text-[10px] text-text-muted">{t('agent.chat.understanding')}</p>
                 )}
                 {latestTasks.map(task => (
                   <div key={task.taskId} className="flex items-start justify-between gap-2 text-[10px]">
@@ -152,7 +152,7 @@ export default function ChatCopilotPanel({
                           ? 'text-error'
                           : 'text-accent'
                     }>
-                      {task.status === 'completed' ? t('agent.chat.completed' as any) : task.status === 'failed' ? task.error || t('agent.chat.failed' as any) : t('agent.chat.running' as any)}
+                      {task.status === 'completed' ? t('agent.chat.completed') : task.status === 'failed' ? task.error || t('agent.chat.failed') : t('agent.chat.running')}
                     </span>
                   </div>
                 ))}
@@ -168,7 +168,7 @@ export default function ChatCopilotPanel({
           >
             <div className="mb-2 flex items-center justify-between gap-2">
               <span className="text-xs font-semibold text-text-primary">
-                {t('agent.chat.pendingConfirm' as any, { label: candidate.payload.label })}
+                {t('agent.chat.pendingConfirm', { label: candidate.payload.label })}
               </span>
               <span
                 className="max-w-[45%] truncate text-[10px] text-text-muted"
@@ -176,11 +176,11 @@ export default function ChatCopilotPanel({
               >
                 {candidate.payload.contextEvidence
                   ? `${t(`agent.context${candidate.payload.contextEvidence.profile.charAt(0).toUpperCase() + candidate.payload.contextEvidence.profile.slice(1)}` as any)} · ≈${candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString()} tokens`
-                  : t('agent.chat.inputSources' as any, { count: candidate.payload.contextSources.length })}
+                  : t('agent.chat.inputSources', { count: candidate.payload.contextSources.length })}
               </span>
             </div>
             <textarea
-              aria-label={t('agent.chat.candidateAria' as any, { label: candidate.payload.label })}
+              aria-label={t('agent.chat.candidateAria', { label: candidate.payload.label })}
               value={candidate.event.content}
               disabled={copilot.busy}
               onChange={event => {
@@ -191,35 +191,35 @@ export default function ChatCopilotPanel({
               }`}
             />
             <p className="mt-1 text-[10px] text-text-muted">
-              {t('agent.chat.realOutput' as any)}
+              {t('agent.chat.realOutput')}
             </p>
             {candidate.payload.contextEvidence && (
               <details className="mt-2 rounded border border-border/60 bg-bg-surface px-2 py-1.5 text-[10px] text-text-muted">
                 <summary className="cursor-pointer text-text-secondary">
-                  {t('agent.chat.viewEvidence' as any, { count: candidate.payload.contextEvidence.included.length })}
+                  {t('agent.chat.viewEvidence', { count: candidate.payload.contextEvidence.included.length })}
                 </summary>
                 <div className="mt-2 space-y-1 break-words">
                   <p>
-                    {t('agent.chat.contextEstimate' as any, { estimate: candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString(), budget: candidate.payload.contextEvidence.inputBudgetTokens.toLocaleString() })}
+                    {t('agent.chat.contextEstimate', { estimate: candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString(), budget: candidate.payload.contextEvidence.inputBudgetTokens.toLocaleString() })}
                   </p>
-                  <p>{t('agent.chat.included' as any, { items: candidate.payload.contextEvidence.included.join('、') || t('agent.chat.none' as any) })}</p>
+                  <p>{t('agent.chat.included', { items: candidate.payload.contextEvidence.included.join('、') || t('agent.chat.none') })}</p>
                   {candidate.payload.contextEvidence.trimmed.length > 0 && (
-                    <p className="text-warning">{t('agent.chat.trimmed' as any, { items: candidate.payload.contextEvidence.trimmed.join('、') })}</p>
+                    <p className="text-warning">{t('agent.chat.trimmed', { items: candidate.payload.contextEvidence.trimmed.join('、') })}</p>
                   )}
                   {candidate.payload.contextEvidence.omitted.length > 0 && (
-                    <p>{t('agent.chat.omitted' as any, { items: candidate.payload.contextEvidence.omitted.join('、') })}</p>
+                    <p>{t('agent.chat.omitted', { items: candidate.payload.contextEvidence.omitted.join('、') })}</p>
                   )}
                 </div>
               </details>
             )}
             {candidate.payload.teamBudgetEvidence && (
               <p className="mt-2 rounded border border-border/60 bg-bg-surface px-2 py-1.5 text-[10px] text-text-muted">
-                {t('agent.chat.teamBudget' as any, { used: candidate.payload.teamBudgetEvidence.usedTokens.toLocaleString(), max: candidate.payload.teamBudgetEvidence.maxTokens.toLocaleString(), calls: candidate.payload.teamBudgetEvidence.calls, maxCalls: candidate.payload.teamBudgetEvidence.maxCalls, retries: candidate.payload.teamBudgetEvidence.canonRetries, maxRetries: candidate.payload.teamBudgetEvidence.maxCanonRetries })}
+                {t('agent.chat.teamBudget', { used: candidate.payload.teamBudgetEvidence.usedTokens.toLocaleString(), max: candidate.payload.teamBudgetEvidence.maxTokens.toLocaleString(), calls: candidate.payload.teamBudgetEvidence.calls, maxCalls: candidate.payload.teamBudgetEvidence.maxCalls, retries: candidate.payload.teamBudgetEvidence.canonRetries, maxRetries: candidate.payload.teamBudgetEvidence.maxCanonRetries })}
               </p>
             )}
             {(candidate.payload.dependsOnTaskIds?.length ?? 0) > 0 && (
               <p className="mt-1 text-[10px] text-warning">
-                {t('agent.chat.adoptUpstreamFirst' as any, { tasks: candidate.payload.dependsOnTaskIds!.join('、') })}
+                {t('agent.chat.adoptUpstreamFirst', { tasks: candidate.payload.dependsOnTaskIds!.join('、') })}
               </p>
             )}
             <div className="mt-3 flex justify-end gap-2">
@@ -230,7 +230,7 @@ export default function ChatCopilotPanel({
                 className="flex items-center gap-1 rounded px-2.5 py-1.5 text-xs text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-50"
               >
                 <Trash2 className="h-3.5 w-3.5" />
-                {t('agent.chat.reject' as any)}
+                {t('agent.chat.reject')}
               </button>
               <button
                 type="button"
@@ -241,7 +241,7 @@ export default function ChatCopilotPanel({
                 {copilot.busy
                   ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   : <Check className="h-3.5 w-3.5" />}
-                {t('agent.chat.adopt' as any)}
+                {t('agent.chat.adopt')}
               </button>
             </div>
           </section>
@@ -257,7 +257,7 @@ export default function ChatCopilotPanel({
         }}
       >
         <textarea
-          aria-label={t('agent.chat.tellGoal' as any)}
+          aria-label={t('agent.chat.tellGoal')}
           value={copilot.authorRequest}
           disabled={copilot.loading || copilot.busy || copilot.pendingCandidates.length > 0}
           maxLength={2000}
@@ -270,12 +270,12 @@ export default function ChatCopilotPanel({
             }
           }}
           placeholder={copilot.pendingCandidates.length
-            ? t('agent.chat.placeholderPending' as any)
-            : t('agent.chat.placeholder' as any)}
+            ? t('agent.chat.placeholderPending')
+            : t('agent.chat.placeholder')}
           className="w-full resize-none rounded-md border border-border bg-bg-base px-3 py-2 text-xs leading-5 text-text-primary outline-none focus:border-accent disabled:opacity-60"
         />
         <div className="mt-2 flex items-center justify-between">
-          <span className="text-[10px] text-text-muted">{t('agent.chat.enterToSend' as any)}</span>
+          <span className="text-[10px] text-text-muted">{t('agent.chat.enterToSend')}</span>
           {copilot.busy ? (
             <button
               type="button"
@@ -283,7 +283,7 @@ export default function ChatCopilotPanel({
               className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover"
             >
               <Square className="h-3.5 w-3.5" />
-              {t('agent.chat.stop' as any)}
+              {t('agent.chat.stop')}
             </button>
           ) : (
             <button
@@ -296,7 +296,7 @@ export default function ChatCopilotPanel({
               className="flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-xs text-white hover:opacity-90 disabled:opacity-40"
             >
               <Send className="h-3.5 w-3.5" />
-              {t('agent.chat.submitToAgent' as any)}
+              {t('agent.chat.submitToAgent')}
             </button>
           )}
         </div>

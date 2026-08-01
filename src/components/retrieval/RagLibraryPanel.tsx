@@ -25,6 +25,7 @@ import type { Project, RagLibraryEntry } from '../../lib/types'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useDialog } from '../shared/Dialog'
 import { useToast } from '../shared/Toast'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 interface DocumentGroup {
   id: string
@@ -36,12 +37,12 @@ interface DocumentGroup {
   fields: RagLibraryEntry[]
 }
 
-const VECTOR_LABELS: Record<RagLibraryEntry['vectorState'], string> = {
+const VECTOR_LABELS = {
   none: 'retrieval.vector.none',
   keyword: 'retrieval.vector.keyword',
   partial: 'retrieval.vector.partial',
   ready: 'retrieval.vector.ready',
-}
+} as const satisfies Record<RagLibraryEntry['vectorState'], PanelsKeys>
 
 export default function RagLibraryPanel({ project }: { project: Project }) {
   const { t } = useTranslation('panels')
@@ -132,10 +133,10 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
       const summaries = await rebuildProjectNarrativeSummaries({ projectId })
       await load()
       toast.success(
-        t('retrieval.library.rebuildSuccess' as any, { chunks: chunks.chunks, summaries: summaries.chapterNodes + summaries.volumeNodes + summaries.bookNodes } as any),
+        t('retrieval.library.rebuildSuccess', { chunks: chunks.chunks, summaries: summaries.chapterNodes + summaries.volumeNodes + summaries.bookNodes }),
       )
     } catch (reason) {
-      toast.error(t('retrieval.library.rebuildFailed' as any, { error: reason instanceof Error ? reason.message : String(reason) } as any))
+      toast.error(t('retrieval.library.rebuildFailed', { error: reason instanceof Error ? reason.message : String(reason) }))
     } finally {
       setBusy(null)
     }
@@ -143,9 +144,9 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
 
   const clear = async () => {
     const confirmed = await dialog.confirm({
-      title: t('retrieval.library.deleteTitle' as any),
-      message: t('retrieval.library.deleteMsg' as any),
-      confirmText: t('retrieval.library.deleteConfirm' as any),
+      title: t('retrieval.library.deleteTitle'),
+      message: t('retrieval.library.deleteMsg'),
+      confirmText: t('retrieval.library.deleteConfirm'),
       tone: 'danger',
     })
     if (!confirmed) return
@@ -153,9 +154,9 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
     try {
       const cleared = await clearProjectRetrievalCache(projectId)
       await load()
-      toast.success(t('retrieval.library.deleteSuccess' as any, { chunks: cleared.chunks, summaries: cleared.summaries } as any))
+      toast.success(t('retrieval.library.deleteSuccess', { chunks: cleared.chunks, summaries: cleared.summaries }))
     } catch (reason) {
-      toast.error(t('retrieval.library.deleteFailed' as any, { error: reason instanceof Error ? reason.message : String(reason) } as any))
+      toast.error(t('retrieval.library.deleteFailed', { error: reason instanceof Error ? reason.message : String(reason) }))
     } finally {
       setBusy(null)
     }
@@ -168,10 +169,10 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
             <div>
               <div className="flex items-center gap-2">
                 <Database className="h-5 w-5 text-accent" />
-                <h1 className="text-lg font-semibold text-text-primary">{t('retrieval.library.title' as any)}</h1>
+                <h1 className="text-lg font-semibold text-text-primary">{t('retrieval.library.title')}</h1>
               </div>
               <p className="mt-1 max-w-3xl text-xs leading-5 text-text-secondary">
-                {t('retrieval.library.subtitle' as any)}
+                {t('retrieval.library.subtitle')}
               </p>
             </div>
           <div className="ml-auto flex items-center gap-2">
@@ -182,7 +183,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
               className="flex items-center gap-1.5 rounded border border-border bg-bg-surface px-3 py-2 text-xs text-text-secondary hover:border-accent hover:text-accent disabled:opacity-50"
             >
               {busy === 'rebuild' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-              {t('retrieval.library.rebuildIndex' as any)}
+              {t('retrieval.library.rebuildIndex')}
             </button>
             <button
               type="button"
@@ -191,17 +192,17 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
               className="flex items-center gap-1.5 rounded border border-error/40 px-3 py-2 text-xs text-error hover:bg-error/10 disabled:opacity-50"
             >
               {busy === 'clear' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-              {t('retrieval.library.deleteIndex' as any)}
+              {t('retrieval.library.deleteIndex')}
             </button>
           </div>
         </header>
 
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            [t('retrieval.library.visibleRecords' as any), stats.documents.toLocaleString()],
-            [t('retrieval.library.visibleFields' as any), `${stats.enabled}/${stats.fields}`],
-            [t('retrieval.library.contentEstimate' as any), `${stats.tokens.toLocaleString()} tokens`],
-            [t('retrieval.library.chapterChunks' as any), stats.totalChunks.toLocaleString()],
+            [t('retrieval.library.visibleRecords'), stats.documents.toLocaleString()],
+            [t('retrieval.library.visibleFields'), `${stats.enabled}/${stats.fields}`],
+            [t('retrieval.library.contentEstimate'), `${stats.tokens.toLocaleString()} tokens`],
+            [t('retrieval.library.chapterChunks'), stats.totalChunks.toLocaleString()],
           ].map(([label, value]) => (
             <div key={label} className="rounded-lg border border-border bg-bg-surface p-3">
               <p className="text-[10px] text-text-muted">{label}</p>
@@ -213,28 +214,28 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
         <section className="rounded-xl border border-border bg-bg-surface">
           <div className="flex flex-wrap items-center gap-3 border-b border-border p-3">
             <div>
-              <h2 className="text-sm font-medium text-text-primary">{t('retrieval.library.inputData' as any)}</h2>
-              <p className="text-[10px] text-text-muted">{t('retrieval.library.inputDataDesc' as any)}</p>
+              <h2 className="text-sm font-medium text-text-primary">{t('retrieval.library.inputData')}</h2>
+              <p className="text-[10px] text-text-muted">{t('retrieval.library.inputDataDesc')}</p>
             </div>
             <label className="ml-auto flex min-w-64 items-center gap-2 rounded border border-border bg-bg-base px-2 py-1.5">
               <Search className="h-3.5 w-3.5 text-text-muted" />
               <input
-                aria-label={t('retrieval.library.searchAria' as any)}
+                aria-label={t('retrieval.library.searchAria')}
                 value={query}
                 onChange={event => setQuery(event.target.value)}
-                placeholder={t('retrieval.library.searchPlaceholder' as any)}
+                placeholder={t('retrieval.library.searchPlaceholder')}
                 className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none"
               />
             </label>
           </div>
           {loading && !entries.length ? (
             <p className="flex items-center justify-center gap-2 py-16 text-xs text-text-muted">
-              <Loader2 className="h-4 w-4 animate-spin" /> {t('retrieval.library.loading' as any)}
+              <Loader2 className="h-4 w-4 animate-spin" /> {t('retrieval.library.loading')}
             </p>
           ) : error ? (
             <p className="m-4 rounded bg-error/10 p-3 text-xs text-error">{error}</p>
           ) : !groups.length ? (
-            <p className="py-16 text-center text-xs text-text-muted">{t('retrieval.library.noMatch' as any)}</p>
+            <p className="py-16 text-center text-xs text-text-muted">{t('retrieval.library.noMatch')}</p>
           ) : (
             <div className="divide-y divide-border">
               {groups.map(group => {
@@ -251,7 +252,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                       <ChevronDown className="h-3.5 w-3.5 text-text-muted transition-transform group-open:rotate-180" />
                       <input
                         type="checkbox"
-                        aria-label={t('retrieval.library.enableDocAria' as any, { title: group.title } as any)}
+                        aria-label={t('retrieval.library.enableDocAria', { title: group.title })}
                         checked={first.documentEnabled}
                         onClick={event => event.stopPropagation()}
                         onChange={event => void mutate(() => updateRagDocumentPolicy({
@@ -267,13 +268,13 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                           <span className="mr-2 text-text-muted">{group.sourceLabel}</span>{group.title}
                         </p>
                         <p className="mt-0.5 text-[10px] text-text-muted">
-                          {t('retrieval.library.fields' as any, { count: group.fields.length } as any)} · {totalTokens.toLocaleString()} tokens ·
-                          {' '}{chunkCount ? `${t('retrieval.library.chunks' as any, { count: chunkCount } as any)} · ` : ''}{t(VECTOR_LABELS[vectorState] as any)} ·
-                          {' '}{t('retrieval.library.updated' as any, { date: group.updatedAt ? new Date(group.updatedAt).toLocaleString() : t('retrieval.library.unknown' as any) } as any)}
+                          {t('retrieval.library.fields', { count: group.fields.length })} · {totalTokens.toLocaleString()} tokens ·
+                          {' '}{chunkCount ? `${t('retrieval.library.chunks', { count: chunkCount })} · ` : ''}{t(VECTOR_LABELS[vectorState])} ·
+                          {' '}{t('retrieval.library.updated', { date: group.updatedAt ? new Date(group.updatedAt).toLocaleString() : t('retrieval.library.unknown') })}
                         </p>
                       </div>
                       <label className="text-[10px] text-text-muted" onClick={event => event.stopPropagation()}>
-                        {t('retrieval.library.defaultWeight' as any)}
+                        {t('retrieval.library.defaultWeight')}
                         <input
                           type="number"
                           min={0.1}
@@ -290,7 +291,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                         />
                       </label>
                       <label className="text-[10px] text-text-muted" onClick={event => event.stopPropagation()}>
-                        {t('retrieval.library.fieldCap' as any)}
+                        {t('retrieval.library.fieldCap')}
                         <input
                           type="number"
                           min={100}
@@ -312,7 +313,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                           <div className="flex items-center gap-2">
                             <input
                               type="checkbox"
-                              aria-label={t('retrieval.library.enableFieldAria' as any, { label: entry.fieldLabel } as any)}
+                              aria-label={t('retrieval.library.enableFieldAria', { label: entry.fieldLabel })}
                               checked={entry.enabled}
                               disabled={!entry.documentEnabled}
                               onChange={event => void mutate(() => updateRagFieldPolicy({
@@ -346,24 +347,24 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
           <div className="flex items-center gap-2 border-b border-border p-3">
             <FileSearch className="h-4 w-4 text-accent" />
             <div>
-              <h2 className="text-sm font-medium text-text-primary">{t('retrieval.library.recentRecalls' as any)}</h2>
-              <p className="text-[10px] text-text-muted">{t('retrieval.library.recentRecallsDesc' as any)}</p>
+              <h2 className="text-sm font-medium text-text-primary">{t('retrieval.library.recentRecalls')}</h2>
+              <p className="text-[10px] text-text-muted">{t('retrieval.library.recentRecallsDesc')}</p>
             </div>
           </div>
           {!recalls.length ? (
-            <p className="p-6 text-center text-xs text-text-muted">{t('retrieval.library.noRecalls' as any)}</p>
+            <p className="p-6 text-center text-xs text-text-muted">{t('retrieval.library.noRecalls')}</p>
           ) : (
             <div className="divide-y divide-border">
               {recalls.map(recall => (
                 <details key={`${recall.runId}:${recall.nodeTitle}`} className="p-3">
                   <summary className="cursor-pointer text-xs text-text-secondary">
                     {recall.nodeTitle} · {new Date(recall.startedAt).toLocaleString()} ·
-                    {' '}{t('retrieval.library.included' as any)} {recall.included.length} / {t('retrieval.library.omitted' as any)} {recall.omitted.length} / {t('retrieval.library.trimmed' as any)} {recall.trimmed.length}
+                    {' '}{t('retrieval.library.included')} {recall.included.length} / {t('retrieval.library.omitted')} {recall.omitted.length} / {t('retrieval.library.trimmed')} {recall.trimmed.length}
                   </summary>
                   <div className="mt-2 grid gap-2 text-[10px] text-text-muted md:grid-cols-3">
-                    <p><strong className="text-text-secondary">{t('retrieval.library.included' as any)}</strong><br />{recall.included.join('\n') || t('retrieval.library.none' as any)}</p>
-                    <p><strong className="text-text-secondary">{t('retrieval.library.omitted' as any)}</strong><br />{recall.omitted.join('\n') || t('retrieval.library.none' as any)}</p>
-                    <p><strong className="text-text-secondary">{t('retrieval.library.trimmed' as any)}</strong><br />{recall.trimmed.join('\n') || t('retrieval.library.none' as any)}</p>
+                    <p><strong className="text-text-secondary">{t('retrieval.library.included')}</strong><br />{recall.included.join('\n') || t('retrieval.library.none')}</p>
+                    <p><strong className="text-text-secondary">{t('retrieval.library.omitted')}</strong><br />{recall.omitted.join('\n') || t('retrieval.library.none')}</p>
+                    <p><strong className="text-text-secondary">{t('retrieval.library.trimmed')}</strong><br />{recall.trimmed.join('\n') || t('retrieval.library.none')}</p>
                   </div>
                 </details>
               ))}

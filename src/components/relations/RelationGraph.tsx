@@ -5,6 +5,7 @@ import ForceGraph2D from 'react-force-graph-2d'
 type ForceGraphHandle = ComponentRef<typeof ForceGraph2D>
 import { moralAxisColor } from '../../lib/character/character-axes'
 import type { Character, CharacterRelation } from '../../lib/types'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 // 关系类型对应颜色
 const RELATION_COLORS: Record<string, string> = {
@@ -20,7 +21,7 @@ const RELATION_COLORS: Record<string, string> = {
   other:      '#6b7280',
 }
 
-const RELATION_LABELS: Record<string, string> = {
+const RELATION_LABELS = {
   family: 'relations.graph.family',
   lover: 'relations.graph.lover',
   friend: 'relations.graph.friend',
@@ -31,7 +32,7 @@ const RELATION_LABELS: Record<string, string> = {
   ally: 'relations.graph.ally',
   subordinate: 'relations.graph.subordinate',
   other: 'relations.graph.other',
-}
+} as const satisfies Record<string, PanelsKeys>
 
 interface GraphNode { id: string; name: string; role: string; color: string }
 interface GraphLink { source: string; target: string; type: string; bidirectional: boolean; label: string; color: string }
@@ -67,7 +68,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
       target: String(r.toCharacterId),
       type: r.relationType,
       bidirectional: r.isBidirectional,
-      label: r.label ?? t(RELATION_LABELS[r.relationType] as any) ?? r.relationType,
+      label: r.label ?? t(RELATION_LABELS[r.relationType]) ?? r.relationType,
       color: RELATION_COLORS[r.relationType] ?? '#6b7280',
     }))
 
@@ -131,7 +132,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
   if (characters.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-text-muted">
-        <p className="text-sm">{t('relations.graph.noCharacters' as any)}</p>
+        <p className="text-sm">{t('relations.graph.noCharacters')}</p>
       </div>
     )
   }
@@ -139,7 +140,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
   if (relations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-text-muted">
-        <p className="text-sm">{t('relations.graph.noRelations' as any)}</p>
+        <p className="text-sm">{t('relations.graph.noRelations')}</p>
       </div>
     )
   }
@@ -169,7 +170,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
         {Object.entries(RELATION_COLORS).map(([key, color]) => (
           <div key={key} className="flex items-center gap-1 text-xs text-text-muted">
             <span className="w-3 h-0.5 inline-block rounded" style={{ backgroundColor: color }} />
-            {t(RELATION_LABELS[key] as any)}
+            {t(RELATION_LABELS[key as keyof typeof RELATION_LABELS])}
           </div>
         ))}
       </div>

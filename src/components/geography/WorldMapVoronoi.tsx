@@ -341,17 +341,17 @@ export default function WorldMapVoronoi({ config, onMapGenerated, onConfigChange
         <div className="absolute top-3 left-3 text-xs bg-[#1e2230] text-gray-300 rounded-lg px-2.5 py-1.5 shadow-lg border border-gray-700/50 space-y-0.5">
           <div className="font-medium text-white">{mapData.name}</div>
           <div className="text-gray-400">
-            {t('geography.infoStatsFormat' as any, { states: mapData.states.filter(s => s.i > 0).length, cities: mapData.burgs.filter(b => b.i > 0).length, rivers: mapData.rivers.length, roads: mapData.roads.length })}
+            {t('geography.infoStatsFormat', { states: mapData.states.filter(s => s.i > 0).length, cities: mapData.burgs.filter(b => b.i > 0).length, rivers: mapData.rivers.length, roads: mapData.roads.length })}
           </div>
           {mapData.scaleResolution && (
             <div className="text-gray-500">
-              {t('geography.scalePrefix' as any)}{scaleSourceLabel(mapData.scaleResolution.source, t)}
-              {mapData.scaleResolution.travelEstimate ? t('geography.travelEstimate' as any) : ''}
+              {t('geography.scalePrefix')}{scaleSourceLabel(mapData.scaleResolution.source, t)}
+              {mapData.scaleResolution.travelEstimate ? t('geography.travelEstimate') : ''}
             </div>
           )}
           {(mapData.spatialDiagnostics?.violations.length ?? 0) > 0 && (
             <div className="text-amber-400">
-              {t('geography.spatialConflict' as any, { count: mapData.spatialDiagnostics!.violations.length })}
+              {t('geography.spatialConflict', { count: mapData.spatialDiagnostics!.violations.length })}
             </div>
           )}
         </div>

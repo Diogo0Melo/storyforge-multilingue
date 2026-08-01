@@ -67,13 +67,13 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
         projectId,
       })
       if (!output.trim()) {
-        setError(t('style.calibration.noResult' as any))
+        setError(t('style.calibration.noResult'))
         return
       }
       setResultText(output.trim())
     } catch (generateError) {
       console.error('[StyleCalibration] 生成失败:', generateError)
-      setError(generateError instanceof Error ? generateError.message : t('style.calibration.generateFailed' as any))
+      setError(generateError instanceof Error ? generateError.message : t('style.calibration.generateFailed'))
     } finally {
       setRunning(false)
     }
@@ -89,9 +89,9 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
         sourceText,
         resultText,
       })
-      toast.success(verdict === 'closer' ? t('style.calibration.recordedCloser' as any) : t('style.calibration.recordedAdjust' as any))
+      toast.success(verdict === 'closer' ? t('style.calibration.recordedCloser') : t('style.calibration.recordedAdjust'))
     } catch (feedbackError) {
-      setError(t('style.calibration.feedbackFailed' as any, { error: feedbackError instanceof Error ? feedbackError.message : String(feedbackError) } as any))
+      setError(t('style.calibration.feedbackFailed', { error: feedbackError instanceof Error ? feedbackError.message : String(feedbackError) }))
     }
   }
 
@@ -106,9 +106,9 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
         authorNote: feedbackNote,
       })
       if (!pair) return
-      toast.success(t('style.calibration.sampleSaved' as any))
+      toast.success(t('style.calibration.sampleSaved'))
     } catch (pairError) {
-      setError(t('style.calibration.sampleFailed' as any, { error: pairError instanceof Error ? pairError.message : String(pairError) } as any))
+      setError(t('style.calibration.sampleFailed', { error: pairError instanceof Error ? pairError.message : String(pairError) }))
     }
   }
 
@@ -116,10 +116,10 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
     <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
       <div>
         <h3 className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
-          <Wrench className="h-4 w-4 text-accent" /> {t('style.calibration.title' as any)}
+          <Wrench className="h-4 w-4 text-accent" /> {t('style.calibration.title')}
         </h3>
         <p className="mt-1 text-[11px] leading-5 text-text-muted">
-          {t('style.calibration.desc' as any)}
+          {t('style.calibration.desc')}
         </p>
       </div>
 
@@ -127,12 +127,12 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
         value={sourceText}
         onChange={event => setSourceText(event.target.value.slice(0, MAX_CALIBRATION_SOURCE_CHARS))}
         rows={6}
-        placeholder={t('style.calibration.placeholder' as any)}
+        placeholder={t('style.calibration.placeholder')}
         className="w-full resize-y rounded border border-border bg-bg-base px-3 py-2 text-sm leading-relaxed text-text-secondary focus:border-accent focus:outline-none"
       />
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] text-text-muted">
-          {t('style.calibration.charCount' as any, { count: sourceText.length.toLocaleString(), max: MAX_CALIBRATION_SOURCE_CHARS.toLocaleString() } as any)}
+          {t('style.calibration.charCount', { count: sourceText.length.toLocaleString(), max: MAX_CALIBRATION_SOURCE_CHARS.toLocaleString() })}
         </span>
         <button
           type="button"
@@ -141,8 +141,8 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
           className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {running
-            ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('style.calibration.generating' as any)}</>
-            : <><Sparkles className="h-3.5 w-3.5" /> {t('style.calibration.generate' as any)}</>}
+            ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('style.calibration.generating')}</>
+            : <><Sparkles className="h-3.5 w-3.5" /> {t('style.calibration.generate')}</>}
         </button>
       </div>
 
@@ -151,7 +151,7 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
       {resultText && (
         <div className="space-y-2 border-t border-border pt-3">
           <label className="text-xs font-medium text-text-secondary" htmlFor="style-calibration-result">
-            {t('style.calibration.resultLabel' as any)}
+            {t('style.calibration.resultLabel')}
           </label>
           <textarea
             id="style-calibration-result"
@@ -161,12 +161,12 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
             className="w-full resize-y rounded border border-accent/30 bg-accent/5 px-3 py-2 text-sm leading-relaxed text-text-secondary focus:border-accent focus:outline-none"
           />
           <div className="flex items-center gap-1.5 text-xs font-medium text-text-secondary">
-            <MessageSquareText className="h-3.5 w-3.5" /> {t('style.calibration.yourJudgement' as any)}
+            <MessageSquareText className="h-3.5 w-3.5" /> {t('style.calibration.yourJudgement')}
           </div>
           <input
             value={feedbackNote}
             onChange={event => setFeedbackNote(event.target.value.slice(0, 240))}
-            placeholder={t('style.calibration.notePlaceholder' as any)}
+            placeholder={t('style.calibration.notePlaceholder')}
             className="w-full rounded border border-border bg-bg-base px-2.5 py-1.5 text-xs text-text-secondary focus:border-accent focus:outline-none"
           />
           <div className="flex flex-wrap gap-2">
@@ -175,14 +175,14 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
               onClick={() => { void recordFeedback('closer') }}
               className="inline-flex items-center gap-1 rounded bg-success/15 px-2.5 py-1.5 text-xs font-medium text-success hover:bg-success/25"
             >
-              <Check className="h-3.5 w-3.5" /> {t('style.calibration.closer' as any)}
+              <Check className="h-3.5 w-3.5" /> {t('style.calibration.closer')}
             </button>
             <button
               type="button"
               onClick={() => { void recordFeedback('needs-adjustment') }}
               className="inline-flex items-center gap-1 rounded bg-warning/15 px-2.5 py-1.5 text-xs font-medium text-warning hover:bg-warning/25"
             >
-              <Wrench className="h-3.5 w-3.5" /> {t('style.calibration.needsAdjustment' as any)}
+              <Wrench className="h-3.5 w-3.5" /> {t('style.calibration.needsAdjustment')}
             </button>
             <button
               type="button"
@@ -190,7 +190,7 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
               disabled={!hasChangedResult}
               className="inline-flex items-center gap-1 rounded border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Save className="h-3.5 w-3.5" /> {t('style.calibration.saveSample' as any)}
+              <Save className="h-3.5 w-3.5" /> {t('style.calibration.saveSample')}
             </button>
           </div>
         </div>

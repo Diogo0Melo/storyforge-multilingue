@@ -134,7 +134,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
       && systemIds.has(character.cultivationSystemId)
       && (character.isCrossWorld || (character.homeWorldGroupId ?? null) === worldGroupId))
     if (!scopedCharacters.length) {
-      setMessage(t('cultivation.progress.noLinkedCharacter' as any))
+      setMessage(t('cultivation.progress.noLinkedCharacter'))
       return
     }
     const content = htmlToPlainText(chapter.content || '').trim()
@@ -159,9 +159,9 @@ export default function CultivationProgressPanel({ project }: { project: Project
         systems: scopedSystems,
       })
       setCandidates(next)
-      setMessage(next.length ? t('cultivation.progress.foundCandidates', { count: next.length } as any) : t('cultivation.progress.noCandidates' as any))
+      setMessage(next.length ? t('cultivation.progress.foundCandidates', { count: next.length }) : t('cultivation.progress.noCandidates'))
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('cultivation.progress.analysisFailed' as any))
+      setMessage(error instanceof Error ? error.message : t('cultivation.progress.analysisFailed'))
     } finally {
       setAnalyzing(false)
     }
@@ -181,9 +181,9 @@ export default function CultivationProgressPanel({ project }: { project: Project
       await loadEvents(project.id!)
       setCandidates(currentRows => currentRows.filter(row => candidateKey(row) !== key))
       setSelectedCharacterId(candidate.characterId)
-      setMessage(t('cultivation.progress.confirmed' as any))
+      setMessage(t('cultivation.progress.confirmed'))
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : t('cultivation.progress.confirmFailed' as any))
+      setMessage(error instanceof Error ? error.message : t('cultivation.progress.confirmFailed'))
     } finally {
       setAcceptingKey(null)
     }
@@ -191,9 +191,9 @@ export default function CultivationProgressPanel({ project }: { project: Project
 
   const removeEvent = async (id: number) => {
     if (!await dialog.confirm({
-      title: t('cultivation.progress.deleteEventTitle' as any),
-      message: t('cultivation.progress.deleteEventMsg' as any),
-      confirmText: t('cultivation.progress.delete' as any),
+      title: t('cultivation.progress.deleteEventTitle'),
+      message: t('cultivation.progress.deleteEventMsg'),
+      confirmText: t('cultivation.progress.delete'),
       tone: 'danger',
     })) return
     await deleteEvent(id)
@@ -205,10 +205,10 @@ export default function CultivationProgressPanel({ project }: { project: Project
       <header className="flex items-start justify-between gap-4 border-b border-border/40 pb-4">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <GitBranch className="w-5 h-5" /> {t('cultivation.progress.title' as any)}
+            <GitBranch className="w-5 h-5" /> {t('cultivation.progress.title')}
           </h2>
           <p className="text-xs text-text-muted mt-1">
-            {t('cultivation.progress.subtitle' as any)}
+            {t('cultivation.progress.subtitle')}
           </p>
         </div>
         <label className="flex items-center gap-2 text-xs text-text-secondary border border-border rounded-lg px-3 py-2">
@@ -219,16 +219,16 @@ export default function CultivationProgressPanel({ project }: { project: Project
               includeCultivationProgressInAI: event.target.checked,
             })}
           />
-          {t('cultivation.progress.feedBackWriting' as any)}
+          {t('cultivation.progress.feedBackWriting')}
         </label>
       </header>
 
       <section className="rounded-xl border border-border bg-bg-surface p-4 space-y-3">
         <div className="flex items-end gap-3">
           <label className="flex-1">
-            <span className="block text-xs text-text-muted mb-1">{t('cultivation.progress.selectChapter' as any)}</span>
+            <span className="block text-xs text-text-muted mb-1">{t('cultivation.progress.selectChapter')}</span>
             <select
-              aria-label={t('cultivation.progress.sourceChapterAria' as any)}
+              aria-label={t('cultivation.progress.sourceChapterAria')}
               value={selectedChapterId ?? ''}
               onChange={event => {
                 setSelectedChapterId(event.target.value ? Number(event.target.value) : null)
@@ -237,7 +237,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
               }}
               className="w-full bg-bg-base border border-border rounded-lg px-3 py-2 text-sm text-text-primary"
             >
-              {writtenChapters.length === 0 && <option value="">{t('cultivation.progress.noWrittenChapter' as any)}</option>}
+              {writtenChapters.length === 0 && <option value="">{t('cultivation.progress.noWrittenChapter')}</option>}
               {writtenChapters.map(chapter => <option key={chapter.id} value={chapter.id}>{chapter.title}</option>)}
             </select>
           </label>
@@ -247,7 +247,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent text-white text-sm disabled:opacity-40"
           >
             {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {analyzing ? t('cultivation.progress.analyzing' as any) : t('cultivation.progress.analyzeChapter' as any)}
+            {analyzing ? t('cultivation.progress.analyzing') : t('cultivation.progress.analyzeChapter')}
           </button>
         </div>
         {message && <p className="text-xs text-text-secondary">{message}</p>}
@@ -264,7 +264,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-text-primary">
                         {character?.name} · {system?.name} → {stage?.name}
-                        <span className="ml-2 text-[10px] text-accent">{t(TRANSITION_LABEL_KEYS[candidate.transition] as any)}</span>
+                        <span className="ml-2 text-[10px] text-accent">{t(TRANSITION_LABEL_KEYS[candidate.transition])}</span>
                       </p>
                       {candidate.trigger && <p className="text-xs text-text-muted mt-1">{candidate.trigger}</p>}
                       <blockquote className="text-xs text-text-secondary mt-2 border-l-2 border-accent/40 pl-2">
@@ -273,7 +273,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                     </div>
                     <div className="flex gap-1">
                       <button
-                        aria-label={t('cultivation.progress.confirmAria' as any)}
+                        aria-label={t('cultivation.progress.confirmAria')}
                         disabled={acceptingKey === key}
                         onClick={() => accept(candidate)}
                         className="p-1.5 rounded text-green-500 hover:bg-green-500/10 disabled:opacity-40"
@@ -283,7 +283,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                           : <Check className="w-4 h-4" />}
                       </button>
                       <button
-                        aria-label={t('cultivation.progress.ignoreAria' as any)}
+                        aria-label={t('cultivation.progress.ignoreAria')}
                         onClick={() => setCandidates(rows => rows.filter(row => candidateKey(row) !== key))}
                         className="p-1.5 rounded text-text-muted hover:text-error"
                       >
@@ -300,7 +300,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
 
       {trackableCharacters.length === 0 ? (
         <div className="border border-dashed border-border rounded-xl py-12 text-center text-sm text-text-muted">
-          {t('cultivation.progress.noLinkedChar' as any)}
+          {t('cultivation.progress.noLinkedChar')}
         </div>
       ) : (
         <>
@@ -315,7 +315,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                     : 'border-border text-text-secondary'
                 }`}
               >
-                {character.name}{character.roleWeight === 'main' ? t('cultivation.progress.mainRole' as any) : ''}
+                {character.name}{character.roleWeight === 'main' ? t('cultivation.progress.mainRole') : ''}
               </button>
             ))}
           </div>
@@ -323,14 +323,14 @@ export default function CultivationProgressPanel({ project }: { project: Project
           <section className="rounded-xl border border-border bg-bg-surface p-4">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
-                <p className="text-xs text-text-muted">{selectedSystem?.name ?? t('cultivation.progress.noSystem' as any)}</p>
+                <p className="text-xs text-text-muted">{selectedSystem?.name ?? t('cultivation.progress.noSystem')}</p>
                 <h3 className="text-lg font-semibold text-text-primary">
-                  {current ? t('cultivation.progress.currentText', { stage: current.stageName } as any) : t('cultivation.progress.noConfirmedStage' as any)}
+                  {current ? t('cultivation.progress.currentText', { stage: current.stageName }) : t('cultivation.progress.noConfirmedStage')}
                 </h3>
               </div>
               {selectedCharacter?.cultivationStageId && (
                 <span className="text-[10px] text-text-muted">
-                  {t('cultivation.progress.cardSetting', { stage: selectedStages.find(stage => stage.id === selectedCharacter.cultivationStageId)?.name ?? t('cultivation.progress.expired' as any) } as any)}
+                  {t('cultivation.progress.cardSetting', { stage: selectedStages.find(stage => stage.id === selectedCharacter.cultivationStageId)?.name ?? t('cultivation.progress.expired') })}
                 </span>
               )}
             </div>
@@ -340,7 +340,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                 <div className="flex gap-4 min-w-max">
                   {Array.from({ length: Math.max(...tiers.values(), 0) + 1 }, (_, tier) => (
                     <div key={tier} className="w-36 space-y-2">
-                      <p className="text-[10px] text-text-muted text-center">{t('cultivation.progress.tier', { tier } as any)}</p>
+                      <p className="text-[10px] text-text-muted text-center">{t('cultivation.progress.tier', { tier })}</p>
                       {selectedStages.filter(stage => (tiers.get(stage.id) ?? 0) === tier).map(stage => (
                         <div
                           key={stage.id}
@@ -368,7 +368,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
             )}
 
             {selectedEvents.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-6">{t('cultivation.progress.noConfirmedEvents' as any)}</p>
+              <p className="text-sm text-text-muted text-center py-6">{t('cultivation.progress.noConfirmedEvents')}</p>
             ) : (
               <div className="space-y-2 border-l border-border ml-2 pl-4">
                 {selectedEvents.map(event => (
@@ -378,7 +378,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                       <div className="flex-1">
                         <p className="text-sm text-text-primary">
                           {event.stageName}
-                          <span className="ml-2 text-[10px] text-accent">{t(TRANSITION_LABEL_KEYS[event.transition] as any)}</span>
+                          <span className="ml-2 text-[10px] text-accent">{t(TRANSITION_LABEL_KEYS[event.transition])}</span>
                           {event.status !== 'confirmed' && (
                             <span className="ml-2 text-[10px] text-error">{event.status}</span>
                           )}
@@ -390,7 +390,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                       </div>
                       {event.id != null && (
                         <button
-                          aria-label={t('cultivation.progress.deleteEventAria' as any)}
+                          aria-label={t('cultivation.progress.deleteEventAria')}
                           onClick={() => removeEvent(event.id!)}
                           className="p-1 text-text-muted hover:text-error"
                         >

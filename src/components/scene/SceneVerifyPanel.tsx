@@ -93,10 +93,10 @@ export default function SceneVerifyPanel({ project }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-              <ScanSearch className="w-5 h-5" /> {t('scene.verify.title' as any)}
+              <ScanSearch className="w-5 h-5" /> {t('scene.verify.title')}
             </h2>
             <p className="text-xs text-text-muted mt-0.5">
-              {t('scene.verify.subtitle' as any)}
+              {t('scene.verify.subtitle')}
             </p>
           </div>
           {project.enableMultiWorld && <WorldGroupSwitcher />}
@@ -105,11 +105,11 @@ export default function SceneVerifyPanel({ project }: Props) {
 
       {/* 场景输入 */}
       <section>
-        <label className="block text-sm font-medium text-text-primary mb-2">{t('scene.verify.currentScene' as any)}</label>
+        <label className="block text-sm font-medium text-text-primary mb-2">{t('scene.verify.currentScene')}</label>
         <AutoResizeTextarea
           value={scene}
           onChange={e => setScene(e.target.value)}
-          placeholder={t('scene.verify.scenePlaceholder' as any)}
+          placeholder={t('scene.verify.scenePlaceholder')}
           className="w-full text-sm bg-bg-base border border-border rounded-lg px-4 py-3 text-text-primary placeholder:text-text-muted resize-none focus:outline-none focus:border-accent"
           minRows={4}
         />
@@ -118,20 +118,20 @@ export default function SceneVerifyPanel({ project }: Props) {
       {/* 时代 / 地点（可选） */}
       <section className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block text-xs text-text-muted mb-1">{t('scene.verify.eraLabel' as any)}</label>
+          <label className="block text-xs text-text-muted mb-1">{t('scene.verify.eraLabel')}</label>
           <CInput
             value={sceneEra}
             onChange={e => setSceneEra(e.target.value)}
-            placeholder={t('scene.verify.eraPlaceholder' as any)}
+            placeholder={t('scene.verify.eraPlaceholder')}
             className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
           />
         </div>
         <div>
-          <label className="block text-xs text-text-muted mb-1">{t('scene.verify.locationLabel' as any)}</label>
+          <label className="block text-xs text-text-muted mb-1">{t('scene.verify.locationLabel')}</label>
           <CInput
             value={sceneLocation}
             onChange={e => setSceneLocation(e.target.value)}
-            placeholder={t('scene.verify.locationPlaceholder' as any)}
+            placeholder={t('scene.verify.locationPlaceholder')}
             className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-sm text-text-primary placeholder:text-text-muted focus:outline-none focus:border-accent"
           />
         </div>
@@ -145,10 +145,10 @@ export default function SceneVerifyPanel({ project }: Props) {
           className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
           {building || ai.isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          {building ? t('scene.verify.readingSettings' as any) : ai.isStreaming ? t('scene.verify.verifying' as any) : t('scene.verify.verify' as any)}
+          {building ? t('scene.verify.readingSettings') : ai.isStreaming ? t('scene.verify.verifying') : t('scene.verify.verify')}
         </button>
         {ai.isStreaming && (
-          <button onClick={ai.stop} className="text-xs text-text-muted hover:text-red-500 transition-colors">{t('scene.verify.stop' as any)}</button>
+          <button onClick={ai.stop} className="text-xs text-text-muted hover:text-red-500 transition-colors">{t('scene.verify.stop')}</button>
         )}
       </div>
 
@@ -162,7 +162,7 @@ export default function SceneVerifyPanel({ project }: Props) {
           onStop={ai.stop}
           onAccept={() => { /* 考证结果供参考，无需写入数据，采纳=无操作 */ }}
           onRetry={handleVerify}
-          placeholder={t('scene.verify.resultPlaceholder' as any)}
+          placeholder={t('scene.verify.resultPlaceholder')}
           moduleKey="scene.verify"
         />
       )}

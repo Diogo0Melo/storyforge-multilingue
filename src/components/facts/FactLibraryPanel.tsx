@@ -12,10 +12,11 @@ import type { FactStatus } from '../../lib/types/temporal-fact'
 import { exportFactMemoryMarkdown } from '../../lib/fact-ledger/human-readable-io'
 import KnowledgeLedgerPanel from './KnowledgeLedgerPanel'
 import WorldConstitutionPanel from './WorldConstitutionPanel'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 type FactTab = FactStatus | 'exceptions'
 
-const STATUS_TABS: { key: FactTab; labelKey: string }[] = [
+const STATUS_TABS: { key: FactTab; labelKey: PanelsKeys }[] = [
   { key: 'exceptions', labelKey: 'facts.library.tabExceptions' },
   { key: 'candidate', labelKey: 'facts.library.tabCandidate' },
   { key: 'confirmed', labelKey: 'facts.library.tabConfirmed' },
@@ -25,7 +26,7 @@ const STATUS_TABS: { key: FactTab; labelKey: string }[] = [
 
 const EXCEPTION_STATUSES: FactStatus[] = ['stale', 'source-missing', 'invalid-range']
 
-const STATUS_LABEL_KEY: Record<FactStatus, string> = {
+const STATUS_LABEL_KEY = {
   candidate: 'facts.status.candidate',
   confirmed: 'facts.status.confirmed',
   superseded: 'facts.status.superseded',
@@ -33,13 +34,13 @@ const STATUS_LABEL_KEY: Record<FactStatus, string> = {
   stale: 'facts.status.stale',
   'source-missing': 'facts.status.sourceMissing',
   'invalid-range': 'facts.status.invalidRange',
-}
+} as const satisfies Record<FactStatus, PanelsKeys>
 
-const STATUS_HINT_KEY: Partial<Record<FactStatus, string>> = {
+const STATUS_HINT_KEY = {
   stale: 'facts.hint.stale',
   'source-missing': 'facts.hint.sourceMissing',
   'invalid-range': 'facts.hint.invalidRange',
-}
+} as const satisfies Partial<Record<FactStatus, PanelsKeys>>
 
 export default function FactLibraryPanel({ project }: { project: Project }) {
   const { t } = useTranslation('panels')
@@ -72,7 +73,7 @@ export default function FactLibraryPanel({ project }: { project: Project }) {
     a.download = `storyforge-fact-memory-${project.id}.md`
     a.click()
     URL.revokeObjectURL(url)
-    setIoMsg(t('facts.library.exported' as any))
+    setIoMsg(t('facts.library.exported'))
   }
 
   const handleImportDiff = async () => {
@@ -80,10 +81,10 @@ export default function FactLibraryPanel({ project }: { project: Project }) {
     try {
       const raw = JSON.parse(diffText)
       const result = await importCandidateDiff(project.id, raw)
-      setIoMsg(t('facts.library.diffImported' as any, { written: result.written, duplicate: result.skippedDuplicate, invalid: result.skippedInvalid } as any))
+      setIoMsg(t('facts.library.diffImported', { written: result.written, duplicate: result.skippedDuplicate, invalid: result.skippedInvalid }))
       if (result.written > 0) setDiffText('')
     } catch (err) {
-      setIoMsg(t('facts.library.diffImportFailed' as any, { error: err instanceof Error ? err.message : String(err) } as any))
+      setIoMsg(t('facts.library.diffImportFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
@@ -99,37 +100,37 @@ export default function FactLibraryPanel({ project }: { project: Project }) {
       <div className="flex items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2">
           <Database className="w-5 h-5 text-sky-400" />
-          <h1 className="text-lg font-bold text-text-primary">{t('facts.library.title' as any)}</h1>
+          <h1 className="text-lg font-bold text-text-primary">{t('facts.library.title')}</h1>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={() => setLibraryMode('constitution')}
             className="px-3 py-1.5 text-xs rounded-md bg-amber-500/10 text-amber-300 hover:bg-amber-500/20">
-            {t('facts.library.viewConstitution' as any)}
+            {t('facts.library.viewConstitution')}
           </button>
           <button onClick={() => setLibraryMode('knowledge')}
             className="px-3 py-1.5 text-xs rounded-md bg-violet-500/10 text-violet-300 hover:bg-violet-500/20">
-            {t('facts.library.viewKnowledge' as any)}
+            {t('facts.library.viewKnowledge')}
           </button>
         </div>
       </div>
       <p className="text-xs text-text-muted mb-4">
-        {t('facts.library.desc' as any)}
+        {t('facts.library.desc')}
       </p>
 
       <div className="mb-4 p-3 rounded-lg border border-border bg-bg-elevated/60">
         <div className="flex flex-wrap gap-2 items-center mb-2">
           <button onClick={() => void handleExport()}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-bg-base text-xs text-text-secondary hover:text-text-primary">
-            <Download className="w-3.5 h-3.5" /> {t('facts.library.exportMarkdown' as any)}
+            <Download className="w-3.5 h-3.5" /> {t('facts.library.exportMarkdown')}
           </button>
           <button onClick={() => void handleImportDiff()} disabled={!diffText.trim()}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-sky-500/10 text-xs text-sky-300 hover:bg-sky-500/20 disabled:opacity-40">
-            <Upload className="w-3.5 h-3.5" /> {t('facts.library.importDiff' as any)}
+            <Upload className="w-3.5 h-3.5" /> {t('facts.library.importDiff')}
           </button>
           {ioMsg && <span className="text-[11px] text-text-muted">{ioMsg}</span>}
         </div>
         <textarea value={diffText} onChange={e => setDiffText(e.target.value)}
-          placeholder={t('facts.library.diffPlaceholder' as any)}
+          placeholder={t('facts.library.diffPlaceholder')}
           className="w-full min-h-[76px] px-3 py-2 text-xs rounded bg-bg-base border border-border text-text-primary placeholder:text-text-muted focus:outline-none focus:border-sky-500" />
       </div>
 
@@ -137,14 +138,14 @@ export default function FactLibraryPanel({ project }: { project: Project }) {
         {STATUS_TABS.map(tabItem => (
           <button key={tabItem.key} onClick={() => setTab(tabItem.key)}
             className={`px-3 py-1.5 text-xs rounded-md transition-colors ${tab === tabItem.key ? 'bg-sky-500/20 text-sky-300' : 'bg-bg-elevated text-text-muted hover:text-text-secondary'}`}>
-            {t(tabItem.labelKey as any)}{counts[tabItem.key] ? `（${counts[tabItem.key]}）` : ''}
+            {t(tabItem.labelKey)}{counts[tabItem.key] ? `（${counts[tabItem.key]}）` : ''}
           </button>
         ))}
       </div>
 
-      {loading && <p className="text-sm text-text-muted">{t('facts.library.loading' as any)}</p>}
+      {loading && <p className="text-sm text-text-muted">{t('facts.library.loading')}</p>}
       {!loading && rows.length === 0 && (
-        <p className="text-sm text-text-muted py-8 text-center">{t('facts.library.empty' as any, { tab: t(STATUS_TABS.find(tabItem => tabItem.key === tab)?.labelKey ?? '' as any) } as any)}</p>
+        <p className="text-sm text-text-muted py-8 text-center">{t('facts.library.empty', { tab: t(STATUS_TABS.find(tabItem => tabItem.key === tab)?.labelKey ?? 'facts.library.tabExceptions') })}</p>
       )}
 
       <div className="space-y-2">
@@ -157,19 +158,19 @@ export default function FactLibraryPanel({ project }: { project: Project }) {
                   <span className="font-medium">{f.subjectName}</span>
                   <span className="text-text-muted"> · {spec?.label ?? f.predicate}：</span>
                   <span>{f.value}</span>
-                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-bg-base text-text-muted">{t(STATUS_LABEL_KEY[f.status] as any)}</span>
-                  {f.locked && <span className="ml-2 text-[10px] text-amber-400">{t('facts.library.locked' as any)}</span>}
+                  <span className="ml-2 text-[10px] px-1.5 py-0.5 rounded bg-bg-base text-text-muted">{t(STATUS_LABEL_KEY[f.status])}</span>
+                  {f.locked && <span className="ml-2 text-[10px] text-amber-400">{t('facts.library.locked')}</span>}
                 </p>
-                {STATUS_HINT_KEY[f.status] && <p className="text-xs text-amber-300/90 mt-1">{t(STATUS_HINT_KEY[f.status]! as any)}</p>}
-                {f.sourceQuote && <p className="text-xs text-text-muted mt-1 truncate">{t('facts.library.evidence' as any, { quote: f.sourceQuote } as any)}</p>}
+                {f.status in STATUS_HINT_KEY && <p className="text-xs text-amber-300/90 mt-1">{t(STATUS_HINT_KEY[f.status as keyof typeof STATUS_HINT_KEY]!)}</p>}
+                {f.sourceQuote && <p className="text-xs text-text-muted mt-1 truncate">{t('facts.library.evidence', { quote: f.sourceQuote })}</p>}
               </div>
               {(['candidate', ...EXCEPTION_STATUSES] as FactStatus[]).includes(f.status) && f.id != null && (
                 <div className="flex items-center gap-1 shrink-0">
-                  <button onClick={() => void confirmFact(project.id!, f.id!)} title={t('facts.library.confirmAria' as any)}
+                  <button onClick={() => void confirmFact(project.id!, f.id!)} title={t('facts.library.confirmAria')}
                     className="p-1.5 text-emerald-400 hover:bg-emerald-500/15 rounded">
                     <Check className="w-4 h-4" />
                   </button>
-                  <button onClick={() => void rejectFact(project.id!, f.id!)} title={t('facts.library.rejectAria' as any)}
+                  <button onClick={() => void rejectFact(project.id!, f.id!)} title={t('facts.library.rejectAria')}
                     className="p-1.5 text-rose-400 hover:bg-rose-500/15 rounded">
                     <X className="w-4 h-4" />
                   </button>

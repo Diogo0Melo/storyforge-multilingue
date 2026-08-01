@@ -2,6 +2,7 @@ import { useMemo, useRef, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { stratify, tree, type HierarchyPointNode } from 'd3-hierarchy'
 import type { Location } from '../../lib/types'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 type NodeDatum = Location & { id: string; parentId: string | null }
 type PointNode = HierarchyPointNode<NodeDatum>
@@ -12,7 +13,7 @@ const TYPE_EMOJI: Record<string, string> = {
   building: '🏛️', other: '📍',
 }
 
-const TYPE_I18N_KEYS: Record<string, string> = {
+const TYPE_I18N_KEYS = {
   continent: 'geography.legendContinent',
   country: 'geography.legendCountry',
   city: 'geography.legendCity',
@@ -23,7 +24,7 @@ const TYPE_I18N_KEYS: Record<string, string> = {
   nature: 'geography.legendNature',
   building: 'geography.legendBuilding',
   other: 'geography.legendOther',
-}
+} as const satisfies Record<string, PanelsKeys>
 
 const NODE_COLORS: Record<string, string> = {
   continent: '#f59e0b', country: '#6366f1', city: '#22c55e',
@@ -152,7 +153,7 @@ export default function LocationTreeMap({ locations }: Props) {
           <div key={key} className="flex items-center gap-1 text-xs text-text-muted">
             <span>{emoji}</span>
             <span style={{ color: NODE_COLORS[key] }}>
-              {t(TYPE_I18N_KEYS[key] as any)}
+              {t(TYPE_I18N_KEYS[key as keyof typeof TYPE_I18N_KEYS])}
             </span>
           </div>
         ))}

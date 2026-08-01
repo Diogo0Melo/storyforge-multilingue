@@ -191,7 +191,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `agent.orchestrator` | `src/lib/agent/orchestrator.ts:354` |
 | `agent.readonly` | `src/lib/agent/client-adapter.ts:23` |
 | `ai.restructure` | `src/lib/ai/restructure.ts:54` |
-| `canon.setting.extract` | `src/components/facts/WorldConstitutionPanel.tsx:81` |
+| `canon.setting.extract` | `src/components/facts/WorldConstitutionPanel.tsx:82` |
 | `chapter.content` | `src/lib/generation/chapter-generation-node.ts:22` |
 | `chapter.content.batch` | `src/lib/ai/batch-detail-runner.ts:256` |
 | `chapter.continue` | `src/lib/generation/chapter-generation-node.ts:23` |
@@ -208,9 +208,9 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `cultivation.progress` | `src/components/cultivation/CultivationProgressPanel.tsx:145` |
 | `detail.scene` | `src/components/outline/DetailedOutlinePanel.tsx:153`<br/>`src/components/outline/ScenePanel.tsx:128`<br/>`src/lib/ai/batch-detail-runner.ts:109` |
 | `emotion.beat` | `src/components/editor/EmotionBeatCard.tsx:68` |
-| `foreshadow.structure` | `src/components/foreshadow/ForeshadowPanel.tsx:83` |
-| `foreshadow.suggest` | `src/components/foreshadow/ForeshadowPanel.tsx:233` |
-| `geography.concept-map` | `src/components/geography/GeographyPanel.tsx:129` |
+| `foreshadow.structure` | `src/components/foreshadow/ForeshadowPanel.tsx:84` |
+| `foreshadow.suggest` | `src/components/foreshadow/ForeshadowPanel.tsx:234` |
+| `geography.concept-map` | `src/components/geography/GeographyPanel.tsx:130` |
 | `geography.world-map` | `src/components/geography/WorldMapPanel.tsx:109` |
 | `history.consult` | `src/components/history/useHistoryAI.ts:120` |
 | `history.storm` | `src/components/history/useHistoryAI.ts:122` |
@@ -242,7 +242,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `story.timeline` | `src/components/timeline/StoryTimelinePanel.tsx:87` |
 | `storyline-progress.map` | `src/components/outline/StorylineProgressPanel.tsx:79` |
 | `style.calibrate` | `src/components/style/StyleCalibrationPanel.tsx:65` |
-| `style.learn` | `src/components/style/StyleLearningPanel.tsx:123` |
+| `style.learn` | `src/components/style/StyleLearningPanel.tsx:124` |
 | `world-group.expand` | `src/components/world-group/WorldGroupDetail.tsx:100` |
 | `world-group.suggest` | `src/components/world-group/WorldGroupOverview.tsx:59` |
 | `worldview.dimension` | `src/components/worldview/WorldviewHumanityPanel.tsx:357`<br/>`src/components/worldview/WorldviewNaturalPanel.tsx:292`<br/>`src/components/worldview/WorldviewOriginPanel.tsx:268` |
@@ -262,4 +262,4 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ---
 
-生成时间基准:commit `e8933b6`
+生成时间基准:commit `5196ef1`

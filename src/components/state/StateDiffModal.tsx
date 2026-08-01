@@ -42,11 +42,11 @@ export default function StateDiffModal({ diffs, chapterTitle, onConfirm, onCance
         <div className="bg-bg-surface border border-border rounded-xl p-6 max-w-lg w-full mx-4">
           <div className="flex items-center gap-2 text-text-muted mb-4">
             <AlertCircle className="w-5 h-5" />
-            <span className="text-sm">{t('state.diff.noChanges' as any)}</span>
+            <span className="text-sm">{t('state.diff.noChanges')}</span>
           </div>
           <button onClick={onCancel}
             className="px-4 py-2 bg-bg-elevated text-text-secondary rounded-lg text-sm hover:bg-bg-hover transition-colors">
-            {t('state.diff.close' as any)}
+            {t('state.diff.close')}
           </button>
         </div>
       </div>
@@ -58,9 +58,9 @@ export default function StateDiffModal({ diffs, chapterTitle, onConfirm, onCance
       <div className="bg-bg-surface border border-border rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] flex flex-col">
         {/* 头部 */}
         <div className="p-5 border-b border-border">
-          <h3 className="text-lg font-bold text-text-primary">{t('state.diff.title' as any)}</h3>
+          <h3 className="text-lg font-bold text-text-primary">{t('state.diff.title')}</h3>
           <p className="text-sm text-text-muted mt-1">
-            {t('state.diff.summary' as any, { title: chapterTitle, count: diffs.length } as any)}
+            {t('state.diff.summary', { title: chapterTitle, count: diffs.length })}
           </p>
         </div>
 
@@ -109,22 +109,22 @@ export default function StateDiffModal({ diffs, chapterTitle, onConfirm, onCance
         {/* 底部操作 */}
         <div className="p-5 border-t border-border flex items-center justify-between">
           <span className="text-xs text-text-muted">
-            {t('state.diff.selected' as any, { count: selected.size, total: diffs.length } as any)}
+            {t('state.diff.selected', { count: selected.size, total: diffs.length })}
           </span>
           <div className="flex gap-3">
             {showSkip && (
               <button onClick={onCancel}
                 className="flex items-center gap-1.5 px-4 py-2 text-text-muted text-sm hover:text-text-secondary transition-colors">
-                {t('state.diff.skip' as any)}
+                {t('state.diff.skip')}
               </button>
             )}
             <button onClick={onCancel}
               className="flex items-center gap-1.5 px-4 py-2 bg-bg-elevated text-text-secondary rounded-lg text-sm hover:bg-bg-hover transition-colors">
-              <X className="w-4 h-4" /> {t('state.diff.cancel' as any)}
+              <X className="w-4 h-4" /> {t('state.diff.cancel')}
             </button>
             <button onClick={handleConfirm}
               className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-lg text-sm hover:bg-accent-hover transition-colors">
-              <Check className="w-4 h-4" /> {t('state.diff.writeToTable' as any, { count: selected.size } as any)}
+              <Check className="w-4 h-4" /> {t('state.diff.writeToTable', { count: selected.size })}
             </button>
           </div>
         </div>

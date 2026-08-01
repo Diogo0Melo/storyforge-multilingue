@@ -63,7 +63,7 @@ export default function ForeshadowKanban({ onSelectForeshadow }: Props) {
             <div className="min-h-[520px] space-y-3 px-3 py-4">
               {items.length === 0 ? (
                 <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-border text-xs text-text-muted/50">
-                  {t('foreshadow.kanban.empty' as any)}
+                  {t('foreshadow.kanban.empty')}
                 </div>
               ) : (
                 items.map(f => (
@@ -93,17 +93,17 @@ export default function ForeshadowKanban({ onSelectForeshadow }: Props) {
                         onClick={(e) => { e.stopPropagation(); handleRevert(f) }}
                         disabled={f.status === 'planned'}
                         className="text-xs text-text-muted hover:text-text-primary disabled:opacity-20 disabled:cursor-default"
-                        title={t('foreshadow.kanban.revertTitle' as any)}
+                        title={t('foreshadow.kanban.revertTitle')}
                       >
-                        {t('foreshadow.kanban.revert' as any)}
+                        {t('foreshadow.kanban.revert')}
                       </button>
                       <button
                         onClick={(e) => { e.stopPropagation(); handleAdvance(f) }}
                         disabled={f.status === 'resolved'}
                         className="text-xs text-accent hover:text-accent-hover disabled:opacity-20 disabled:cursor-default"
-                        title={t('foreshadow.kanban.advanceTitle' as any)}
+                        title={t('foreshadow.kanban.advanceTitle')}
                       >
-                        {t('foreshadow.kanban.advance' as any)}
+                        {t('foreshadow.kanban.advance')}
                       </button>
                     </div>
                   </div>

@@ -3,6 +3,7 @@ import type { PreparedGenerationContext, OutlineGenerationRequest } from '../../
 import type { ChatMessage } from '../../lib/types'
 import PromptPreviewGate from '../shared/PromptPreviewGate'
 import OutlineGenerationBasis from './OutlineGenerationBasis'
+import type { OutlineKeys } from '../../i18n/generated-resources'
 
 interface Props {
   request: OutlineGenerationRequest
@@ -20,12 +21,12 @@ interface Props {
   onConfirmMessages?: (messages: ChatMessage[]) => void
 }
 
-const REQUEST_TITLE_KEYS: Record<OutlineGenerationRequest['kind'], string> = {
+const REQUEST_TITLE_KEYS = {
   volumes: 'request.titleVolumes',
   chapters: 'request.titleChapters',
   'single-volume': 'request.titleSingleVolume',
   'single-chapter': 'request.titleSingleChapter',
-}
+} as const satisfies Record<OutlineGenerationRequest['kind'], OutlineKeys>
 
 export default function OutlineGenerationRequestPanel({
   request,
@@ -60,7 +61,7 @@ export default function OutlineGenerationRequestPanel({
     <div className="space-y-3 rounded-lg border border-accent/30 bg-accent/5 px-3 py-3">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="text-xs leading-5 text-text-secondary">
-          <span className="font-medium text-text-primary">{t(REQUEST_TITLE_KEYS[request.kind] as any)}</span>
+          <span className="font-medium text-text-primary">{t(REQUEST_TITLE_KEYS[request.kind])}</span>
           <span className="ml-2">
             {request.kind === 'single-chapter'
               ? t('request.singleChapterNote')

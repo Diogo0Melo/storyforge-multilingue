@@ -40,8 +40,8 @@ export default function DataManagementPanel({ project, onImported }: Props) {
   return (
     <div className="max-w-2xl space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-text-primary mb-1">{t('data.mgmt.title' as any)}</h2>
-        <p className="text-sm text-text-muted">{t('data.mgmt.subtitle' as any)}</p>
+        <h2 className="text-xl font-bold text-text-primary mb-1">{t('data.mgmt.title')}</h2>
+        <p className="text-sm text-text-muted">{t('data.mgmt.subtitle')}</p>
       </div>
 
       {/* Tab 切换 */}
@@ -104,56 +104,56 @@ function ExportTab({ project, onImported }: Props) {
 
   const handleExportJSON = async () => {
     try {
-      show('loading', t('data.mgmt.exportingJson' as any))
+      show('loading', t('data.mgmt.exportingJson'))
       const data = await exportProjectJSON(project.id!)
       downloadJSON(data, `${project.name}_${new Date().toISOString().slice(0, 10)}.json`)
-      show('success', t('data.mgmt.jsonExportSuccess' as any))
-    } catch (e) { show('error', t('data.mgmt.exportFailed' as any, { error: (e as Error).message })) }
+      show('success', t('data.mgmt.jsonExportSuccess'))
+    } catch (e) { show('error', t('data.mgmt.exportFailed', { error: (e as Error).message })) }
   }
 
   const handleFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     try {
-      show('loading', t('data.mgmt.importing' as any))
+      show('loading', t('data.mgmt.importing'))
       const data: ProjectExportData = JSON.parse(await file.text())
       const newId = await importProjectJSON(data)
-      show('success', t('data.mgmt.importSuccess' as any))
+      show('success', t('data.mgmt.importSuccess'))
       onImported?.(newId)
-    } catch (err) { show('error', t('data.mgmt.importFailed' as any, { error: (err as Error).message })) }
+    } catch (err) { show('error', t('data.mgmt.importFailed', { error: (err as Error).message })) }
     e.target.value = ''
   }
 
   const handleExportMarkdown = async () => {
     try {
-      show('loading', t('data.mgmt.exportingMarkdown' as any))
+      show('loading', t('data.mgmt.exportingMarkdown'))
       const md = await exportProjectMarkdown(project.id!)
       downloadTextFile(md, `${project.name}_${new Date().toISOString().slice(0, 10)}.md`, 'text/markdown')
-      show('success', t('data.mgmt.markdownExportSuccess' as any))
-    } catch (e) { show('error', t('data.mgmt.exportFailed' as any, { error: (e as Error).message })) }
+      show('success', t('data.mgmt.markdownExportSuccess'))
+    } catch (e) { show('error', t('data.mgmt.exportFailed', { error: (e as Error).message })) }
   }
 
   const handleExportTXT = async () => {
     try {
-      show('loading', t('data.mgmt.exportingTxt' as any))
+      show('loading', t('data.mgmt.exportingTxt'))
       const txt = await exportProjectTXT(project.id!)
       downloadTextFile(txt, `${project.name}_${new Date().toISOString().slice(0, 10)}.txt`)
-      show('success', t('data.mgmt.txtExportSuccess' as any))
-    } catch (e) { show('error', t('data.mgmt.exportFailed' as any, { error: (e as Error).message })) }
+      show('success', t('data.mgmt.txtExportSuccess'))
+    } catch (e) { show('error', t('data.mgmt.exportFailed', { error: (e as Error).message })) }
   }
 
   const handleDownloadDiagnostics = async () => {
     try {
-      show('loading', t('data.mgmt.gatheringDiagnostics' as any))
+      show('loading', t('data.mgmt.gatheringDiagnostics'))
       const report = await buildLocalDiagnosticReport()
       downloadTextFile(
         JSON.stringify(report, null, 2),
         `storyforge-diagnostics-${new Date().toISOString().slice(0, 10)}.json`,
         'application/json',
       )
-      show('success', t('data.mgmt.diagnosticsSuccess' as any))
+      show('success', t('data.mgmt.diagnosticsSuccess'))
     } catch (e) {
-      show('error', t('data.mgmt.diagnosticsFailed' as any, { error: (e as Error).message }))
+      show('error', t('data.mgmt.diagnosticsFailed', { error: (e as Error).message }))
     }
   }
 
@@ -164,13 +164,13 @@ function ExportTab({ project, onImported }: Props) {
     setFolderBusy(true)
     try {
       const ok = await ensureFolderPermission(h)
-      if (!ok) { show('error', t('data.mgmt.noFolderPermission' as any)); return }
+      if (!ok) { show('error', t('data.mgmt.noFolderPermission')); return }
       await saveFolderHandle(projFolderKey(project.id!), h)
       await saveFolderHandle(LAST_FOLDER_KEY, h)
       setFolderHandle(h); setFolderName(h.name); setFolderNeedsAuth(false)
       const wrote = await writeProjectJSONToFolder(h, project.id!)
-      show(wrote ? 'success' : 'error', wrote ? t('data.mgmt.boundAndSaved' as any, { name: h.name }) : t('data.mgmt.bindSuccessWriteFail' as any))
-    } catch (e) { show('error', t('data.mgmt.bindFailed' as any, { error: (e as Error).message })) }
+      show(wrote ? 'success' : 'error', wrote ? t('data.mgmt.boundAndSaved', { name: h.name }) : t('data.mgmt.bindSuccessWriteFail'))
+    } catch (e) { show('error', t('data.mgmt.bindFailed', { error: (e as Error).message })) }
     finally { setFolderBusy(false) }
   }
 
@@ -180,11 +180,11 @@ function ExportTab({ project, onImported }: Props) {
     setFolderBusy(true)
     try {
       const ok = await ensureFolderPermission(folderHandle)
-      if (!ok) { show('error', t('data.mgmt.notAuthorized' as any)); return }
+      if (!ok) { show('error', t('data.mgmt.notAuthorized')); return }
       setFolderNeedsAuth(false)
       await writeProjectJSONToFolder(folderHandle, project.id!)
-      show('success', t('data.mgmt.reauthSuccess' as any))
-    } catch (e) { show('error', t('data.mgmt.reauthFailed' as any, { error: (e as Error).message })) }
+      show('success', t('data.mgmt.reauthSuccess'))
+    } catch (e) { show('error', t('data.mgmt.reauthFailed', { error: (e as Error).message })) }
     finally { setFolderBusy(false) }
   }
 
@@ -192,11 +192,11 @@ function ExportTab({ project, onImported }: Props) {
     if (!folderHandle) return
     setFolderBusy(true)
     try {
-      show('loading', t('data.mgmt.writingFolder' as any))
-      if (!(await ensureFolderPermission(folderHandle))) { show('error', t('data.mgmt.notAuthorizedCannotWrite' as any)); setFolderNeedsAuth(true); return }
+      show('loading', t('data.mgmt.writingFolder'))
+      if (!(await ensureFolderPermission(folderHandle))) { show('error', t('data.mgmt.notAuthorizedCannotWrite')); setFolderNeedsAuth(true); return }
       const ok = await writeProjectJSONToFolder(folderHandle, project.id!)
-      show(ok ? 'success' : 'error', ok ? t('data.mgmt.savedToFolder' as any) : t('data.mgmt.writeFailedRebind' as any))
-    } catch (e) { show('error', t('data.mgmt.writeFailed' as any, { error: (e as Error).message })) }
+      show(ok ? 'success' : 'error', ok ? t('data.mgmt.savedToFolder') : t('data.mgmt.writeFailedRebind'))
+    } catch (e) { show('error', t('data.mgmt.writeFailed', { error: (e as Error).message })) }
     finally { setFolderBusy(false) }
   }
 
@@ -214,15 +214,15 @@ function ExportTab({ project, onImported }: Props) {
       {/* JSON */}
       <SectionCard
         icon={<FileJson className="w-5 h-5 text-accent" />}
-        title={t('data.mgmt.jsonFullBackup' as any)}
-        desc={t('data.mgmt.jsonFullBackupDesc' as any)}
+        title={t('data.mgmt.jsonFullBackup')}
+        desc={t('data.mgmt.jsonFullBackupDesc')}
       >
         <div className="flex gap-3 flex-wrap">
           <ActionButton onClick={handleExportJSON} disabled={status === 'loading'} variant="accent">
-            <Download className="w-4 h-4" /> {t('data.mgmt.exportJson' as any)}
+            <Download className="w-4 h-4" /> {t('data.mgmt.exportJson')}
           </ActionButton>
           <ActionButton onClick={() => fileInputRef.current?.click()} disabled={status === 'loading'} variant="default">
-            <Upload className="w-4 h-4" /> {t('data.mgmt.importJson' as any)}
+            <Upload className="w-4 h-4" /> {t('data.mgmt.importJson')}
           </ActionButton>
           <input ref={fileInputRef} type="file" accept=".json" onChange={handleFileSelected} className="hidden" />
         </div>
@@ -234,44 +234,44 @@ function ExportTab({ project, onImported }: Props) {
       {/* Markdown */}
       <SectionCard
         icon={<FileText className="w-5 h-5 text-blue-400" />}
-        title={t('data.mgmt.markdownExport' as any)}
-        desc={t('data.mgmt.markdownExportDesc' as any)}
+        title={t('data.mgmt.markdownExport')}
+        desc={t('data.mgmt.markdownExportDesc')}
       >
         <ActionButton onClick={handleExportMarkdown} disabled={status === 'loading'} variant="blue">
-          <Download className="w-4 h-4" /> {t('data.mgmt.exportMarkdown' as any)}
+          <Download className="w-4 h-4" /> {t('data.mgmt.exportMarkdown')}
         </ActionButton>
       </SectionCard>
 
       {/* TXT */}
       <SectionCard
         icon={<FileType className="w-5 h-5 text-yellow-400" />}
-        title={t('data.mgmt.txtExport' as any)}
-        desc={t('data.mgmt.txtExportDesc' as any)}
+        title={t('data.mgmt.txtExport')}
+        desc={t('data.mgmt.txtExportDesc')}
       >
         <ActionButton onClick={handleExportTXT} disabled={status === 'loading'} variant="yellow">
-          <Download className="w-4 h-4" /> {t('data.mgmt.exportTxt' as any)}
+          <Download className="w-4 h-4" /> {t('data.mgmt.exportTxt')}
         </ActionButton>
       </SectionCard>
 
       {/* 本地文件夹 */}
       <SectionCard
         icon={<FolderOpen className="w-5 h-5 text-orange-400" />}
-        title={t('data.mgmt.folderBackup' as any)}
-        desc={t('data.mgmt.folderBackupDesc' as any)}
-        badge={!isFSASupported() ? t('data.mgmt.chromeEdgeOnly' as any) : undefined}
+        title={t('data.mgmt.folderBackup')}
+        desc={t('data.mgmt.folderBackupDesc')}
+        badge={!isFSASupported() ? t('data.mgmt.chromeEdgeOnly') : undefined}
       >
         {folderHandle ? (
           <div className="space-y-2">
             {folderNeedsAuth ? (
               <div className="flex items-center gap-2 text-sm text-amber-400 bg-amber-500/10 px-3 py-2 rounded-lg">
                 <ShieldAlert className="w-4 h-4 shrink-0" />
-                <span className="flex-1 truncate">{t('data.mgmt.boundButReauth' as any, { name: folderName })}</span>
+                <span className="flex-1 truncate">{t('data.mgmt.boundButReauth', { name: folderName })}</span>
                 <button onClick={handleUnbindFolder} className="text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
               </div>
             ) : (
               <div className="flex items-center gap-2 text-sm text-green-400 bg-green-500/10 px-3 py-2 rounded-lg">
                 <FolderOpen className="w-4 h-4 shrink-0" />
-                <span className="flex-1 truncate">{t('data.mgmt.bound' as any, { name: folderName })}</span>
+                <span className="flex-1 truncate">{t('data.mgmt.bound', { name: folderName })}</span>
                 <button onClick={handleUnbindFolder} className="text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
               </div>
             )}
@@ -279,29 +279,29 @@ function ExportTab({ project, onImported }: Props) {
               {folderNeedsAuth && (
                 <ActionButton onClick={handleReauthFolder} disabled={folderBusy} variant="orange">
                   {folderBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldAlert className="w-4 h-4" />}
-                  {t('data.mgmt.reauthorize' as any)}
+                  {t('data.mgmt.reauthorize')}
                 </ActionButton>
               )}
               <ActionButton onClick={handleSaveToFolder} disabled={folderBusy || status === 'loading'} variant={folderNeedsAuth ? 'default' : 'orange'}>
                 {folderBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                {folderBusy ? t('data.mgmt.writing' as any) : t('data.mgmt.saveNow' as any)}
+                {folderBusy ? t('data.mgmt.writing') : t('data.mgmt.saveNow')}
               </ActionButton>
             </div>
           </div>
         ) : (
           <ActionButton onClick={handleBindFolder} disabled={!isFSASupported() || folderBusy || status === 'loading'} variant="orange">
-            {folderBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />} {t('data.mgmt.selectFolder' as any)}
+            {folderBusy ? <Loader2 className="w-4 h-4 animate-spin" /> : <FolderOpen className="w-4 h-4" />} {t('data.mgmt.selectFolder')}
           </ActionButton>
         )}
       </SectionCard>
 
       <SectionCard
         icon={<Stethoscope className="w-5 h-5 text-teal-400" />}
-        title={t('data.mgmt.diagnostics' as any)}
-        desc={t('data.mgmt.diagnosticsDesc' as any)}
+        title={t('data.mgmt.diagnostics')}
+        desc={t('data.mgmt.diagnosticsDesc')}
       >
         <ActionButton onClick={handleDownloadDiagnostics} disabled={status === 'loading'} variant="default">
-          <Download className="w-4 h-4" /> {t('data.mgmt.downloadDiagnostics' as any)}
+          <Download className="w-4 h-4" /> {t('data.mgmt.downloadDiagnostics')}
         </ActionButton>
       </SectionCard>
     </div>
@@ -324,26 +324,26 @@ function BackupTab({ project }: Props) {
   const handleCreate = async () => {
     setCreating(true)
     try {
-      await createSnapshot(project.id!, label.trim() || t('data.mgmt.manualBackup' as any, { date: new Date().toLocaleString(i18n.language) }), 'manual')
-      toast.success(t('data.mgmt.snapshotCreated' as any))
+      await createSnapshot(project.id!, label.trim() || t('data.mgmt.manualBackup', { date: new Date().toLocaleString(i18n.language) }), 'manual')
+      toast.success(t('data.mgmt.snapshotCreated'))
       setLabel(''); setShowForm(false)
     } catch (err) {
-      toast.error(t('data.mgmt.snapshotCreateFailed' as any, { error: (err as Error).message }))
+      toast.error(t('data.mgmt.snapshotCreateFailed', { error: (err as Error).message }))
     } finally { setCreating(false) }
   }
 
   const handleRestore = async (snap: Snapshot) => {
     const ok = await dialog.confirm({
-      title: t('data.mgmt.restoreSnapshotTitle' as any, { label: snap.label }),
-      message: t('data.mgmt.restoreSnapshotMsg' as any),
-      confirmText: t('data.backup.restoreAsNew' as any),
+      title: t('data.mgmt.restoreSnapshotTitle', { label: snap.label }),
+      message: t('data.mgmt.restoreSnapshotMsg'),
+      confirmText: t('data.backup.restoreAsNew'),
     })
     if (!ok) return
     setRestoring(snap.id!)
     try {
       await restoreSnapshot(snap.id!)
-      toast.success(t('data.mgmt.restoreSuccess' as any))
-    } catch (err) { toast.error(t('data.mgmt.restoreFailed' as any, { error: (err as Error).message })) }
+      toast.success(t('data.mgmt.restoreSuccess'))
+    } catch (err) { toast.error(t('data.mgmt.restoreFailed', { error: (err as Error).message })) }
     finally { setRestoring(null) }
   }
 
@@ -354,13 +354,13 @@ function BackupTab({ project }: Props) {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <HardDrive className="w-4 h-4 text-accent" />
-            <span className="text-sm font-medium text-text-primary">{t('data.mgmt.createSnapshot' as any)}</span>
+            <span className="text-sm font-medium text-text-primary">{t('data.mgmt.createSnapshot')}</span>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
             className="text-xs text-accent hover:text-accent-hover transition-colors"
           >
-            {showForm ? t('data.mgmt.collapse' as any) : t('data.mgmt.addNew' as any)}
+            {showForm ? t('data.mgmt.collapse') : t('data.mgmt.addNew')}
           </button>
         </div>
         {showForm && (
@@ -368,7 +368,7 @@ function BackupTab({ project }: Props) {
             <input
               value={label}
               onChange={e => setLabel(e.target.value)}
-              placeholder={t('data.mgmt.snapshotPlaceholder' as any)}
+              placeholder={t('data.mgmt.snapshotPlaceholder')}
               className="flex-1 px-3 py-1.5 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
             />
             <button
@@ -377,7 +377,7 @@ function BackupTab({ project }: Props) {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
               {creating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Plus className="w-3.5 h-3.5" />}
-              {t('data.mgmt.create' as any)}
+              {t('data.mgmt.create')}
             </button>
           </div>
         )}
@@ -387,13 +387,13 @@ function BackupTab({ project }: Props) {
       <div className="space-y-2">
         {loading && (
           <div className="flex items-center justify-center py-8 text-text-muted">
-            <Loader2 className="w-5 h-5 animate-spin mr-2" /> {t('data.mgmt.loading' as any)}
+            <Loader2 className="w-5 h-5 animate-spin mr-2" /> {t('data.mgmt.loading')}
           </div>
         )}
         {!loading && snapshots.length === 0 && (
           <div className="text-center text-text-muted text-sm py-10">
             <History className="w-8 h-8 mx-auto mb-2 opacity-30" />
-            {t('data.mgmt.noSnapshots' as any)}
+            {t('data.mgmt.noSnapshots')}
           </div>
         )}
         {snapshots.map(snap => (
@@ -406,14 +406,14 @@ function BackupTab({ project }: Props) {
               <button
                 onClick={() => handleRestore(snap)}
                 disabled={restoring === snap.id}
-                title={t('data.mgmt.restoreFromSnapshotAria' as any)}
+                title={t('data.mgmt.restoreFromSnapshotAria')}
                 className="p-1.5 text-text-muted hover:text-accent rounded hover:bg-accent/10 transition-colors disabled:opacity-50"
               >
                 {restoring === snap.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
               </button>
               <button
                 onClick={() => deleteSnapshot(snap.id!)}
-                title={t('data.mgmt.deleteSnapshotAria' as any)}
+                title={t('data.mgmt.deleteSnapshotAria')}
                 className="p-1.5 text-text-muted hover:text-error rounded hover:bg-error/10 transition-colors"
               >
                 <Trash2 className="w-4 h-4" />

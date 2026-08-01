@@ -326,7 +326,7 @@ export default function LocationPanel({ project }: Props) {
       {/* 工具栏 */}
       <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
         <div className="text-sm text-text-secondary">
-          {t('location.totalCount' as any, { count: locations.length })}
+          {t('location.totalCount', { count: locations.length })}
         </div>
         <div className="flex items-center gap-2">
           {/* 视图切换 */}

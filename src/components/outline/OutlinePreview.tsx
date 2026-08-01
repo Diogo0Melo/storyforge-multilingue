@@ -18,6 +18,7 @@ import { useOutlineStore } from '../../stores/outline'
 import { useChapterStore } from '../../stores/chapter'
 import { parseForeshadowEchoChapterIds } from '../../lib/foreshadow/context'
 import type { EmotionArc, ScenePace } from '../../lib/types'
+import type { OutlineKeys } from '../../i18n/generated-resources'
 
 interface Props {
   /** 当前章节的 outlineNodeId */
@@ -26,13 +27,13 @@ interface Props {
   onClose: () => void
 }
 
-const EMOTION_LABEL_KEYS: Record<EmotionArc, { key: string; color: string }> = {
+const EMOTION_LABEL_KEYS = {
   rising:  { key: 'preview.emotionRising', color: 'text-success' },
   falling: { key: 'preview.emotionFalling', color: 'text-info' },
   flat:    { key: 'preview.emotionFlat', color: 'text-text-muted' },
   wave:    { key: 'preview.emotionWave', color: 'text-warning' },
   climax:  { key: 'preview.emotionClimax', color: 'text-error' },
-}
+} as const satisfies Record<EmotionArc, { key: OutlineKeys; color: string }>
 
 const PACE_COLORS: Record<ScenePace, string> = {
   slow:   'bg-info/15 text-info',
@@ -41,9 +42,9 @@ const PACE_COLORS: Record<ScenePace, string> = {
   climax: 'bg-error/15 text-error',
 }
 
-const PACE_LABEL_KEYS: Record<ScenePace, string> = {
+const PACE_LABEL_KEYS = {
   slow: 'preview.paceSlow', medium: 'preview.paceMedium', fast: 'preview.paceFast', climax: 'preview.paceClimax',
-}
+} as const satisfies Record<ScenePace, OutlineKeys>
 
 export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
   const { t } = useTranslation('outline')
@@ -156,7 +157,7 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
           )}
           {detail?.emotionArc && (
             <span className={`text-xs ${EMOTION_LABEL_KEYS[detail.emotionArc]?.color || ''}`}>
-              {t(EMOTION_LABEL_KEYS[detail.emotionArc]?.key as any) || detail.emotionArc}
+              {t(EMOTION_LABEL_KEYS[detail.emotionArc]?.key) || detail.emotionArc}
             </span>
           )}
         </div>
@@ -215,7 +216,7 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
                     <div className="flex items-center gap-2">
                       <span className="text-text-primary font-medium">{s.title}</span>
                       <span className={`px-1 py-0.5 rounded text-[10px] ${PACE_COLORS[s.pace]}`}>
-                        {t(PACE_LABEL_KEYS[s.pace] as any)}
+                        {t(PACE_LABEL_KEYS[s.pace])}
                       </span>
                       {s.estimatedWords > 0 && (
                         <span className="text-text-muted">{t('preview.words', { count: s.estimatedWords })}</span>

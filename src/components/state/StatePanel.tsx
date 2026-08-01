@@ -90,10 +90,10 @@ export default function StatePanel({ project, onOpenInventory }: Props) {
       <div className="flex items-start justify-between gap-3 pb-4 border-b border-border/40">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <UserRound className="w-5 h-5" /> {t('state.panel.title' as any)}
+            <UserRound className="w-5 h-5" /> {t('state.panel.title')}
           </h2>
           <p className="text-xs text-text-muted mt-1">
-            {t('state.panel.subtitle' as any)}
+            {t('state.panel.subtitle')}
           </p>
         </div>
         <button
@@ -101,23 +101,23 @@ export default function StatePanel({ project, onOpenInventory }: Props) {
           disabled={!characterCards.length}
           className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg border border-border bg-bg-elevated text-text-secondary disabled:opacity-40"
         >
-          <Download className="w-3.5 h-3.5" /> {t('state.panel.export' as any)}
+          <Download className="w-3.5 h-3.5" /> {t('state.panel.export')}
         </button>
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <Summary label={t('state.panel.totalCharacters' as any)} value={characters.length} />
-        <Summary label={t('state.panel.establishedState' as any)} value={characterCards.length} accent />
-        <Summary label={t('state.panel.pendingState' as any)} value={Math.max(0, characters.length - characterCards.length)} />
+        <Summary label={t('state.panel.totalCharacters')} value={characters.length} />
+        <Summary label={t('state.panel.establishedState')} value={characterCards.length} accent />
+        <Summary label={t('state.panel.pendingState')} value={Math.max(0, characters.length - characterCards.length)} />
       </div>
 
       {loading ? (
-        <div className="text-sm text-text-muted text-center py-10">{t('state.panel.loading' as any)}</div>
+        <div className="text-sm text-text-muted text-center py-10">{t('state.panel.loading')}</div>
       ) : characters.length === 0 ? (
         <div className="text-center py-12 text-text-muted">
           <UserRound className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">{t('state.panel.noCharacters' as any)}</p>
-          <p className="text-xs mt-1">{t('state.panel.noCharactersHint' as any)}</p>
+          <p className="text-sm">{t('state.panel.noCharacters')}</p>
+          <p className="text-xs mt-1">{t('state.panel.noCharactersHint')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -190,12 +190,12 @@ function CharacterStateCard({
     if (editing) setDraft(fields.length ? fields : [{ key: '当前状态', value: '' }])
   }, [editing, fields])
 
-  const location = findField(fields, LOCATION_KEYS) || character.location || t('state.panel.notRecorded' as any)
+  const location = findField(fields, LOCATION_KEYS) || character.location || t('state.panel.notRecorded')
   const faction = findField(fields, FACTION_KEYS)
     || knownFactions.find(name => fields.some(field => field.value.includes(name)))
-    || t('state.panel.notRecorded' as any)
+    || t('state.panel.notRecorded')
   const stateItems = findField(fields, ITEM_KEYS)
-  const heldItems = protagonistItems.length ? protagonistItems.join('、') : stateItems || t('state.panel.notRecorded' as any)
+  const heldItems = protagonistItems.length ? protagonistItems.join('、') : stateItems || t('state.panel.notRecorded')
   const coreFields = fields.filter(field =>
     ![...LOCATION_KEYS, ...FACTION_KEYS, ...ITEM_KEYS]
       .some(key => field.key.toLocaleLowerCase().includes(key.toLocaleLowerCase())),
@@ -211,11 +211,11 @@ function CharacterStateCard({
           <div className="flex items-center gap-2">
             <h3 className="font-semibold text-text-primary truncate">{character.name}</h3>
             <span className="text-[10px] px-1.5 py-0.5 rounded bg-bg-elevated text-text-muted">{character.role}</span>
-            {!card && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">{t('state.panel.pendingExtract' as any)}</span>}
+            {!card && <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400">{t('state.panel.pendingExtract')}</span>}
           </div>
-          <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{character.shortDescription || t('state.panel.noBio' as any)}</p>
+          <p className="text-xs text-text-muted mt-0.5 line-clamp-2">{character.shortDescription || t('state.panel.noBio')}</p>
         </div>
-        <button onClick={onToggleEdit} className="p-1 text-text-muted hover:text-accent" title={t('state.panel.editStateAria' as any)}>
+        <button onClick={onToggleEdit} className="p-1 text-text-muted hover:text-accent" title={t('state.panel.editStateAria')}>
           {editing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
         </button>
       </div>
@@ -227,13 +227,13 @@ function CharacterStateCard({
               <CInput
                 value={field.key}
                 onChange={event => setDraft(current => current.map((item, i) => i === index ? { ...item, key: event.target.value } : item))}
-                placeholder={t('state.panel.fieldPlaceholder' as any)}
+                placeholder={t('state.panel.fieldPlaceholder')}
                 className="w-28 px-2 py-1.5 rounded border border-border bg-bg-base text-xs"
               />
               <CInput
                 value={field.value}
                 onChange={event => setDraft(current => current.map((item, i) => i === index ? { ...item, value: event.target.value } : item))}
-                placeholder={t('state.panel.valuePlaceholder' as any)}
+                placeholder={t('state.panel.valuePlaceholder')}
                 className="flex-1 px-2 py-1.5 rounded border border-border bg-bg-base text-xs"
               />
               <button onClick={() => setDraft(current => current.filter((_, i) => i !== index))} className="p-1 text-text-muted hover:text-red-400">
@@ -242,21 +242,21 @@ function CharacterStateCard({
             </div>
           ))}
           <div className="flex items-center justify-between">
-            <button onClick={() => setDraft(current => [...current, { key: '', value: '' }])} className="text-xs text-accent">{t('state.panel.addField' as any)}</button>
+            <button onClick={() => setDraft(current => [...current, { key: '', value: '' }])} className="text-xs text-accent">{t('state.panel.addField')}</button>
             <button
               onClick={() => onSave(draft.filter(field => field.key.trim() && field.value.trim()))}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded bg-accent text-white text-xs"
             >
-              <Save className="w-3.5 h-3.5" /> {t('state.panel.save' as any)}
+              <Save className="w-3.5 h-3.5" /> {t('state.panel.save')}
             </button>
           </div>
         </div>
       ) : (
         <>
           <div className="grid grid-cols-2 gap-2 mt-4">
-            <Fact icon={MapPin} label={t('state.panel.location' as any)} value={location} />
-            <Fact icon={Shield} label={t('state.panel.faction' as any)} value={faction} />
-            <Fact icon={BookOpenCheck} label={t('state.panel.storyProgress' as any)} value={chapterTitle || t('state.panel.notRecorded' as any)} />
+            <Fact icon={MapPin} label={t('state.panel.location')} value={location} />
+            <Fact icon={Shield} label={t('state.panel.faction')} value={faction} />
+            <Fact icon={BookOpenCheck} label={t('state.panel.storyProgress')} value={chapterTitle || t('state.panel.notRecorded')} />
             <InventoryFact
               value={heldItems}
               source={inventoryBacked ? 'inventory' : 'state'}
@@ -266,7 +266,7 @@ function CharacterStateCard({
           </div>
           <div className="mt-3 pt-3 border-t border-border/50">
             <p className="text-[10px] uppercase tracking-wide text-text-muted flex items-center gap-1">
-              <Sparkles className="w-3 h-3" /> {t('state.panel.currentStatus' as any)}
+              <Sparkles className="w-3 h-3" /> {t('state.panel.currentStatus')}
             </p>
             {coreFields.length ? (
               <div className="mt-2 flex flex-wrap gap-1.5">
@@ -277,7 +277,7 @@ function CharacterStateCard({
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-text-muted mt-2">{t('state.panel.noDynamicStatus' as any)}</p>
+              <p className="text-xs text-text-muted mt-2">{t('state.panel.noDynamicStatus')}</p>
             )}
           </div>
         </>
@@ -301,17 +301,17 @@ export function InventoryFact({
     <div className="rounded-lg bg-bg-elevated/60 p-2.5 min-w-0" data-testid="state-inventory-fact">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] text-text-muted flex min-w-0 items-center gap-1">
-          <Package className="w-3 h-3 shrink-0" /> {t('state.panel.heldItems' as any)}
+          <Package className="w-3 h-3 shrink-0" /> {t('state.panel.heldItems')}
           <span className="truncate text-[9px] text-text-muted/70">
-            · {source === 'inventory' ? t('state.panel.fromInventory' as any) : t('state.panel.fromState' as any)}
+            · {source === 'inventory' ? t('state.panel.fromInventory') : t('state.panel.fromState')}
           </span>
         </p>
         {onOpenInventory && (
           <button
             type="button"
             onClick={onOpenInventory}
-            title={t('state.panel.goToInventory' as any)}
-            aria-label={t('state.panel.goToInventoryAria' as any)}
+            title={t('state.panel.goToInventory')}
+            aria-label={t('state.panel.goToInventoryAria')}
             className="shrink-0 rounded p-0.5 text-text-muted hover:bg-accent/10 hover:text-accent"
           >
             <ArrowRight className="h-3 w-3" />

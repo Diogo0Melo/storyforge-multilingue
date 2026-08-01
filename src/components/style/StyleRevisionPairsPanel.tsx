@@ -18,7 +18,7 @@ export default function StyleRevisionPairsPanel({ pairs, onUpdateNote, onRemove 
   if (!pairs.length) {
     return (
       <div className="rounded bg-bg-base p-3 text-xs leading-5 text-text-muted">
-        {t('style.revision.empty' as any)}
+        {t('style.revision.empty')}
       </div>
     )
   }
@@ -36,19 +36,19 @@ export default function StyleRevisionPairsPanel({ pairs, onUpdateNote, onRemove 
               type="button"
               onClick={() => { void onRemove(pair.id) }}
               className="rounded p-1 text-text-muted hover:bg-error/10 hover:text-error"
-              title={t('style.revision.deleteAria' as any)}
-              aria-label={t('style.revision.deleteLabel' as any, { title: pair.chapterTitle })}
+              title={t('style.revision.deleteAria')}
+              aria-label={t('style.revision.deleteLabel', { title: pair.chapterTitle })}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           </div>
           <div className="mt-2 grid gap-2 text-[11px] leading-5 md:grid-cols-2">
             <div className="rounded border border-border/70 p-2 text-text-muted">
-              <span className="mb-1 block font-medium text-text-secondary">{t('style.revision.before' as any)}</span>
+              <span className="mb-1 block font-medium text-text-secondary">{t('style.revision.before')}</span>
               {excerpt(pair.beforeText)}
             </div>
             <div className="rounded border border-accent/25 bg-accent/5 p-2 text-text-secondary">
-              <span className="mb-1 block font-medium text-accent">{t('style.revision.after' as any)}</span>
+              <span className="mb-1 block font-medium text-accent">{t('style.revision.after')}</span>
               {excerpt(pair.afterText)}
             </div>
           </div>
@@ -61,7 +61,7 @@ export default function StyleRevisionPairsPanel({ pairs, onUpdateNote, onRemove 
               }
             }}
             maxLength={240}
-            placeholder={t('style.revision.notePlaceholder' as any)}
+            placeholder={t('style.revision.notePlaceholder')}
             className="mt-2 w-full rounded border border-border bg-bg-surface px-2.5 py-1.5 text-xs text-text-secondary focus:border-accent focus:outline-none"
           />
         </article>

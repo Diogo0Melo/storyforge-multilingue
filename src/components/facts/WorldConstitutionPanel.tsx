@@ -12,16 +12,17 @@ import {
   listSettingAssertionSources,
   parseSettingAssertionCandidates,
 } from '../../lib/fact-ledger/setting-assertions'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 type ConstitutionTab = 'candidate' | 'confirmed' | 'exceptions' | 'rejected'
 const EXCEPTIONS: FactStatus[] = ['stale', 'source-missing', 'invalid-range']
 
-const TAB_LABEL_KEY: Record<ConstitutionTab, string> = {
+const TAB_LABEL_KEY = {
   candidate: 'facts.tab.candidate',
   confirmed: 'facts.tab.confirmed',
   exceptions: 'facts.tab.exceptions',
   rejected: 'facts.tab.rejected',
-}
+} as const satisfies Record<ConstitutionTab, PanelsKeys>
 
 export default function WorldConstitutionPanel({ project, onShowFacts }: {
   project: Project
@@ -62,7 +63,7 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
       db.characters.where('projectId').equals(project.id).toArray(),
     ])
     if (!sources.length) {
-      setMessage(t('facts.constitution.noFields' as any))
+      setMessage(t('facts.constitution.noFields'))
       return
     }
     const subjects = {
@@ -93,9 +94,9 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
         subjects,
       })
       setTab('candidate')
-      setMessage(t('facts.constitution.scanResult' as any, { sources: sources.length, candidates: candidates.length, written: result.written, skipped: result.skipped } as any))
+      setMessage(t('facts.constitution.scanResult', { sources: sources.length, candidates: candidates.length, written: result.written, skipped: result.skipped }))
     } catch (error) {
-      setMessage(t('facts.constitution.scanFailed' as any, { error: error instanceof Error ? error.message : String(error) } as any))
+      setMessage(t('facts.constitution.scanFailed', { error: error instanceof Error ? error.message : String(error) }))
     }
   }
 
@@ -103,34 +104,34 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
     const result = await confirmFact(project.id!, factId)
     if (result.confirmed) {
       setReplacementCandidateId(null)
-      setMessage(t('facts.constitution.confirmed' as any))
+      setMessage(t('facts.constitution.confirmed'))
       return
     }
     if (result.clashes.length) {
       setReplacementCandidateId(factId)
       const values = result.clashes.map(item => `"${item.confirmed.value}"`).join('、')
-      setMessage(t('facts.constitution.blockedClash' as any, { values } as any))
+      setMessage(t('facts.constitution.blockedClash', { values }))
       return
     }
     if (result.reason === 'source-stale' || result.reason === 'source-missing') {
       setMessage(result.reason === 'source-stale'
-        ? t('facts.constitution.blockedStale' as any)
-        : t('facts.constitution.blockedMissing' as any))
+        ? t('facts.constitution.blockedStale')
+        : t('facts.constitution.blockedMissing'))
       return
     }
-    setMessage(t('facts.constitution.cannotConfirm' as any))
+    setMessage(t('facts.constitution.cannotConfirm'))
   }
 
   const handleExplicitReplacement = async () => {
     if (replacementCandidateId == null) return
     const result = await replaceConstitutionFact(project.id!, replacementCandidateId)
     if (result.confirmed) {
-      setMessage(t('facts.constitution.replaced' as any, { count: result.replaced } as any))
+      setMessage(t('facts.constitution.replaced', { count: result.replaced }))
       setReplacementCandidateId(null)
     } else if (result.reason === 'locked-conflict') {
-      setMessage(t('facts.constitution.lockedCannotReplace' as any))
+      setMessage(t('facts.constitution.lockedCannotReplace'))
     } else {
-      setMessage(t('facts.constitution.replaceFailed' as any))
+      setMessage(t('facts.constitution.replaceFailed'))
       setReplacementCandidateId(null)
     }
   }
@@ -140,15 +141,15 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
       <div className="flex items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2">
           <Landmark className="w-5 h-5 text-amber-400" />
-          <h1 className="text-lg font-bold text-text-primary">{t('facts.constitution.title' as any)}</h1>
+          <h1 className="text-lg font-bold text-text-primary">{t('facts.constitution.title')}</h1>
         </div>
         <button onClick={onShowFacts}
           className="px-3 py-1.5 text-xs rounded-md bg-bg-elevated text-text-secondary hover:text-text-primary">
-          {t('facts.constitution.viewFacts' as any)}
+          {t('facts.constitution.viewFacts')}
         </button>
       </div>
       <p className="text-xs text-text-muted mb-4">
-        {t('facts.constitution.desc' as any)}
+        {t('facts.constitution.desc')}
       </p>
 
       <div className="mb-4 p-3 rounded-lg border border-border bg-bg-elevated/60">
@@ -156,14 +157,14 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
           <button onClick={() => void extractFromSettings()} disabled={ai.isStreaming}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/15 text-xs text-amber-300 hover:bg-amber-500/25 disabled:opacity-50">
             {ai.isStreaming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanSearch className="w-3.5 h-3.5" />}
-            {ai.isStreaming ? t('facts.constitution.scanning' as any) : t('facts.constitution.scanNow' as any)}
+            {ai.isStreaming ? t('facts.constitution.scanning') : t('facts.constitution.scanNow')}
           </button>
           {message && <span className="text-[11px] text-text-muted">{message}</span>}
         </div>
         {replacementCandidateId != null && (
           <button onClick={() => void handleExplicitReplacement()}
             className="mt-2 px-3 py-1.5 rounded-md border border-rose-500/40 bg-rose-500/10 text-xs text-rose-300 hover:bg-rose-500/20">
-            {t('facts.constitution.replaceOld' as any)}
+            {t('facts.constitution.replaceOld')}
           </button>
         )}
       </div>
@@ -172,14 +173,14 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
         {(Object.keys(TAB_LABEL_KEY) as ConstitutionTab[]).map(key => (
           <button key={key} onClick={() => setTab(key)}
             className={`px-3 py-1.5 text-xs rounded-md ${tab === key ? 'bg-amber-500/20 text-amber-300' : 'bg-bg-elevated text-text-muted hover:text-text-secondary'}`}>
-            {t(TAB_LABEL_KEY[key] as any)}{counts[key] ? `（${counts[key]}）` : ''}
+            {t(TAB_LABEL_KEY[key])}{counts[key] ? `（${counts[key]}）` : ''}
           </button>
         ))}
       </div>
 
-      {loading && <p className="text-sm text-text-muted">{t('facts.library.loading' as any)}</p>}
+      {loading && <p className="text-sm text-text-muted">{t('facts.library.loading')}</p>}
       {!loading && rows.length === 0 && (
-        <p className="text-sm text-text-muted py-8 text-center">{t('facts.constitution.empty' as any, { tab: t(TAB_LABEL_KEY[tab] as any) } as any)}</p>
+        <p className="text-sm text-text-muted py-8 text-center">{t('facts.constitution.empty', { tab: t(TAB_LABEL_KEY[tab]) })}</p>
       )}
       <div className="space-y-2">
         {rows.map(fact => (
@@ -191,17 +192,17 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
                 <span>{fact.value}</span>
               </p>
               <p className="text-[11px] text-text-muted mt-1">
-                {t('facts.constitution.source' as any, { table: fact.sourceRecordTable ?? t('facts.constitution.unknown' as any), field: fact.sourceField ?? t('facts.constitution.unknownField' as any) } as any)}
-                {fact.sourceQuote ? t('facts.constitution.evidence' as any, { quote: fact.sourceQuote } as any) : ''}
+                {t('facts.constitution.source', { table: fact.sourceRecordTable ?? t('facts.constitution.unknown'), field: fact.sourceField ?? t('facts.constitution.unknownField') })}
+                {fact.sourceQuote ? t('facts.constitution.evidence', { quote: fact.sourceQuote }) : ''}
               </p>
             </div>
             {(['candidate', ...EXCEPTIONS] as FactStatus[]).includes(fact.status) && fact.id != null && (
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => void handleConfirm(fact.id!)} title={t('facts.constitution.confirmAria' as any)}
+                <button onClick={() => void handleConfirm(fact.id!)} title={t('facts.constitution.confirmAria')}
                   className="p-1.5 text-emerald-400 hover:bg-emerald-500/15 rounded">
                   <Check className="w-4 h-4" />
                 </button>
-                <button onClick={() => void rejectFact(project.id!, fact.id!)} title={t('facts.constitution.rejectAria' as any)}
+                <button onClick={() => void rejectFact(project.id!, fact.id!)} title={t('facts.constitution.rejectAria')}
                   className="p-1.5 text-rose-400 hover:bg-rose-500/15 rounded">
                   <X className="w-4 h-4" />
                 </button>

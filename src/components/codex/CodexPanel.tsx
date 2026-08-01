@@ -148,8 +148,8 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
   // ── 分类操作 ──
   const handleAddCategory = async () => {
     const name = (await dialog.prompt({
-      title: t('codex.panel.addCategoryTitle', { domain: t(CODEX_DOMAIN_LABEL_KEYS[domain], CODEX_DOMAIN_LABELS[domain]) } as any),
-      placeholder: t('codex.panel.addCategoryPlaceholder' as any),
+      title: t('codex.panel.addCategoryTitle', { domain: t(CODEX_DOMAIN_LABEL_KEYS[domain], CODEX_DOMAIN_LABELS[domain]) }),
+      placeholder: t('codex.panel.addCategoryPlaceholder'),
     }))?.trim()
     if (!name) return
     const id = await addCategory({
@@ -164,9 +164,9 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
   const handleDeleteCategory = async (cat: CodexCategory) => {
     if (cat.builtInKey) return
     const ok = await dialog.confirm({
-      title: t('codex.panel.deleteCategoryTitle', { name: cat.name } as any),
-      message: t('codex.panel.deleteCategoryMsg' as any),
-      confirmText: t('codex.panel.delete' as any),
+      title: t('codex.panel.deleteCategoryTitle', { name: cat.name }),
+      message: t('codex.panel.deleteCategoryMsg'),
+      confirmText: t('codex.panel.delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -177,12 +177,12 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
   const handleAddEntry = async () => {
     if (!activeCatId) return
     if (!scopeReady) {
-      toast.error(t('codex.panel.worldNotLoaded' as any))
+      toast.error(t('codex.panel.worldNotLoaded'))
       return
     }
     const id = await addEntry({
       projectId, categoryId: activeCatId,
-      name: t('codex.panel.newEntry' as any), summary: '', description: '',
+      name: t('codex.panel.newEntry'), summary: '', description: '',
       fields: '{}', refs: '{}',
       order: catEntries.length, worldGroupId: scopedWorldGroupId,
     })
@@ -191,9 +191,9 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
 
   const handleDeleteEntry = async (entry: CodexEntry) => {
     const ok = await dialog.confirm({
-      title: t('codex.panel.deleteEntryTitle', { name: entry.name } as any),
-      message: t('codex.panel.deleteEntryMsg' as any),
-      confirmText: t('codex.panel.delete' as any),
+      title: t('codex.panel.deleteEntryTitle', { name: entry.name }),
+      message: t('codex.panel.deleteEntryMsg'),
+      confirmText: t('codex.panel.delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -203,7 +203,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
 
   const openExtractor = () => {
     if (!scopeReady) {
-      toast.error(t('codex.panel.worldNotLoaded' as any))
+      toast.error(t('codex.panel.worldNotLoaded'))
       return
     }
     setExtractText(extractionSourceText)
@@ -242,7 +242,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
       )
       setCandidates(parsed)
       setSelectedCandidates(new Set(parsed.map((_, index) => index)))
-      if (!parsed.length) toast.info(t('codex.panel.noExtractResult' as any))
+      if (!parsed.length) toast.info(t('codex.panel.noExtractResult'))
     } finally {
       setExtracting(false)
     }
@@ -272,8 +272,8 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
     })
     await loadAll(projectId)
     setExtractOpen(false)
-    const skipMsg = result.skipped.length ? t('codex.panel.adoptSkipped', { count: result.skipped.length } as any) : ''
-    toast.success(t('codex.panel.adoptResult', { count: result.written.length } as any) + skipMsg + '。')
+    const skipMsg = result.skipped.length ? t('codex.panel.adoptSkipped', { count: result.skipped.length }) : ''
+    toast.success(t('codex.panel.adoptResult', { count: result.written.length }) + skipMsg + '。')
   }
 
   return (
@@ -286,7 +286,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
         {!fixedDomain && (
           <>
             <Boxes className="w-5 h-5 text-accent" />
-            <h2 className="text-base font-semibold text-text-primary mr-2">{t('codex.panel.title' as any)}</h2>
+            <h2 className="text-base font-semibold text-text-primary mr-2">{t('codex.panel.title')}</h2>
             <div className="flex rounded-lg bg-bg-elevated p-0.5">
               {DOMAINS.map(d => (
                 <button
@@ -302,14 +302,14 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
             </div>
           </>
         )}
-        {fixedDomain && <span className="text-sm font-medium text-text-secondary">{t('codex.panel.entriesIn', { domain: CODEX_DOMAIN_LABELS[fixedDomain] } as any)}</span>}
+        {fixedDomain && <span className="text-sm font-medium text-text-secondary">{t('codex.panel.entriesIn', { domain: CODEX_DOMAIN_LABELS[fixedDomain] })}</span>}
         <button
           onClick={() => setShowHidden(v => !v)}
           className="ml-auto text-xs text-text-muted hover:text-text-primary inline-flex items-center gap-1"
-          title={t('codex.panel.showHidden' as any)}
+          title={t('codex.panel.showHidden')}
         >
           {showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          {showHidden ? t('codex.panel.hiddenShown' as any) : t('codex.panel.showHiddenBtn' as any)}
+          {showHidden ? t('codex.panel.hiddenShown') : t('codex.panel.showHiddenBtn')}
         </button>
       </div>
       )}
@@ -340,7 +340,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                   <button
                     onClick={(e) => { e.stopPropagation(); setCategoryHidden(cat.id!, !cat.hidden) }}
                     className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-text-primary"
-                    title={cat.hidden ? t('codex.panel.unhide' as any) : t('codex.panel.hideBuiltIn' as any)}
+                    title={cat.hidden ? t('codex.panel.unhide') : t('codex.panel.hideBuiltIn')}
                   >
                     {cat.hidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                   </button>
@@ -348,7 +348,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat) }}
                     className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400"
-                    title={t('codex.panel.deleteCustomCat' as any)}
+                    title={t('codex.panel.deleteCustomCat')}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -361,7 +361,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
               onClick={handleAddCategory}
               className="m-2 px-2 py-1.5 text-xs rounded-lg border border-dashed border-border text-text-muted hover:text-accent hover:border-accent/50 inline-flex items-center justify-center gap-1"
             >
-              <FolderPlus className="w-3.5 h-3.5" /> {t('codex.panel.addCategory' as any)}
+              <FolderPlus className="w-3.5 h-3.5" /> {t('codex.panel.addCategory')}
             </button>
           )}
         </div>
@@ -371,20 +371,20 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
         <div className="w-52 shrink-0 border-r border-border flex flex-col">
           {/* 排序下拉 */}
           <div className="px-2 pt-2 pb-1 flex items-center gap-1.5">
-            <span className="text-[10px] text-text-muted shrink-0">{t('codex.panel.sort' as any)}</span>
+            <span className="text-[10px] text-text-muted shrink-0">{t('codex.panel.sort')}</span>
             <select
               value={sortMode}
               onChange={e => setSortMode(e.target.value as typeof sortMode)}
               className="flex-1 text-[11px] bg-bg-elevated border border-border rounded px-1.5 py-1 text-text-secondary"
             >
-              <option value="order">{t('codex.panel.sortOrder' as any)}</option>
-              <option value="importance">{t('codex.panel.sortImportance' as any)}</option>
-              <option value="pinyin">{t('codex.panel.sortPinyin' as any)}</option>
+              <option value="order">{t('codex.panel.sortOrder')}</option>
+              <option value="importance">{t('codex.panel.sortImportance')}</option>
+              <option value="pinyin">{t('codex.panel.sortPinyin')}</option>
             </select>
           </div>
           <div className="flex-1 overflow-y-auto p-2 pt-1 space-y-0.5">
             {catEntries.length === 0 && (
-              <p className="text-xs text-text-muted px-2 py-3 text-center">{t('codex.panel.noEntries' as any)}</p>
+              <p className="text-xs text-text-muted px-2 py-3 text-center">{t('codex.panel.noEntries')}</p>
             )}
             {catEntries.map(entry => (
               <div
@@ -395,9 +395,9 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                 }`}
               >
                 <span>{entry.icon || activeCat?.icon || '•'}</span>
-                <span className="truncate flex-1">{entry.name || t('codex.panel.unnamed' as any)}</span>
+                <span className="truncate flex-1">{entry.name || t('codex.panel.unnamed')}</span>
                 {entry.name && dupNames.has(entry.name.trim()) && (
-                  <span className="text-amber-400 shrink-0" title={t('codex.panel.dupWarning' as any)}>⚠</span>
+                  <span className="text-amber-400 shrink-0" title={t('codex.panel.dupWarning')}>⚠</span>
                 )}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteEntry(entry) }}
@@ -414,23 +414,23 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
               disabled={!activeCatId || !scopeReady}
               className="w-full px-2 py-1.5 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent/10 disabled:opacity-40 inline-flex items-center justify-center gap-1"
             >
-              <Sparkles className="w-3.5 h-3.5" /> {t('codex.panel.extractAi' as any)}
+              <Sparkles className="w-3.5 h-3.5" /> {t('codex.panel.extractAi')}
             </button>
             <button
               onClick={handleAddEntry}
               disabled={!activeCatId || !scopeReady}
               className="w-full px-2 py-1.5 text-xs rounded-lg bg-accent text-white hover:bg-accent/90 disabled:opacity-40 inline-flex items-center justify-center gap-1"
             >
-              <Plus className="w-3.5 h-3.5" /> {t('codex.panel.addEntry' as any)}
+              <Plus className="w-3.5 h-3.5" /> {t('codex.panel.addEntry')}
             </button>
             {/* B1:管理本分类的专属字段(增删改字段 schema) */}
             <button
               onClick={() => setShowFieldsEditor(true)}
               disabled={!activeCat}
               className="w-full px-2 py-1.5 text-xs rounded-lg border border-border text-text-secondary hover:text-accent hover:border-accent/50 disabled:opacity-40 inline-flex items-center justify-center gap-1"
-              title={t('codex.panel.manageFieldsTitle' as any)}
+              title={t('codex.panel.manageFieldsTitle')}
             >
-              <Settings2 className="w-3.5 h-3.5" /> {t('codex.panel.manageFields' as any)}
+              <Settings2 className="w-3.5 h-3.5" /> {t('codex.panel.manageFields')}
             </button>
           </div>
         </div>
@@ -449,7 +449,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
             />
           ) : (
             <div className="h-full flex items-center justify-center text-text-muted text-sm">
-              {activeCat ? t('codex.panel.selectOrAdd' as any) : t('codex.panel.selectCategory' as any)}
+              {activeCat ? t('codex.panel.selectOrAdd') : t('codex.panel.selectCategory')}
             </div>
           )}
         </div>
@@ -468,22 +468,22 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
           <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-bg-surface border border-border rounded-xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-text-primary">{t('codex.panel.extractTitle', { name: activeCat.name } as any)}</h3>
-                <p className="text-xs text-text-muted">{t('codex.panel.extractDesc' as any)}</p>
+                <h3 className="font-semibold text-text-primary">{t('codex.panel.extractTitle', { name: activeCat.name })}</h3>
+                <p className="text-xs text-text-muted">{t('codex.panel.extractDesc')}</p>
               </div>
               <button onClick={() => setExtractOpen(false)}><X className="w-4 h-4 text-text-muted" /></button>
             </div>
             <textarea value={extractText} onChange={e => setExtractText(e.target.value)} rows={8}
-              placeholder={t('codex.panel.extractPlaceholder' as any)}
+              placeholder={t('codex.panel.extractPlaceholder')}
               className="w-full p-3 bg-bg-base border border-border rounded-lg text-sm text-text-primary resize-y" />
             <label className="flex items-start gap-2 text-xs text-text-secondary">
               <input type="checkbox" checked={supplementTags} onChange={e => setSupplementTags(e.target.checked)} className="mt-0.5 accent-accent" />
-              <span>{t('codex.panel.supplementTags' as any)} <span className="text-amber-400">{t('codex.panel.tokenWarning' as any)}</span></span>
+              <span>{t('codex.panel.supplementTags')} <span className="text-amber-400">{t('codex.panel.tokenWarning')}</span></span>
             </label>
             <button onClick={handleExtractEntries} disabled={extracting || !extractText.trim()}
               className="px-3 py-1.5 bg-accent text-white rounded-lg text-sm disabled:opacity-40 inline-flex items-center gap-1.5">
               {extracting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {extracting ? t('codex.panel.extracting' as any) : t('codex.panel.startExtract' as any)}
+              {extracting ? t('codex.panel.extracting') : t('codex.panel.startExtract')}
             </button>
             {candidates.length > 0 && (
               <div className="space-y-2 border-t border-border pt-3">
@@ -504,10 +504,10 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                   </label>
                 ))}
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setExtractOpen(false)} className="px-3 py-1.5 text-xs text-text-muted">{t('codex.panel.cancel' as any)}</button>
+                  <button onClick={() => setExtractOpen(false)} className="px-3 py-1.5 text-xs text-text-muted">{t('codex.panel.cancel')}</button>
                   <button onClick={handleAdoptCandidates} disabled={!selectedCandidates.size}
                     className="px-3 py-1.5 text-xs bg-accent text-white rounded disabled:opacity-40">
-                    {t('codex.panel.writeSelected', { count: selectedCandidates.size } as any)}
+                    {t('codex.panel.writeSelected', { count: selectedCandidates.size })}
                   </button>
                 </div>
               </div>

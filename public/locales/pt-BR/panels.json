@@ -275,7 +275,22 @@
       "manageTitle": "Gerenciar campos do verbete 「{{name}}」",
       "typeSelect": "Seleção suspensa",
       "typeText": "Texto",
-      "typeLongtext": "Texto longo"
+      "typeLongtext": "Texto longo",
+      "typeNumber": "Número",
+      "typeRef": "Referência vinculada",
+      "newField": "Novo campo",
+      "closeAria": "Fechar editor de campos",
+      "noFields": "Nenhum campo personalizado",
+      "fieldNamePlaceholder": "Nome do campo",
+      "fieldType": "Tipo de campo",
+      "moveUp": "Mover para cima",
+      "moveDown": "Mover para baixo",
+      "deleteField": "Excluir campo",
+      "selectOptionsPlaceholder": "Opções (separadas por /)",
+      "refCategoryPlaceholder": "Nome da categoria vinculada",
+      "addField": "Adicionar campo",
+      "cancel": "Cancelar",
+      "save": "Salvar"
     }
   },
   "cultivation": {
@@ -1653,5 +1668,16 @@
     "previewTitle": "Pré-visualização de lista IA",
     "subtitle": "Declare por dimensões quais configurações vêm da história real e quais são transformações fictícias; a IA seguirá estritamente essas restrições na geração.",
     "title": "Real e Fantasia"
+  },
+  "worldview": {
+    "power.title": "⚡ Sistema de Poder",
+    "power.name": "Nome do Sistema",
+    "power.namePlaceholder": "Ex.: Cultivo de Energia Espiritual, Sistema de Magia",
+    "power.description": "Descrição do Sistema",
+    "power.descPlaceholder": "Descreva a natureza, origem e funcionamento do sistema de poder...",
+    "power.levels": "Divisão de Níveis",
+    "power.levelsPlaceholder": "Ex.: Refinamento de Qi → Fundação → Núcleo Dourado → Alma Nascente...",
+    "power.rules": "Regras Fundamentais",
+    "power.rulesPlaceholder": "Ex.: limitações de combate acima do nível, condições de avanço, tabus..."
   }
 }

@@ -92,19 +92,19 @@ export default function WorldTreeSidebar({ projectId }: Props) {
     <div className="w-40 shrink-0 border-r border-border bg-bg-elevated flex flex-col h-full">
       {/* 标题 */}
       <div className="flex items-center justify-between px-2 py-1.5 border-b border-border">
-        <span className="text-[10px] font-medium text-text-secondary">{t('geography.worldTree.title' as any)}</span>
+        <span className="text-[10px] font-medium text-text-secondary">{t('geography.worldTree.title')}</span>
         <div className="flex items-center gap-0.5">
           <button
             onClick={() => handleAddChild(null)}
             className="p-1 rounded hover:bg-bg-hover text-text-muted hover:text-accent transition-colors"
-            title={t('geography.worldTree.newRootWorld' as any)}
+            title={t('geography.worldTree.newRootWorld')}
           >
             <Plus className="w-3 h-3" />
           </button>
           <button
             onClick={() => setCollapsed(true)}
             className="p-1 rounded hover:bg-bg-hover text-text-muted hover:text-text-primary transition-colors"
-            title={t('geography.worldTree.collapse' as any)}
+            title={t('geography.worldTree.collapse')}
           >
             <PanelLeftClose className="w-3 h-3" />
           </button>
@@ -114,7 +114,7 @@ export default function WorldTreeSidebar({ projectId }: Props) {
       {/* 树列表 */}
       <div className="flex-1 overflow-y-auto py-0.5">
         {tree.length === 0 ? (
-          <div className="px-2 py-4 text-center text-text-muted text-[10px]">{t('geography.worldTree.noWorlds' as any)}</div>
+          <div className="px-2 py-4 text-center text-text-muted text-[10px]">{t('geography.worldTree.noWorlds')}</div>
         ) : (
           tree.map(node => (
             <TreeItem
@@ -216,14 +216,14 @@ function TreeItem({
           <button
             onClick={(e) => { e.stopPropagation(); setEditName(node.name); setEditing(true) }}
             className="p-0.5 rounded hover:bg-bg-base text-text-muted hover:text-text-primary"
-            title={t('geography.worldTree.rename' as any)}
+            title={t('geography.worldTree.rename')}
           >
             <Edit3 className="w-2.5 h-2.5" />
           </button>
           <button
             onClick={(e) => { e.stopPropagation(); onAddChild(node.id!) }}
             className="p-0.5 rounded hover:bg-bg-base text-text-muted hover:text-accent"
-            title={t('geography.worldTree.newChildWorld' as any)}
+            title={t('geography.worldTree.newChildWorld')}
           >
             <Plus className="w-2.5 h-2.5" />
           </button>
@@ -231,15 +231,15 @@ function TreeItem({
             onClick={async (e) => {
               e.stopPropagation()
               const ok = await dialog.confirm({
-                title: t('geography.worldTree.deleteTitle' as any, { name: node.name }),
-                message: t('geography.worldTree.deleteMessage' as any),
-                confirmText: t('geography.worldTree.delete' as any),
+                title: t('geography.worldTree.deleteTitle', { name: node.name }),
+                message: t('geography.worldTree.deleteMessage'),
+                confirmText: t('geography.worldTree.delete'),
                 tone: 'danger',
               })
               if (ok) onDelete(node.id!)
             }}
             className="p-0.5 rounded hover:bg-bg-base text-text-muted hover:text-red-400"
-            title={t('geography.worldTree.delete' as any)}
+            title={t('geography.worldTree.delete')}
           >
             <Trash2 className="w-2.5 h-2.5" />
           </button>

@@ -11,8 +11,9 @@ import type { Project, Location, LocationType } from '../../lib/types'
 import { nanoid } from '../../lib/utils/id'
 import { sanitizeSvg } from '../../lib/utils/sanitize-svg'
 import LocationTreeMap from './LocationTreeMap'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
-const LOCATION_TYPE_KEYS: Record<LocationType, string> = {
+const LOCATION_TYPE_KEYS = {
   continent: 'geography.legendContinent',
   country: 'geography.legendCountry',
   city: 'geography.legendCity',
@@ -23,7 +24,7 @@ const LOCATION_TYPE_KEYS: Record<LocationType, string> = {
   nature: 'geography.legendNature',
   building: 'geography.legendBuilding',
   other: 'geography.legendOther',
-}
+} as const satisfies Record<LocationType, PanelsKeys>
 
 export function removeLocationSubtree(locations: Location[], id: string): Location[] {
   const toDelete = new Set<string>()
@@ -299,7 +300,7 @@ export default function GeographyPanel({ project }: Props) {
                   <MapPin className="w-4 h-4 text-accent" />
                   <span className="text-sm font-medium text-text-primary flex-1 text-left">{loc.name}</span>
                   <span className="text-xs text-text-muted bg-bg-elevated px-2 py-0.5 rounded">
-                    {t(LOCATION_TYPE_KEYS[loc.type] as any)}
+                    {t(LOCATION_TYPE_KEYS[loc.type])}
                   </span>
                 </button>
 
@@ -319,12 +320,12 @@ export default function GeographyPanel({ project }: Props) {
                         <label className="block text-xs text-text-muted mb-1">{t('geography.type')}</label>
                         <select
                           value={loc.type}
-                          onChange={e => handleUpdateLocation(loc.id, { type: e.target.value as any })}
+                          onChange={e => handleUpdateLocation(loc.id, { type: e.target.value as LocationType })}
                           className="w-full px-2 py-1.5 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
                         >
-                          {(Object.keys(LOCATION_TYPE_KEYS) as any[]).map(type => (
+                          {(Object.keys(LOCATION_TYPE_KEYS) as LocationType[]).map(type => (
                             <option key={type} value={type}>
-                              {t(`geography.legend${type.charAt(0).toUpperCase() + type.slice(1)}` as any)}
+                              {t(LOCATION_TYPE_KEYS[type])}
                             </option>
                           ))}
                         </select>

@@ -17,13 +17,14 @@ import { countWords, htmlToPlainText } from '../../lib/utils/html'
 import type { Project, Chapter, ChapterStatus } from '../../lib/types'
 import StyleCalibrationPanel from './StyleCalibrationPanel'
 import StyleRevisionPairsPanel from './StyleRevisionPairsPanel'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 interface Props {
   project: Project
 }
 
 const CORPUS_STATUSES: ChapterStatus[] = ['revised', 'polished', 'final']
-const STATUS_LABEL_KEYS: Record<string, string> = { revised: 'style.status.revised', polished: 'style.status.polished', final: 'style.status.final' }
+const STATUS_LABEL_KEYS = { revised: 'style.status.revised', polished: 'style.status.polished', final: 'style.status.final' } as const satisfies Partial<Record<ChapterStatus, PanelsKeys>>
 const PER_CHAPTER_CHARS = 2500
 const MAX_CORPUS_CHAPTERS = 6
 
@@ -85,7 +86,7 @@ export default function StyleLearningPanel({ project }: Props) {
 
   const toggle = (id: number) => {
     if (!selectedIds.has(id) && selectedIds.size >= MAX_CORPUS_CHAPTERS) {
-      setError(t('style.learning.maxChapters' as any, { count: MAX_CORPUS_CHAPTERS } as any))
+      setError(t('style.learning.maxChapters', { count: MAX_CORPUS_CHAPTERS }))
       return
     }
     setError(null)
@@ -122,7 +123,7 @@ export default function StyleLearningPanel({ project }: Props) {
       })
       const out = await chat(messages, aiConfig, { category: 'style.learn', projectId: project.id! })
       const text = out.trim()
-      if (!text) { setError(t('style.learning.noContent' as any)); return }
+      if (!text) { setError(t('style.learning.noContent')); return }
       await saveProfile(project.id!, {
         profile: text,
         sourceChapterIds: selected.map(c => c.id!),
@@ -131,7 +132,7 @@ export default function StyleLearningPanel({ project }: Props) {
       })
     } catch (e) {
       console.error('[StyleLearning] learn failed:', e)
-      setError(e instanceof Error ? e.message : t('style.learning.failed' as any))
+      setError(e instanceof Error ? e.message : t('style.learning.failed'))
     } finally {
       setRunning(false)
     }
@@ -142,25 +143,25 @@ export default function StyleLearningPanel({ project }: Props) {
       <div className="max-w-3xl mx-auto p-5 space-y-5">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-bold text-text-primary">
-            <Brain className="w-5 h-5 text-accent" /> {t('style.learning.title' as any)}
+            <Brain className="w-5 h-5 text-accent" /> {t('style.learning.title')}
           </h2>
           <p className="text-xs text-text-muted mt-1">
-            {t('style.learning.subtitle' as any)}
+            {t('style.learning.subtitle')}
           </p>
         </div>
 
         <div className="bg-bg-surface border border-border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-text-primary">{t('style.learning.corpus' as any)}</span>
+            <span className="text-sm font-medium text-text-primary">{t('style.learning.corpus')}</span>
             <span className="text-xs text-text-muted">
-              {t('style.learning.selectedChapters' as any, { count: selected.length, words: sampleWords.toLocaleString() } as any)}
+              {t('style.learning.selectedChapters', { count: selected.length, words: sampleWords.toLocaleString() })}
             </span>
           </div>
 
           {candidates.length === 0 ? (
             <div className="flex items-start gap-2 text-xs text-text-muted bg-bg-base rounded p-3">
               <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-              <span>{t('style.learning.noChapters' as any)}</span>
+              <span>{t('style.learning.noChapters')}</span>
             </div>
           ) : (
             <div className="space-y-1 max-h-56 overflow-y-auto">
@@ -174,7 +175,7 @@ export default function StyleLearningPanel({ project }: Props) {
                   />
                   <span className="text-sm text-text-primary flex-1 truncate">{c.title}</span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent shrink-0">
-                    {t(STATUS_LABEL_KEYS[c.status] as any) || c.status}
+                    {c.status in STATUS_LABEL_KEYS ? t(STATUS_LABEL_KEYS[c.status as keyof typeof STATUS_LABEL_KEYS]!) : c.status}
                   </span>
                   <span className="text-[10px] text-text-muted shrink-0">{(c.wordCount || c.content.length).toLocaleString()}</span>
                 </label>
@@ -188,12 +189,12 @@ export default function StyleLearningPanel({ project }: Props) {
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent text-white rounded-md text-sm font-medium hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {running
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('style.learning.learning' as any)}</>
-              : <><Sparkles className="w-4 h-4" /> {hasProfile ? t('style.learning.relearn' as any) : t('style.learning.learn' as any)}</>}
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('style.learning.learning')}</>
+              : <><Sparkles className="w-4 h-4" /> {hasProfile ? t('style.learning.relearn') : t('style.learning.learn')}</>}
           </button>
 
           <p className="text-[11px] leading-5 text-text-muted">
-            {t('style.learning.limit' as any, { chapters: MAX_CORPUS_CHAPTERS, chars: PER_CHAPTER_CHARS.toLocaleString() } as any)}
+            {t('style.learning.limit', { chapters: MAX_CORPUS_CHAPTERS, chars: PER_CHAPTER_CHARS.toLocaleString() })}
           </p>
 
           {error && (
@@ -206,9 +207,9 @@ export default function StyleLearningPanel({ project }: Props) {
         <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-medium text-text-primary">{t('style.learning.revisionPairs' as any)}</h3>
+              <h3 className="text-sm font-medium text-text-primary">{t('style.learning.revisionPairs')}</h3>
               <p className="mt-1 text-[11px] text-text-muted">
-                {t('style.learning.pairsCount' as any, { count: revisionPairs.length } as any)}
+                {t('style.learning.pairsCount', { count: revisionPairs.length })}
               </p>
             </div>
           </div>
@@ -223,21 +224,21 @@ export default function StyleLearningPanel({ project }: Props) {
           <div className="bg-bg-surface border border-border rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
-                <Check className="w-4 h-4 text-success" /> {t('style.learning.myProfile' as any)}
+                <Check className="w-4 h-4 text-success" /> {t('style.learning.myProfile')}
               </span>
               <button
                 onClick={() => setEnabled(!profile.enabled)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                   profile.enabled ? 'bg-success/15 text-success' : 'bg-text-muted/15 text-text-muted'
                 }`}
-                title={profile.enabled ? t('style.learning.enabledInject' as any) : t('style.learning.disabledInject' as any)}
+                title={profile.enabled ? t('style.learning.enabledInject') : t('style.learning.disabledInject')}
               >
-                <Power className="w-3.5 h-3.5" /> {profile.enabled ? t('style.learning.injecting' as any) : t('style.learning.disabled' as any)}
+                <Power className="w-3.5 h-3.5" /> {profile.enabled ? t('style.learning.injecting') : t('style.learning.disabled')}
               </button>
             </div>
 
             <p className="text-[11px] text-text-muted">
-              {t('style.learning.profileBased' as any, { chapters: profile.sampleCount, words: profile.sampleWords.toLocaleString() } as any)} {t('style.learning.profileEditable' as any)}
+              {t('style.learning.profileBased', { chapters: profile.sampleCount, words: profile.sampleWords.toLocaleString() })} {t('style.learning.profileEditable')}
             </p>
 
             <textarea
@@ -246,7 +247,7 @@ export default function StyleLearningPanel({ project }: Props) {
               onChange={e => setDraft(e.target.value)}
               onBlur={() => { if (draft !== (profile.profile || '')) updateProfileText(draft) }}
               rows={16}
-              placeholder={t('style.learning.profilePlaceholder' as any)}
+              placeholder={t('style.learning.profilePlaceholder')}
               className="w-full px-3 py-2 bg-bg-base border border-border rounded text-sm text-text-secondary leading-relaxed resize-y focus:outline-none focus:border-accent font-mono"
             />
           </div>

@@ -265,7 +265,22 @@
       "manageTitle": "管理「{{name}}」词条字段",
       "typeSelect": "下拉选择",
       "typeText": "文本",
-      "typeLongtext": "长文本"
+      "typeLongtext": "长文本",
+      "typeNumber": "数字",
+      "typeRef": "关联引用",
+      "newField": "新字段",
+      "closeAria": "关闭字段编辑器",
+      "noFields": "暂无自定义字段",
+      "fieldNamePlaceholder": "字段名称",
+      "fieldType": "字段类型",
+      "moveUp": "上移",
+      "moveDown": "下移",
+      "deleteField": "删除字段",
+      "selectOptionsPlaceholder": "选项（用 / 分隔）",
+      "refCategoryPlaceholder": "关联分类名称",
+      "addField": "添加字段",
+      "cancel": "取消",
+      "save": "保存"
     }
   },
   "cultivation": {
@@ -1633,5 +1648,16 @@
     "previewTitle": "AI 清单预览",
     "subtitle": "按维度声明哪些设定取自真实历史、哪些是架空改造，AI 生成时会严格遵守这些约束。",
     "title": "真实与幻想"
+  },
+  "worldview": {
+    "power.title": "⚡ 力量体系",
+    "power.name": "体系名称",
+    "power.namePlaceholder": "例如：灵气修炼、魔法体系",
+    "power.description": "体系描述",
+    "power.descPlaceholder": "描述力量体系的本质、来源和运作方式...",
+    "power.levels": "等级划分",
+    "power.levelsPlaceholder": "例如：练气→筑基→金丹→元婴→化神...",
+    "power.rules": "核心规则",
+    "power.rulesPlaceholder": "例如：越级战斗的限制、突破条件、禁忌..."
   }
 }
