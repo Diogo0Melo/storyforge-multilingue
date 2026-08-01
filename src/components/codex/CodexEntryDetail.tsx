@@ -18,6 +18,7 @@ import type {
 import { parseCultivationStages } from '../../lib/types/cultivation'
 import { useCultivationStore } from '../../stores/cultivation'
 import { useLocationStore } from '../../stores/location'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 interface Props {
   entry: CodexEntry
@@ -249,17 +250,17 @@ function CodexFieldRow({
   const { t } = useTranslation('panels')
   return (
     <div className="grid grid-cols-[5rem_1fr] gap-2 items-start">
-      <label className="text-xs text-text-muted pt-2 text-right">{definition.label}</label>
+      <label className="text-xs text-text-muted pt-2 text-right">{definition.labelKey ? t(definition.labelKey as PanelsKeys, definition.label) : definition.label}</label>
       <div className="min-w-0">
         {definition.type === 'longtext' && (
           <CTextarea value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholder} rows={2}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm resize-y" />
         )}
         {definition.type === 'select' && (
-          <select value={value} onChange={event => onValue(event.target.value)} aria-label={definition.label}
+          <select value={value} onChange={event => onValue(event.target.value)} aria-label={definition.labelKey ? t(definition.labelKey as PanelsKeys, definition.label) : definition.label}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm">
             <option value="">{t('codex.entry.notSelected')}</option>
-            {(definition.options || []).map(option => <option key={option} value={option}>{option}</option>)}
+            {(definition.options || []).map((option, i) => <option key={option} value={option}>{definition.optionKeys?.[i] ? t(definition.optionKeys[i] as PanelsKeys, option) : option}</option>)}
           </select>
         )}
         {definition.type === 'number' && (

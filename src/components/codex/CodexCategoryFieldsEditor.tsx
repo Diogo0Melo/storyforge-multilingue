@@ -79,20 +79,20 @@ export default function CodexCategoryFieldsEditor({ category, onClose, onSave }:
                   className="flex-1 px-2 py-1 text-sm rounded bg-bg-elevated border border-border focus:outline-none focus:border-accent"
                 />
                 <select
-                  aria-label={`${t('codex.fields.fieldType')}-${definition.label}`}
+                  aria-label={`${t('codex.fields.fieldType')}-${definition.labelKey ? t(definition.labelKey as PanelsKeys, definition.label) : definition.label}`}
                   value={definition.type}
                   onChange={event => update(index, { type: event.target.value as CodexFieldDef['type'] })}
                   className="px-2 py-1 text-xs rounded bg-bg-elevated border border-border"
                 >
                   {fieldTypes.map(type => <option key={type.value} value={type.value}>{type.label}</option>)}
                 </select>
-                <button onClick={() => move(index, -1)} disabled={index === 0} className="p-1 text-text-muted hover:text-text-primary disabled:opacity-30" aria-label={`${t('codex.fields.moveUp')}${definition.label}`}>
+                <button onClick={() => move(index, -1)} disabled={index === 0} className="p-1 text-text-muted hover:text-text-primary disabled:opacity-30" aria-label={`${t('codex.fields.moveUp')}${definition.labelKey ? t(definition.labelKey as PanelsKeys, definition.label) : definition.label}`}>
                   <ChevronUp className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => move(index, 1)} disabled={index === defs.length - 1} className="p-1 text-text-muted hover:text-text-primary disabled:opacity-30" aria-label={`${t('codex.fields.moveDown')}${definition.label}`}>
+                <button onClick={() => move(index, 1)} disabled={index === defs.length - 1} className="p-1 text-text-muted hover:text-text-primary disabled:opacity-30" aria-label={`${t('codex.fields.moveDown')}${definition.labelKey ? t(definition.labelKey as PanelsKeys, definition.label) : definition.label}`}>
                   <ChevronDown className="w-3.5 h-3.5" />
                 </button>
-                <button onClick={() => remove(index)} className="p-1 text-text-muted hover:text-red-400" aria-label={`${t('codex.fields.deleteField')}${definition.label}`}>
+                <button onClick={() => remove(index)} className="p-1 text-text-muted hover:text-red-400" aria-label={`${t('codex.fields.deleteField')}${definition.labelKey ? t(definition.labelKey as PanelsKeys, definition.label) : definition.label}`}>
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
               </div>
