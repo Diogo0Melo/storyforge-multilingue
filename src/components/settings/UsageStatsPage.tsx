@@ -144,7 +144,7 @@ export default function UsageStatsPage({ project }: Props) {
                       className="inline-block px-2 py-0.5 rounded text-xs font-medium"
                       style={{ backgroundColor: meta.color + '22', color: meta.color }}
                     >
-                      {meta.label}
+                      {meta.labelKey ? t(meta.labelKey, meta.label) : meta.label}
                     </span>
                   </td>
                   <td className="px-3 py-2 text-text-muted text-xs whitespace-nowrap max-w-[180px]" title={`${e.provider ?? ''} ${e.model}`}>

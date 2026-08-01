@@ -6,11 +6,11 @@ import type {
 import { useTranslation } from 'react-i18next'
 import {
   MORAL_AXES,
-  MORAL_AXIS_LABELS,
+  MORAL_AXIS_LABEL_KEYS,
   ORDER_AXES,
-  ORDER_AXIS_LABELS,
+  ORDER_AXIS_LABEL_KEYS,
   ROLE_WEIGHTS,
-  ROLE_WEIGHT_LABELS,
+  ROLE_WEIGHT_LABEL_KEYS,
 } from '../../lib/character/character-axes'
 
 interface Props {
@@ -45,7 +45,7 @@ export default function CharacterAxesPicker({
                   : 'bg-bg-base text-text-secondary border-border hover:border-accent/50'
               }`}
             >
-              {ROLE_WEIGHT_LABELS[weight]}
+              {t(ROLE_WEIGHT_LABEL_KEYS[weight])}
             </button>
           ))}
         </div>
@@ -57,13 +57,13 @@ export default function CharacterAxesPicker({
           <span />
           {MORAL_AXES.map(moral => (
             <span key={moral} className="text-[10px] text-center text-text-muted py-0.5">
-              {MORAL_AXIS_LABELS[moral]}
+              {t(MORAL_AXIS_LABEL_KEYS[moral])}
             </span>
           ))}
           {ORDER_AXES.map(order => (
             <div key={order} className="contents">
               <span className="text-[10px] text-text-muted flex items-center">
-                {ORDER_AXIS_LABELS[order]}
+                {t(ORDER_AXIS_LABEL_KEYS[order])}
               </span>
               {MORAL_AXES.map(moral => {
                 const selected = moralAxis === moral && orderAxis === order
@@ -80,7 +80,7 @@ export default function CharacterAxesPicker({
                   >
                     {order === 'neutral' && moral === 'neutral'
                       ? t('axes.absoluteNeutral')
-                      : `${ORDER_AXIS_LABELS[order]}${MORAL_AXIS_LABELS[moral]}`}
+                      : `${t(ORDER_AXIS_LABEL_KEYS[order])}${t(MORAL_AXIS_LABEL_KEYS[moral])}`}
                   </button>
                 )
               })}

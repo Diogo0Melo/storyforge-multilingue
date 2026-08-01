@@ -468,7 +468,33 @@
     "polish": "💎 润色",
     "qualityReview": "质量审校",
     "stopOrganizing": "停止整理",
-    "viewOrganization": "查看整理结果"
+    "viewOrganization": "查看整理结果",
+    "defaultFont": "默认正文",
+    "defaultLineHeight": "默认行距",
+    "defaultParagraphSpacing": "默认段距",
+    "noParagraphSpacing": "无段距",
+    "lineUnit": "行",
+    "textColor": {
+      "body": "正文",
+      "strong": "强黑/强白",
+      "cream": "暖褐",
+      "gold": "大黄",
+      "orange": "橙红",
+      "blue": "蓝",
+      "green": "绿",
+      "red": "大红",
+      "purple": "紫"
+    },
+    "bgColor": {
+      "clear": "清除文字背景色",
+      "yellow": "黄底",
+      "red": "红底",
+      "blue": "蓝底",
+      "green": "绿底",
+      "purple": "紫底",
+      "brown": "褐底",
+      "ink": "墨底"
+    }
   },
   "richToolbar": {
     "fontFamily": "字体",

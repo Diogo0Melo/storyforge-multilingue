@@ -1,4 +1,4 @@
-/**
+﻿/**
  * NS-4 · 受控谓词注册表 `FACT_PREDICATE_REGISTRY`（设计权威：方案 §14.2）。
  *
  * 单一事实源：AI 抽取的事实候选【必须】映射到这里登记的谓词 key（或其 aliases）。
@@ -14,6 +14,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'location',
     label: '所在地点',
+    labelKey: 'factPredicate.location',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'string',
@@ -25,6 +26,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'aliveStatus',
     label: '存亡状态',
+    labelKey: 'factPredicate.aliveStatus',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'enum',
@@ -52,6 +54,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'healthStatus',
     label: '健康/伤病状态',
+    labelKey: 'factPredicate.healthStatus',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'string',
@@ -63,6 +66,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'powerStage',
     label: '力量/修为阶段',
+    labelKey: 'factPredicate.powerStage',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'string',
@@ -74,6 +78,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'goal',
     label: '当前目标/动机',
+    labelKey: 'factPredicate.goal',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'string',
@@ -86,6 +91,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'owns',
     label: '持有物品/掌控',
+    labelKey: 'factPredicate.owns',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'entity-ref',
@@ -98,6 +104,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'knows',
     label: '知晓/认知',
+    labelKey: 'factPredicate.knows',
     subjectTypes: ['character'],
     factKind: 'event',
     valueType: 'string',
@@ -109,6 +116,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'relation',
     label: '人物关系',
+    labelKey: 'factPredicate.relation',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'entity-ref',
@@ -121,6 +129,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'legacyState',
     label: '旧状态卡字段',
+    labelKey: 'factPredicate.legacyState',
     subjectTypes: ['character', 'location', 'storyArc', 'worldGroup', 'codexEntry'],
     factKind: 'state',
     valueType: 'json',
@@ -133,6 +142,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'magicSource',
     label: '超自然力量来源',
+    labelKey: 'factPredicate.magicSource',
     subjectTypes: ['worldGroup'],
     factKind: 'state',
     valueType: 'string',
@@ -145,6 +155,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'creationOrigin',
     label: '世界创生来源',
+    labelKey: 'factPredicate.creationOrigin',
     subjectTypes: ['worldGroup'],
     factKind: 'state',
     valueType: 'string',
@@ -157,6 +168,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'deityAuthority',
     label: '神明权柄规则',
+    labelKey: 'factPredicate.deityAuthority',
     subjectTypes: ['worldGroup'],
     factKind: 'state',
     valueType: 'string',
@@ -169,6 +181,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'technologyLevel',
     label: '技术基线',
+    labelKey: 'factPredicate.technologyLevel',
     subjectTypes: ['worldGroup'],
     factKind: 'state',
     valueType: 'string',
@@ -181,6 +194,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'powerCeiling',
     label: '力量上限',
+    labelKey: 'factPredicate.powerCeiling',
     subjectTypes: ['worldGroup'],
     factKind: 'state',
     valueType: 'string',
@@ -193,6 +207,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'parentStatus',
     label: '父母/监护人状态',
+    labelKey: 'factPredicate.parentStatus',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'string',
@@ -205,6 +220,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'characterOrigin',
     label: '角色身世来源',
+    labelKey: 'factPredicate.characterOrigin',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'string',
@@ -217,6 +233,7 @@ export const FACT_PREDICATE_REGISTRY: readonly FactPredicateSpec[] = Object.free
   {
     key: 'trueIdentity',
     label: '真实身份',
+    labelKey: 'factPredicate.trueIdentity',
     subjectTypes: ['character'],
     factKind: 'state',
     valueType: 'string',

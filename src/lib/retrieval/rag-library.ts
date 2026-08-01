@@ -41,6 +41,7 @@ type RagRow = RagDocumentMetadata & {
 type RagField = {
   key: string
   label: string
+  labelKey?: string
   content: string
 }
 
@@ -49,7 +50,9 @@ interface RagDescriptor<Row extends RagRow = RagRow> {
   table: Table<Row, number>
   sourceKey: string
   sourceLabel: string
+  sourceLabelKey?: string
   title: (row: Row, context: ProjectionContext) => string
+  titleKey?: string
   fields: (row: Row, context: ProjectionContext) => RagField[]
   visible?: (row: Row, context: ProjectionContext) => boolean
 }
@@ -78,8 +81,8 @@ function text(value: unknown): string {
   }
 }
 
-function field(key: string, label: string, value: unknown): RagField {
-  return { key, label, content: text(value) }
+function field(key: string, label: string, value: unknown, labelKey?: string): RagField {
+  return { key, label, labelKey, content: text(value) }
 }
 
 function stableDocumentId(tableName: string, row: RagRow): string {
@@ -146,28 +149,28 @@ const STORY_CORE_FIELDS: Array<[keyof StoryCore, string]> = [
   ['subPlots', '故事复线'],
 ]
 
-const CHARACTER_FIELDS: Array<[keyof Character, string]> = [
-  ['shortDescription', '一句话简介'],
-  ['identity', '身份'],
-  ['profile', '基础档案'],
-  ['appearance', '外貌'],
-  ['personality', '性格'],
-  ['background', '背景'],
-  ['motivation', '动机'],
-  ['values', '价值观'],
-  ['strengths', '长处'],
-  ['weaknesses', '弱点'],
-  ['fears', '恐惧'],
-  ['goals', '目标'],
-  ['innerConflict', '内心冲突'],
-  ['abilities', '能力'],
-  ['powerLevel', '实力定位'],
-  ['relationships', '关系描述'],
-  ['arc', '角色弧光'],
-  ['keyEvents', '关键经历'],
-  ['speechStyle', '语言风格'],
-  ['habits', '习惯'],
-  ['signatureItem', '标志性物品'],
+const CHARACTER_FIELDS: Array<[keyof Character, string, string]> = [
+  ['shortDescription', '一句话简介', 'rag.field.shortDescription'],
+  ['identity', '身份', 'rag.field.identity'],
+  ['profile', '基础档案', 'rag.field.profile'],
+  ['appearance', '外貌', 'rag.field.appearance'],
+  ['personality', '性格', 'rag.field.personality'],
+  ['background', '背景', 'rag.field.background'],
+  ['motivation', '动机', 'rag.field.motivation'],
+  ['values', '价值观', 'rag.field.values'],
+  ['strengths', '长处', 'rag.field.strengths'],
+  ['weaknesses', '弱点', 'rag.field.weaknesses'],
+  ['fears', '恐惧', 'rag.field.fears'],
+  ['goals', '目标', 'rag.field.goals'],
+  ['innerConflict', '内心冲突', 'rag.field.innerConflict'],
+  ['abilities', '能力', 'rag.field.abilities'],
+  ['powerLevel', '实力定位', 'rag.field.powerLevel'],
+  ['relationships', '关系描述', 'rag.field.relationships'],
+  ['arc', '角色弧光', 'rag.field.arc'],
+  ['keyEvents', '关键经历', 'rag.field.keyEvents'],
+  ['speechStyle', '语言风格', 'rag.field.speechStyle'],
+  ['habits', '习惯', 'rag.field.habits'],
+  ['signatureItem', '标志性物品', 'rag.field.signatureItem'],
 ]
 
 function descriptors(): RagDescriptor<any>[] {
@@ -177,7 +180,9 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.worldviews,
       sourceKey: 'worldview',
       sourceLabel: '世界观',
+      sourceLabelKey: 'rag.source.worldview',
       title: (_row, context) => context.worldGroupId == null ? '主世界观' : '当前世界观',
+      titleKey: 'rag.title.worldview',
       visible: (row: Worldview, context) => exactWorld(row.worldGroupId, context.worldGroupId),
       fields: (row: Worldview) => WORLDVIEW_FIELDS.map(([key, label]) => field(String(key), label, row[key])),
     },
@@ -186,7 +191,9 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.storyCores,
       sourceKey: 'storyCore',
       sourceLabel: '故事核心',
+      sourceLabelKey: 'rag.source.storyCore',
       title: () => '故事核心',
+      titleKey: 'rag.title.storyCore',
       fields: (row: StoryCore) => STORY_CORE_FIELDS.map(([key, label]) => field(String(key), label, row[key])),
     },
     {
@@ -194,27 +201,29 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.characters,
       sourceKey: 'characters',
       sourceLabel: '角色档案',
+      sourceLabelKey: 'rag.source.characters',
       title: (row: Character) => row.name || `角色 #${row.id}`,
       visible: (row: Character, context) => (
         !!row.isCrossWorld || exactWorld(row.homeWorldGroupId, context.worldGroupId)
       ),
-      fields: (row: Character) => CHARACTER_FIELDS.map(([key, label]) => field(String(key), label, row[key])),
+      fields: (row: Character) => CHARACTER_FIELDS.map(([key, label, labelKey]) => field(String(key), label, row[key], labelKey)),
     },
     {
       tableName: 'characterRelations',
       table: db.characterRelations,
       sourceKey: 'characterRelations',
       sourceLabel: '角色关系',
+      sourceLabelKey: 'rag.source.characterRelations',
       title: (row: CharacterRelation, context) => {
         const from = context.characterNameById.get(row.fromCharacterId) ?? `角色 #${row.fromCharacterId}`
         const to = context.characterNameById.get(row.toCharacterId) ?? `角色 #${row.toCharacterId}`
         return `${from} → ${to}`
       },
       fields: (row: CharacterRelation) => [
-        field('relationType', '关系类型', row.relationType),
-        field('label', '关系标签', row.label),
-        field('description', '关系说明', row.description),
-        field('isBidirectional', '是否双向', row.isBidirectional ? '双向' : '单向'),
+        field('relationType', '关系类型', row.relationType, 'rag.field.relationType'),
+        field('label', '关系标签', row.label, 'rag.field.relationLabel'),
+        field('description', '关系说明', row.description, 'rag.field.relationDescription'),
+        field('isBidirectional', '是否双向', row.isBidirectional ? '双向' : '单向', 'rag.field.isBidirectional'),
       ],
     },
     {
@@ -222,14 +231,15 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.chapters,
       sourceKey: 'chapterContent',
       sourceLabel: '章节与前文',
+      sourceLabelKey: 'rag.source.chapterContent',
       title: (row: Chapter) => row.title || `章节 #${row.id}`,
       visible: (row: Chapter, context) => (
         exactWorld(context.outlineWorldById.get(row.outlineNodeId), context.worldGroupId)
       ),
       fields: (row: Chapter) => [
-        field('content', '正文', htmlToPlainText(row.content || '')),
-        field('summary', '章节摘要', row.summary),
-        field('notes', '作者笔记', row.notes),
+        field('content', '正文', htmlToPlainText(row.content || ''), 'rag.field.content'),
+        field('summary', '章节摘要', row.summary, 'rag.field.chapterSummary'),
+        field('notes', '作者笔记', row.notes, 'rag.field.authorNotes'),
       ],
     },
     {
@@ -237,6 +247,7 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.codexEntries,
       sourceKey: 'codex',
       sourceLabel: '设定词条',
+      sourceLabelKey: 'rag.source.codex',
       title: (row: CodexEntry) => row.name || `词条 #${row.id}`,
       visible: (row: CodexEntry, context) => exactWorld(row.worldGroupId, context.worldGroupId),
       fields: (row: CodexEntry, context) => {
@@ -246,10 +257,10 @@ function descriptors(): RagDescriptor<any>[] {
           field(`custom.${definition.key}`, definition.label, customValues[definition.key]),
         )
         return [
-          field('summary', '简介', row.summary),
-          field('description', '详细描述', row.description),
+          field('summary', '简介', row.summary, 'rag.field.summary'),
+          field('description', '详细描述', row.description, 'rag.field.description'),
           ...customFields,
-          field('tags', '标签', row.tags),
+          field('tags', '标签', row.tags, 'rag.field.tags'),
         ]
       },
     },
@@ -258,11 +269,12 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.importantLocations,
       sourceKey: 'locations',
       sourceLabel: '重要地点',
+      sourceLabelKey: 'rag.source.locations',
       title: (row: ImportantLocation) => row.name || `地点 #${row.id}`,
       fields: (row: ImportantLocation) => [
-        field('description', '地点描述', row.description),
-        field('significance', '剧情作用', row.significance),
-        field('tags', '地点标签', row.tags),
+        field('description', '地点描述', row.description, 'rag.field.locationDescription'),
+        field('significance', '剧情作用', row.significance, 'rag.field.significance'),
+        field('tags', '地点标签', row.tags, 'rag.field.locationTags'),
       ],
     },
     {
@@ -270,12 +282,14 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.histories,
       sourceKey: 'historical',
       sourceLabel: '历史',
+      sourceLabelKey: 'rag.source.historical',
       title: (_row, context) => context.worldGroupId == null ? '主世界历史' : '当前世界历史',
+      titleKey: 'rag.title.historical',
       visible: (row: History, context) => exactWorld(row.worldGroupId, context.worldGroupId),
       fields: (row: History) => [
-        field('overview', '历史总述', row.overview),
-        field('eraSystem', '纪年体系', row.eraSystem),
-        field('events', '历史事件', row.events),
+        field('overview', '历史总述', row.overview, 'rag.field.overview'),
+        field('eraSystem', '纪年体系', row.eraSystem, 'rag.field.eraSystem'),
+        field('events', '历史事件', row.events, 'rag.field.events'),
       ],
     },
     {
@@ -283,11 +297,12 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.foreshadows,
       sourceKey: 'foreshadows',
       sourceLabel: '伏笔',
+      sourceLabelKey: 'rag.source.foreshadows',
       title: (row: Foreshadow) => row.name || `伏笔 #${row.id}`,
       fields: (row: Foreshadow) => [
-        field('description', '伏笔描述', row.description),
-        field('notes', '作者备注', row.notes),
-        field('status', '当前状态', row.status),
+        field('description', '伏笔描述', row.description, 'rag.field.foreshadowDescription'),
+        field('notes', '作者备注', row.notes, 'rag.field.foreshadowNotes'),
+        field('status', '当前状态', row.status, 'rag.field.foreshadowStatus'),
       ],
     },
     {
@@ -295,11 +310,12 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.references,
       sourceKey: 'references',
       sourceLabel: '项目参考',
+      sourceLabelKey: 'rag.source.references',
       title: (row: Reference) => row.title || `参考 #${row.id}`,
       fields: (row: Reference) => [
-        field('note', '作者备注', row.note),
-        field('analysisSummary', '分析摘要', row.analysisSummary),
-        field('importedData', '结构化参考', row.importedData),
+        field('note', '作者备注', row.note, 'rag.field.referenceNote'),
+        field('analysisSummary', '分析摘要', row.analysisSummary, 'rag.field.analysisSummary'),
+        field('importedData', '结构化参考', row.importedData, 'rag.field.importedData'),
       ],
     },
     {
@@ -307,6 +323,7 @@ function descriptors(): RagDescriptor<any>[] {
       table: db.itemLedger,
       sourceKey: 'itemLedger',
       sourceLabel: '角色物品流水',
+      sourceLabelKey: 'rag.source.itemLedger',
       title: (row: ItemLedgerEntry) => `${row.heldByName || '未知持有人'} · ${row.itemName}`,
       fields: (row: ItemLedgerEntry) => [
         field(
@@ -314,8 +331,9 @@ function descriptors(): RagDescriptor<any>[] {
           '物品事件',
           `${row.heldByName || '未知持有人'}${row.action === 'gain' ? '获得' : '消耗'}`
             + `${row.quantity} × ${row.itemName}${row.chapterTitle ? `（${row.chapterTitle}）` : ''}`,
+          'rag.field.itemEvent',
         ),
-        field('note', '物品备注', row.note),
+        field('note', '物品备注', row.note, 'rag.field.itemNote'),
       ],
     },
   ]

@@ -16,56 +16,57 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { EditorTypography } from '../../lib/editor-typography'
+import type { EditorKeys } from '../../i18n/generated-resources'
 
-const FONT_FAMILY_OPTIONS = [
-  { label: '默认正文', value: '', preview: 'var(--font-serif)' },
+const FONT_FAMILY_OPTIONS: { label: string; labelKey?: EditorKeys; value: string; preview?: string }[] = [
+  { label: '默认正文', labelKey: 'toolbar.defaultFont', value: '', preview: 'var(--font-serif)' },
   { label: '宋体', value: '"SimSun", "Songti SC", "Noto Serif CJK SC", serif', preview: '"SimSun", "Songti SC", serif' },
   { label: '黑体', value: '"SimHei", "Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif', preview: '"SimHei", "Microsoft YaHei", sans-serif' },
   { label: '仿宋', value: '"FangSong", "FangSong_GB2312", "STFangsong", serif', preview: '"FangSong", "STFangsong", serif' },
   { label: '楷体', value: '"KaiTi", "Kaiti SC", "STKaiti", serif', preview: '"KaiTi", "Kaiti SC", serif' },
   { label: '微软雅黑', value: '"Microsoft YaHei", "PingFang SC", sans-serif', preview: '"Microsoft YaHei", "PingFang SC", sans-serif' },
-] as const
+]
 
 const FONT_SIZE_OPTIONS = ['12px', '14px', '16px', '18px', '20px', '22px', '24px', '28px', '32px'] as const
-const LINE_HEIGHT_OPTIONS = [
-  { label: '默认行距', value: '' },
+const LINE_HEIGHT_OPTIONS: { label: string; labelKey?: EditorKeys; value: string }[] = [
+  { label: '默认行距', labelKey: 'toolbar.defaultLineHeight', value: '' },
   { label: '1.0', value: '1' },
   { label: '1.15', value: '1.15' },
   { label: '1.5', value: '1.5' },
   { label: '2.0', value: '2' },
   { label: '2.5', value: '2.5' },
   { label: '3.0', value: '3' },
-] as const
-const PARAGRAPH_SPACING_OPTIONS = [
-  { label: '默认段距', value: '' },
-  { label: '无段距', value: '0' },
+]
+const PARAGRAPH_SPACING_OPTIONS: { label: string; labelKey?: EditorKeys; value: string }[] = [
+  { label: '默认段距', labelKey: 'toolbar.defaultParagraphSpacing', value: '' },
+  { label: '无段距', labelKey: 'toolbar.noParagraphSpacing', value: '0' },
   { label: '0.5行', value: '0.5em' },
   { label: '1行', value: '1em' },
   { label: '1.5行', value: '1.5em' },
   { label: '2行', value: '2em' },
-] as const
+]
 
-const TEXT_COLOR_PRESETS = [
-  { label: '正文', value: 'var(--editor-ink-primary)' },
-  { label: '强黑/强白', value: 'var(--editor-ink-strong)' },
-  { label: '暖褐', value: 'var(--editor-ink-cream)' },
-  { label: '大黄', value: 'var(--editor-ink-gold)' },
-  { label: '橙红', value: 'var(--editor-ink-orange)' },
-  { label: '蓝', value: 'var(--editor-ink-blue)' },
-  { label: '绿', value: 'var(--editor-ink-green)' },
-  { label: '大红', value: 'var(--editor-ink-red)' },
-  { label: '紫', value: 'var(--editor-ink-purple)' },
-] as const
-const BACKGROUND_COLOR_PRESETS = [
-  { label: '清除文字背景色', value: '#00000000' },
-  { label: '黄底', value: 'var(--editor-mark-yellow)' },
-  { label: '红底', value: 'var(--editor-mark-red)' },
-  { label: '蓝底', value: 'var(--editor-mark-blue)' },
-  { label: '绿底', value: 'var(--editor-mark-green)' },
-  { label: '紫底', value: 'var(--editor-mark-purple)' },
-  { label: '褐底', value: 'var(--editor-mark-brown)' },
-  { label: '墨底', value: 'var(--editor-mark-ink)' },
-] as const
+const TEXT_COLOR_PRESETS: { label: string; labelKey?: EditorKeys; value: string }[] = [
+  { label: '正文', labelKey: 'toolbar.textColor.body', value: 'var(--editor-ink-primary)' },
+  { label: '强黑/强白', labelKey: 'toolbar.textColor.strong', value: 'var(--editor-ink-strong)' },
+  { label: '暖褐', labelKey: 'toolbar.textColor.cream', value: 'var(--editor-ink-cream)' },
+  { label: '大黄', labelKey: 'toolbar.textColor.gold', value: 'var(--editor-ink-gold)' },
+  { label: '橙红', labelKey: 'toolbar.textColor.orange', value: 'var(--editor-ink-orange)' },
+  { label: '蓝', labelKey: 'toolbar.textColor.blue', value: 'var(--editor-ink-blue)' },
+  { label: '绿', labelKey: 'toolbar.textColor.green', value: 'var(--editor-ink-green)' },
+  { label: '大红', labelKey: 'toolbar.textColor.red', value: 'var(--editor-ink-red)' },
+  { label: '紫', labelKey: 'toolbar.textColor.purple', value: 'var(--editor-ink-purple)' },
+]
+const BACKGROUND_COLOR_PRESETS: { label: string; labelKey?: EditorKeys; value: string }[] = [
+  { label: '清除文字背景色', labelKey: 'toolbar.bgColor.clear', value: '#00000000' },
+  { label: '黄底', labelKey: 'toolbar.bgColor.yellow', value: 'var(--editor-mark-yellow)' },
+  { label: '红底', labelKey: 'toolbar.bgColor.red', value: 'var(--editor-mark-red)' },
+  { label: '蓝底', labelKey: 'toolbar.bgColor.blue', value: 'var(--editor-mark-blue)' },
+  { label: '绿底', labelKey: 'toolbar.bgColor.green', value: 'var(--editor-mark-green)' },
+  { label: '紫底', labelKey: 'toolbar.bgColor.purple', value: 'var(--editor-mark-purple)' },
+  { label: '褐底', labelKey: 'toolbar.bgColor.brown', value: 'var(--editor-mark-brown)' },
+  { label: '墨底', labelKey: 'toolbar.bgColor.ink', value: 'var(--editor-mark-ink)' },
+]
 
 interface Props {
   typography: EditorTypography
@@ -143,7 +144,7 @@ export default function RichEditorToolbar({
         onChange={event => onTypographyChange({ fontFamily: event.target.value })}
         className={`${selectCls} w-32`} title={t('richToolbar.fontFamilyTitle')}>
         {FONT_FAMILY_OPTIONS.map(option => (
-          <option key={option.label} value={option.value} style={{ fontFamily: option.preview }}>{option.label}</option>
+          <option key={option.value || option.label} value={option.value} style={{ fontFamily: option.preview }}>{option.labelKey ? t(option.labelKey) : option.label}</option>
         ))}
       </select>
       <select aria-label={t('richToolbar.fontSize')} value={typography.fontSize}
@@ -155,12 +156,12 @@ export default function RichEditorToolbar({
       <select aria-label={t('richToolbar.lineHeight')} value={typography.lineHeight}
         onChange={event => onTypographyChange({ lineHeight: event.target.value })}
         className={`${selectCls} w-24`} title={t('richToolbar.lineHeightTitle')}>
-        {LINE_HEIGHT_OPTIONS.map(option => <option key={option.label} value={option.value}>{option.label}</option>)}
+        {LINE_HEIGHT_OPTIONS.map(option => <option key={option.value || option.label} value={option.value}>{option.labelKey ? t(option.labelKey) : option.label}</option>)}
       </select>
       <select aria-label={t('richToolbar.paragraphSpacing')} value={typography.paragraphSpacing}
         onChange={event => onTypographyChange({ paragraphSpacing: event.target.value })}
         className={`${selectCls} w-24`} title={t('richToolbar.paragraphSpacingTitle')}>
-        {PARAGRAPH_SPACING_OPTIONS.map(option => <option key={option.label} value={option.value}>{option.label}</option>)}
+        {PARAGRAPH_SPACING_OPTIONS.map(option => <option key={option.value || option.label} value={option.value}>{option.labelKey ? t(option.labelKey) : option.label}</option>)}
       </select>
       <div className="flex items-center gap-1 rounded-md border border-border bg-bg-surface px-1.5 py-1" title={t('richToolbar.textColor')}>
         <Palette className="h-3.5 w-3.5 text-text-muted" />
@@ -168,12 +169,15 @@ export default function RichEditorToolbar({
           onChange={event => onTextColorChange(event.target.value)}
           className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0" />
         <div className="hidden items-center gap-0.5 md:flex">
-          {TEXT_COLOR_PRESETS.map(color => (
-            <button key={color.label} type="button" aria-label={t('richToolbar.textColorAria', { name: color.label })}
-              onClick={() => onTextColorChange(color.value)}
-              className="h-4 w-4 rounded border border-border hover:border-accent"
-              style={{ backgroundColor: color.value }} />
-          ))}
+          {TEXT_COLOR_PRESETS.map(color => {
+            const displayName = color.labelKey ? t(color.labelKey) : color.label
+            return (
+              <button key={color.value} type="button" aria-label={t('richToolbar.textColorAria', { name: displayName })}
+                onClick={() => onTextColorChange(color.value)}
+                className="h-4 w-4 rounded border border-border hover:border-accent"
+                style={{ backgroundColor: color.value }} />
+            )
+          })}
         </div>
         <button type="button" onClick={onClearTextColor}
           className="px-1 text-[10px] text-text-muted hover:text-text-primary">{t('richToolbar.clear')}</button>
@@ -184,17 +188,20 @@ export default function RichEditorToolbar({
           onChange={event => onBackgroundColorChange(event.target.value)}
           className="h-5 w-6 cursor-pointer border-0 bg-transparent p-0" />
         <div className="hidden items-center gap-0.5 md:flex">
-          {BACKGROUND_COLOR_PRESETS.map(color => (
-            <button key={color.label} type="button" aria-label={color.label}
-              onClick={() => onBackgroundColorChange(color.value)}
-              className="h-4 w-4 rounded border border-border hover:border-accent"
-              style={{
-                backgroundColor: color.value === '#00000000' ? 'transparent' : color.value,
-                backgroundImage: color.value === '#00000000'
-                  ? 'linear-gradient(135deg, transparent 45%, var(--error) 46%, var(--error) 54%, transparent 55%)'
-                  : undefined,
-              }} />
-          ))}
+          {BACKGROUND_COLOR_PRESETS.map(color => {
+            const displayName = color.labelKey ? t(color.labelKey) : color.label
+            return (
+              <button key={color.value} type="button" aria-label={displayName}
+                onClick={() => onBackgroundColorChange(color.value)}
+                className="h-4 w-4 rounded border border-border hover:border-accent"
+                style={{
+                  backgroundColor: color.value === '#00000000' ? 'transparent' : color.value,
+                  backgroundImage: color.value === '#00000000'
+                    ? 'linear-gradient(135deg, transparent 45%, var(--error) 46%, var(--error) 54%, transparent 55%)'
+                    : undefined,
+                }} />
+            )
+          })}
         </div>
       </div>
       <div className="w-px h-5 bg-border mx-0.5" />

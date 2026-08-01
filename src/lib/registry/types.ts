@@ -315,6 +315,7 @@ export interface AssembleContextInput {
 export interface ContextSource {
   key: string
   label: string
+  labelKey?: string
   scope: ContextSourceScope
   layer: ContextLayer
   /** Approximate per-source soft cap. Adapters can still return less. */

@@ -506,7 +506,33 @@
     "polish": "💎 Revisar",
     "qualityReview": "Revisão de qualidade",
     "stopOrganizing": "Parar organização",
-    "viewOrganization": "Ver resultado da organização"
+    "viewOrganization": "Ver resultado da organização",
+    "defaultFont": "Texto padrão",
+    "defaultLineHeight": "Espaçamento padrão",
+    "defaultParagraphSpacing": "Parágrafo padrão",
+    "noParagraphSpacing": "Sem espaçamento",
+    "lineUnit": "linha(s)",
+    "textColor": {
+      "body": "Corpo",
+      "strong": "Preto forte/Branco forte",
+      "cream": "Marrom quente",
+      "gold": "Amarelo",
+      "orange": "Laranja",
+      "blue": "Azul",
+      "green": "Verde",
+      "red": "Vermelho",
+      "purple": "Roxo"
+    },
+    "bgColor": {
+      "clear": "Limpar cor de fundo",
+      "yellow": "Fundo amarelo",
+      "red": "Fundo vermelho",
+      "blue": "Fundo azul",
+      "green": "Fundo verde",
+      "purple": "Fundo roxo",
+      "brown": "Fundo marrom",
+      "ink": "Fundo tinta"
+    }
   },
   "richToolbar": {
     "fontFamily": "Família de Fonte",

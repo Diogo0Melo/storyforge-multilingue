@@ -46,7 +46,7 @@ function defaultNode(kind: NodeFlowKind, index: number): NodeFlowNode {
   const base = {
     id: nanoid(),
     kind,
-    title: definition.label,
+    title: definition.labelKey ? (i18n.t(`panels:${definition.labelKey}` as 'panels:nodeFlow.kind.inputText') as string) : definition.label,
     x: 100 + (index % 4) * 330,
     y: 90 + Math.floor(index / 4) * 250,
   }

@@ -59,6 +59,7 @@ export interface FactPredicateSpec {
   /** 谓词 key，如 location / powerStage / owns / relation */
   key: string
   label: string
+  labelKey?: string
   /** 该谓词允许的主体类型 */
   subjectTypes: FactEntityType[]
   /** ★区分 state/event/derived（§14.2 解 §12.4.4） */

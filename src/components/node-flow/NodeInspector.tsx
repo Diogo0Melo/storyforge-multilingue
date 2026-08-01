@@ -1,5 +1,6 @@
 import { Plus, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 import { nanoid } from 'nanoid'
 import { CONTEXT_SOURCES } from '../../lib/registry/context-sources'
 import type { NodeFlowGraph, NodeFlowNode, NodeValueType } from '../../lib/types'
@@ -134,7 +135,7 @@ export default function NodeInspector(props: {
                       className="mt-0.5 accent-[var(--color-accent)]"
                     />
                     <span>
-                      <span className="block text-[10px] text-text-secondary">{source.label}</span>
+                      <span className="block text-[10px] text-text-secondary">{source.labelKey ? t(source.labelKey as PanelsKeys) : source.label}</span>
                       <span className="block text-[9px] text-text-muted">{source.key} · {source.scope}</span>
                     </span>
                   </label>

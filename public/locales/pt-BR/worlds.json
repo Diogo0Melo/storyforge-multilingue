@@ -444,5 +444,24 @@
         "impact": { "0": "Cultivadores vs mortais", "1": "Poder vs autoridade", "2": "Sistemas de gestão" }
       }
     }
+  },
+  "factPredicate": {
+    "location": "Localização",
+    "aliveStatus": "Estado de vida",
+    "healthStatus": "Estado de saúde/lesão",
+    "powerStage": "Estágio de poder/cultivo",
+    "goal": "Objetivo/motivação atual",
+    "owns": "Posse/controle de item",
+    "knows": "Conhecimento",
+    "relation": "Relação entre personagens",
+    "legacyState": "Campo de estado legado",
+    "magicSource": "Fonte de poder sobrenatural",
+    "creationOrigin": "Origem da criação do mundo",
+    "deityAuthority": "Regras de autoridade divina",
+    "technologyLevel": "Nível tecnológico",
+    "powerCeiling": "Teto de poder",
+    "parentStatus": "Estado dos pais/guardiões",
+    "characterOrigin": "Origem do personagem",
+    "trueIdentity": "Identidade verdadeira"
   }
 }

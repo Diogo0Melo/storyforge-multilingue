@@ -765,5 +765,34 @@
         }
       }
     }
+  },
+  "usageLog": {
+    "chapterContent": "正文生成",
+    "chapterPolish": "正文润色",
+    "outline": "大纲生成",
+    "detail": "细纲生成",
+    "worldview": "世界观生成",
+    "storyTimeline": "故事年表提取",
+    "storyDesign": "故事设计生成",
+    "rules": "创作规则生成",
+    "character": "角色生成",
+    "foreshadow": "伏笔生成",
+    "storyArc": "故事线生成",
+    "stateExtract": "主角状态提取",
+    "factExtract": "事实抽取(NS-4)",
+    "retrievalEmbed": "语义索引(NS-5)",
+    "inventory": "物品提取",
+    "relation": "关系提取",
+    "sceneVerify": "场景考证",
+    "agent": "Agent 团队",
+    "review": "章节审校",
+    "codex": "词条/角色聚合",
+    "summary": "摘要生成",
+    "inspiration": "灵感反推",
+    "worldGroup": "世界建议",
+    "import": "导入解析",
+    "reference": "作品分析",
+    "test": "连接测试",
+    "other": "其他"
   }
 }

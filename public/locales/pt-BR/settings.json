@@ -810,5 +810,34 @@
         }
       }
     }
+  },
+  "usageLog": {
+    "chapterContent": "Geração de texto",
+    "chapterPolish": "Revisão de texto",
+    "outline": "Geração de outline",
+    "detail": "Geração de detalhe",
+    "worldview": "Geração de worldview",
+    "storyTimeline": "Extração de cronologia",
+    "storyDesign": "Design de história",
+    "rules": "Regras de criação",
+    "character": "Geração de personagem",
+    "foreshadow": "Geração de foreshadowing",
+    "storyArc": "Geração de arco",
+    "stateExtract": "Extração de estado",
+    "factExtract": "Extração de fatos (NS-4)",
+    "retrievalEmbed": "Indexação semântica (NS-5)",
+    "inventory": "Extração de itens",
+    "relation": "Extração de relações",
+    "sceneVerify": "Verificação de cena",
+    "agent": "Equipe Agent",
+    "review": "Revisão de capítulo",
+    "codex": "Agregação de codex/personagem",
+    "summary": "Geração de resumo",
+    "inspiration": "Retropolação de inspiração",
+    "worldGroup": "Sugestão de mundo",
+    "import": "Análise de importação",
+    "reference": "Análise de obra",
+    "test": "Teste de conexão",
+    "other": "Outros"
   }
 }

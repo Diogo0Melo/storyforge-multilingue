@@ -444,5 +444,24 @@
         "impact": { "0": "修士vs凡人", "1": "力量vs权力", "2": "管理制度" }
       }
     }
+  },
+  "factPredicate": {
+    "location": "所在地点",
+    "aliveStatus": "存亡状态",
+    "healthStatus": "健康/伤病状态",
+    "powerStage": "力量/修为阶段",
+    "goal": "当前目标/动机",
+    "owns": "持有物品/掌控",
+    "knows": "知晓/认知",
+    "relation": "人物关系",
+    "legacyState": "旧状态卡字段",
+    "magicSource": "超自然力量来源",
+    "creationOrigin": "世界创生来源",
+    "deityAuthority": "神明权柄规则",
+    "technologyLevel": "技术基线",
+    "powerCeiling": "力量上限",
+    "parentStatus": "父母/监护人状态",
+    "characterOrigin": "角色身世来源",
+    "trueIdentity": "真实身份"
   }
 }
