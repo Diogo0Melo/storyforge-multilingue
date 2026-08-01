@@ -13,7 +13,7 @@ import { buildAllWorldsOverview } from '../../lib/ai/world-group-context'
 import { db } from '../../lib/db/schema'
 import { adopt } from '../../lib/registry/adopt'
 import type { WorldGroup, WorldGroupType } from '../../lib/types'
-import { WORLD_GROUP_TYPE_LABELS } from '../../lib/types/world-group'
+import { WORLD_GROUP_TYPE_LABELS, WORLD_GROUP_TYPE_LABEL_KEYS } from '../../lib/types/world-group'
 
 const TYPE_OPTIONS: { value: WorldGroupType; labelKey: string }[] = [
   { value: 'primary', labelKey: 'worldGroup.typePrimary' },
@@ -32,7 +32,7 @@ interface Props {
 }
 
 export default function WorldGroupDetail({ group, onBack }: Props) {
-  const { t } = useTranslation('panels')
+  const { t } = useTranslation(['panels', 'common'])
   const { updateGroup } = useWorldGroupStore()
   const [form, setForm] = useState({
     name: '',
@@ -92,7 +92,7 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
     const sc = await db.storyCores.where('projectId').equals(group.projectId).first()
     const messages = buildWorldExpandPrompt({
       worldName: form.name,
-      worldType: WORLD_GROUP_TYPE_LABELS[form.type],
+      worldType: WORLD_GROUP_TYPE_LABELS[form.type], // AI prompt stays Chinese
       draft: form.description || group.name,
       otherWorlds,
       storyCore: sc?.mainPlot || sc?.theme || '',
@@ -151,7 +151,7 @@ export default function WorldGroupDetail({ group, onBack }: Props) {
           {form.name || t('worldGroup.unnamedWorld')}
         </h2>
         <p className="text-xs text-text-muted mt-0.5">
-          {WORLD_GROUP_TYPE_LABELS[form.type]}
+          {t(WORLD_GROUP_TYPE_LABEL_KEYS[form.type], { defaultValue: WORLD_GROUP_TYPE_LABELS[form.type] })}
           {form.plannedChapterCount ? ` · ${t('worldGroupDetail.plannedChapters', { count: form.plannedChapterCount })}` : ''}
         </p>
       </div>

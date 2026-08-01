@@ -71,7 +71,7 @@ import { useLocationStore } from '../stores/location'
 import { useWorldGroupStore } from '../stores/world-group'
 
 export default function WorkspacePage() {
-  const { t } = useTranslation('nav')
+  const { t } = useTranslation(['nav', 'common'])
   const { projectId } = useParams()
   const navigate = useNavigate()
   const { loadProject, projects, currentProjectId } = useProjectStore()
@@ -341,8 +341,8 @@ export default function WorkspacePage() {
                   return !value
                 })
               }}
-              title={showCopilot ? '关闭 AI 对话副驾' : '打开 AI 对话副驾'}
-              aria-label={showCopilot ? '关闭 AI 对话副驾' : '打开 AI 对话副驾'}
+              title={showCopilot ? t('common:workspace.toggleCopilot.close') : t('common:workspace.toggleCopilot.open')}
+              aria-label={showCopilot ? t('common:workspace.toggleCopilot.close') : t('common:workspace.toggleCopilot.open')}
               className={`shrink-0 rounded p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text-primary ${showCopilot ? 'text-accent' : ''}`}
             >
               <MessageSquare className="h-4 w-4" />
@@ -354,8 +354,8 @@ export default function WorkspacePage() {
                   return !value
                 })
               }}
-              title={showProperties ? '关闭属性面板' : '打开属性面板'}
-              aria-label={showProperties ? '关闭属性面板' : '打开属性面板'}
+              title={showProperties ? t('common:workspace.toggleProperties.close') : t('common:workspace.toggleProperties.open')}
+              aria-label={showProperties ? t('common:workspace.toggleProperties.close') : t('common:workspace.toggleProperties.open')}
               className={`shrink-0 rounded p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text-primary ${showProperties ? 'text-accent' : ''}`}
             >
               <PanelRight className="w-4 h-4" />

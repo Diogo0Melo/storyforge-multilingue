@@ -385,6 +385,8 @@
     "tabReview": "审校",
     "textQuote": "正文：\"{{quote}}\"",
     "trimmed": "裁剪 {{count}}",
+    "tokenInput": "输入",
+    "tokenOutput": "输出",
     "weaknesses": "⚠️ 薄弱"
   },
   "richEditor": {

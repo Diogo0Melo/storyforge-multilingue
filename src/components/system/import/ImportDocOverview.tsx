@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { Info } from 'lucide-react'
 import { FILE_LIMIT_HINTS } from '../../../lib/doc-parser'
 import type { ImportSession } from '../../../lib/types/import-session'
+import type { ImportKeys } from '../../../i18n/generated-resources'
 
 export function ImportDocIntro({ chunkSize }: { chunkSize: number }) {
   const { t } = useTranslation('import')
@@ -23,7 +24,7 @@ export function ImportDocIntro({ chunkSize }: { chunkSize: number }) {
           {FILE_LIMIT_HINTS.map(hint => (
             <div key={hint.ext} className="text-center px-2 py-1.5 bg-bg-base rounded">
               <div className="text-xs font-mono text-accent">.{hint.ext}</div>
-              <div className="text-[10px] text-text-muted">{hint.label}</div>
+              <div className="text-[10px] text-text-muted">{hint.labelKey ? t(hint.labelKey as ImportKeys) : hint.label}</div>
               <div className="text-xs text-text-primary font-medium">≤ {hint.mb} MB</div>
             </div>
           ))}

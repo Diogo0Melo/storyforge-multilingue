@@ -33,9 +33,13 @@ export interface CodexFieldDef {
   key: string
   /** 显示名（外观/品级/功效…） */
   label: string
+  /** i18n key for UI label */
+  labelKey?: string
   type: CodexFieldType
   /** select 选项 */
   options?: string[]
+  /** i18n keys for select options (parallel to options[]) */
+  optionKeys?: string[]
   /** ref 字段：建议指向哪类词条的 builtInKey（软提示，选择器仍可跨类） */
   refCategory?: string
   /** ref 字段是否允许多选（默认 true） */
@@ -168,7 +172,7 @@ export function stringifyEntryRefs(refs: Record<string, number[]>): string {
  *
  * - `target === undefined`：调用方明确未启用作用域过滤，返回全部（如项目级维护工具）。
  * - `target === null`：单世界数据，只读取尚未归属世界组的词条。
- * - `target === number`：多世界数据，只读取该世界的词条；null 不是“全局词条”。
+ * - `target === number`：多世界数据，只读取该世界的词条；null 不是"全局词条"。
  *
  * 开启多世界时，stampPrimaryWorld 会把既有 null 词条迁移到主世界。因此把 null
  * 继续视为全局会让迁移后新建错位数据泄漏到所有世界。
@@ -207,95 +211,95 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   {
     domain: 'natural', builtInKey: 'mineral', name: '矿物灵材', nameKey: 'codex.builtIn.mineral', icon: '⛏️',
     fields: [
-      { key: 'appearance', label: '外观', type: 'longtext', placeholder: '形状 / 颜色 / 质感' },
-      { key: 'rank', label: '品级品阶', type: 'select', options: PIN_JI_OPTIONS },
-      { key: 'effect', label: '功效作用', type: 'longtext' },
-      { key: 'origin', label: '产地分布', type: 'text' },
-      { key: 'rarity', label: '稀有度', type: 'select', options: ['常见', '稀少', '罕见', '珍稀', '绝世'] },
-      { key: 'craftInto', label: '可炼器物', type: 'ref', refCategory: 'artifact', refMulti: true },
+      { key: 'appearance', label: '外观', labelKey: 'codex.field.mineral.appearance', type: 'longtext', placeholder: '形状 / 颜色 / 质感' },
+      { key: 'rank', label: '品级品阶', labelKey: 'codex.field.mineral.rank', type: 'select', options: PIN_JI_OPTIONS, optionKeys: ['codex.field.mineral.rank.option.0', 'codex.field.mineral.rank.option.1', 'codex.field.mineral.rank.option.2', 'codex.field.mineral.rank.option.3', 'codex.field.mineral.rank.option.4', 'codex.field.mineral.rank.option.5'] },
+      { key: 'effect', label: '功效作用', labelKey: 'codex.field.mineral.effect', type: 'longtext' },
+      { key: 'origin', label: '产地分布', labelKey: 'codex.field.mineral.origin', type: 'text' },
+      { key: 'rarity', label: '稀有度', labelKey: 'codex.field.mineral.rarity', type: 'select', options: ['常见', '稀少', '罕见', '珍稀', '绝世'], optionKeys: ['codex.field.mineral.rarity.option.0', 'codex.field.mineral.rarity.option.1', 'codex.field.mineral.rarity.option.2', 'codex.field.mineral.rarity.option.3', 'codex.field.mineral.rarity.option.4'] },
+      { key: 'craftInto', label: '可炼器物', labelKey: 'codex.field.mineral.craftInto', type: 'ref', refCategory: 'artifact', refMulti: true },
     ],
   },
   {
     domain: 'natural', builtInKey: 'herb', name: '灵植草药', nameKey: 'codex.builtIn.herb', icon: '🌿',
     fields: [
-      { key: 'form', label: '形态', type: 'longtext' },
-      { key: 'effect', label: '药效', type: 'longtext' },
-      { key: 'rank', label: '品级', type: 'select', options: PIN_JI_OPTIONS },
-      { key: 'habitat', label: '生长环境', type: 'text' },
-      { key: 'maturity', label: '成熟周期', type: 'text' },
-      { key: 'difficulty', label: '采集难度', type: 'select', options: ['容易', '一般', '困难', '极难'] },
-      { key: 'craftInto', label: '可炼丹药', type: 'ref', refCategory: 'artifact', refMulti: true },
+      { key: 'form', label: '形态', labelKey: 'codex.field.herb.form', type: 'longtext' },
+      { key: 'effect', label: '药效', labelKey: 'codex.field.herb.effect', type: 'longtext' },
+      { key: 'rank', label: '品级', labelKey: 'codex.field.herb.rank', type: 'select', options: PIN_JI_OPTIONS, optionKeys: ['codex.field.herb.rank.option.0', 'codex.field.herb.rank.option.1', 'codex.field.herb.rank.option.2', 'codex.field.herb.rank.option.3', 'codex.field.herb.rank.option.4', 'codex.field.herb.rank.option.5'] },
+      { key: 'habitat', label: '生长环境', labelKey: 'codex.field.herb.habitat', type: 'text' },
+      { key: 'maturity', label: '成熟周期', labelKey: 'codex.field.herb.maturity', type: 'text' },
+      { key: 'difficulty', label: '采集难度', labelKey: 'codex.field.herb.difficulty', type: 'select', options: ['容易', '一般', '困难', '极难'], optionKeys: ['codex.field.herb.difficulty.option.0', 'codex.field.herb.difficulty.option.1', 'codex.field.herb.difficulty.option.2', 'codex.field.herb.difficulty.option.3'] },
+      { key: 'craftInto', label: '可炼丹药', labelKey: 'codex.field.herb.craftInto', type: 'ref', refCategory: 'artifact', refMulti: true },
     ],
   },
   {
     domain: 'natural', builtInKey: 'beast', name: '灵兽异兽', nameKey: 'codex.builtIn.beast', icon: '🐅',
     fields: [
-      { key: 'kind', label: '类别', type: 'select', options: ['走兽', '飞禽', '水族', '虫豸', '异种'] },
+      { key: 'kind', label: '类别', labelKey: 'codex.field.beast.kind', type: 'select', options: ['走兽', '飞禽', '水族', '虫豸', '异种'], optionKeys: ['codex.field.beast.kind.option.0', 'codex.field.beast.kind.option.1', 'codex.field.beast.kind.option.2', 'codex.field.beast.kind.option.3', 'codex.field.beast.kind.option.4'] },
       // WORLD-1 已有结构化关联；保留这两个旧文本字段承载老项目无法自动推断的数据。
-      { key: 'cultivation', label: '修炼体系（旧文本备注）', type: 'text', placeholder: '旧数据兼容；新数据请使用上方结构化关联' },
-      { key: 'realm', label: '境界（旧文本备注）', type: 'text' },
-      { key: 'body', label: '体型外貌', type: 'longtext' },
-      { key: 'habit', label: '习性性情', type: 'longtext' },
-      { key: 'habitat', label: '栖息地', type: 'text' },
-      { key: 'threat', label: '威胁等级', type: 'select', options: ['无害', '低危', '中危', '高危', '毁灭级'] },
-      { key: 'ability', label: '特殊能力', type: 'longtext' },
-      { key: 'drops', label: '可产出材料', type: 'ref', refCategory: 'artifact', refMulti: true },
+      { key: 'cultivation', label: '修炼体系（旧文本备注）', labelKey: 'codex.field.beast.cultivation', type: 'text', placeholder: '旧数据兼容；新数据请使用上方结构化关联' },
+      { key: 'realm', label: '境界（旧文本备注）', labelKey: 'codex.field.beast.realm', type: 'text' },
+      { key: 'body', label: '体型外貌', labelKey: 'codex.field.beast.body', type: 'longtext' },
+      { key: 'habit', label: '习性性情', labelKey: 'codex.field.beast.habit', type: 'longtext' },
+      { key: 'habitat', label: '栖息地', labelKey: 'codex.field.beast.habitat', type: 'text' },
+      { key: 'threat', label: '威胁等级', labelKey: 'codex.field.beast.threat', type: 'select', options: ['无害', '低危', '中危', '高危', '毁灭级'], optionKeys: ['codex.field.beast.threat.option.0', 'codex.field.beast.threat.option.1', 'codex.field.beast.threat.option.2', 'codex.field.beast.threat.option.3', 'codex.field.beast.threat.option.4'] },
+      { key: 'ability', label: '特殊能力', labelKey: 'codex.field.beast.ability', type: 'longtext' },
+      { key: 'drops', label: '可产出材料', labelKey: 'codex.field.beast.drops', type: 'ref', refCategory: 'artifact', refMulti: true },
     ],
   },
   // ── 人文环境 ──
   {
     domain: 'humanity', builtInKey: 'race', name: '种族民族', nameKey: 'codex.builtIn.race', icon: '🧬',
     fields: [
-      { key: 'appearance', label: '外貌特征', type: 'longtext' },
-      { key: 'talent', label: '种族天赋', type: 'longtext' },
-      { key: 'lifespan', label: '平均寿命', type: 'text' },
-      { key: 'population', label: '人口规模', type: 'text' },
-      { key: 'settlement', label: '聚居地', type: 'text' },
-      { key: 'custom', label: '文化习俗', type: 'longtext' },
-      { key: 'faith', label: '信仰', type: 'text' },
-      { key: 'relations', label: '与其他种族关系', type: 'longtext' },
-      { key: 'representatives', label: '代表人物', type: 'text' },
+      { key: 'appearance', label: '外貌特征', labelKey: 'codex.field.race.appearance', type: 'longtext' },
+      { key: 'talent', label: '种族天赋', labelKey: 'codex.field.race.talent', type: 'longtext' },
+      { key: 'lifespan', label: '平均寿命', labelKey: 'codex.field.race.lifespan', type: 'text' },
+      { key: 'population', label: '人口规模', labelKey: 'codex.field.race.population', type: 'text' },
+      { key: 'settlement', label: '聚居地', labelKey: 'codex.field.race.settlement', type: 'text' },
+      { key: 'custom', label: '文化习俗', labelKey: 'codex.field.race.custom', type: 'longtext' },
+      { key: 'faith', label: '信仰', labelKey: 'codex.field.race.faith', type: 'text' },
+      { key: 'relations', label: '与其他种族关系', labelKey: 'codex.field.race.relations', type: 'longtext' },
+      { key: 'representatives', label: '代表人物', labelKey: 'codex.field.race.representatives', type: 'text' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'faction', name: '势力', nameKey: 'codex.builtIn.faction', icon: '⚔️',
     fields: [
-      { key: 'type', label: '类型', type: 'select', options: ['门派', '朝廷', '商会', '部落', '教派', '世家', '其他'] },
-      { key: 'territory', label: '势力范围', type: 'text' },
-      { key: 'leader', label: '领导者', type: 'text' },
-      { key: 'coreMembers', label: '核心成员', type: 'longtext' },
-      { key: 'power', label: '实力等级', type: 'text' },
-      { key: 'goal', label: '宗旨目标', type: 'longtext' },
-      { key: 'relations', label: '敌友关系', type: 'longtext' },
-      { key: 'banner', label: '标志旗帜', type: 'text' },
-      { key: 'mapRegion', label: '绑定地图区域', type: 'text' },
-      { key: 'color', label: '颜色', type: 'text', placeholder: '如 #C17D5E' },
+      { key: 'type', label: '类型', labelKey: 'codex.field.faction.type', type: 'select', options: ['门派', '朝廷', '商会', '部落', '教派', '世家', '其他'], optionKeys: ['codex.field.faction.type.option.0', 'codex.field.faction.type.option.1', 'codex.field.faction.type.option.2', 'codex.field.faction.type.option.3', 'codex.field.faction.type.option.4', 'codex.field.faction.type.option.5', 'codex.field.faction.type.option.6'] },
+      { key: 'territory', label: '势力范围', labelKey: 'codex.field.faction.territory', type: 'text' },
+      { key: 'leader', label: '领导者', labelKey: 'codex.field.faction.leader', type: 'text' },
+      { key: 'coreMembers', label: '核心成员', labelKey: 'codex.field.faction.coreMembers', type: 'longtext' },
+      { key: 'power', label: '实力等级', labelKey: 'codex.field.faction.power', type: 'text' },
+      { key: 'goal', label: '宗旨目标', labelKey: 'codex.field.faction.goal', type: 'longtext' },
+      { key: 'relations', label: '敌友关系', labelKey: 'codex.field.faction.relations', type: 'longtext' },
+      { key: 'banner', label: '标志旗帜', labelKey: 'codex.field.faction.banner', type: 'text' },
+      { key: 'mapRegion', label: '绑定地图区域', labelKey: 'codex.field.faction.mapRegion', type: 'text' },
+      { key: 'color', label: '颜色', labelKey: 'codex.field.faction.color', type: 'text', placeholder: '如 #C17D5E' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'city', name: '城池重镇', nameKey: 'codex.builtIn.city', icon: '🏰',
     fields: [
-      { key: 'faction', label: '所属势力', type: 'ref', refCategory: 'faction', refMulti: false },
-      { key: 'locationNote', label: '位置备注（旧文本）', type: 'text', placeholder: '结构化位置请使用上方「重要地点」关联' },
-      { key: 'scale', label: '规模人口', type: 'text' },
-      { key: 'ruler', label: '统治者', type: 'text' },
-      { key: 'economy', label: '经济特产', type: 'longtext' },
-      { key: 'strategic', label: '战略地位', type: 'longtext' },
-      { key: 'style', label: '城市风貌', type: 'longtext' },
-      { key: 'landmark', label: '地标建筑', type: 'text' },
+      { key: 'faction', label: '所属势力', labelKey: 'codex.field.city.faction', type: 'ref', refCategory: 'faction', refMulti: false },
+      { key: 'locationNote', label: '位置备注（旧文本）', labelKey: 'codex.field.city.locationNote', type: 'text', placeholder: '结构化位置请使用上方「重要地点」关联' },
+      { key: 'scale', label: '规模人口', labelKey: 'codex.field.city.scale', type: 'text' },
+      { key: 'ruler', label: '统治者', labelKey: 'codex.field.city.ruler', type: 'text' },
+      { key: 'economy', label: '经济特产', labelKey: 'codex.field.city.economy', type: 'longtext' },
+      { key: 'strategic', label: '战略地位', labelKey: 'codex.field.city.strategic', type: 'longtext' },
+      { key: 'style', label: '城市风貌', labelKey: 'codex.field.city.style', type: 'longtext' },
+      { key: 'landmark', label: '地标建筑', labelKey: 'codex.field.city.landmark', type: 'text' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'artifact', name: '人工器物', nameKey: 'codex.builtIn.artifact', icon: '🗡️',
     fields: [
-      { key: 'type', label: '类别', type: 'select', options: ['武器', '防具', '法器', '丹药', '功法秘籍', '阵法', '材料', '其他'] },
-      { key: 'rank', label: '品级品阶', type: 'select', options: PIN_JI_OPTIONS },
-      { key: 'appearance', label: '外观', type: 'longtext' },
-      { key: 'effect', label: '能力效果', type: 'longtext' },
-      { key: 'craft', label: '炼制方式', type: 'longtext' },
-      { key: 'materials', label: '所需材料', type: 'ref', refCategory: 'mineral', refMulti: true },
-      { key: 'origin', label: '来历', type: 'longtext' },
-      { key: 'owner', label: '当前持有者', type: 'text' },
+      { key: 'type', label: '类别', labelKey: 'codex.field.artifact.type', type: 'select', options: ['武器', '防具', '法器', '丹药', '功法秘籍', '阵法', '材料', '其他'], optionKeys: ['codex.field.artifact.type.option.0', 'codex.field.artifact.type.option.1', 'codex.field.artifact.type.option.2', 'codex.field.artifact.type.option.3', 'codex.field.artifact.type.option.4', 'codex.field.artifact.type.option.5', 'codex.field.artifact.type.option.6', 'codex.field.artifact.type.option.7'] },
+      { key: 'rank', label: '品级品阶', labelKey: 'codex.field.artifact.rank', type: 'select', options: PIN_JI_OPTIONS, optionKeys: ['codex.field.artifact.rank.option.0', 'codex.field.artifact.rank.option.1', 'codex.field.artifact.rank.option.2', 'codex.field.artifact.rank.option.3', 'codex.field.artifact.rank.option.4', 'codex.field.artifact.rank.option.5'] },
+      { key: 'appearance', label: '外观', labelKey: 'codex.field.artifact.appearance', type: 'longtext' },
+      { key: 'effect', label: '能力效果', labelKey: 'codex.field.artifact.effect', type: 'longtext' },
+      { key: 'craft', label: '炼制方式', labelKey: 'codex.field.artifact.craft', type: 'longtext' },
+      { key: 'materials', label: '所需材料', labelKey: 'codex.field.artifact.materials', type: 'ref', refCategory: 'mineral', refMulti: true },
+      { key: 'origin', label: '来历', labelKey: 'codex.field.artifact.origin', type: 'longtext' },
+      { key: 'owner', label: '当前持有者', labelKey: 'codex.field.artifact.owner', type: 'text' },
     ],
   },
 
@@ -303,40 +307,40 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   {
     domain: 'natural', builtInKey: 'natStructure', name: '世界结构', nameKey: 'codex.builtIn.natStructure', icon: '🌐',
     fields: [
-      { key: 'type', label: '层级类型', type: 'text', placeholder: '如 星球 / 大陆 / 位面 / 平行空间' },
-      { key: 'scope', label: '范围', type: 'text' },
-      { key: 'feature', label: '特征说明', type: 'longtext' },
+      { key: 'type', label: '层级类型', labelKey: 'codex.field.natStructure.type', type: 'text', placeholder: '如 星球 / 大陆 / 位面 / 平行空间' },
+      { key: 'scope', label: '范围', labelKey: 'codex.field.natStructure.scope', type: 'text' },
+      { key: 'feature', label: '特征说明', labelKey: 'codex.field.natStructure.feature', type: 'longtext' },
     ],
   },
   {
     domain: 'natural', builtInKey: 'natDimension', name: '疆域版图', nameKey: 'codex.builtIn.natDimension', icon: '📐',
     fields: [
-      { key: 'scale', label: '尺度范围', type: 'text' },
-      { key: 'feature', label: '区域特征', type: 'longtext' },
+      { key: 'scale', label: '尺度范围', labelKey: 'codex.field.natDimension.scale', type: 'text' },
+      { key: 'feature', label: '区域特征', labelKey: 'codex.field.natDimension.feature', type: 'longtext' },
     ],
   },
   {
     domain: 'natural', builtInKey: 'natTerrain', name: '地貌', nameKey: 'codex.builtIn.natTerrain', icon: '🗺️',
     fields: [
-      { key: 'type', label: '类型', type: 'select', options: ['大陆', '山脉', '高原', '平原', '盆地', '丘陵', '峡谷', '沙漠', '森林', '其他'] },
-      { key: 'location', label: '位置', type: 'text' },
-      { key: 'feature', label: '地形特征', type: 'longtext' },
+      { key: 'type', label: '类型', labelKey: 'codex.field.natTerrain.type', type: 'select', options: ['大陆', '山脉', '高原', '平原', '盆地', '丘陵', '峡谷', '沙漠', '森林', '其他'], optionKeys: ['codex.field.natTerrain.type.option.0', 'codex.field.natTerrain.type.option.1', 'codex.field.natTerrain.type.option.2', 'codex.field.natTerrain.type.option.3', 'codex.field.natTerrain.type.option.4', 'codex.field.natTerrain.type.option.5', 'codex.field.natTerrain.type.option.6', 'codex.field.natTerrain.type.option.7', 'codex.field.natTerrain.type.option.8', 'codex.field.natTerrain.type.option.9'] },
+      { key: 'location', label: '位置', labelKey: 'codex.field.natTerrain.location', type: 'text' },
+      { key: 'feature', label: '地形特征', labelKey: 'codex.field.natTerrain.feature', type: 'longtext' },
     ],
   },
   {
     domain: 'natural', builtInKey: 'natWater', name: '山川水系', nameKey: 'codex.builtIn.natWater', icon: '⛰️',
     fields: [
-      { key: 'type', label: '类型', type: 'select', options: ['山脉', '山峰', '河流', '湖泊', '海洋', '运河', '瀑布', '其他'] },
-      { key: 'scale', label: '规模', type: 'text' },
-      { key: 'feature', label: '特征', type: 'longtext' },
+      { key: 'type', label: '类型', labelKey: 'codex.field.natWater.type', type: 'select', options: ['山脉', '山峰', '河流', '湖泊', '海洋', '运河', '瀑布', '其他'], optionKeys: ['codex.field.natWater.type.option.0', 'codex.field.natWater.type.option.1', 'codex.field.natWater.type.option.2', 'codex.field.natWater.type.option.3', 'codex.field.natWater.type.option.4', 'codex.field.natWater.type.option.5', 'codex.field.natWater.type.option.6', 'codex.field.natWater.type.option.7'] },
+      { key: 'scale', label: '规模', labelKey: 'codex.field.natWater.scale', type: 'text' },
+      { key: 'feature', label: '特征', labelKey: 'codex.field.natWater.feature', type: 'longtext' },
     ],
   },
   {
     domain: 'natural', builtInKey: 'natClimate', name: '气候带', nameKey: 'codex.builtIn.natClimate', icon: '🌦️',
     fields: [
-      { key: 'region', label: '所在区域', type: 'text' },
-      { key: 'type', label: '气候类型', type: 'text', placeholder: '如 温带 / 苦寒 / 湿热' },
-      { key: 'hazard', label: '季节/自然灾害', type: 'longtext' },
+      { key: 'region', label: '所在区域', labelKey: 'codex.field.natClimate.region', type: 'text' },
+      { key: 'type', label: '气候类型', labelKey: 'codex.field.natClimate.type', type: 'text', placeholder: '如 温带 / 苦寒 / 湿热' },
+      { key: 'hazard', label: '季节/自然灾害', labelKey: 'codex.field.natClimate.hazard', type: 'longtext' },
     ],
   },
 
@@ -344,58 +348,58 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   {
     domain: 'humanity', builtInKey: 'humEra', name: '历史时代', nameKey: 'codex.builtIn.humEra', icon: '📜',
     fields: [
-      { key: 'period', label: '时间/纪年', type: 'text' },
-      { key: 'feature', label: '时代特征/大事', type: 'longtext' },
+      { key: 'period', label: '时间/纪年', labelKey: 'codex.field.humEra.period', type: 'text' },
+      { key: 'feature', label: '时代特征/大事', labelKey: 'codex.field.humEra.feature', type: 'longtext' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'humEvent', name: '重大事件', nameKey: 'codex.builtIn.humEvent', icon: '📅',
     fields: [
-      { key: 'type', label: '类型', type: 'select', options: ['战争', '王朝兴替', '灾劫', '变法', '发现', '其他'] },
-      { key: 'time', label: '发生时间', type: 'text' },
-      { key: 'impact', label: '影响', type: 'longtext' },
+      { key: 'type', label: '类型', labelKey: 'codex.field.humEvent.type', type: 'select', options: ['战争', '王朝兴替', '灾劫', '变法', '发现', '其他'], optionKeys: ['codex.field.humEvent.type.option.0', 'codex.field.humEvent.type.option.1', 'codex.field.humEvent.type.option.2', 'codex.field.humEvent.type.option.3', 'codex.field.humEvent.type.option.4', 'codex.field.humEvent.type.option.5'] },
+      { key: 'time', label: '发生时间', labelKey: 'codex.field.humEvent.time', type: 'text' },
+      { key: 'impact', label: '影响', labelKey: 'codex.field.humEvent.impact', type: 'longtext' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'humSociety', name: '政经文化', nameKey: 'codex.builtIn.humSociety', icon: '🏛️',
     fields: [
-      { key: 'type', label: '类别', type: 'select', options: ['政体', '货币', '赋税', '阶层制度', '宗教信仰', '风俗节庆', '其他'] },
-      { key: 'detail', label: '说明', type: 'longtext' },
+      { key: 'type', label: '类别', labelKey: 'codex.field.humSociety.type', type: 'select', options: ['政体', '货币', '赋税', '阶层制度', '宗教信仰', '风俗节庆', '其他'], optionKeys: ['codex.field.humSociety.type.option.0', 'codex.field.humSociety.type.option.1', 'codex.field.humSociety.type.option.2', 'codex.field.humSociety.type.option.3', 'codex.field.humSociety.type.option.4', 'codex.field.humSociety.type.option.5', 'codex.field.humSociety.type.option.6'] },
+      { key: 'detail', label: '说明', labelKey: 'codex.field.humSociety.detail', type: 'longtext' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'humPolitics', name: '政治制度', nameKey: 'codex.builtIn.humPolitics', icon: '🏛️',
     fields: [
-      { key: 'type', label: '制度类型', type: 'select', options: ['政体', '官制', '法律', '军事', '外交', '阶层', '其他'] },
-      { key: 'scope', label: '适用范围', type: 'text' },
-      { key: 'authority', label: '权力主体', type: 'text' },
-      { key: 'detail', label: '制度说明', type: 'longtext' },
+      { key: 'type', label: '制度类型', labelKey: 'codex.field.humPolitics.type', type: 'select', options: ['政体', '官制', '法律', '军事', '外交', '阶层', '其他'], optionKeys: ['codex.field.humPolitics.type.option.0', 'codex.field.humPolitics.type.option.1', 'codex.field.humPolitics.type.option.2', 'codex.field.humPolitics.type.option.3', 'codex.field.humPolitics.type.option.4', 'codex.field.humPolitics.type.option.5', 'codex.field.humPolitics.type.option.6'] },
+      { key: 'scope', label: '适用范围', labelKey: 'codex.field.humPolitics.scope', type: 'text' },
+      { key: 'authority', label: '权力主体', labelKey: 'codex.field.humPolitics.authority', type: 'text' },
+      { key: 'detail', label: '制度说明', labelKey: 'codex.field.humPolitics.detail', type: 'longtext' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'humEconomy', name: '经济制度', nameKey: 'codex.builtIn.humEconomy', icon: '💰',
     fields: [
-      { key: 'type', label: '制度类型', type: 'select', options: ['货币', '税赋', '贸易', '产业', '资源分配', '金融', '其他'] },
-      { key: 'scope', label: '流通范围', type: 'text' },
-      { key: 'actors', label: '主要参与者', type: 'text' },
-      { key: 'detail', label: '制度说明', type: 'longtext' },
+      { key: 'type', label: '制度类型', labelKey: 'codex.field.humEconomy.type', type: 'select', options: ['货币', '税赋', '贸易', '产业', '资源分配', '金融', '其他'], optionKeys: ['codex.field.humEconomy.type.option.0', 'codex.field.humEconomy.type.option.1', 'codex.field.humEconomy.type.option.2', 'codex.field.humEconomy.type.option.3', 'codex.field.humEconomy.type.option.4', 'codex.field.humEconomy.type.option.5', 'codex.field.humEconomy.type.option.6'] },
+      { key: 'scope', label: '流通范围', labelKey: 'codex.field.humEconomy.scope', type: 'text' },
+      { key: 'actors', label: '主要参与者', labelKey: 'codex.field.humEconomy.actors', type: 'text' },
+      { key: 'detail', label: '制度说明', labelKey: 'codex.field.humEconomy.detail', type: 'longtext' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'humCulture', name: '文化制度', nameKey: 'codex.builtIn.humCulture', icon: '🎭',
     fields: [
-      { key: 'type', label: '文化类型', type: 'select', options: ['语言', '宗教', '教育', '礼仪', '节庆', '艺术', '习俗', '其他'] },
-      { key: 'region', label: '流行区域/群体', type: 'text' },
-      { key: 'taboo', label: '禁忌', type: 'text' },
-      { key: 'detail', label: '文化说明', type: 'longtext' },
+      { key: 'type', label: '文化类型', labelKey: 'codex.field.humCulture.type', type: 'select', options: ['语言', '宗教', '教育', '礼仪', '节庆', '艺术', '习俗', '其他'], optionKeys: ['codex.field.humCulture.type.option.0', 'codex.field.humCulture.type.option.1', 'codex.field.humCulture.type.option.2', 'codex.field.humCulture.type.option.3', 'codex.field.humCulture.type.option.4', 'codex.field.humCulture.type.option.5', 'codex.field.humCulture.type.option.6', 'codex.field.humCulture.type.option.7'] },
+      { key: 'region', label: '流行区域/群体', labelKey: 'codex.field.humCulture.region', type: 'text' },
+      { key: 'taboo', label: '禁忌', labelKey: 'codex.field.humCulture.taboo', type: 'text' },
+      { key: 'detail', label: '文化说明', labelKey: 'codex.field.humCulture.detail', type: 'longtext' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'humConflict', name: '矛盾冲突', nameKey: 'codex.builtIn.humConflict', icon: '🔥',
     fields: [
-      { key: 'type', label: '类型', type: 'text', placeholder: '如 阶级 / 种族 / 信仰 / 资源' },
-      { key: 'sides', label: '对立方', type: 'text' },
-      { key: 'tension', label: '张力/根源', type: 'longtext' },
+      { key: 'type', label: '类型', labelKey: 'codex.field.humConflict.type', type: 'text', placeholder: '如 阶级 / 种族 / 信仰 / 资源' },
+      { key: 'sides', label: '对立方', labelKey: 'codex.field.humConflict.sides', type: 'text' },
+      { key: 'tension', label: '张力/根源', labelKey: 'codex.field.humConflict.tension', type: 'longtext' },
     ],
   },
 
@@ -403,17 +407,17 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   {
     domain: 'origin', builtInKey: 'originPower', name: '力量层级', nameKey: 'codex.builtIn.originPower', icon: '⚡',
     fields: [
-      { key: 'rank', label: '等级/层级', type: 'text' },
-      { key: 'mark', label: '核心标志', type: 'longtext' },
-      { key: 'condition', label: '晋升条件', type: 'longtext' },
+      { key: 'rank', label: '等级/层级', labelKey: 'codex.field.originPower.rank', type: 'text' },
+      { key: 'mark', label: '核心标志', labelKey: 'codex.field.originPower.mark', type: 'longtext' },
+      { key: 'condition', label: '晋升条件', labelKey: 'codex.field.originPower.condition', type: 'longtext' },
     ],
   },
   {
     domain: 'origin', builtInKey: 'originDeity', name: '神明信仰', nameKey: 'codex.builtIn.originDeity', icon: '🌟',
     fields: [
-      { key: 'type', label: '类型', type: 'select', options: ['主神', '次神', '半神', '国教', '民间信仰', '邪神', '其他'] },
-      { key: 'title', label: '名号/职司', type: 'text' },
-      { key: 'rule', label: '规则/禁忌', type: 'longtext' },
+      { key: 'type', label: '类型', labelKey: 'codex.field.originDeity.type', type: 'select', options: ['主神', '次神', '半神', '国教', '民间信仰', '邪神', '其他'], optionKeys: ['codex.field.originDeity.type.option.0', 'codex.field.originDeity.type.option.1', 'codex.field.originDeity.type.option.2', 'codex.field.originDeity.type.option.3', 'codex.field.originDeity.type.option.4', 'codex.field.originDeity.type.option.5', 'codex.field.originDeity.type.option.6'] },
+      { key: 'title', label: '名号/职司', labelKey: 'codex.field.originDeity.title', type: 'text' },
+      { key: 'rule', label: '规则/禁忌', labelKey: 'codex.field.originDeity.rule', type: 'longtext' },
     ],
   },
 ]

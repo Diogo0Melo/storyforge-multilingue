@@ -165,6 +165,8 @@ export interface PromptTemplate {
   /** i18n key for UI display name */
   nameKey?: string
   description: string
+  /** i18n key for UI display description */
+  descriptionKey?: string
   systemPrompt: string
   userPromptTemplate: string
   variables: string[]

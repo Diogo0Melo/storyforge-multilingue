@@ -32,14 +32,46 @@ export type OutlineWorkshopStage = typeof OUTLINE_WORKSHOP_STAGES[number]
 
 export const OUTLINE_WORKSHOP_STAGE_META: Record<OutlineWorkshopStage, {
   title: string
+  titleKey?: string
   description: string
+  descKey?: string
   calls: number
 }> = {
-  scan: { title: '现状扫描', description: '找出本章必须承接的状态、伏笔和边界', calls: 1 },
-  motivation: { title: '动机推演', description: '逐角色明确此刻欲望、恐惧与认知限制', calls: 1 },
-  collision: { title: '碰撞预演', description: '让动机自然相撞，形成至少三步反应链', calls: 1 },
-  quality: { title: '质量闸门', description: '软性反套路审查 + 物品/认知/宪法闭集硬查', calls: 1 },
-  scenes: { title: '场景卡', description: '收敛为可采纳场景卡与不可写清单', calls: 1 },
+  scan: {
+    title: '现状扫描',
+    titleKey: 'workshop.scan.title',
+    description: '找出本章必须承接的状态、伏笔和边界',
+    descKey: 'workshop.scan.desc',
+    calls: 1,
+  },
+  motivation: {
+    title: '动机推演',
+    titleKey: 'workshop.motivation.title',
+    description: '逐角色明确此刻欲望、恐惧与认知限制',
+    descKey: 'workshop.motivation.desc',
+    calls: 1,
+  },
+  collision: {
+    title: '碰撞预演',
+    titleKey: 'workshop.collision.title',
+    description: '让动机自然相撞，形成至少三步反应链',
+    descKey: 'workshop.collision.desc',
+    calls: 1,
+  },
+  quality: {
+    title: '质量闸门',
+    titleKey: 'workshop.quality.title',
+    description: '软性反套路审查 + 物品/认知/宪法闭集硬查',
+    descKey: 'workshop.quality.desc',
+    calls: 1,
+  },
+  scenes: {
+    title: '场景卡',
+    titleKey: 'workshop.scenes.title',
+    description: '收敛为可采纳场景卡与不可写清单',
+    descKey: 'workshop.scenes.desc',
+    calls: 1,
+  },
 }
 
 export type OutlineWorkshopArtifacts = Partial<Record<OutlineWorkshopStage, string>>

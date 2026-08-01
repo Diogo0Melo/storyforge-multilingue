@@ -14,12 +14,14 @@ export type CanonAssertionSourceTable =
 export interface CanonAssertionSourceFieldSpec {
   field: string
   label: string
+  labelKey?: string
   predicates: readonly string[]
 }
 
 export interface CanonAssertionSourceSpec {
   table: CanonAssertionSourceTable
   label: string
+  labelKey?: string
   fields: readonly CanonAssertionSourceFieldSpec[]
 }
 
@@ -27,50 +29,55 @@ export const CANON_ASSERTION_SOURCE_REGISTRY: readonly CanonAssertionSourceSpec[
   {
     table: 'worldviews',
     label: '世界观',
+    labelKey: 'panels:canonSource.worldviews',
     fields: [
-      { field: 'worldOrigin', label: '世界来源', predicates: ['magicSource', 'creationOrigin', 'deityAuthority', 'technologyLevel'] },
-      { field: 'powerHierarchy', label: '力量体系', predicates: ['magicSource', 'deityAuthority', 'powerCeiling'] },
-      { field: 'divineDesign', label: '神明设定', predicates: ['deityAuthority'] },
-      { field: 'worldStructure', label: '世界结构', predicates: ['technologyLevel'] },
-      { field: 'politicsOverview', label: '政治制度', predicates: ['technologyLevel'] },
-      { field: 'economyOverview', label: '经济制度', predicates: ['technologyLevel'] },
-      { field: 'cultureOverview', label: '文化制度', predicates: ['technologyLevel'] },
-      { field: 'politicsEconomyCulture', label: '政治经济文化', predicates: ['technologyLevel'] },
+      { field: 'worldOrigin', label: '世界来源', labelKey: 'panels:canonSource.worldOrigin', predicates: ['magicSource', 'creationOrigin', 'deityAuthority', 'technologyLevel'] },
+      { field: 'powerHierarchy', label: '力量体系', labelKey: 'panels:canonSource.powerHierarchy', predicates: ['magicSource', 'deityAuthority', 'powerCeiling'] },
+      { field: 'divineDesign', label: '神明设定', labelKey: 'panels:canonSource.divineDesign', predicates: ['deityAuthority'] },
+      { field: 'worldStructure', label: '世界结构', labelKey: 'panels:canonSource.worldStructure', predicates: ['technologyLevel'] },
+      { field: 'politicsOverview', label: '政治制度', labelKey: 'panels:canonSource.politicsOverview', predicates: ['technologyLevel'] },
+      { field: 'economyOverview', label: '经济制度', labelKey: 'panels:canonSource.economyOverview', predicates: ['technologyLevel'] },
+      { field: 'cultureOverview', label: '文化制度', labelKey: 'panels:canonSource.cultureOverview', predicates: ['technologyLevel'] },
+      { field: 'politicsEconomyCulture', label: '政治经济文化', labelKey: 'panels:canonSource.politicsEconomyCulture', predicates: ['technologyLevel'] },
     ],
   },
   {
     table: 'powerSystems',
     label: '力量体系',
+    labelKey: 'panels:canonSource.powerSystems',
     fields: [
-      { field: 'description', label: '体系描述', predicates: ['magicSource'] },
-      { field: 'levels', label: '力量等级', predicates: ['powerCeiling'] },
-      { field: 'rules', label: '体系规则', predicates: ['magicSource', 'deityAuthority', 'powerCeiling'] },
+      { field: 'description', label: '体系描述', labelKey: 'panels:canonSource.powerSystemDescription', predicates: ['magicSource'] },
+      { field: 'levels', label: '力量等级', labelKey: 'panels:canonSource.powerLevels', predicates: ['powerCeiling'] },
+      { field: 'rules', label: '体系规则', labelKey: 'panels:canonSource.powerRules', predicates: ['magicSource', 'deityAuthority', 'powerCeiling'] },
     ],
   },
   {
     table: 'cultivationSystems',
     label: '修炼体系',
+    labelKey: 'panels:canonSource.cultivationSystems',
     fields: [
-      { field: 'description', label: '流派描述', predicates: ['magicSource', 'powerCeiling'] },
-      { field: 'stages', label: '境界图谱', predicates: ['powerCeiling'] },
+      { field: 'description', label: '流派描述', labelKey: 'panels:canonSource.cultivationDescription', predicates: ['magicSource', 'powerCeiling'] },
+      { field: 'stages', label: '境界图谱', labelKey: 'panels:canonSource.cultivationStages', predicates: ['powerCeiling'] },
     ],
   },
   {
     table: 'storyCores',
     label: '故事核心',
+    labelKey: 'panels:canonSource.storyCores',
     fields: [
-      { field: 'logline', label: '一句话故事', predicates: ['parentStatus', 'characterOrigin', 'trueIdentity'] },
-      { field: 'concept', label: '故事概念', predicates: ['parentStatus', 'characterOrigin', 'trueIdentity'] },
-      { field: 'mainPlot', label: '故事主线', predicates: ['parentStatus', 'characterOrigin', 'trueIdentity'] },
+      { field: 'logline', label: '一句话故事', labelKey: 'panels:canonSource.logline', predicates: ['parentStatus', 'characterOrigin', 'trueIdentity'] },
+      { field: 'concept', label: '故事概念', labelKey: 'panels:canonSource.concept', predicates: ['parentStatus', 'characterOrigin', 'trueIdentity'] },
+      { field: 'mainPlot', label: '故事主线', labelKey: 'panels:canonSource.mainPlot', predicates: ['parentStatus', 'characterOrigin', 'trueIdentity'] },
     ],
   },
   {
     table: 'characters',
     label: '角色档案',
+    labelKey: 'panels:canonSource.characters',
     fields: [
-      { field: 'background', label: '背景故事', predicates: ['parentStatus', 'characterOrigin', 'trueIdentity'] },
-      { field: 'relationships', label: '关系描述', predicates: ['parentStatus'] },
-      { field: 'identity', label: '身份', predicates: ['characterOrigin', 'trueIdentity'] },
+      { field: 'background', label: '背景故事', labelKey: 'panels:canonSource.background', predicates: ['parentStatus', 'characterOrigin', 'trueIdentity'] },
+      { field: 'relationships', label: '关系描述', labelKey: 'panels:canonSource.relationships', predicates: ['parentStatus'] },
+      { field: 'identity', label: '身份', labelKey: 'panels:canonSource.identity', predicates: ['characterOrigin', 'trueIdentity'] },
     ],
   },
 ])

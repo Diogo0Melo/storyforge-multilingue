@@ -128,7 +128,39 @@
   "aiStream.tokenUsageTitle": "Entrada {{input}} + Saída {{output}}",
   "aiStream.viewRaw": "Ver dados brutos",
   "backup": {
-    "snapshotNotFound": "Snapshot não encontrado"
+    "snapshotNotFound": "Snapshot não encontrado",
+    "autoSnapshotName": "Backup automático {{time}}"
+  },
+  "workspace": {
+    "toggleCopilot": {
+      "close": "Fechar copiloto de IA",
+      "open": "Abrir copiloto de IA"
+    },
+    "toggleProperties": {
+      "close": "Fechar painel de propriedades",
+      "open": "Abrir painel de propriedades"
+    }
+  },
+  "year": {
+    "unspecified": "Ano não especificado",
+    "epoch": "Origem da Era",
+    "ce": "{{year}} d.C.",
+    "bce": "{{year}} a.C."
+  },
+  "fileFormat": {
+    "plainText": "Texto simples"
+  },
+  "world": {
+    "defaultName": "Mundo Principal",
+    "defaultDescription": "O mundo principal onde a história se passa"
+  },
+  "worldGroupType": {
+    "primary": "Mundo Principal",
+    "traversal": "Objeto de Travessia",
+    "instance": "Mundo de Instância",
+    "parallel": "Mundo Paralelo",
+    "ascension": "Reino Superior/Dimensional",
+    "custom": "Personalizado"
   },
   "beforeUnload.confirm": "Você tem conteúdo não salvo. Deseja realmente sair?",
   "cancel": "Cancelar",

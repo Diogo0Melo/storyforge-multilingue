@@ -203,6 +203,7 @@ function descriptors(): RagDescriptor<any>[] {
       sourceLabel: '角色档案',
       sourceLabelKey: 'rag.source.characters',
       title: (row: Character) => row.name || `角色 #${row.id}`,
+      titleKey: 'rag.title.character',
       visible: (row: Character, context) => (
         !!row.isCrossWorld || exactWorld(row.homeWorldGroupId, context.worldGroupId)
       ),

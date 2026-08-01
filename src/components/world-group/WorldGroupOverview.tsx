@@ -9,7 +9,7 @@ import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
 import { buildWorldSuggestPrompt, parseWorldSuggestOutput, type SuggestedWorld } from '../../lib/ai/world-group-ai'
 import { buildAllWorldsOverview } from '../../lib/ai/world-group-context'
-import { WORLD_GROUP_TYPE_LABELS, WORLD_LINK_TYPE_LABELS } from '../../lib/types/world-group'
+import { WORLD_GROUP_TYPE_LABELS, WORLD_GROUP_TYPE_LABEL_KEYS, WORLD_LINK_TYPE_LABELS } from '../../lib/types/world-group'
 import type { Project, WorldGroup, WorldGroupType, WorldGroupLinkType } from '../../lib/types'
 import WorldGroupDetail from './WorldGroupDetail'
 import WorldRelationGraph from './WorldRelationGraph'
@@ -199,7 +199,7 @@ export default function WorldGroupOverview({ project }: Props) {
                           <div className="flex items-center gap-1.5">
                             <span className="text-sm font-medium text-text-primary">{w.name}</span>
                             <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-bg-elevated text-text-muted border border-border/50">
-                              {WORLD_GROUP_TYPE_LABELS[w.type]}
+                              {t(WORLD_GROUP_TYPE_LABEL_KEYS[w.type], { defaultValue: WORLD_GROUP_TYPE_LABELS[w.type] })}
                             </span>
                             {w.plannedChapterCount > 0 && (
                               <span className="text-[10px] text-text-muted">{t('worldGroup.chapters', { count: w.plannedChapterCount })}</span>
@@ -245,7 +245,7 @@ export default function WorldGroupOverview({ project }: Props) {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-text-primary truncate">{g.name}</span>
                       <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-bg-elevated text-text-muted border border-border/50">
-                        {WORLD_GROUP_TYPE_LABELS[g.type]}
+                        {t(WORLD_GROUP_TYPE_LABEL_KEYS[g.type], { defaultValue: WORLD_GROUP_TYPE_LABELS[g.type] })}
                       </span>
                     </div>
                     {g.description && (
@@ -420,7 +420,7 @@ export default function WorldGroupOverview({ project }: Props) {
                             <span className="text-text-primary">{g.name}</span>
                           </span>
                         </td>
-                        <td className="py-2 px-3 text-text-muted text-xs">{WORLD_GROUP_TYPE_LABELS[g.type]}</td>
+                        <td className="py-2 px-3 text-text-muted text-xs">{t(WORLD_GROUP_TYPE_LABEL_KEYS[g.type], { defaultValue: WORLD_GROUP_TYPE_LABELS[g.type] })}</td>
                         <td className="py-2 px-3 text-text-muted">{g.plannedChapterCount || '—'}</td>
                         <td className="py-2 px-3 text-text-muted text-xs truncate max-w-[200px]">{g.entryCondition || '—'}</td>
                         <td className="py-2 px-3 text-text-muted text-xs truncate max-w-[200px]">{g.powerRestriction || '—'}</td>

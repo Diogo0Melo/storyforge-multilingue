@@ -31,8 +31,8 @@ export const UNSUPPORTED_EXTS = ['doc'] as const
 export const ACCEPT_ATTR = '.txt,.md,.csv,.pdf,.docx'
 
 /** 人类可读的大小说明（给 UI 用） */
-export const FILE_LIMIT_HINTS: Array<{ ext: string; label: string; mb: number }> = [
-  { ext: 'txt',  label: '纯文本',   mb: FILE_SIZE_LIMITS.txt  / 1024 / 1024 },
+export const FILE_LIMIT_HINTS: Array<{ ext: string; label: string; labelKey?: string; mb: number }> = [
+  { ext: 'txt',  label: '纯文本',   labelKey: 'common:fileFormat.plainText', mb: FILE_SIZE_LIMITS.txt  / 1024 / 1024 },
   { ext: 'md',   label: 'Markdown', mb: FILE_SIZE_LIMITS.md   / 1024 / 1024 },
   { ext: 'csv',  label: 'CSV',      mb: FILE_SIZE_LIMITS.csv  / 1024 / 1024 },
   { ext: 'pdf',  label: 'PDF',      mb: FILE_SIZE_LIMITS.pdf  / 1024 / 1024 },

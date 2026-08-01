@@ -11,6 +11,7 @@ import { create } from 'zustand'
 import { db } from '../lib/db/schema'
 import type { WorldNode, WorldPortal } from '../lib/types'
 import { parseWorldPortals, stringifyWorldPortals } from '../lib/utils/world-portals'
+import i18n from '../i18n/i18n'
 
 /** 树形节点（带 children） */
 export interface WorldTreeNode extends WorldNode {
@@ -225,8 +226,8 @@ export const useWorldNodeStore = create<WorldNodeStore>((set, get) => ({
         const root: WorldNode = {
           projectId,
           parentId: null,
-          name: '主世界',
-          description: '故事发生的主要世界',
+          name: i18n.t('common:world.defaultName'),
+          description: i18n.t('common:world.defaultDescription'),
           sortOrder: 0,
           icon: '🌍',
           worldGroupId,

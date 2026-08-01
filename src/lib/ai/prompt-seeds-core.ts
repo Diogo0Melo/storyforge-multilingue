@@ -180,6 +180,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-世界观维度生成',
     nameKey: 'prompt.seed.worldviewDimension',
     description: '为世界观的单个维度（地理/历史/社会/文化/经济/规则/摘要）生成内容。',
+    descriptionKey: 'prompt.seed.worldviewDimension.desc',
     systemPrompt: WORLDVIEW_SYSTEM,
     userPromptTemplate: `小说名称：{{projectName}}
 小说类型：{{genres}}
@@ -213,6 +214,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-角色完整设计',
     nameKey: 'prompt.seed.characterFullDesign',
     description: '基于世界观和已有角色，设计一个新角色的完整资料。',
+    descriptionKey: 'prompt.seed.characterFullDesign.desc',
     systemPrompt: CHARACTER_SYSTEM,
     userPromptTemplate: `小说：{{projectName}}（{{genres}}）
 
@@ -255,6 +257,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-角色维度补全',
     nameKey: 'prompt.seed.characterDimensionFill',
     description: '为指定角色的某个维度（背景/性格/能力等）补充约 200-400 字的细节。',
+    descriptionKey: 'prompt.seed.characterDimensionFill.desc',
     systemPrompt: CHARACTER_SYSTEM,
     userPromptTemplate: `角色：{{characterName}}
 已有信息：{{characterInfo}}
@@ -278,6 +281,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-卷级大纲生成',
     nameKey: 'prompt.seed.volumeOutline',
     description: '基于世界观与故事核心生成全书的卷级大纲。',
+    descriptionKey: 'prompt.seed.volumeOutline.desc',
     systemPrompt: OUTLINE_SYSTEM,
     userPromptTemplate: `小说名称：{{projectName}}
 小说类型：{{genres}}
@@ -323,6 +327,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-章节大纲展开',
     nameKey: 'prompt.seed.chapterOutlineExpand',
     description: '将单卷展开为 15-25 章的章节大纲。',
+    descriptionKey: 'prompt.seed.chapterOutlineExpand.desc',
     systemPrompt: OUTLINE_SYSTEM,
     userPromptTemplate: `请将下面这一卷展开为章节大纲。
 
@@ -376,6 +381,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-长篇连载（默认）',
     nameKey: 'prompt.seed.longSerialDefault',
     description: '通用男频网文风格的章节正文生成，支持基调/节奏/字数三个可调参数。',
+    descriptionKey: 'prompt.seed.longSerialDefault.desc',
     isDefault: true,
     systemPrompt: CHAPTER_SYSTEM,
     userPromptTemplate: `请根据以下信息写一章小说正文：
@@ -441,6 +447,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-章节续写',
     nameKey: 'prompt.seed.chapterContinue',
     description: '从已有正文末尾继续往下写约 1000-2000 字。',
+    descriptionKey: 'prompt.seed.chapterContinue.desc',
     systemPrompt: CHAPTER_SYSTEM,
     userPromptTemplate: `请续写以下小说正文，保持风格和情节连贯：
 
@@ -478,6 +485,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-章节连续性记忆',
     nameKey: 'prompt.seed.chapterMemory',
     description: '一次调用同时提取章节摘要、下一章承接 handoff 与计划正文对账；引文 offset 由系统回查，不信任模型位置。',
+    descriptionKey: 'prompt.seed.chapterMemory.desc',
     isDefault: true,
     systemPrompt: `你是长篇小说的章节连续性记忆抽取器。只根据给定正文提取，不补写、不推测未来、不混入其他章节信息。
 
@@ -546,6 +554,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-文本润色',
     nameKey: 'prompt.seed.textPolish',
     description: '按用户指令润色文本，保持原意不变。',
+    descriptionKey: 'prompt.seed.textPolish.desc',
     systemPrompt: POLISH_SYSTEM,
     userPromptTemplate: `指令：{{instruction}}
 
@@ -568,6 +577,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-文本扩写',
     nameKey: 'prompt.seed.textExpand',
     description: '将文本扩展丰富，增加细节、心理与环境，情节走向不变。',
+    descriptionKey: 'prompt.seed.textExpand.desc',
     systemPrompt: EXPAND_SYSTEM,
     userPromptTemplate: `{{#if userHint}}要求：{{userHint}}
 
@@ -593,6 +603,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-去 AI 味改写',
     nameKey: 'prompt.seed.deAiRewrite',
     description: '把 AI 味重的文本改写得更像真人写的。',
+    descriptionKey: 'prompt.seed.deAiRewrite.desc',
     systemPrompt: DEAI_SYSTEM,
     userPromptTemplate: `{{text}}`,
     variables: ['text'],
@@ -612,6 +623,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-伏笔建议',
     nameKey: 'prompt.seed.foreshadowSuggest',
     description: '基于世界观、角色和已有伏笔，建议 3-5 个新伏笔。',
+    descriptionKey: 'prompt.seed.foreshadowSuggest.desc',
     systemPrompt: FORESHADOW_SYSTEM,
     userPromptTemplate: `小说名称：{{projectName}}
 小说类型：{{genres}}{{#if worldContext}}
@@ -649,6 +661,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-角色关系提取',
     nameKey: 'prompt.seed.characterRelationExtract',
     description: '从大纲摘要和章节正文中自动提取角色间的关系。',
+    descriptionKey: 'prompt.seed.characterRelationExtract.desc',
     systemPrompt: `你是一位专业的小说角色关系分析师。你的任务是从给定的文本素材中提取所有角色之间的关系。
 
 分析要求：
@@ -707,6 +720,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-概念地图 SVG',
     nameKey: 'prompt.seed.conceptMapSvg',
     description: '基于地点列表生成奇幻风格的 SVG 概念地图。',
+    descriptionKey: 'prompt.seed.conceptMapSvg.desc',
     systemPrompt: CONCEPT_MAP_SYSTEM,
     userPromptTemplate: `世界总述：{{overview}}
 
@@ -726,6 +740,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-地图图像 Prompt',
     nameKey: 'prompt.seed.mapImagePrompt',
     description: '生成 Midjourney/DALL-E/SD 的世界地图绘图 prompt。',
+    descriptionKey: 'prompt.seed.mapImagePrompt.desc',
     systemPrompt: '',
     userPromptTemplate: `{{imageStyle}}, top-down view, detailed cartography, {{projectName}} world, featuring locations: {{locationNames}}, terrain types: {{locationTypes}}, ornate compass rose, decorative border, illustrated mountains forests oceans, old map aesthetic, warm sepia tones with color accents, highly detailed, 4k, --ar 16:9`,
     variables: ['imageStyle', 'projectName', 'locationNames', 'locationTypes'],
@@ -740,6 +755,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-故事核心生成',
     nameKey: 'prompt.seed.storyCore',
     description: '基于已有世界观和用户提示，生成故事的某个维度（一句话/概念/主题/核心冲突等）。',
+    descriptionKey: 'prompt.seed.storyCore.desc',
     systemPrompt: `你是一位资深的故事架构师，擅长在世界观基础上构思引人入胜的故事核心{{#if usesTone}}（基调：{{tone}}）{{/if}}。
 
 设计原则：
@@ -777,6 +793,7 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
     name: '内置-创作规则生成',
     nameKey: 'prompt.seed.creativeRules',
     description: '基于项目类型和世界观，建议适配的创作规则（风格/视角/基调/禁忌等）。',
+    descriptionKey: 'prompt.seed.creativeRules.desc',
     systemPrompt: `你是一位资深的创作顾问，擅长帮作者明确创作规则与风格约束，避免后续行文偏移{{#if usesStrictness}}（约束力度：{{strictness}}）{{/if}}。
 
 输出要求：

@@ -421,6 +421,8 @@
     "trimmed": "Cortados {{count}}",
     "trimmed_one": "Cortado {{count}}",
     "trimmed_other": "Cortados {{count}}",
+    "tokenInput": "Entrada",
+    "tokenOutput": "Saída",
     "weaknesses": "⚠️ Pontos fracos"
   },
   "richEditor": {

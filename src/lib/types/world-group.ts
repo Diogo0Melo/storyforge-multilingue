@@ -84,6 +84,16 @@ export const WORLD_GROUP_TYPE_LABELS: Record<WorldGroupType, string> = {
   custom: '自定义',
 }
 
+/** 世界组类型标签键（用于 i18n） */
+export const WORLD_GROUP_TYPE_LABEL_KEYS = {
+  primary: 'worldGroup.typePrimary',
+  traversal: 'worldGroup.typeTraversal',
+  instance: 'worldGroup.typeInstance',
+  parallel: 'worldGroup.typeParallel',
+  ascension: 'worldGroup.typeAscension',
+  custom: 'worldGroup.typeCustom',
+} as const satisfies Record<WorldGroupType, string>
+
 /** 世界关系类型标签 */
 export const WORLD_LINK_TYPE_LABELS: Record<WorldGroupLinkType, string> = {
   portal: '传送门',

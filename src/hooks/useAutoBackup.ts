@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { useBackupStore, AUTO_BACKUP_INTERVAL } from '../stores/backup'
+import i18n from '../i18n/i18n'
 
 /**
  * 自动定时备份 Hook
@@ -23,7 +24,7 @@ export function useAutoBackup(projectId: number | null) {
       try {
         const now = new Date()
         const timeStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')} ${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-        await createSnapshot(projectId, `自动备份 ${timeStr}`, 'auto')
+        await createSnapshot(projectId, i18n.t('common:backup.autoSnapshotName', { time: timeStr }), 'auto')
       } catch (err) {
         console.error('[AutoBackup] 创建快照失败:', err)
       }

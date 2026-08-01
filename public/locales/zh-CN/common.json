@@ -126,7 +126,39 @@
   "aiStream.tokenUsageTitle": "输入 {{input}} + 输出 {{output}}",
   "aiStream.viewRaw": "查看原始数据",
   "backup": {
-    "snapshotNotFound": "快照不存在"
+    "snapshotNotFound": "快照不存在",
+    "autoSnapshotName": "自动备份 {{time}}"
+  },
+  "workspace": {
+    "toggleCopilot": {
+      "close": "关闭 AI 对话副驾",
+      "open": "打开 AI 对话副驾"
+    },
+    "toggleProperties": {
+      "close": "关闭属性面板",
+      "open": "打开属性面板"
+    }
+  },
+  "year": {
+    "unspecified": "年份未指定",
+    "epoch": "纪年原点",
+    "ce": "公元 {{year}} 年",
+    "bce": "公元前 {{year}} 年"
+  },
+  "fileFormat": {
+    "plainText": "纯文本"
+  },
+  "world": {
+    "defaultName": "主世界",
+    "defaultDescription": "故事发生的主要世界"
+  },
+  "worldGroupType": {
+    "primary": "主世界",
+    "traversal": "穿越目标",
+    "instance": "副本世界",
+    "parallel": "平行世界",
+    "ascension": "上界/高维",
+    "custom": "自定义"
   },
   "beforeUnload.confirm": "你有未保存的内容，确定要离开吗？",
   "cancel": "取消",

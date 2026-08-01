@@ -222,16 +222,16 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `outline.character-driven` | `src/components/outline/CharacterDrivenPlotPanel.tsx:200` |
 | `outline.character-revision` | `src/components/outline/CharacterRevisionPanel.tsx:171` |
 | `outline.volume` | `src/lib/outline/generation-node.ts:51` |
-| `outline.workshop.collision` | `src/lib/outline/workshop.ts:449` |
-| `outline.workshop.motivation` | `src/lib/outline/workshop.ts:446` |
-| `outline.workshop.scan` | `src/lib/outline/workshop.ts:443` |
-| `outline.workshop.scenes` | `src/lib/outline/workshop.ts:454` |
+| `outline.workshop.collision` | `src/lib/outline/workshop.ts:481` |
+| `outline.workshop.motivation` | `src/lib/outline/workshop.ts:478` |
+| `outline.workshop.scan` | `src/lib/outline/workshop.ts:475` |
+| `outline.workshop.scenes` | `src/lib/outline/workshop.ts:486` |
 | `prompt.examples` | `src/components/settings/prompt/PromptExamplesEditor.tsx:83` |
 | `reference.characters` | `src/components/project/AnalysisReportViewer.tsx:156` |
 | `reference.summary` | `src/components/project/AnalysisReportViewer.tsx:124` |
 | `relation.extract` | `src/components/relations/CharacterRelationPanel.tsx:91` |
 | `review.anti-ai` | `src/components/editor/ReviewPanel.tsx:108` |
-| `review.outline-workshop` | `src/lib/outline/workshop.ts:452` |
+| `review.outline-workshop` | `src/lib/outline/workshop.ts:484` |
 | `review.quality` | `src/components/editor/ReviewPanel.tsx:100` |
 | `review.readability` | `src/components/editor/ReviewPanel.tsx:117` |
 | `review.revise` | `src/components/editor/ChapterEditor.tsx:771` |
@@ -262,4 +262,4 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ---
 
-生成时间基准:commit `5196ef1`
+生成时间基准:commit `6eda574`

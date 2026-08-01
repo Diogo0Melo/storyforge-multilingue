@@ -275,7 +275,7 @@ export default function ReviewPanel(props: Props) {
           </div>
         )}
         {ai.tokenUsage && !ai.isStreaming && (
-          <div className="text-[10px] text-text-muted mb-2" title={`输入 ${ai.tokenUsage.inputTokens} + 输出 ${ai.tokenUsage.outputTokens}`}>
+          <div className="text-[10px] text-text-muted mb-2" title={`${t('review.tokenInput')} ${ai.tokenUsage.inputTokens} + ${t('review.tokenOutput')} ${ai.tokenUsage.outputTokens}`}>
             Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
           </div>
         )}

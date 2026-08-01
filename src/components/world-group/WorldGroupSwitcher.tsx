@@ -6,7 +6,7 @@ import { useState, useRef, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown } from 'lucide-react'
 import { useWorldGroupStore } from '../../stores/world-group'
-import { WORLD_GROUP_TYPE_LABELS } from '../../lib/types/world-group'
+import { WORLD_GROUP_TYPE_LABEL_KEYS } from '../../lib/types/world-group'
 
 export default function WorldGroupSwitcher() {
   const { t } = useTranslation('panels')
@@ -54,7 +54,7 @@ export default function WorldGroupSwitcher() {
               <span className="text-base shrink-0">{g.icon || '🌐'}</span>
               <div className="flex-1 min-w-0">
                 <div className="truncate font-medium">{g.name}</div>
-                <div className="text-[10px] text-text-muted">{WORLD_GROUP_TYPE_LABELS[g.type]}</div>
+                <div className="text-[10px] text-text-muted">{t(WORLD_GROUP_TYPE_LABEL_KEYS[g.type])}</div>
               </div>
               {g.id === activeGroupId && (
                 <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
