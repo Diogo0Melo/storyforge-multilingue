@@ -7,6 +7,7 @@ export const VOLUME_OUTLINE_PARAMETERS: PromptParameter[] = [
     labelKey: 'settings:prompt.parameters.pace',
     type: 'select',
     options: ['慢', '中', '快', '极快'],
+    optionKeys: ['settings:prompt.parameters.paceOption.0', 'settings:prompt.parameters.paceOption.1', 'settings:prompt.parameters.paceOption.2', 'settings:prompt.parameters.paceOption.3'],
     default: '中',
     description: '影响每卷信息密度',
     optional: true,

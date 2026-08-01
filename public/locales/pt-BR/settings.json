@@ -222,6 +222,9 @@
       "detailLevel": "Nível de Detalhe",
       "pace": "Ritmo Geral",
       "volumeCount": "Volumes Sugeridos",
+      "toneOption": { "0": "Sério", "1": "Épico", "2": "Lírico", "3": "Hardcore", "4": "Fantasia Leve" },
+      "detailLevelOption": { "0": "Uma frase", "1": "Breve", "2": "Médio", "3": "Detalhado" },
+      "paceOption": { "0": "Lento", "1": "Médio", "2": "Rápido", "3": "Muito Rápido" },
       "types": {
         "boolean": "Interruptor",
         "number": "Número",

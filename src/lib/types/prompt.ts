@@ -129,6 +129,8 @@ export interface PromptParameter {
   type: 'select' | 'slider' | 'number' | 'text' | 'boolean'
   /** select 类型的可选项（label 与 value 同） */
   options?: string[]
+  /** i18n keys for select options (parallel array to options) */
+  optionKeys?: string[]
   /** slider/number 范围 */
   min?: number
   max?: number

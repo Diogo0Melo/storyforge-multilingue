@@ -120,7 +120,7 @@ export default function PromptRunPanel({
         <div className="flex items-center gap-2">
           <Settings2 className="w-3.5 h-3.5 text-text-secondary" />
           <span className="text-text-secondary">{t('promptRun.currentTemplate')}</span>
-          <span className="text-text-primary font-medium">{tpl.name}</span>
+          <span className="text-text-primary font-medium">{tpl.nameKey ? t(tpl.nameKey, tpl.name) : tpl.name}</span>
           {dirty && (
             <span className="px-1.5 py-0.5 rounded bg-warning/15 text-warning text-[10px]">
               {t('promptRun.tempAdjusted')}
@@ -241,7 +241,7 @@ function ParamControl({
         />
       )}
       <label className={`w-20 flex-shrink-0 ${enabled ? 'text-text-secondary' : 'text-text-muted line-through'}`}>
-        {param.label}
+        {param.labelKey ? t(param.labelKey, param.label) : param.label}
       </label>
       {param.type === 'select' && (
         <select
@@ -250,7 +250,7 @@ function ParamControl({
           disabled={!enabled}
           className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-text-primary disabled:opacity-50 focus:outline-none focus:border-accent"
         >
-          {(param.options || []).map(opt => <option key={opt} value={opt}>{opt}</option>)}
+          {(param.options || []).map((opt, i) => <option key={opt} value={opt}>{param.optionKeys?.[i] ? t(param.optionKeys[i]!, opt) : opt}</option>)}
         </select>
       )}
       {param.type === 'slider' && (

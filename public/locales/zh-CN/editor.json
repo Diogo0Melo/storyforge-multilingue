@@ -94,7 +94,18 @@
     "readerFeelingPlaceholder": "期望读者感受",
     "regenerate": "重新生成",
     "sceneGoalPlaceholder": "场景目标",
-    "title": "情感节拍"
+    "title": "情感节拍",
+    "tone": {
+      "tense": "紧张",
+      "warm": "温馨",
+      "sad": "悲伤",
+      "joyful": "欢乐",
+      "angry": "愤怒",
+      "fear": "恐惧",
+      "calm": "平静",
+      "shocking": "震撼",
+      "anticipation": "期待"
+    }
   },
   "entityType": {
     "character": "角色",

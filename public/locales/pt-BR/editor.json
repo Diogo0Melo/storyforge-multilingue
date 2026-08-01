@@ -106,7 +106,18 @@
     "readerFeelingPlaceholder": "Sentimento esperado do leitor",
     "regenerate": "Gerar novamente",
     "sceneGoalPlaceholder": "Objetivo da cena",
-    "title": "Batidas emocionais"
+    "title": "Batidas emocionais",
+    "tone": {
+      "tense": "Tenso",
+      "warm": "Acolhedor",
+      "sad": "Triste",
+      "joyful": "Alegre",
+      "angry": "Raivoso",
+      "fear": "Medo",
+      "calm": "Calmo",
+      "shocking": "Impactante",
+      "anticipation": "Expectativa"
+    }
   },
   "entityType": {
     "character": "Personagem",

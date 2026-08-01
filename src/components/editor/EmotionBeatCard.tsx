@@ -6,6 +6,7 @@ import { CInput } from '../../components/shared/CompositionInput'
 import { useState, useEffect } from 'react'
 import { Heart, Sparkles, ChevronUp, Trash2, Edit3, Save, Plus, X, RotateCcw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import type { TFunction } from 'i18next'
 import { useEmotionBeatStore } from '../../stores/emotion-beat'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
@@ -35,11 +36,35 @@ const TONE_COLORS: Record<string, string> = {
   '期待': 'bg-cyan-500/15 text-cyan-400',
 }
 
+/** i18n keys for displaying emotion tones (data stays Chinese, display is localized) */
+const EMOTION_TONE_LABEL_KEYS: Record<string, string> = {
+  '紧张': 'emotionBeat.tone.tense',
+  '温馨': 'emotionBeat.tone.warm',
+  '悲伤': 'emotionBeat.tone.sad',
+  '欢乐': 'emotionBeat.tone.joyful',
+  '愤怒': 'emotionBeat.tone.angry',
+  '恐惧': 'emotionBeat.tone.fear',
+  '平静': 'emotionBeat.tone.calm',
+  '震撼': 'emotionBeat.tone.shocking',
+  '期待': 'emotionBeat.tone.anticipation',
+}
+
 function getToneColor(tone: string): string {
   for (const [key, cls] of Object.entries(TONE_COLORS)) {
     if (tone.includes(key)) return cls
   }
   return 'bg-bg-elevated text-text-muted'
+}
+
+function getEmotionToneLabel(tone: string, t: TFunction<'editor'>): string {
+  // Exact match first
+  const exactKey = EMOTION_TONE_LABEL_KEYS[tone]
+  if (exactKey) return t(exactKey, tone)
+  // Fuzzy match: AI may generate variations like "紧张不安" containing "紧张"
+  for (const [chinese, key] of Object.entries(EMOTION_TONE_LABEL_KEYS)) {
+    if (tone.includes(chinese)) return t(key, tone)
+  }
+  return tone // Unknown tone, display as-is
 }
 
 export default function EmotionBeatCard({
@@ -266,7 +291,7 @@ export default function EmotionBeatCard({
                 <div className="flex items-center gap-2 mb-0.5">
                   <span className="font-medium text-text-primary">{beat.label}</span>
                   <span className={`px-1.5 py-0.5 rounded text-[10px] ${getToneColor(beat.emotionTone)}`}>
-                    {beat.emotionTone}
+                    {getEmotionToneLabel(beat.emotionTone, t)}
                   </span>
                 </div>
                 <div className="text-text-muted space-y-0.5">
