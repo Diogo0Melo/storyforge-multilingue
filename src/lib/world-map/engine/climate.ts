@@ -6,19 +6,19 @@ import type { GridCells, BiomeDef } from './types'
 
 /** 生态群落定义 — 标准等高线地形图配色 */
 export const BIOMES: BiomeDef[] = [
-  { id: 0, name: '海洋',       color: '#6baed6', habitability: 0,   moveCost: 10 },
-  { id: 1, name: '热带沙漠',   color: '#e8d5a3', habitability: 4,   moveCost: 200 },
-  { id: 2, name: '寒带荒漠',   color: '#c9b98a', habitability: 10,  moveCost: 150 },
-  { id: 3, name: '热带草原',   color: '#c6e2a0', habitability: 22,  moveCost: 60 },
-  { id: 4, name: '温带草原',   color: '#a8d86e', habitability: 30,  moveCost: 50 },
-  { id: 5, name: '热带季风林', color: '#6abf5b', habitability: 50,  moveCost: 70 },
-  { id: 6, name: '温带落叶林', color: '#3da33d', habitability: 100, moveCost: 70 },
-  { id: 7, name: '热带雨林',   color: '#1e8a1e', habitability: 80,  moveCost: 80 },
-  { id: 8, name: '温带雨林',   color: '#2d8c2d', habitability: 90,  moveCost: 90 },
-  { id: 9, name: '针叶林',     color: '#4a7a3b', habitability: 12,  moveCost: 200 },
-  { id: 10, name: '苔原',      color: '#b8c9a0', habitability: 4,   moveCost: 1000 },
-  { id: 11, name: '冰川',      color: '#eaf0f6', habitability: 0,   moveCost: 5000 },
-  { id: 12, name: '湿地',      color: '#7fb5a0', habitability: 12,  moveCost: 150 },
+  { id: 0, name: '海洋',       nameKey: 'geography.biome.ocean',             color: '#6baed6', habitability: 0,   moveCost: 10 },
+  { id: 1, name: '热带沙漠',   nameKey: 'geography.biome.tropicalDesert',    color: '#e8d5a3', habitability: 4,   moveCost: 200 },
+  { id: 2, name: '寒带荒漠',   nameKey: 'geography.biome.coldDesert',        color: '#c9b98a', habitability: 10,  moveCost: 150 },
+  { id: 3, name: '热带草原',   nameKey: 'geography.biome.tropicalSavanna',   color: '#c6e2a0', habitability: 22,  moveCost: 60 },
+  { id: 4, name: '温带草原',   nameKey: 'geography.biome.temperateGrassland', color: '#a8d86e', habitability: 30,  moveCost: 50 },
+  { id: 5, name: '热带季风林', nameKey: 'geography.biome.tropicalMonsoon',   color: '#6abf5b', habitability: 50,  moveCost: 70 },
+  { id: 6, name: '温带落叶林', nameKey: 'geography.biome.temperateDeciduous', color: '#3da33d', habitability: 100, moveCost: 70 },
+  { id: 7, name: '热带雨林',   nameKey: 'geography.biome.tropicalRainforest', color: '#1e8a1e', habitability: 80,  moveCost: 80 },
+  { id: 8, name: '温带雨林',   nameKey: 'geography.biome.temperateRainforest', color: '#2d8c2d', habitability: 90,  moveCost: 90 },
+  { id: 9, name: '针叶林',     nameKey: 'geography.biome.borealForest',      color: '#4a7a3b', habitability: 12,  moveCost: 200 },
+  { id: 10, name: '苔原',      nameKey: 'geography.biome.tundra',            color: '#b8c9a0', habitability: 4,   moveCost: 1000 },
+  { id: 11, name: '冰川',      nameKey: 'geography.biome.glacier',           color: '#eaf0f6', habitability: 0,   moveCost: 5000 },
+  { id: 12, name: '湿地',      nameKey: 'geography.biome.wetland',           color: '#7fb5a0', habitability: 12,  moveCost: 150 },
 ]
 
 /**

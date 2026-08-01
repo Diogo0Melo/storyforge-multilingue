@@ -5,6 +5,15 @@ import type {
   CharacterRole,
   CharacterRoleWeight,
 } from '../types'
+import type { CharactersKeys } from '../../i18n/generated-resources'
+import i18n from '../../i18n/i18n'
+
+export const ROLE_WEIGHT_LABEL_KEYS = {
+  main: 'axes.roleWeight.main',
+  secondary: 'axes.roleWeight.secondary',
+  npc: 'axes.roleWeight.npc',
+  extra: 'axes.roleWeight.extra',
+} as const satisfies Record<CharacterRoleWeight, CharactersKeys>
 
 export const ROLE_WEIGHT_LABELS: Record<CharacterRoleWeight, string> = {
   main: '主要',
@@ -13,11 +22,23 @@ export const ROLE_WEIGHT_LABELS: Record<CharacterRoleWeight, string> = {
   extra: '路人',
 }
 
+export const MORAL_AXIS_LABEL_KEYS = {
+  good: 'axes.moralAxis.good',
+  neutral: 'axes.moralAxis.neutral',
+  evil: 'axes.moralAxis.evil',
+} as const satisfies Record<CharacterMoralAxis, CharactersKeys>
+
 export const MORAL_AXIS_LABELS: Record<CharacterMoralAxis, string> = {
   good: '善良',
   neutral: '中立',
   evil: '邪恶',
 }
+
+export const ORDER_AXIS_LABEL_KEYS = {
+  lawful: 'axes.orderAxis.lawful',
+  neutral: 'axes.orderAxis.neutral',
+  chaotic: 'axes.orderAxis.chaotic',
+} as const satisfies Record<CharacterOrderAxis, CharactersKeys>
 
 export const ORDER_AXIS_LABELS: Record<CharacterOrderAxis, string> = {
   lawful: '守序',
@@ -115,7 +136,7 @@ export function normalizeCharacterAxes(
 export function characterAxesLabel(
   character: Pick<Character, 'roleWeight' | 'moralAxis' | 'orderAxis'>,
 ): string {
-  return `${ROLE_WEIGHT_LABELS[character.roleWeight]} · ${ORDER_AXIS_LABELS[character.orderAxis]}${MORAL_AXIS_LABELS[character.moralAxis]}`
+  return `${i18n.t(ROLE_WEIGHT_LABEL_KEYS[character.roleWeight], { ns: 'characters' })} · ${i18n.t(ORDER_AXIS_LABEL_KEYS[character.orderAxis], { ns: 'characters' })}${i18n.t(MORAL_AXIS_LABEL_KEYS[character.moralAxis], { ns: 'characters' })}`
 }
 
 export function moralAxisColor(moralAxis: CharacterMoralAxis): string {

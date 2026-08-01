@@ -56,6 +56,17 @@
   "genre.kongbu": "恐怖惊悚",
   "genre.other": "其他",
 
+  "genreGroup.xuanhuan": "玄幻",
+  "genreGroup.xianxia": "仙侠",
+  "genreGroup.wuxia": "武侠",
+  "genreGroup.kehuan": "科幻",
+  "genreGroup.qihuan": "奇幻",
+  "genreGroup.dushi": "都市",
+  "genreGroup.lishi": "历史",
+  "genreGroup.youxi": "游戏",
+  "genreGroup.qingxiaoshuo": "轻小说",
+  "genreGroup.other": "其他",
+
   "style.jinyong": "金庸武侠",
   "style.gulong": "古龙风格",
   "style.zhangailing": "张爱玲细腻",

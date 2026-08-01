@@ -4,6 +4,7 @@ export const VOLUME_OUTLINE_PARAMETERS: PromptParameter[] = [
   {
     key: 'pace',
     label: '整体节奏',
+    labelKey: 'settings:prompt.parameters.pace',
     type: 'select',
     options: ['慢', '中', '快', '极快'],
     default: '中',
@@ -13,6 +14,7 @@ export const VOLUME_OUTLINE_PARAMETERS: PromptParameter[] = [
   {
     key: 'volumeCount',
     label: '建议卷数',
+    labelKey: 'settings:prompt.parameters.volumeCount',
     type: 'slider',
     min: 1,
     max: 30,

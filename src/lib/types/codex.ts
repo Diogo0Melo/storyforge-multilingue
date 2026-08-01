@@ -1,4 +1,5 @@
 import type { RagDocumentMetadata } from './rag-library'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 /**
  * Phase 35-a — 词条系统（Codex）数据模型
@@ -17,11 +18,11 @@ export const CODEX_DOMAIN_LABELS: Record<CodexDomain, string> = {
   origin: '世界起源',
 }
 
-export const CODEX_DOMAIN_LABEL_KEYS: Record<CodexDomain, string> = {
+export const CODEX_DOMAIN_LABEL_KEYS = {
   natural: 'codex.domain.natural',
   humanity: 'codex.domain.humanity',
   origin: 'codex.domain.origin',
-}
+} as const satisfies Record<CodexDomain, PanelsKeys>
 
 /** 字段类型 */
 export type CodexFieldType = 'text' | 'longtext' | 'select' | 'number' | 'ref'

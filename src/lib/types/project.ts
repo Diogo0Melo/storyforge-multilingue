@@ -1,5 +1,15 @@
+import type { ProjectKeys } from '../../i18n/generated-resources'
+
 /** 写作状态 */
 export type ProjectStatus = 'drafting' | 'ongoing' | 'paused' | 'completed'
+
+/** 项目状态标签键 */
+export const PROJECT_STATUS_LABEL_KEYS = {
+  drafting:  'status.drafting',
+  ongoing:   'status.ongoing',
+  paused:    'status.paused',
+  completed: 'status.completed',
+} as const satisfies Record<ProjectStatus, ProjectKeys>
 
 /** 项目状态标签 */
 export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
@@ -15,6 +25,7 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
  */
 export interface GenreOption {
   readonly group: string
+  readonly groupKey?: string
   readonly value: string
   readonly label: string
   readonly labelKey?: string

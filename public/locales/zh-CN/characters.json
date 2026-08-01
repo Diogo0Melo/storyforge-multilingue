@@ -7,9 +7,25 @@
     "unspecified": "未指定"
   },
   "axes": {
+    "roleWeightTitle": "角色权重",
     "absoluteNeutral": "绝对中立",
     "alignmentGrid": "阵营九宫格（必选）",
-    "roleWeight": "戏份（必选）"
+    "roleWeight": {
+      "main": "主要",
+      "secondary": "次要",
+      "npc": "NPC",
+      "extra": "路人"
+    },
+    "moralAxis": {
+      "good": "善良",
+      "neutral": "中立",
+      "evil": "邪恶"
+    },
+    "orderAxis": {
+      "lawful": "守序",
+      "neutral": "中立",
+      "chaotic": "混乱"
+    }
   },
   "delete": "删除",
   "dimensions": {

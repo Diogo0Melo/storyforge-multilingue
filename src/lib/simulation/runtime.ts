@@ -523,7 +523,7 @@ export async function createSimulationCheckpoint(input: {
     throughSequence,
   )
   const stateJson = JSON.stringify(state)
-  const name = input.name.trim() || `检查点 ${throughSequence}`
+  const name = input.name.trim() || i18n.t('panels:simulation.runtime.checkpointDefault' as any, { sequence: throughSequence })
   if (name.length > 200) throw new Error(i18n.t('common:errors.simulation.checkpointNameTooLong'))
   const checkpoint: SimulationCheckpoint = {
     projectId: session.projectId,

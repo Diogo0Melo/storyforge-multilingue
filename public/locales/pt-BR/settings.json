@@ -218,6 +218,10 @@
       "optionalLabel": "Permitir desativar",
       "selectOptionsPlaceholder": "Opções, separadas por vírgula (ex: sério, relaxado, humorístico)",
       "title": "Parâmetros Ajustáveis",
+      "tone": "Tom",
+      "detailLevel": "Nível de Detalhe",
+      "pace": "Ritmo Geral",
+      "volumeCount": "Volumes Sugeridos",
       "types": {
         "boolean": "Interruptor",
         "number": "Número",
@@ -574,9 +578,13 @@
         "userInputPlaceholder": "Sua entrada (opcional): escreva conteúdo desta etapa aqui, IA gerará/expandirá com base no que você escrever"
       },
       "stepCount": "Total {{count}} etapas",
-      "stepCount_one": "prompt.workflow.stepCount",
-      "stepCount_many": "prompt.workflow.stepCount",
-      "stepCount_other": "prompt.workflow.stepCount",
+      "stepCount_one": "{{count}} etapa",
+      "stepCount_many": "{{count}} etapas",
+      "stepCount_other": "{{count}} etapas",
+      "confirmRequired": "{{count}} etapas requerem confirmação",
+      "confirmRequired_one": "{{count}} etapa requer confirmação",
+      "confirmRequired_many": "{{count}} etapas requerem confirmação",
+      "confirmRequired_other": "{{count}} etapas requerem confirmação",
       "system": "Sistema",
       "title": "Modo de Nó",
       "user": "Meu"
@@ -769,5 +777,38 @@
     "totalCost": "Custo Total",
     "totalInput": "Total de Tokens de Entrada",
     "totalOutput": "Total de Tokens de Saída"
+  },
+  "workflow": {
+    "seed": {
+      "quickStart": {
+        "name": "Início Rápido · Geral",
+        "description": "Do zero ao primeiro capítulo: núcleo da história → visão de mundo → personagens principais → esboço de volume → primeiro capítulo. Cada etapa pode ser pausada para revisão.",
+        "step": {
+          "logline": "Logline",
+          "worldOrigin": "Origem do Mundo",
+          "mainCharacter": "Personagem Principal",
+          "volumeOutline": "Esboço de Volume",
+          "firstChapter": "Primeiro Capítulo"
+        }
+      },
+      "singleChapter": {
+        "name": "Geração Profunda de Capítulo Único",
+        "description": "Expanda um esboço de capítulo em cenas detalhadas → escreva o texto → revise → remova tom de IA. Ideal para refinar um capítulo.",
+        "step": {
+          "detailScene": "Detalhar Cenas",
+          "writeProse": "Escrever Texto",
+          "polish": "Revisar",
+          "deai": "Remover Tom de IA"
+        }
+      },
+      "foreshadow": {
+        "name": "Construção de Sistema de Presságios",
+        "description": "Com base na visão de mundo e personagens existentes, sugira um conjunto de presságios bem elaborados.",
+        "step": {
+          "worldviewSummary": "Resumo da Visão de Mundo",
+          "foreshadowSuggestions": "Sugestões de Presságios"
+        }
+      }
+    }
   }
 }

@@ -270,6 +270,12 @@
       "humConflict": "Conflitos",
       "originPower": "Níveis de Poder",
       "originDeity": "Crenças Divinas"
+    },
+    "fields": {
+      "manageTitle": "Gerenciar campos do verbete 「{{name}}」",
+      "typeSelect": "Seleção suspensa",
+      "typeText": "Texto",
+      "typeLongtext": "Texto longo"
     }
   },
   "cultivation": {
@@ -719,6 +725,21 @@
       "deleteTitle": "Excluir 「{{name}}」?",
       "deleteMessage": "Após exclusão, todos os mundos filhos também serão excluídos. Esta ação é irreversível.",
       "delete": "Excluir"
+    },
+    "biome": {
+      "ocean": "Oceano",
+      "tropicalDesert": "Deserto Tropical",
+      "coldDesert": "Deserto Frio",
+      "tropicalSavanna": "Savana Tropical",
+      "temperateGrassland": "Pradaria Temperada",
+      "tropicalMonsoon": "Floresta Monçônica Tropical",
+      "temperateDeciduous": "Floresta Decidual Temperada",
+      "tropicalRainforest": "Floresta Tropical",
+      "temperateRainforest": "Floresta Temperada",
+      "borealForest": "Floresta Boreal",
+      "tundra": "Tundra",
+      "glacier": "Geleira",
+      "wetland": "Pântano"
     }
   },
   "guide": {
@@ -865,7 +886,36 @@
     "timelineEvents": "Eventos da Linha do Tempo",
     "title": "📜 Cronologia Histórica e Linha do Tempo",
     "worldTabAll": "📋 Visão Geral",
-    "worldTabAllTitle": "Ver a história de todos os mundos lado a lado, somente leitura"
+    "worldTabAllTitle": "Ver histórico de todos os mundos lado a lado, somente leitura",
+    "eventDateDefault": "Data desconhecida",
+    "eventTitleDefault": "Novo evento histórico",
+    "eventDescriptionDefault": "Digite a descrição do evento aqui...",
+    "keywordDefault": "Nova palavra-chave",
+    "keywordDescriptionDefault": "Digite a descrição da palavra-chave aqui...",
+    "era": {
+      "preQin": "Pré-Qin",
+      "qinHan": "Qin-Han",
+      "weiJin": "Wei-Jin",
+      "suiTang": "Sui-Tang",
+      "songYuan": "Song-Yuan",
+      "mingQing": "Ming-Qing",
+      "republic": "República",
+      "modern": "Moderno",
+      "ancientGlobal": "Antiguidade Global",
+      "medievalGlobal": "Medieval Global",
+      "renaissanceGlobal": "Renascimento Global",
+      "industrialGlobal": "Era Industrial Global",
+      "worldWarsGlobal": "Guerras Mundiais Global",
+      "coldWarGlobal": "Guerra Fria Global",
+      "custom": "Personalizado/Ficcional"
+    },
+    "keywordCategory": {
+      "technology": "Artefatos e Tecnologia",
+      "institution": "Instituições e Cargos",
+      "culture": "Cultura e Costumes",
+      "economy": "Sociedade e Economia",
+      "architecture": "Geografia e Arquitetura"
+    }
   },
   "items": {
     "inventory.activeKinds": "Tipos ativos",
@@ -1396,7 +1446,9 @@
     "runtime.saveBranch": "Arquivo e ramo",
     "runtime.subtitle": "Arquivo independente compartilhado por NPC, TTRPG e conversa de personagem. Eventos aqui não reescrevem o Canon da ficção.",
     "runtime.title": "Runtime interativo",
-    "runtime.typeAria": "Tipo de runtime"
+    "runtime.typeAria": "Tipo de runtime",
+    "runtime.checkpointDefault": "Ponto de Verificação {{sequence}}",
+    "runtime.timeAdvanced": "Tempo +{{amount}}"
   },
   "state": {
     "diff.cancel": "Cancelar",

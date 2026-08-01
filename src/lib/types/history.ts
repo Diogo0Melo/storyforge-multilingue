@@ -1,4 +1,5 @@
 import type { RagDocumentMetadata } from './rag-library'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 /** 历史事件 */
 export interface HistoricalEvent {
@@ -42,6 +43,24 @@ export type HistoricalEra =
   | 'world-wars-global' // 两次世界大战与现代早期
   | 'cold-war-global'  // 冷战与当代
   | 'custom'           // 自定义/架空
+
+export const HISTORICAL_ERA_LABEL_KEYS = {
+  'pre-qin': 'history.era.preQin',
+  'qin-han': 'history.era.qinHan',
+  'wei-jin': 'history.era.weiJin',
+  'sui-tang': 'history.era.suiTang',
+  'song-yuan': 'history.era.songYuan',
+  'ming-qing': 'history.era.mingQing',
+  'republic': 'history.era.republic',
+  'modern': 'history.era.modern',
+  'ancient-global': 'history.era.ancientGlobal',
+  'medieval-global': 'history.era.medievalGlobal',
+  'renaissance-global': 'history.era.renaissanceGlobal',
+  'industrial-global': 'history.era.industrialGlobal',
+  'world-wars-global': 'history.era.worldWarsGlobal',
+  'cold-war-global': 'history.era.coldWarGlobal',
+  'custom': 'history.era.custom',
+} as const satisfies Record<HistoricalEra, PanelsKeys>
 
 export const HISTORICAL_ERA_LABELS: Record<HistoricalEra, string> = {
   'pre-qin': '先秦',
@@ -98,6 +117,14 @@ export type HistoricalKeywordCategory =
   | 'culture'      // 文化与风俗（如：避讳、茶道、寒食节）
   | 'economy'      // 社会与经济（如：飞钱、坊市制、盐铁专卖）
   | 'architecture' // 地理与建筑（如：园林、里坊、驿站）
+
+export const KEYWORD_CATEGORY_LABEL_KEYS = {
+  technology: 'history.keywordCategory.technology',
+  institution: 'history.keywordCategory.institution',
+  culture: 'history.keywordCategory.culture',
+  economy: 'history.keywordCategory.economy',
+  architecture: 'history.keywordCategory.architecture',
+} as const satisfies Record<HistoricalKeywordCategory, PanelsKeys>
 
 export const KEYWORD_CATEGORY_LABELS: Record<HistoricalKeywordCategory, string> = {
   technology: '器物与科技',

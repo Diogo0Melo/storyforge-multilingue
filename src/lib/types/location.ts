@@ -1,4 +1,5 @@
 import type { RagDocumentMetadata } from './rag-library'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 /**
  * Phase 25.3 — 重要地点模块
@@ -29,7 +30,7 @@ export type LocationTag = TerrainTag | PlaceTag
 export const ALL_LOCATION_TAGS: readonly LocationTag[] = [...TERRAIN_TAGS, ...PLACE_TAGS]
 
 /** i18n key map — Chinese identifiers → translation keys (display only) */
-export const TAG_I18N_KEY: Record<LocationTag, string> = {
+export const TAG_I18N_KEY = {
   // 自然地形
   '大陆': 'location.terrain.continent',
   '半岛': 'location.terrain.peninsula',
@@ -93,7 +94,7 @@ export const TAG_I18N_KEY: Record<LocationTag, string> = {
   '宗门': 'location.place.sect',
   '洞府': 'location.place.caveDwelling',
   '灵脉': 'location.place.spiritVein',
-}
+} as const satisfies Record<LocationTag, PanelsKeys>
 
 /** i18n keys for category labels */
 export const CATEGORY_I18N_KEYS = {

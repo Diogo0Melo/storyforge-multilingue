@@ -270,6 +270,7 @@ export interface Culture {
 export interface BiomeDef {
   id: number
   name: string
+  nameKey?: string
   color: string
   habitability: number
   moveCost: number

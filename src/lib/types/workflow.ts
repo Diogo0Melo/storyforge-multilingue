@@ -35,6 +35,8 @@ export interface PromptWorkflowStep {
   stepId: string
   /** 用户可见的步骤名 */
   label: string
+  /** i18n key for step label (settings namespace) */
+  labelKey?: string
   /** 用哪个模板（按 moduleKey 找当前激活的） */
   promptModuleKey: PromptModuleKey
   /** 指定具体模板版本；不指定时用当前激活模板 */
@@ -94,7 +96,11 @@ export interface PromptWorkflow {
   id?: number
   scope: 'system' | 'user'
   name: string
+  /** i18n key for workflow name (settings namespace) */
+  nameKey?: string
   description: string
+  /** i18n key for workflow description (settings namespace) */
+  descriptionKey?: string
   /** 适用题材标签（与 PromptTemplate.genres 对齐） */
   genres?: string[]
   steps: PromptWorkflowStep[]

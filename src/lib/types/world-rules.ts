@@ -1,3 +1,5 @@
+import type { WorldsKeys } from '../../i18n/generated-resources'
+
 /**
  * Phase 32 — 真实与幻想（世界规则体系）
  *
@@ -17,11 +19,11 @@ export const CONFLICT_PRIORITY_LABELS: Record<ConflictPriority, string> = {
 }
 
 /** i18n keys for conflict priority labels (UI only) */
-export const CONFLICT_PRIORITY_LABEL_KEYS: Record<ConflictPriority, string> = {
+export const CONFLICT_PRIORITY_LABEL_KEYS = {
   historical: 'worldRules.priority.historical',
   balanced: 'worldRules.priority.balanced',
   fictional: 'worldRules.priority.fictional',
-}
+} as const satisfies Record<ConflictPriority, WorldsKeys>
 // ── 树节点定义（预定义 + 用户自定义） ──────────────────────────
 
 /** 预定义树节点 */

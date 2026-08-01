@@ -260,6 +260,12 @@
       "humConflict": "矛盾冲突",
       "originPower": "力量层级",
       "originDeity": "神明信仰"
+    },
+    "fields": {
+      "manageTitle": "管理「{{name}}」词条字段",
+      "typeSelect": "下拉选择",
+      "typeText": "文本",
+      "typeLongtext": "长文本"
     }
   },
   "cultivation": {
@@ -707,6 +713,21 @@
       "deleteTitle": "删除「{{name}}」？",
       "deleteMessage": "删除后其所有子世界也会一并删除，此操作不可恢复。",
       "delete": "删除"
+    },
+    "biome": {
+      "ocean": "海洋",
+      "tropicalDesert": "热带沙漠",
+      "coldDesert": "寒带荒漠",
+      "tropicalSavanna": "热带草原",
+      "temperateGrassland": "温带草原",
+      "tropicalMonsoon": "热带季风林",
+      "temperateDeciduous": "温带落叶林",
+      "tropicalRainforest": "热带雨林",
+      "temperateRainforest": "温带雨林",
+      "borealForest": "针叶林",
+      "tundra": "苔原",
+      "glacier": "冰川",
+      "wetland": "湿地"
     }
   },
   "guide": {
@@ -780,7 +801,6 @@
     "digitalYear": "数字化年份 (排序用)",
     "digitalYearAriaLabel": "数字化年份",
     "digitalYearPlaceholder": "负数表示公元前",
-    "era": "适用历史时期",
     "eraAriaLabel": "适用历史时期",
     "eraSystemDescription": "描述这个世界的纪年方式，如：年号纪年、干支纪年等...",
     "eraSystemLabel": "纪年体系",
@@ -853,7 +873,36 @@
     "timelineEvents": "时间轴事件",
     "title": "📜 历史年表与时间线",
     "worldTabAll": "📋 一览",
-    "worldTabAllTitle": "并排查看所有世界的历史，只读"
+    "worldTabAllTitle": "并排查看所有世界的历史，只读",
+    "eventDateDefault": "未知时间",
+    "eventTitleDefault": "新历史事件",
+    "eventDescriptionDefault": "在此输入事件描述...",
+    "keywordDefault": "新关键词",
+    "keywordDescriptionDefault": "在此输入关键词描述...",
+    "era": {
+      "preQin": "先秦",
+      "qinHan": "秦汉三国",
+      "weiJin": "魏晋南北朝",
+      "suiTang": "隋唐五代",
+      "songYuan": "两宋辽金元",
+      "mingQing": "明清时局",
+      "republic": "民国时期",
+      "modern": "近现代",
+      "ancientGlobal": "古典时代（古希腊/罗马/两河等）",
+      "medievalGlobal": "中世纪（欧洲/拜占庭/阿拉伯等）",
+      "renaissanceGlobal": "文艺复兴与大航海时代",
+      "industrialGlobal": "工业革命与近代世界",
+      "worldWarsGlobal": "两次世界大战与现代早期",
+      "coldWarGlobal": "冷战与当代",
+      "custom": "自定义/架空"
+    },
+    "keywordCategory": {
+      "technology": "器物与科技",
+      "institution": "制度与官职",
+      "culture": "文化与风俗",
+      "economy": "社会与经济",
+      "architecture": "地理与建筑"
+    }
   },
   "items": {
     "inventory.activeKinds": "当前种类",
@@ -1383,7 +1432,9 @@
     "runtime.saveBranch": "存档与分支",
     "runtime.subtitle": "NPC、跑团和角色聊天共用的独立存档。这里的事件不会反写小说 Canon。",
     "runtime.title": "互动运行时",
-    "runtime.typeAria": "运行时类型"
+    "runtime.typeAria": "运行时类型",
+    "runtime.checkpointDefault": "检查点 {{sequence}}",
+    "runtime.timeAdvanced": "时间 +{{amount}}"
   },
   "state": {
     "diff.cancel": "取消",

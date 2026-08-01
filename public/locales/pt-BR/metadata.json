@@ -56,6 +56,17 @@
   "genre.kongbu": "Horror e Thriller",
   "genre.other": "Outro",
 
+  "genreGroup.xuanhuan": "Xuanhuan",
+  "genreGroup.xianxia": "Xianxia",
+  "genreGroup.wuxia": "Wuxia",
+  "genreGroup.kehuan": "Ficção Científica",
+  "genreGroup.qihuan": "Fantasia",
+  "genreGroup.dushi": "Urbano",
+  "genreGroup.lishi": "Histórico",
+  "genreGroup.youxi": "Games",
+  "genreGroup.qingxiaoshuo": "Light Novel",
+  "genreGroup.other": "Outro",
+
   "style.jinyong": "Wuxia de Jin Yong",
   "style.gulong": "Estilo Gu Long",
   "style.zhangailing": "Delicadeza de Zhang Ailing",

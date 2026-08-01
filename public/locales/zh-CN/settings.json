@@ -209,6 +209,10 @@
       "optionalLabel": "允许关闭",
       "selectOptionsPlaceholder": "选项，逗号分隔（如：严肃,轻松,幽默）",
       "title": "可调参数",
+      "tone": "基调",
+      "detailLevel": "详尽度",
+      "pace": "整体节奏",
+      "volumeCount": "建议卷数",
       "types": {
         "boolean": "开关",
         "number": "数字",
@@ -538,6 +542,7 @@
         "userInputPlaceholder": "你的输入(可选)：在此写本步内容,AI 会在你写的基础上生成/扩展"
       },
       "stepCount": "共 {{count}} 步",
+      "confirmRequired": "{{count}} 步需确认",
       "system": "系统",
       "title": "节点模式",
       "user": "我的"
@@ -727,5 +732,38 @@
     "totalCost": "总花费",
     "totalInput": "总输入 Token",
     "totalOutput": "总输出 Token"
+  },
+  "workflow": {
+    "seed": {
+      "quickStart": {
+        "name": "极速起书 · 通用",
+        "description": "从零到第一章：故事核心 → 世界观 → 主要角色 → 卷大纲 → 第一章正文。每步可暂停审核。",
+        "step": {
+          "logline": "一句话故事",
+          "worldOrigin": "世界起源",
+          "mainCharacter": "主要角色",
+          "volumeOutline": "卷级大纲",
+          "firstChapter": "第一章正文"
+        }
+      },
+      "singleChapter": {
+        "name": "单章深度生成",
+        "description": "把一个章节大纲展开为细纲场景 → 写正文 → 润色 → 去 AI 味。适合精雕细琢一章。",
+        "step": {
+          "detailScene": "细纲拆场景",
+          "writeProse": "写正文",
+          "polish": "润色",
+          "deai": "去 AI 味"
+        }
+      },
+      "foreshadow": {
+        "name": "伏笔体系搭建",
+        "description": "基于已有世界观和角色，建议一套精心设计的伏笔。",
+        "step": {
+          "worldviewSummary": "世界观摘要",
+          "foreshadowSuggestions": "伏笔建议"
+        }
+      }
+    }
   }
 }

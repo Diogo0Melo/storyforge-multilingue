@@ -32,7 +32,7 @@ export default function CharacterAxesPicker({
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'}>
       <div>
-        <p className="text-[11px] text-text-muted mb-1">{t('axes.roleWeight')}</p>
+        <p className="text-[11px] text-text-muted mb-1">{t('axes.roleWeightTitle')}</p>
         <div className="grid grid-cols-4 gap-1">
           {ROLE_WEIGHTS.map(weight => (
             <button

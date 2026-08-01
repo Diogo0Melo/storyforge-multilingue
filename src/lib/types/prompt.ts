@@ -123,6 +123,8 @@ export interface PromptParameter {
   key: string
   /** UI 显示名 */
   label: string
+  /** i18n key for UI display name */
+  labelKey?: string
   /** 类型：select 下拉 / slider 滑块 / number 数字 / text 文本 / boolean 开关 */
   type: 'select' | 'slider' | 'number' | 'text' | 'boolean'
   /** select 类型的可选项（label 与 value 同） */

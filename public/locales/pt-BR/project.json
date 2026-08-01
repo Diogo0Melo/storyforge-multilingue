@@ -363,5 +363,11 @@
     "writeChars_other": "Gravar na biblioteca de personagens ({{count}})",
     "writeStory": "Gravar design da história",
     "writeWorld": "Gravar visão de mundo"
+  },
+  "status": {
+    "drafting": "Rascunho",
+    "ongoing": "Em andamento",
+    "paused": "Pausado",
+    "completed": "Concluído"
   }
 }

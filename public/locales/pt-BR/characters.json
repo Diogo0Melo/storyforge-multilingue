@@ -7,9 +7,25 @@
     "unspecified": "Não especificado"
   },
   "axes": {
+    "roleWeightTitle": "Peso do Papel",
     "absoluteNeutral": "Neutro absoluto",
     "alignmentGrid": "Grade de alinhamento (obrigatório)",
-    "roleWeight": "Papel (obrigatório)"
+    "roleWeight": {
+      "main": "Principal",
+      "secondary": "Secundário",
+      "npc": "NPC",
+      "extra": "Figurante"
+    },
+    "moralAxis": {
+      "good": "Bom",
+      "neutral": "Neutro",
+      "evil": "Mau"
+    },
+    "orderAxis": {
+      "lawful": "Leal",
+      "neutral": "Neutro",
+      "chaotic": "Caótico"
+    }
   },
   "delete": "Excluir",
   "dimensions": {

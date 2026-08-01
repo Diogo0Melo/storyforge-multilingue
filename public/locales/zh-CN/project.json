@@ -327,5 +327,11 @@
     "writeChars": "写入角色库（{{count}} 个）",
     "writeStory": "写入故事设计",
     "writeWorld": "写入世界观"
+  },
+  "status": {
+    "drafting": "构思中",
+    "ongoing": "连载中",
+    "paused": "暂停",
+    "completed": "已完结"
   }
 }

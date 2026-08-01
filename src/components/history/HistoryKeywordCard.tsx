@@ -110,7 +110,7 @@ export default function HistoryKeywordCard({
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-text-muted mb-1">{t('history.era')}</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('history.eraAriaLabel')}</label>
               <select
                 aria-label={t('history.eraAriaLabel')}
                 value={keyword.era}
