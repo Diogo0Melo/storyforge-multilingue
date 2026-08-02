@@ -40,10 +40,10 @@ const LINE_HEIGHT_OPTIONS: { label: string; labelKey?: EditorKeys; value: string
 const PARAGRAPH_SPACING_OPTIONS: { label: string; labelKey?: EditorKeys; value: string }[] = [
   { label: '默认段距', labelKey: 'toolbar.defaultParagraphSpacing', value: '' },
   { label: '无段距', labelKey: 'toolbar.noParagraphSpacing', value: '0' },
-  { label: '0.5行', value: '0.5em' },
-  { label: '1行', value: '1em' },
-  { label: '1.5行', value: '1.5em' },
-  { label: '2行', value: '2em' },
+  { label: '0.5行', labelKey: 'toolbar.paragraphSpacing.05', value: '0.5em' },
+  { label: '1行', labelKey: 'toolbar.paragraphSpacing.1', value: '1em' },
+  { label: '1.5行', labelKey: 'toolbar.paragraphSpacing.15', value: '1.5em' },
+  { label: '2行', labelKey: 'toolbar.paragraphSpacing.2', value: '2em' },
 ]
 
 const TEXT_COLOR_PRESETS: { label: string; labelKey?: EditorKeys; value: string }[] = [

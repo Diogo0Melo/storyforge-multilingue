@@ -294,7 +294,7 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
           <div className="max-h-80 space-y-3 overflow-y-auto pr-1 text-[11px]">
             <section>
               <p className="font-medium text-text-secondary">{t('entityRename.manuscript')}</p>
-              <p className="text-text-muted">{preview.chapterReplacementCount} 处 / {preview.chapterMatches.length} 章</p>
+              <p className="text-text-muted">{t('entityRename.placeCount', { count: preview.chapterReplacementCount })} / {t('entityRename.chapterCount', { count: preview.chapterMatches.length })}</p>
               {preview.chapterMatches.map(match => (
                 <button
                   key={match.chapterId}
@@ -308,7 +308,7 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
             <section>
               <p className="font-medium text-text-secondary">{t('entityRename.structuredSync')}</p>
               {preview.structuredCounts.map(item => (
-                <p key={item.label} className="text-text-muted">{item.label} · {item.count} 条</p>
+                <p key={item.label} className="text-text-muted">{item.label} · {t('entityRename.entryCount', { count: item.count })}</p>
               ))}
             </section>
             <section>

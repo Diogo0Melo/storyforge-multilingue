@@ -212,7 +212,13 @@
     "undoMessage": "Mudará «{{newName}}» de volta para «{{oldName}}».\nSó será executado se nenhum registro relacionado tiver sido modificado novamente; caso contrário, use o snapshot do projeto já criado.",
     "undoRename": "Desfazer último renomeamento",
     "undoSuccess": "Último renomeamento de entidade desfeito",
-    "undoTitle": "Desfazer último renomeamento de entidade?"
+    "undoTitle": "Desfazer último renomeamento de entidade?",
+    "placeCount": "{{count}} local",
+    "placeCount_other": "{{count}} locais",
+    "chapterCount": "{{count}} capítulo",
+    "chapterCount_other": "{{count}} capítulos",
+    "entryCount": "{{count}} entrada",
+    "entryCount_other": "{{count}} entradas"
   },
   "findReplace": {
     "caseSensitive": "Diferenciar maiúsculas",
@@ -531,6 +537,12 @@
     "defaultLineHeight": "Espaçamento padrão",
     "defaultParagraphSpacing": "Parágrafo padrão",
     "noParagraphSpacing": "Sem espaçamento",
+    "paragraphSpacing": {
+      "05": "0.5 linha",
+      "1": "1 linha",
+      "15": "1.5 linhas",
+      "2": "2 linhas"
+    },
     "lineUnit": "linha(s)",
     "textColor": {
       "body": "Corpo",

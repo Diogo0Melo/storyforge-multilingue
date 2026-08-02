@@ -196,7 +196,10 @@
     "undoMessage": "将把「{{newName}}」恢复为「{{oldName}}」。\n只有相关记录都未被再次修改时才会执行；否则请使用已创建的项目快照。",
     "undoRename": "撤销上次实体改名",
     "undoSuccess": "已撤销上次实体改名",
-    "undoTitle": "撤销上次实体改名？"
+    "undoTitle": "撤销上次实体改名？",
+    "placeCount": "{{count}}处",
+    "chapterCount": "{{count}}章",
+    "entryCount": "{{count}}条"
   },
   "findReplace": {
     "caseSensitive": "大小写敏感",
@@ -493,6 +496,12 @@
     "defaultLineHeight": "默认行距",
     "defaultParagraphSpacing": "默认段距",
     "noParagraphSpacing": "无段距",
+    "paragraphSpacing": {
+      "05": "0.5行",
+      "1": "1行",
+      "15": "1.5行",
+      "2": "2行"
+    },
     "lineUnit": "行",
     "textColor": {
       "body": "正文",
