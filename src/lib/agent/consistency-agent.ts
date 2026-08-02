@@ -238,7 +238,7 @@ export async function runConsistencyAgent(input: {
     lifecycleCatalog: formatLifecycleCatalog(lifecycle.catalog),
   })
   const reservation = input.budget.reserveCall({
-    label: input.mode === 'fast' ? '一致性 Fast Guard' : '一致性 Deep Audit',
+    label: input.mode === 'fast' ? i18n.t('common:agent.consistencyFastGuard') : i18n.t('common:agent.consistencyDeepAudit'),
     messages,
     maxOutputTokens: input.mode === 'fast' ? 4_000 : 6_000,
   })

@@ -6,6 +6,9 @@ import type {
 } from '../types'
 import i18n from '../../i18n/i18n'
 
+/** Persisted sentinel — do NOT translate. Used for auto-rename logic comparison. */
+const DEFAULT_CONVERSATION_TITLE = '创作对话'
+
 export async function getOrCreateAgentConversation(input: {
   projectId: number
   worldGroupId: number | null
@@ -23,7 +26,7 @@ export async function getOrCreateAgentConversation(input: {
   const row: AgentConversation = {
     projectId: input.projectId,
     worldGroupId: input.worldGroupId,
-    title: '创作对话',
+    title: DEFAULT_CONVERSATION_TITLE,
     status: 'active',
     createdAt: now,
     updatedAt: now,
@@ -71,7 +74,7 @@ export async function appendAgentEvent(input: {
     const id = await db.agentEvents.add(event) as number
     await db.agentConversations.update(input.conversationId, {
       updatedAt: createdAt,
-      ...(conversation.title === '创作对话' && input.role === 'user'
+      ...(conversation.title === DEFAULT_CONVERSATION_TITLE && input.role === 'user'
         ? { title: input.content.trim().slice(0, 40) || conversation.title }
         : {}),
     })

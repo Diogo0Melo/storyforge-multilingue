@@ -101,7 +101,7 @@ export function useMasterCopilot(input: {
           version: 1,
           taskId: '',
           agentId: 'character',
-          label: '候选',
+          label: i18n.t('common:agent.candidate'),
           contextSources: [],
           baseSnapshot: {},
         }),

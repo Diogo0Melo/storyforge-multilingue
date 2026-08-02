@@ -27,7 +27,7 @@ export async function exportToGist(
   const content = JSON.stringify(data, null, 2)
 
   const body = {
-    description: `故事熔炉备份 — ${data.project.name} (${formatDateTime(new Date())})`,
+    description: i18n.t('common:exportMeta.gistDescription', { name: data.project.name, date: formatDateTime(new Date()) }),
     public: false,
     files: {
       [filename]: { content },
