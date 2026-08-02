@@ -6,6 +6,7 @@ import { useProjectStore } from '../../stores/project'
 import { useWorldGroupStore } from '../../stores/world-group'
 import type { Project } from '../../lib/types'
 import { GENRE_OPTIONS, GENRE_GROUP_LABEL_KEYS } from '../../lib/types'
+import { formatDateTime } from '../../i18n/format'
 
 // 按 group 分组
 const GENRE_GROUPS = Array.from(
@@ -217,8 +218,8 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
         <div className="pt-4 border-t border-border">
           <p className="text-text-muted text-xs">
             {t('info.timestamps', {
-              created: new Date(project.createdAt).toLocaleString('zh-CN'),
-              updated: new Date(project.updatedAt).toLocaleString('zh-CN'),
+              created: formatDateTime(new Date(project.createdAt)),
+              updated: formatDateTime(new Date(project.updatedAt)),
             })}
           </p>
         </div>

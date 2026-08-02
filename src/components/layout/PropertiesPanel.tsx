@@ -6,6 +6,7 @@ import { useCharacterStore } from '../../stores/character'
 import { useCharacterRelationStore } from '../../stores/character-relation'
 import { useGeographyStore } from '../../stores/project-singletons'
 import { useForeshadowStore } from '../../stores/foreshadow'
+import { formatDateTime } from '../../i18n/format'
 import type { SidebarModule } from './Sidebar'
 
 interface Props {
@@ -14,7 +15,7 @@ interface Props {
 }
 
 function formatDate(ts: number) {
-  return new Date(ts).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+  return formatDateTime(new Date(ts), { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {

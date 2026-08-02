@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 /** Simplified t() signature — avoids TS2589 type recursion with large project.json */
 type SimpleT = (key: string, options?: Record<string, unknown>) => string
 import type { ProjectKeys } from '../../i18n/generated-resources'
+import { formatDateTime } from '../../i18n/format'
 import {
   BookMarked,
   ChevronDown,
@@ -96,7 +97,7 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
           {data?.sourceFilename && (
             <p className="text-[10px] text-text-muted mt-0.5">
               {t('refDetail.sourceFile')}{data.sourceFilename}
-              {data.importedAt && ` · ${t('refDetail.importedAt')} ${new Date(data.importedAt).toLocaleString('zh-CN')}`}
+              {data.importedAt && ` · ${t('refDetail.importedAt')} ${formatDateTime(new Date(data.importedAt))}`}
             </p>
           )}
         </div>

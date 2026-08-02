@@ -712,5 +712,29 @@
   "worlds": {
     "defaultPrimaryWorld": "主世界",
     "migrationHistoricalMode": "【自动迁移提示】本项目原先使用「历史考证」模式。现已升级为维度级「真实与幻想」规则体系，请在左侧各维度中分别设定哪些内容取自真实、哪些是架空改造。"
+  },
+  "agent": {
+    "candidate": "候选",
+    "creativeDialogue": "创作对话",
+    "consistencyFastGuard": "一致性 Fast Guard",
+    "consistencyDeepAudit": "一致性 Deep Audit",
+    "logicConsistency": "逻辑一致性",
+    "characterBehaviorConsistency": "人物行为一致性",
+    "worldviewConsistency": "世界观一致性"
+  },
+  "unit": {
+    "characters": "{{count}} 字",
+    "words": "{{count}} 词"
+  },
+  "token": {
+    "input": "Token: ↑{{count}}",
+    "output": "Token: ↓{{count}}",
+    "approx": "≈{{count}} 字",
+    "usage": "Token: ↑{{input}} ↓{{output}}"
+  },
+  "exportMeta": {
+    "gistDescription": "故事熔炉备份 — {{name}} ({{date}})",
+    "snapshotTitle": "上下文快照：{{name}}",
+    "snapshotFilename": "上下文快照_{{name}}_{{date}}.md"
   }
 }

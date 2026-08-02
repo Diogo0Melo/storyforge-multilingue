@@ -13,6 +13,7 @@ import {
   GENRE_OPTIONS, GENRE_GROUP_LABEL_KEYS, PROJECT_STATUS_LABELS,
   type ProjectStatus, type CreateProjectInput,
 } from '../lib/types'
+import { formatDate } from '../i18n/format'
 
 // 按 group 分组
 const GENRE_GROUPS = Array.from(
@@ -291,7 +292,7 @@ export default function HomePage() {
                         {t('home.wordCount', { count: formatWords(project.currentWordCount ?? 0, t('home.unitWan')) })}
                       </div>
                       <div className="text-text-muted text-xs mt-0.5">
-                        {new Date(project.updatedAt).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' })}
+                        {formatDate(new Date(project.updatedAt), { month: 'short', day: 'numeric' })}
                       </div>
                     </div>
 

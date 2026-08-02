@@ -2,6 +2,7 @@
  * AI 连接日志系统
  * 记录所有 API 调用的详细信息，方便排错
  */
+import { formatTime } from '../../i18n/format'
 
 export interface TokenUsage {
   inputTokens: number
@@ -75,7 +76,7 @@ function notify() {
 
 /** 格式化日志为可读文本 */
 export function formatLog(entry: AILogEntry): string {
-  const time = new Date(entry.timestamp).toLocaleTimeString('zh-CN')
+  const time = formatTime(new Date(entry.timestamp))
   const status = entry.status === 'success' ? '✅' : entry.status === 'error' ? '❌' : '⏳'
   const dur = entry.duration ? ` (${entry.duration}ms)` : ''
   let line = `${status} [${time}] ${entry.type.toUpperCase()} → ${entry.provider} ${entry.url}${dur}`

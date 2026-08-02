@@ -6,6 +6,7 @@ import {
   History, Plus, Trash2, RotateCcw, HardDrive,
   ShieldAlert, Stethoscope,
 } from 'lucide-react'
+import { formatDateTime } from '../../i18n/format'
 import { exportProjectJSON, downloadJSON, importProjectJSON, type ProjectExportData } from '../../lib/export/json-export'
 import { exportProjectMarkdown, exportProjectTXT, downloadTextFile } from '../../lib/export/text-export'
 import {
@@ -310,7 +311,7 @@ function ExportTab({ project, onImported }: Props) {
 
 // ── 版本历史 Tab ─────────────────────────────────────────────
 function BackupTab({ project }: Props) {
-  const { t, i18n } = useTranslation('panels')
+  const { t } = useTranslation('panels')
   const { snapshots, loading, loadSnapshots, createSnapshot, deleteSnapshot, restoreSnapshot } = useBackupStore()
   const toast = useToast()
   const dialog = useDialog()
@@ -324,7 +325,7 @@ function BackupTab({ project }: Props) {
   const handleCreate = async () => {
     setCreating(true)
     try {
-      await createSnapshot(project.id!, label.trim() || t('data.mgmt.manualBackup', { date: new Date().toLocaleString(i18n.language) }), 'manual')
+      await createSnapshot(project.id!, label.trim() || t('data.mgmt.manualBackup', { date: formatDateTime(new Date()) }), 'manual')
       toast.success(t('data.mgmt.snapshotCreated'))
       setLabel(''); setShowForm(false)
     } catch (err) {
@@ -400,7 +401,7 @@ function BackupTab({ project }: Props) {
           <div key={snap.id} className="bg-bg-surface border border-border rounded-lg p-3 flex items-center gap-3">
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium text-text-primary truncate">{snap.label}</p>
-              <p className="text-xs text-text-muted">{new Date(snap.createdAt).toLocaleString(i18n.language)}</p>
+              <p className="text-xs text-text-muted">{formatDateTime(new Date(snap.createdAt))}</p>
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
               <button

@@ -6,6 +6,7 @@
  */
 import { useState } from 'react'
 import { useTranslation, Trans } from 'react-i18next'
+import { formatDateTime } from '../../i18n/format'
 import { Cloud, CloudUpload, CloudDownload, Check, Loader2, LogOut, ExternalLink, History } from 'lucide-react'
 import { useGistStore } from '../../stores/gist'
 import type { GistBackupMeta, GistRevisionMeta } from '../../lib/export/gist-export'
@@ -61,7 +62,7 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
   }
   const handleRestoreRevision = async (rev: GistRevisionMeta) => {
     if (!proj?.gistId) return
-    const when = new Date(rev.committedAt).toLocaleString('zh-CN')
+    const when = formatDateTime(new Date(rev.committedAt))
     const ok = await dialog.confirm({
       title: t('data.backup.restoreVersionTitle', { when }),
       message: t('data.backup.restoreMsg'),
@@ -156,7 +157,7 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
           </label>
 
           {proj?.lastBackupAt && (
-            <p className="text-[11px] text-text-muted">{t('data.backup.lastBackup', { date: new Date(proj.lastBackupAt).toLocaleString('zh-CN') })}</p>
+            <p className="text-[11px] text-text-muted">{t('data.backup.lastBackup', { date: formatDateTime(new Date(proj.lastBackupAt)) })}</p>
           )}
 
           {backups && (
@@ -167,7 +168,7 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
                 <button key={b.gistId} onClick={() => handleRestore(b.gistId, b.description || b.filename)}
                   className="w-full text-left px-2 py-1.5 rounded hover:bg-bg-hover text-xs">
                   <div className="text-text-primary truncate">{b.description || b.filename}</div>
-                  <div className="text-[10px] text-text-muted">{t('data.backup.updatedAt', { date: new Date(b.updatedAt).toLocaleString('zh-CN') })}</div>
+                  <div className="text-[10px] text-text-muted">{t('data.backup.updatedAt', { date: formatDateTime(new Date(b.updatedAt)) })}</div>
                 </button>
               ))}
             </div>
@@ -184,7 +185,7 @@ export default function CloudBackupCard({ projectId, onImported }: Props) {
                   <button key={rev.version} onClick={() => handleRestoreRevision(rev)} disabled={busy}
                     className="w-full text-left px-2 py-1.5 rounded hover:bg-bg-hover text-xs disabled:opacity-50 flex items-center justify-between gap-2">
                     <span className="flex items-center gap-1.5">
-                      <span className="text-text-primary">{new Date(rev.committedAt).toLocaleString('zh-CN')}</span>
+                      <span className="text-text-primary">{formatDateTime(new Date(rev.committedAt))}</span>
                       {i === 0 && <span className="text-[10px] px-1 rounded bg-sky-500/20 text-sky-400">{t('data.backup.latest')}</span>}
                     </span>
                     <span className="text-[10px] text-text-muted shrink-0">

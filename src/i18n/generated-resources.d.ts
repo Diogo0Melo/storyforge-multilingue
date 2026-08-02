@@ -766,6 +766,22 @@ export type CommonKeys =
   | 'worldview.timeline'
   | 'worlds.defaultPrimaryWorld'
   | 'worlds.migrationHistoricalMode'
+  | 'agent.candidate'
+  | 'agent.creativeDialogue'
+  | 'agent.consistencyFastGuard'
+  | 'agent.consistencyDeepAudit'
+  | 'agent.logicConsistency'
+  | 'agent.characterBehaviorConsistency'
+  | 'agent.worldviewConsistency'
+  | 'unit.characters'
+  | 'unit.words'
+  | 'token.input'
+  | 'token.output'
+  | 'token.approx'
+  | 'token.usage'
+  | 'exportMeta.gistDescription'
+  | 'exportMeta.snapshotTitle'
+  | 'exportMeta.snapshotFilename'
 
 
 export type EditorKeys =

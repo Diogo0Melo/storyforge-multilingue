@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { useImportStatusStore } from '../../../stores/import-status'
+import { formatTime } from '../../../i18n/format'
 import { Info, AlertTriangle, XCircle, CheckCircle2 } from 'lucide-react'
 import type { ImportLogLevel } from '../../../lib/types/import-session'
 
@@ -32,7 +33,7 @@ export default function ImportActivityLog() {
         {activity.map(entry => {
           const Icon = ICONS[entry.level]
           const color = COLORS[entry.level]
-          const time = new Date(entry.time).toLocaleTimeString('zh-CN', { hour12: false })
+          const time = formatTime(new Date(entry.time), { hour12: false })
           return (
             <div key={entry.id} className={`flex items-start gap-2 text-xs ${color}`}>
               <Icon className="w-3 h-3 mt-0.5 flex-shrink-0" />

@@ -1,5 +1,6 @@
 import type { ProjectExportData } from './json-export'
 import i18n from '../../i18n/i18n'
+import { formatDateTime } from '../../i18n/format'
 
 const GIST_API = 'https://api.github.com/gists'
 
@@ -26,7 +27,7 @@ export async function exportToGist(
   const content = JSON.stringify(data, null, 2)
 
   const body = {
-    description: `故事熔炉备份 — ${data.project.name} (${new Date().toLocaleString('zh-CN')})`,
+    description: `故事熔炉备份 — ${data.project.name} (${formatDateTime(new Date())})`,
     public: false,
     files: {
       [filename]: { content },

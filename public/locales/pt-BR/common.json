@@ -718,5 +718,29 @@
   "worlds": {
     "defaultPrimaryWorld": "Mundo Primário",
     "migrationHistoricalMode": "【Aviso de Migração Automática】Este projeto usava anteriormente o modo「Verificação Histórica」. Agora foi atualizado para o sistema de regras de dimensão「Realidade e Fantasia」. Por favor, defina separadamente em cada dimensão à esquerda qual conteúdo é retirado da realidade e qual é uma transformação fictícia."
+  },
+  "agent": {
+    "candidate": "Candidato",
+    "creativeDialogue": "Diálogo de Criação",
+    "consistencyFastGuard": "Guarda de Consistência (Rápido)",
+    "consistencyDeepAudit": "Auditoria de Consistência (Profundo)",
+    "logicConsistency": "Consistência Lógica",
+    "characterBehaviorConsistency": "Consistência de Comportamento",
+    "worldviewConsistency": "Consistência de Mundo"
+  },
+  "unit": {
+    "characters": "{{count}} caracteres",
+    "words": "{{count}} palavras"
+  },
+  "token": {
+    "input": "Token: ↑{{count}}",
+    "output": "Token: ↓{{count}}",
+    "approx": "≈{{count}} caracteres",
+    "usage": "Token: ↑{{input}} ↓{{output}}"
+  },
+  "exportMeta": {
+    "gistDescription": "Backup StoryForge — {{name}} ({{date}})",
+    "snapshotTitle": "Snapshot de Contexto: {{name}}",
+    "snapshotFilename": "snapshot_contexto_{{name}}_{{date}}.md"
   }
 }

@@ -9,6 +9,7 @@ import { db } from '../db/schema'
 import { htmlToPlainText } from '../utils/html'
 import { buildBestChapterByOutlineMap } from '../chapters/selectors'
 import type { OutlineNode, Chapter } from '../types'
+import { formatDateTime } from '../../i18n/format'
 
 const SEPARATOR = '\n\n---\n\n'
 
@@ -41,7 +42,7 @@ export async function generateContextSnapshot(projectId: number): Promise<string
   const sections: string[] = []
 
   // ── 头部 ──
-  sections.push(`# 上下文快照：${project.name}\n生成时间：${new Date().toLocaleString('zh-CN')}\n类型：${project.genre || '未指定'}`)
+  sections.push(`# 上下文快照：${project.name}\n生成时间：${formatDateTime(new Date())}\n类型：${project.genre || '未指定'}`)
 
   // ── 世界观（v3 字段；v2 仅作极老项目兜底）──
   const wv = worldviews[0]
