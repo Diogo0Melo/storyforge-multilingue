@@ -465,7 +465,9 @@ export default function ChapterOutlineWorkshop({
                       <ul className="mt-1 list-disc space-y-1 pl-4">
                         {quality.advisories.map((item, index) => (
                           <li key={`${item.category}-${index}`}>
-                            {item.category}：{item.reason}{item.suggestion ? `；建议：${item.suggestion}` : ''}
+                            {item.suggestion
+                              ? t('workshop.advisorySep', { category: item.category, reason: item.reason, suggestion: item.suggestion })
+                              : `${item.category}：${item.reason}`}
                           </li>
                         ))}
                       </ul>

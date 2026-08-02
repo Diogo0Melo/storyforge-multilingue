@@ -83,7 +83,7 @@ export default function WorldGroupOverview({ project }: Props) {
   const handleAddWorld = async () => {
     const id = await createGroup({
       projectId: project.id!,
-      name: '新世界',
+      name: t('world.newWorld'),
       description: '',
       type: 'traversal' as WorldGroupType,
       icon: '🌐',
@@ -91,7 +91,7 @@ export default function WorldGroupOverview({ project }: Props) {
     })
     // 自动进入编辑
     const created = groups.find(g => g.id === id) ||
-      { id, projectId: project.id!, name: '新世界', description: '', type: 'traversal' as WorldGroupType, icon: '🌐', order: groups.length, createdAt: Date.now(), updatedAt: Date.now() }
+      { id, projectId: project.id!, name: t('world.newWorld'), description: '', type: 'traversal' as WorldGroupType, icon: '🌐', order: groups.length, createdAt: Date.now(), updatedAt: Date.now() }
     setEditingGroup(created)
   }
 

@@ -135,7 +135,7 @@ export default function RagEntrySelector(props: {
                     disabled={!entry.enabled}
                     onClick={() => toggle(entry.key)}
                     title={entry.enabled
-                      ? `${entry.tokenEstimate} tokens · 权重 ${entry.weight} · 上限 ${entry.tokenCap}`
+                      ? `${entry.tokenEstimate} tokens · ${t('retrieval.weight')} ${entry.weight} · ${t('retrieval.cap')} ${entry.tokenCap}`
                       : t('retrieval.rag.fieldDisabled')}
                     className={`flex w-full items-start gap-1.5 rounded px-1.5 py-1 text-left ${
                       selected.has(entry.key)

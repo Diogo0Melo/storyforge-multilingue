@@ -1569,7 +1569,9 @@
     "vector.keyword": "本地关键词",
     "vector.none": "未建章节索引",
     "vector.partial": "部分向量",
-    "vector.ready": "向量就绪"
+    "vector.ready": "向量就绪",
+    "weight": "权重",
+    "cap": "上限"
   },
   "rules": {
     "creative.add": "添加",
@@ -2018,5 +2020,15 @@
     "quality.desc": "软性反套路审查 + 物品/认知/宪法闭集硬查",
     "scenes.title": "场景卡",
     "scenes.desc": "收敛为可采纳场景卡与不可写清单"
+  },
+  "emotion": {
+    "rising": "📈 升温",
+    "falling": "📉 降温",
+    "flat": "➡️ 平稳",
+    "wave": "🌊 波动",
+    "climax": "⚡ 高潮"
+  },
+  "world": {
+    "newWorld": "新世界"
   }
 }

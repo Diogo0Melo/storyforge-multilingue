@@ -260,6 +260,22 @@
     "subtitle": "AI 只生成闭集候选；点击采纳后才写入项目。",
     "title": "动态进度与交汇"
   },
+  "emotion": {
+    "climax": "⚡ 高潮",
+    "falling": "📉 降温",
+    "flat": "➡️ 平稳",
+    "rising": "📈 升温",
+    "wave": "🌊 波动"
+  },
+  "storyline": {
+    "status": {
+      "abandoned": "已放弃",
+      "active": "活跃",
+      "climax": "高潮",
+      "dormant": "休眠",
+      "resolved": "已解决"
+    }
+  },
   "request": {
     "confirmGenerate": "确认生成",
     "defaultNote": "请先调整上方参数，确认后才会调用 API。",
@@ -313,6 +329,7 @@
     "immutableFacts": "不可破坏事实（{{count}}）",
     "invalidJson": "AI 返回的修订计划不是有效 JSON，请重试或在提示词库中恢复内置模板。",
     "mainPlotSuggestion": "主线影响建议（只读）",
+    "manualOnly": "（仅人工建议，不会写回）",
     "modeBookPlanning": "开书规划",
     "modeMidReplan": "中途重规划",
     "new": "新",
@@ -424,6 +441,7 @@
     "writeAll": "全部写入"
   },
   "workshop": {
+    "advisorySep": "{{category}}：{{reason}}；建议：{{suggestion}}",
     "adoptFailed": "采纳场景卡失败",
     "adopting": "正在采纳...",
     "artifactAria": "{{title}}产物",

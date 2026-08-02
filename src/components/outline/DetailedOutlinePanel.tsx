@@ -16,6 +16,7 @@ import { nanoid } from '../../lib/utils/id'
 import { adopt } from '../../lib/registry/adopt'
 import { assembleContext } from '../../lib/registry/assemble-context'
 import type { Project, DetailedOutline, DetailedScene, EmotionArc } from '../../lib/types'
+import type { OutlineKeys } from '../../i18n/generated-resources'
 import { useToast } from '../shared/Toast'
 import DetailedOutlineSidebar from './DetailedOutlineSidebar'
 import DetailedSceneCard from './DetailedSceneCard'
@@ -24,12 +25,12 @@ interface Props {
   project: Project
 }
 
-const EMOTION_LABELS: Record<EmotionArc, string> = {
-  rising:  '📈 升温',
-  falling: '📉 降温',
-  flat:    '➡️ 平稳',
-  wave:    '🌊 波动',
-  climax:  '⚡ 高潮',
+const EMOTION_LABEL_KEYS: Record<EmotionArc, OutlineKeys> = {
+  rising:  'emotion.rising',
+  falling: 'emotion.falling',
+  flat:    'emotion.flat',
+  wave:    'emotion.wave',
+  climax:  'emotion.climax',
 }
 
 export function filterExistingIds(ids: number[], validIds: Set<number>): number[] {
@@ -440,7 +441,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
                     <span className="text-text-secondary">📍 {currentDetailed.sceneLocation}</span>
                   )}
                   {currentDetailed.emotionArc && (
-                    <span className="text-text-secondary">{EMOTION_LABELS[currentDetailed.emotionArc] || currentDetailed.emotionArc}</span>
+                    <span className="text-text-secondary">{EMOTION_LABEL_KEYS[currentDetailed.emotionArc] ? t(EMOTION_LABEL_KEYS[currentDetailed.emotionArc]) : currentDetailed.emotionArc}</span>
                   )}
                   {currentDetailed.appearingCharacterIds && currentDetailed.appearingCharacterIds.length > 0 && (
                     <span className="text-text-secondary">

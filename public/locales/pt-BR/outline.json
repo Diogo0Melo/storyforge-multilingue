@@ -365,6 +365,7 @@
     "immutableFacts_other": "Fatos imutáveis ({{count}})",
     "invalidJson": "O plano de revisão da IA não é JSON válido. Tente novamente ou restaure o modelo padrão na biblioteca de prompts.",
     "mainPlotSuggestion": "Sugestão de impacto na trama principal (somente leitura)",
+    "manualOnly": "(apenas sugestão manual, não será gravada)",
     "modeBookPlanning": "Planejar Livro",
     "modeMidReplan": "Replanejar no Meio",
     "new": "Novo",
@@ -493,7 +494,24 @@
     "volumesCount": "{{completed}}/{{total}} vol.",
     "writeAll": "Escrever todos"
   },
+  "emotion": {
+    "climax": "⚡ Clímax",
+    "falling": "📉 Decrescente",
+    "flat": "➡️ Estável",
+    "rising": "📈 Crescente",
+    "wave": "🌊 Ondulante"
+  },
+  "storyline": {
+    "status": {
+      "abandoned": "Abandonado",
+      "active": "Ativo",
+      "climax": "Clímax",
+      "dormant": "Dormente",
+      "resolved": "Resolvido"
+    }
+  },
   "workshop": {
+    "advisorySep": "{{category}}: {{reason}}; sugestão: {{suggestion}}",
     "adoptFailed": "Falha ao adotar cartões de cena",
     "adopting": "Adotando...",
     "artifactAria": "Artefato de {{title}}",

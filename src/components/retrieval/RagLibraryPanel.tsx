@@ -330,7 +330,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                             />
                             <span className="text-[11px] font-medium text-text-secondary">{entry.fieldLabel}</span>
                             <span className="ml-auto text-[9px] text-text-muted">
-                              {entry.tokenEstimate} tokens · 权重 {entry.weight} · 上限 {entry.tokenCap}
+                              {entry.tokenEstimate} tokens · {t('retrieval.weight')} {entry.weight} · {t('retrieval.cap')} {entry.tokenCap}
                             </span>
                           </div>
                           <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap text-[10px] leading-4 text-text-muted">

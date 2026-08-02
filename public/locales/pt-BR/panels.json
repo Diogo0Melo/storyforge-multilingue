@@ -1584,7 +1584,9 @@
     "vector.keyword": "Palavra-chave local",
     "vector.none": "Sem índice de capítulo",
     "vector.partial": "Vetor parcial",
-    "vector.ready": "Vetor pronto"
+    "vector.ready": "Vetor pronto",
+    "weight": "Peso",
+    "cap": "Limite"
   },
   "rules": {
     "creative.add": "Adicionar",
@@ -2043,5 +2045,15 @@
     "title": {
       "character": "Personagens"
     }
+  },
+  "emotion": {
+    "rising": "📈 Crescente",
+    "falling": "📉 Decrescente",
+    "flat": "➡️ Estável",
+    "wave": "🌊 Ondulante",
+    "climax": "⚡ Clímax"
+  },
+  "world": {
+    "newWorld": "Novo mundo"
   }
 }

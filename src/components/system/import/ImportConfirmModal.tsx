@@ -274,7 +274,7 @@ export default function ImportConfirmModal({
                 <div className="mt-1 text-[10px] leading-relaxed bg-bg-surface rounded p-2 space-y-1.5 border border-border">
                   <div className="text-text-muted">{t('confirm.exampleIntro')}</div>
                   <div><span className="text-green-400 font-medium">{t('confirm.shallowQuick')}</span>：{t('confirm.shallowQuickExample')}</div>
-                  <div><span className="text-red-400 font-medium">{t('confirm.deepTemplate')}</span>：{t('confirm.deepTemplateExample')}<span className="text-text-muted">（+原文引用佐证）</span></div>
+                  <div><span className="text-red-400 font-medium">{t('confirm.deepTemplate')}</span>：{t('confirm.deepTemplateExample')}<span className="text-text-muted">{t('confirm.citationNote')}</span></div>
                 </div>
               )}
             </div>

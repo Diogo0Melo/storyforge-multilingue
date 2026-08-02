@@ -90,7 +90,8 @@
     "title": "Prestes a iniciar a análise por blocos do documento",
     "volumesChapters": "{{volumes}} volumes · {{chapters}} capítulos",
     "warning": "Atenção",
-    "warningText": "Você pode trocar de aba durante a análise, mas <strong>não feche o navegador</strong> (o texto original em memória seria perdido e seria necessário reenviar o arquivo na próxima vez)."
+    "warningText": "Você pode trocar de aba durante a análise, mas <strong>não feche o navegador</strong> (o texto original em memória seria perdido e seria necessário reenviar o arquivo na próxima vez).",
+    "citationNote": "(+citação do original como evidência)"
   },
   "intro": {
     "autoArchiveEnd": "sem precisar reenviar o arquivo.",

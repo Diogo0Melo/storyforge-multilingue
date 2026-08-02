@@ -172,17 +172,17 @@ export default function CodexImportReviewModal({
 
                 <div className="pl-7 text-[11px] text-text-muted space-y-1">
                   <div>
-                    标签：{candidate.tags.join('、') || '无'}
+                    {t('codexReview.tags')}{candidate.tags.join('、') || t('codexReview.noTags')}
                     {Object.keys(candidate.fields).length > 0
-                      ? ` · 结构化字段：${Object.keys(candidate.fields).join('、')}`
+                      ? `${t('codexReview.structuredFields')}${Object.keys(candidate.fields).join('、')}`
                       : ''}
                   </div>
                   <div className="bg-bg-base border border-border rounded p-2 text-text-secondary">
-                    <span className="text-text-muted">逐字证据：</span>
+                    <span className="text-text-muted">{t('codexReview.verbatimEvidence')}</span>
                     {candidate.evidence.map((evidence, evidenceIndex) => (
                       <span key={`${evidence.chunkIndex}:${evidenceIndex}`}>
                         {evidenceIndex > 0 && '；'}
-                        第 {evidence.chunkIndex + 1} 块“{evidence.quote}”
+                        {t('codexReview.chunkQuote', { chunk: evidence.chunkIndex + 1, quote: evidence.quote })}
                       </span>
                     ))}
                   </div>

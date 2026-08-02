@@ -23,12 +23,12 @@ import {
 } from '../../lib/storyline/storyline-progress'
 
 const EMPTY: StorylineAnalysisCandidates = { progress: [], crossings: [], newArcs: [] }
-const STATUS_LABELS = {
-  dormant: '休眠',
-  active: '活跃',
-  climax: '高潮',
-  resolved: '已解决',
-  abandoned: '已放弃',
+const STATUS_LABEL_KEYS = {
+  dormant: 'storyline.status.dormant',
+  active: 'storyline.status.active',
+  climax: 'storyline.status.climax',
+  resolved: 'storyline.status.resolved',
+  abandoned: 'storyline.status.abandoned',
 } as const
 
 export default function StorylineProgressPanel(props: {
@@ -182,7 +182,7 @@ export default function StorylineProgressPanel(props: {
               <div key={row.id} className="bg-bg-surface border border-border rounded-lg p-3">
                 <div className="flex justify-between gap-2">
                   <strong className="text-sm text-text-primary">{arc?.name ?? t('progress.arcDefaultName', { id: row.arcId })}</strong>
-                  <span className="text-xs text-accent">{STATUS_LABELS[row.status]}</span>
+                  <span className="text-xs text-accent">{t(STATUS_LABEL_KEYS[row.status])}</span>
                 </div>
                 {stage && <p className="text-xs text-text-secondary mt-1">{t('progress.stageLabel')}：{stage.title}</p>}
                 <p className="text-xs text-text-muted mt-1">{row.progressNote}</p>
@@ -227,7 +227,7 @@ export default function StorylineProgressPanel(props: {
             <CandidateCard
               key={`p:${item.arcId}`}
               title={`${t('progress.progressPrefix')} · ${arcsById.get(item.arcId)?.name ?? item.arcId}`}
-              text={`${STATUS_LABELS[item.status]} · ${item.progressNote}`}
+              text={`${t(STATUS_LABEL_KEYS[item.status])} · ${item.progressNote}`}
               quote={item.evidenceQuote}
               accepted={accepted.has(`p:${item.arcId}`)}
               onAccept={() => acceptProgress(item)}

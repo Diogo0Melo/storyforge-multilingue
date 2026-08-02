@@ -70,7 +70,7 @@ export default function CharacterRevisionResult({
           title={t('revision.foreshadowSuggestions', { count: analysis.foreshadowSuggestions.length })}
           items={analysis.foreshadowSuggestions.map(item =>
             `${t('revision.chapterOrdinal', { ordinal: item.chapterOrdinal })} ${item.title}：${item.suggestion}`
-            + (item.writtenRegion ? '（仅人工建议，不会写回）' : ''),
+            + (item.writtenRegion ? t('revision.manualOnly') : ''),
           )}
           empty={t('revision.noForeshadowSuggestions')}
         />
