@@ -483,6 +483,13 @@
     "stopOrganizing": "停止整理",
     "viewOrganization": "查看整理结果",
     "defaultFont": "默认正文",
+    "font": {
+      "songti": "宋体",
+      "simhei": "黑体",
+      "fangsong": "仿宋",
+      "kaiti": "楷体",
+      "msyahei": "微软雅黑"
+    },
     "defaultLineHeight": "默认行距",
     "defaultParagraphSpacing": "默认段距",
     "noParagraphSpacing": "无段距",

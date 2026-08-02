@@ -20,11 +20,11 @@ import type { EditorKeys } from '../../i18n/generated-resources'
 
 const FONT_FAMILY_OPTIONS: { label: string; labelKey?: EditorKeys; value: string; preview?: string }[] = [
   { label: '默认正文', labelKey: 'toolbar.defaultFont', value: '', preview: 'var(--font-serif)' },
-  { label: '宋体', value: '"SimSun", "Songti SC", "Noto Serif CJK SC", serif', preview: '"SimSun", "Songti SC", serif' },
-  { label: '黑体', value: '"SimHei", "Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif', preview: '"SimHei", "Microsoft YaHei", sans-serif' },
-  { label: '仿宋', value: '"FangSong", "FangSong_GB2312", "STFangsong", serif', preview: '"FangSong", "STFangsong", serif' },
-  { label: '楷体', value: '"KaiTi", "Kaiti SC", "STKaiti", serif', preview: '"KaiTi", "Kaiti SC", serif' },
-  { label: '微软雅黑', value: '"Microsoft YaHei", "PingFang SC", sans-serif', preview: '"Microsoft YaHei", "PingFang SC", sans-serif' },
+  { label: '宋体', labelKey: 'toolbar.font.songti', value: '"SimSun", "Songti SC", "Noto Serif CJK SC", serif', preview: '"SimSun", "Songti SC", serif' },
+  { label: '黑体', labelKey: 'toolbar.font.simhei', value: '"SimHei", "Microsoft YaHei", "PingFang SC", "Heiti SC", sans-serif', preview: '"SimHei", "Microsoft YaHei", sans-serif' },
+  { label: '仿宋', labelKey: 'toolbar.font.fangsong', value: '"FangSong", "FangSong_GB2312", "STFangsong", serif', preview: '"FangSong", "STFangsong", serif' },
+  { label: '楷体', labelKey: 'toolbar.font.kaiti', value: '"KaiTi", "Kaiti SC", "STKaiti", serif', preview: '"KaiTi", "Kaiti SC", serif' },
+  { label: '微软雅黑', labelKey: 'toolbar.font.msyahei', value: '"Microsoft YaHei", "PingFang SC", sans-serif', preview: '"Microsoft YaHei", "PingFang SC", sans-serif' },
 ]
 
 const FONT_SIZE_OPTIONS = ['12px', '14px', '16px', '18px', '20px', '22px', '24px', '28px', '32px'] as const

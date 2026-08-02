@@ -521,6 +521,13 @@
     "stopOrganizing": "Parar organização",
     "viewOrganization": "Ver resultado da organização",
     "defaultFont": "Texto padrão",
+    "font": {
+      "songti": "Song (Serif chinês)",
+      "simhei": "Hei (Sans-serif chinês)",
+      "fangsong": "FangSong (Serif clássico)",
+      "kaiti": "Kai (Caligráfico)",
+      "msyahei": "Microsoft YaHei (Sans-serif moderno)"
+    },
     "defaultLineHeight": "Espaçamento padrão",
     "defaultParagraphSpacing": "Parágrafo padrão",
     "noParagraphSpacing": "Sem espaçamento",
