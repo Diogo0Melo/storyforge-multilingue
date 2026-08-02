@@ -33,6 +33,7 @@ interface DocumentGroup {
   tableName: string
   recordId: number
   sourceLabel: string
+  sourceLabelKey?: string
   title: string
   updatedAt: number
   fields: RagLibraryEntry[]
@@ -98,6 +99,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
         tableName: entry.tableName,
         recordId: entry.recordId,
         sourceLabel: entry.sourceLabel,
+        sourceLabelKey: entry.sourceLabelKey,
         title: entry.title,
         updatedAt: entry.updatedAt,
         fields: [],
@@ -266,7 +268,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-medium text-text-primary">
-                          <span className="mr-2 text-text-muted">{group.sourceLabel}</span>{group.title}
+                          <span className="mr-2 text-text-muted">{group.sourceLabelKey ? t(group.sourceLabelKey as PanelsKeys, group.sourceLabel) : group.sourceLabel}</span>{group.title}
                         </p>
                         <p className="mt-0.5 text-[10px] text-text-muted">
                           {t('retrieval.library.fields', { count: group.fields.length })} · {formatNumber(totalTokens)} tokens ·

@@ -426,6 +426,7 @@ export async function buildRagLibrary(input: {
           recordId: row.id,
           sourceKey: descriptor.sourceKey,
           sourceLabel: descriptor.sourceLabel,
+          sourceLabelKey: descriptor.sourceLabelKey,
           title,
           fieldKey: currentField.key,
           fieldLabel: currentField.label,

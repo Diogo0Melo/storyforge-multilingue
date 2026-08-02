@@ -253,7 +253,7 @@ function CodexFieldRow({
       <label className="text-xs text-text-muted pt-2 text-right">{definition.labelKey ? t(definition.labelKey as PanelsKeys, definition.label) : definition.label}</label>
       <div className="min-w-0">
         {definition.type === 'longtext' && (
-          <CTextarea value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholder} rows={2}
+          <CTextarea value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholderKey ? t(definition.placeholderKey as PanelsKeys, definition.placeholder ?? '') : definition.placeholder} rows={2}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm resize-y" />
         )}
         {definition.type === 'select' && (
@@ -264,7 +264,7 @@ function CodexFieldRow({
           </select>
         )}
         {definition.type === 'number' && (
-          <CInput value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholder}
+          <CInput value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholderKey ? t(definition.placeholderKey as PanelsKeys, definition.placeholder ?? '') : definition.placeholder}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm" />
         )}
         {definition.type === 'ref' && (
@@ -280,7 +280,7 @@ function CodexFieldRow({
           />
         )}
         {definition.type === 'text' && (
-          <CInput value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholder}
+          <CInput value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholderKey ? t(definition.placeholderKey as PanelsKeys, definition.placeholder ?? '') : definition.placeholder}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm" />
         )}
       </div>

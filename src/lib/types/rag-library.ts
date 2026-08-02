@@ -30,6 +30,7 @@ export interface RagLibraryEntry {
   recordId: number
   sourceKey: string
   sourceLabel: string
+  sourceLabelKey?: string
   title: string
   fieldKey: string
   fieldLabel: string

@@ -3,10 +3,12 @@ import { useTranslation } from 'react-i18next'
 import { Check, Database, Loader2, RefreshCw, Search } from 'lucide-react'
 import { buildRagLibrary } from '../../lib/retrieval/rag-library'
 import type { RagLibraryEntry } from '../../lib/types'
+import type { PanelsKeys } from '../../i18n/generated-resources'
 
 interface DocumentGroup {
   id: string
   sourceLabel: string
+  sourceLabelKey?: string
   title: string
   fields: RagLibraryEntry[]
 }
@@ -58,6 +60,7 @@ export default function RagEntrySelector(props: {
       const group = map.get(entry.documentId) ?? {
         id: entry.documentId,
         sourceLabel: entry.sourceLabel,
+        sourceLabelKey: entry.sourceLabelKey,
         title: entry.title,
         fields: [],
       }
@@ -118,7 +121,7 @@ export default function RagEntrySelector(props: {
               <summary className="cursor-pointer list-none px-2 py-1.5 text-[10px] text-text-secondary">
                 <span className="flex items-center gap-1">
                   <Database className="h-3 w-3 text-text-muted" />
-                  <span className="min-w-0 flex-1 truncate">{group.sourceLabel} · {group.title}</span>
+                  <span className="min-w-0 flex-1 truncate">{group.sourceLabelKey ? t(group.sourceLabelKey as PanelsKeys, group.sourceLabel) : group.sourceLabel} · {group.title}</span>
                   {selectedCount > 0 && (
                     <span className="rounded bg-accent/10 px-1 text-[9px] text-accent">{selectedCount}</span>
                   )}

@@ -47,6 +47,8 @@ export interface CodexFieldDef {
   required?: boolean
   /** 占位/说明 */
   placeholder?: string
+  /** i18n key for placeholder */
+  placeholderKey?: string
 }
 
 /** 内置分类稳定标识 */
@@ -211,7 +213,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   {
     domain: 'natural', builtInKey: 'mineral', name: '矿物灵材', nameKey: 'codex.builtIn.mineral', icon: '⛏️',
     fields: [
-      { key: 'appearance', label: '外观', labelKey: 'codex.field.mineral.appearance', type: 'longtext', placeholder: '形状 / 颜色 / 质感' },
+      { key: 'appearance', label: '外观', labelKey: 'codex.field.mineral.appearance', type: 'longtext', placeholder: '形状 / 颜色 / 质感', placeholderKey: 'codex.field.mineral.appearance.placeholder' },
       { key: 'rank', label: '品级品阶', labelKey: 'codex.field.mineral.rank', type: 'select', options: PIN_JI_OPTIONS, optionKeys: ['codex.field.mineral.rank.option.0', 'codex.field.mineral.rank.option.1', 'codex.field.mineral.rank.option.2', 'codex.field.mineral.rank.option.3', 'codex.field.mineral.rank.option.4', 'codex.field.mineral.rank.option.5'] },
       { key: 'effect', label: '功效作用', labelKey: 'codex.field.mineral.effect', type: 'longtext' },
       { key: 'origin', label: '产地分布', labelKey: 'codex.field.mineral.origin', type: 'text' },
@@ -236,7 +238,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     fields: [
       { key: 'kind', label: '类别', labelKey: 'codex.field.beast.kind', type: 'select', options: ['走兽', '飞禽', '水族', '虫豸', '异种'], optionKeys: ['codex.field.beast.kind.option.0', 'codex.field.beast.kind.option.1', 'codex.field.beast.kind.option.2', 'codex.field.beast.kind.option.3', 'codex.field.beast.kind.option.4'] },
       // WORLD-1 已有结构化关联；保留这两个旧文本字段承载老项目无法自动推断的数据。
-      { key: 'cultivation', label: '修炼体系（旧文本备注）', labelKey: 'codex.field.beast.cultivation', type: 'text', placeholder: '旧数据兼容；新数据请使用上方结构化关联' },
+      { key: 'cultivation', label: '修炼体系（旧文本备注）', labelKey: 'codex.field.beast.cultivation', type: 'text', placeholder: '旧数据兼容；新数据请使用上方结构化关联', placeholderKey: 'codex.field.beast.cultivation.placeholder' },
       { key: 'realm', label: '境界（旧文本备注）', labelKey: 'codex.field.beast.realm', type: 'text' },
       { key: 'body', label: '体型外貌', labelKey: 'codex.field.beast.body', type: 'longtext' },
       { key: 'habit', label: '习性性情', labelKey: 'codex.field.beast.habit', type: 'longtext' },
@@ -273,14 +275,14 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
       { key: 'relations', label: '敌友关系', labelKey: 'codex.field.faction.relations', type: 'longtext' },
       { key: 'banner', label: '标志旗帜', labelKey: 'codex.field.faction.banner', type: 'text' },
       { key: 'mapRegion', label: '绑定地图区域', labelKey: 'codex.field.faction.mapRegion', type: 'text' },
-      { key: 'color', label: '颜色', labelKey: 'codex.field.faction.color', type: 'text', placeholder: '如 #C17D5E' },
+      { key: 'color', label: '颜色', labelKey: 'codex.field.faction.color', type: 'text', placeholder: '如 #C17D5E', placeholderKey: 'codex.field.faction.color.placeholder' },
     ],
   },
   {
     domain: 'humanity', builtInKey: 'city', name: '城池重镇', nameKey: 'codex.builtIn.city', icon: '🏰',
     fields: [
       { key: 'faction', label: '所属势力', labelKey: 'codex.field.city.faction', type: 'ref', refCategory: 'faction', refMulti: false },
-      { key: 'locationNote', label: '位置备注（旧文本）', labelKey: 'codex.field.city.locationNote', type: 'text', placeholder: '结构化位置请使用上方「重要地点」关联' },
+      { key: 'locationNote', label: '位置备注（旧文本）', labelKey: 'codex.field.city.locationNote', type: 'text', placeholder: '结构化位置请使用上方「重要地点」关联', placeholderKey: 'codex.field.city.locationNote.placeholder' },
       { key: 'scale', label: '规模人口', labelKey: 'codex.field.city.scale', type: 'text' },
       { key: 'ruler', label: '统治者', labelKey: 'codex.field.city.ruler', type: 'text' },
       { key: 'economy', label: '经济特产', labelKey: 'codex.field.city.economy', type: 'longtext' },
@@ -307,7 +309,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   {
     domain: 'natural', builtInKey: 'natStructure', name: '世界结构', nameKey: 'codex.builtIn.natStructure', icon: '🌐',
     fields: [
-      { key: 'type', label: '层级类型', labelKey: 'codex.field.natStructure.type', type: 'text', placeholder: '如 星球 / 大陆 / 位面 / 平行空间' },
+      { key: 'type', label: '层级类型', labelKey: 'codex.field.natStructure.type', type: 'text', placeholder: '如 星球 / 大陆 / 位面 / 平行空间', placeholderKey: 'codex.field.natStructure.type.placeholder' },
       { key: 'scope', label: '范围', labelKey: 'codex.field.natStructure.scope', type: 'text' },
       { key: 'feature', label: '特征说明', labelKey: 'codex.field.natStructure.feature', type: 'longtext' },
     ],
@@ -339,7 +341,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
     domain: 'natural', builtInKey: 'natClimate', name: '气候带', nameKey: 'codex.builtIn.natClimate', icon: '🌦️',
     fields: [
       { key: 'region', label: '所在区域', labelKey: 'codex.field.natClimate.region', type: 'text' },
-      { key: 'type', label: '气候类型', labelKey: 'codex.field.natClimate.type', type: 'text', placeholder: '如 温带 / 苦寒 / 湿热' },
+      { key: 'type', label: '气候类型', labelKey: 'codex.field.natClimate.type', type: 'text', placeholder: '如 温带 / 苦寒 / 湿热', placeholderKey: 'codex.field.natClimate.type.placeholder' },
       { key: 'hazard', label: '季节/自然灾害', labelKey: 'codex.field.natClimate.hazard', type: 'longtext' },
     ],
   },
@@ -397,7 +399,7 @@ export const BUILTIN_CATEGORIES: BuiltInCategorySeed[] = [
   {
     domain: 'humanity', builtInKey: 'humConflict', name: '矛盾冲突', nameKey: 'codex.builtIn.humConflict', icon: '🔥',
     fields: [
-      { key: 'type', label: '类型', labelKey: 'codex.field.humConflict.type', type: 'text', placeholder: '如 阶级 / 种族 / 信仰 / 资源' },
+      { key: 'type', label: '类型', labelKey: 'codex.field.humConflict.type', type: 'text', placeholder: '如 阶级 / 种族 / 信仰 / 资源', placeholderKey: 'codex.field.humConflict.type.placeholder' },
       { key: 'sides', label: '对立方', labelKey: 'codex.field.humConflict.sides', type: 'text' },
       { key: 'tension', label: '张力/根源', labelKey: 'codex.field.humConflict.tension', type: 'longtext' },
     ],
