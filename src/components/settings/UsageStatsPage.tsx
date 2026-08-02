@@ -8,6 +8,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Trash2, RefreshCw, Coins } from 'lucide-react'
 import { useAIUsageStore } from '../../stores/ai-usage'
+import { formatNumber } from '../../i18n/format'
 import { categoryMeta, getUsdCnyRate, setUsdCnyRate } from '../../lib/ai/usage-log'
 import type { Project } from '../../lib/types'
 import { useDialog } from '../shared/Dialog'
@@ -105,8 +106,8 @@ export default function UsageStatsPage({ project }: Props) {
 
       {/* 汇总卡 */}
       <div className="grid grid-cols-3 gap-3">
-        <SummaryCard label={t('usage.totalInput')} value={totals.input.toLocaleString()} />
-        <SummaryCard label={t('usage.totalOutput')} value={totals.output.toLocaleString()} />
+        <SummaryCard label={t('usage.totalInput')} value={formatNumber(totals.input)} />
+        <SummaryCard label={t('usage.totalOutput')} value={formatNumber(totals.output)} />
         <SummaryCard
           label={t('usage.totalCost')}
           value={fmtUsd(totals.usd)}
@@ -155,8 +156,8 @@ export default function UsageStatsPage({ project }: Props) {
                       </div>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-right text-text-secondary tabular-nums">{e.inputTokens.toLocaleString()}</td>
-                  <td className="px-3 py-2 text-right text-text-secondary tabular-nums">{e.outputTokens.toLocaleString()}</td>
+                  <td className="px-3 py-2 text-right text-text-secondary tabular-nums">{formatNumber(e.inputTokens)}</td>
+                  <td className="px-3 py-2 text-right text-text-secondary tabular-nums">{formatNumber(e.outputTokens)}</td>
                   <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">
                     <div className="text-text-primary">{fmtUsd(e.costUsd)}</div>
                     <div className="text-text-muted text-xs">{fmtCny(e.costUsd * rate)}</div>

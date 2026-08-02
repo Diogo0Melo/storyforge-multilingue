@@ -7,6 +7,7 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronRight, Search } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { useOutlineStore } from '../../stores/outline'
 import { useChapterStore } from '../../stores/chapter'
 import { useCharacterStore } from '../../stores/character'
@@ -124,7 +125,7 @@ export default function ChaptersListPanel({ project, initialNodeId }: Props) {
     <div className="flex flex-col h-full">
       {/* 统计 */}
       <div className="px-3 py-2 text-[10px] text-text-muted border-b border-border">
-        {t('list.totalInfo', { chapters: totalChapters, words: totalWords.toLocaleString() })}
+        {t('list.totalInfo', { chapters: totalChapters, words: formatNumber(totalWords) })}
       </div>
 
       {/* 按卷分组的章节列表 */}

@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, ShieldCheck, Bot, TrendingUp, Loader2, AlertTriangle, AlertCircle, Info, Wand2, ScanSearch } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
 import { useReviewResultStore, selectChapterReview, type ReviewTab } from '../../stores/review-result'
@@ -241,11 +242,11 @@ export default function ReviewPanel(props: Props) {
               {props.consistencyCurrent === false ? t('review.contentChanged') : t('review.currentReport')}
               {' · '}{consistencyMeta.mode === 'background' ? t('review.autoFastGuard') : consistencyMeta.mode === 'fast' ? 'Fast Guard' : 'Deep Audit'}
               {' · '}{t('review.modelCalls', { used: consistencyMeta.budget.calls, max: consistencyMeta.budget.maxCalls })}
-              {' · '}{t('organization.budgetTokens', { used: consistencyMeta.budget.usedTokens.toLocaleString(), max: consistencyMeta.budget.maxTokens.toLocaleString() })}
+              {' · '}{t('organization.budgetTokens', { used: formatNumber(consistencyMeta.budget.usedTokens), max: formatNumber(consistencyMeta.budget.maxTokens) })}
             </p>
             {consistencyMeta.context.included.length > 0 && (
               <p className="mt-1">
-                {t('review.inputEvidence', { input: consistencyMeta.context.inputTokens.toLocaleString(), budget: consistencyMeta.context.inputBudget.toLocaleString() })}
+                {t('review.inputEvidence', { input: formatNumber(consistencyMeta.context.inputTokens), budget: formatNumber(consistencyMeta.context.inputBudget) })}
                 {' · '}{t('review.included', { count: consistencyMeta.context.included.length })}
                 {' · '}{t('review.omitted', { count: consistencyMeta.context.omitted.length })}
                 {' · '}{t('review.trimmed', { count: consistencyMeta.context.trimmed.length })}

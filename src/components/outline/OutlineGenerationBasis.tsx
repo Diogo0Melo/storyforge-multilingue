@@ -1,5 +1,6 @@
 import { AlertTriangle, BookOpenCheck, Loader2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber } from '../../i18n/format'
 import { CONTEXT_SOURCE_BY_KEY } from '../../lib/registry/context-sources'
 import type { AssembleContextResult } from '../../lib/registry/types'
 
@@ -56,7 +57,7 @@ export default function OutlineGenerationBasis({
         <BookOpenCheck className="h-3.5 w-3.5 text-accent" />
         <span className="font-medium">{t('basis.title')}</span>
         <span className="text-[10px] text-text-muted">
-          {t('basis.tokenInfo', { used: context.totalInputTokens.toLocaleString(), budget: context.inputBudget.toLocaleString() })}
+          {t('basis.tokenInfo', { used: formatNumber(context.totalInputTokens), budget: formatNumber(context.inputBudget) })}
         </span>
       </div>
 

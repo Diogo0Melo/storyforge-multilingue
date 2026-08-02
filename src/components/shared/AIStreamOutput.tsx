@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Square, Check, RotateCcw, Loader2, ThumbsUp, ThumbsDown, Braces, ChevronDown, ChevronRight, X } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { usePromptStore } from '../../stores/prompt'
 import type { PromptModuleKey, PromptExample } from '../../lib/types/prompt'
 import type { TokenUsage } from '../../lib/ai/logger'
@@ -161,7 +162,7 @@ export default function AIStreamOutput({
             </span>
           ) : estimatedOutputTokens ? (
             <span className="text-text-muted" title={t('aiStream.estimatedTokensHint')}>
-              ≈ {t('aiStream.outputTokensEstimate', { count: estimatedOutputTokens.toLocaleString() })}
+              ≈ {t('aiStream.outputTokensEstimate', { count: formatNumber(estimatedOutputTokens) })}
             </span>
           ) : null}
         </span>

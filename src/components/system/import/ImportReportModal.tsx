@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, CheckCircle2, AlertTriangle, RotateCcw, FileText, Trash2, ArrowRight, BookOpenCheck } from 'lucide-react'
+import { formatNumber } from '../../../i18n/format'
 import type { ImportSession } from '../../../lib/types/import-session'
 
 interface Props {
@@ -74,7 +75,7 @@ export default function ImportReportModal({
             </div>
             <div className="text-sm text-text-primary font-medium break-all">{session.filename}</div>
             <div className="text-xs text-text-muted mt-1">
-              {t('report.fileInfo', { chars: session.totalChars.toLocaleString(), chunks: session.totalChunks, chunkSize: session.chunkSize.toLocaleString() })}
+              {t('report.fileInfo', { chars: formatNumber(session.totalChars), chunks: session.totalChunks, chunkSize: formatNumber(session.chunkSize) })}
             </div>
           </div>
 

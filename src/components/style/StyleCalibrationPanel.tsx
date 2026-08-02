@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Check, Loader2, MessageSquareText, Save, Sparkles, Wrench } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { buildStyleCalibrationPrompt } from '../../lib/ai/adapters/style-adapter'
 import { chat, resolveRequestConfig } from '../../lib/ai/client'
 import { getAIConfigRequiredMessage, isAIConfigReady } from '../../lib/ai/config-readiness'
@@ -132,7 +133,7 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
       />
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] text-text-muted">
-          {t('style.calibration.charCount', { count: sourceText.length.toLocaleString(), max: MAX_CALIBRATION_SOURCE_CHARS.toLocaleString() })}
+          {t('style.calibration.charCount', { count: formatNumber(sourceText.length), max: formatNumber(MAX_CALIBRATION_SOURCE_CHARS) })}
         </span>
         <button
           type="button"

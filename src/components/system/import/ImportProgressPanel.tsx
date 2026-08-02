@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber } from '../../../i18n/format'
 import { useImportStatusStore } from '../../../stores/import-status'
 import { useImportSessionStore } from '../../../stores/import-session'
 import type { ImportSession, ChunkState } from '../../../lib/types/import-session'
@@ -35,7 +36,7 @@ export default function ImportProgressPanel() {
             {t('progress.title', { filename: session.filename })}
           </div>
           <div className="text-xs text-text-muted mt-0.5">
-            {t('progress.summary', { total: session.totalChunks, chunkSize: session.chunkSize.toLocaleString(), totalChars: session.totalChars.toLocaleString() })}
+            {t('progress.summary', { total: session.totalChunks, chunkSize: formatNumber(session.chunkSize), totalChars: formatNumber(session.totalChars) })}
           </div>
         </div>
         <div className="text-right text-xs">
@@ -79,7 +80,7 @@ function ChunkCell({ chunk, isActive, activeAttempts, t }: {
 }) {
   let Icon = Circle
   let color = 'text-text-muted bg-bg-base'
-  let title = t('progress.chunkTitle', { index: chunk.index + 1, chars: chunk.charCount.toLocaleString() })
+  let title = t('progress.chunkTitle', { index: chunk.index + 1, chars: formatNumber(chunk.charCount) })
   if (chunk.label) title += ` · ${chunk.label}`
 
   if (chunk.status === 'done') {

@@ -15,6 +15,7 @@ import { useTranslation } from 'react-i18next'
 import type { Project } from '../../lib/types'
 import { parseAgentEventPayload } from '../../lib/types'
 import { useMasterCopilot } from './useMasterCopilot'
+import { formatNumber } from '../../i18n/format'
 
 interface Props {
   project: Project
@@ -175,7 +176,7 @@ export default function ChatCopilotPanel({
                 title={candidate.payload.contextSources.join('、')}
               >
                 {candidate.payload.contextEvidence
-                  ? `${t(`agent.context${candidate.payload.contextEvidence.profile.charAt(0).toUpperCase() + candidate.payload.contextEvidence.profile.slice(1)}` as any)} · ≈${candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString()} tokens`
+                  ? `${t(`agent.context${candidate.payload.contextEvidence.profile.charAt(0).toUpperCase() + candidate.payload.contextEvidence.profile.slice(1)}` as any)} · ≈${formatNumber(candidate.payload.contextEvidence.estimatedInputTokens)} tokens`
                   : t('agent.chat.inputSources', { count: candidate.payload.contextSources.length })}
               </span>
             </div>
@@ -200,7 +201,7 @@ export default function ChatCopilotPanel({
                 </summary>
                 <div className="mt-2 space-y-1 break-words">
                   <p>
-                    {t('agent.chat.contextEstimate', { estimate: candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString(), budget: candidate.payload.contextEvidence.inputBudgetTokens.toLocaleString() })}
+                    {t('agent.chat.contextEstimate', { estimate: formatNumber(candidate.payload.contextEvidence.estimatedInputTokens), budget: formatNumber(candidate.payload.contextEvidence.inputBudgetTokens) })}
                   </p>
                   <p>{t('agent.chat.included', { items: candidate.payload.contextEvidence.included.join('、') || t('agent.chat.none') })}</p>
                   {candidate.payload.contextEvidence.trimmed.length > 0 && (
@@ -214,7 +215,7 @@ export default function ChatCopilotPanel({
             )}
             {candidate.payload.teamBudgetEvidence && (
               <p className="mt-2 rounded border border-border/60 bg-bg-surface px-2 py-1.5 text-[10px] text-text-muted">
-                {t('agent.chat.teamBudget', { used: candidate.payload.teamBudgetEvidence.usedTokens.toLocaleString(), max: candidate.payload.teamBudgetEvidence.maxTokens.toLocaleString(), calls: candidate.payload.teamBudgetEvidence.calls, maxCalls: candidate.payload.teamBudgetEvidence.maxCalls, retries: candidate.payload.teamBudgetEvidence.canonRetries, maxRetries: candidate.payload.teamBudgetEvidence.maxCanonRetries })}
+                {t('agent.chat.teamBudget', { used: formatNumber(candidate.payload.teamBudgetEvidence.usedTokens), max: formatNumber(candidate.payload.teamBudgetEvidence.maxTokens), calls: candidate.payload.teamBudgetEvidence.calls, maxCalls: candidate.payload.teamBudgetEvidence.maxCalls, retries: candidate.payload.teamBudgetEvidence.canonRetries, maxRetries: candidate.payload.teamBudgetEvidence.maxCanonRetries })}
               </p>
             )}
             {(candidate.payload.dependsOnTaskIds?.length ?? 0) > 0 && (

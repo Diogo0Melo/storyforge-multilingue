@@ -11,6 +11,7 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, MapPin, Users, BookOpen, Zap, TrendingUp, Bookmark } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { useDetailedOutlineStore } from '../../stores/detailed-outline'
 import { useCharacterStore } from '../../stores/character'
 import { useForeshadowStore } from '../../stores/foreshadow'
@@ -228,7 +229,7 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
               ))}
               <div className="text-xs text-text-muted text-right pt-1 border-t border-border">
                 <TrendingUp className="w-3 h-3 inline mr-1" />
-                {t('preview.estimatedTotal')}：{detail.scenes.reduce((s, sc) => s + (sc.estimatedWords || 0), 0).toLocaleString()}
+                {t('preview.estimatedTotal')}：{formatNumber(detail.scenes.reduce((s, sc) => s + (sc.estimatedWords || 0), 0))}
               </div>
             </div>
           </div>

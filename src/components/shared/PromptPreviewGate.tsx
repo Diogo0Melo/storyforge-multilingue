@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Eye, RotateCcw, Send } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { estimateTokens } from '../../lib/ai/context-budget'
 import type { ChatMessage } from '../../lib/types'
 
@@ -66,8 +67,8 @@ export default function PromptPreviewGate({
           </p>
         </div>
         <span className="text-[10px] tabular-nums text-text-muted">
-          {t('promptPreview.tokenCount', { count: draftTokens.toLocaleString() })}
-          {draftTokens !== originalTokens && ` ${t('promptPreview.tokenCountOriginal', { count: originalTokens.toLocaleString() })}`}
+          {t('promptPreview.tokenCount', { count: formatNumber(draftTokens) })}
+          {draftTokens !== originalTokens && ` ${t('promptPreview.tokenCountOriginal', { count: formatNumber(originalTokens) })}`}
         </span>
       </div>
 

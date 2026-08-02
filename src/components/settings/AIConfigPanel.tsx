@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useSyncExternalStore } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff, CheckCircle, RotateCcw, RefreshCw } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { useAIConfigStore, type TestResult } from '../../stores/ai-config'
 import EmbeddingConfigCard from './EmbeddingConfigCard'
 import type { AIProvider } from '../../lib/types'
@@ -446,7 +447,7 @@ export default function AIConfigPanel() {
             <label className="block text-sm text-text-secondary mb-1.5">
               {t('aiConfig.contextWindow')} <span className="text-text-muted font-normal">({t('aiConfig.advancedOptional')})</span>
               {config.contextWindow
-                ? <span className="text-accent ml-1">{config.contextWindow.toLocaleString()} token</span>
+                ? <span className="text-accent ml-1">{formatNumber(config.contextWindow)} token</span>
                 : <span className="text-text-muted ml-1">{t('aiConfig.contextWindowPreset')}</span>}
             </label>
             <div className="flex items-center gap-2">

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber } from '../../i18n/format'
 import {
   AlertTriangle,
   Check,
@@ -172,7 +173,7 @@ export default function ChapterOrganizationModal({
           )}
 
           <div className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-bg-base p-3 text-xs text-text-secondary sm:grid-cols-3">
-            <span>{t('organization.budgetTokens', { used: candidate.budget.usedTokens.toLocaleString(), max: candidate.budget.maxTokens.toLocaleString() })}</span>
+            <span>{t('organization.budgetTokens', { used: formatNumber(candidate.budget.usedTokens), max: formatNumber(candidate.budget.maxTokens) })}</span>
             <span>{t('organization.budgetCalls', { used: candidate.budget.calls, max: candidate.budget.maxCalls })}</span>
             <span>{t('organization.sourceHash', { hash: candidate.sourceTextHash.slice(0, 12) })}</span>
           </div>

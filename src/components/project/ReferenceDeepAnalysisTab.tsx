@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber } from '../../i18n/format'
 import {
   BarChart3,
   CheckCircle2,
@@ -159,7 +160,7 @@ export default function ReferenceDeepAnalysisTab({ reference }: Props) {
       })
       registerRefChunks(run.id!, plan.chunks)
       setSelectedRunId(run.id)
-      setStatusMessage(t('deepAnalysis.uploadSuccess', { filename: file.name, chars: plan.totalChars.toLocaleString(), chunks: plan.chunks.length }))
+      setStatusMessage(t('deepAnalysis.uploadSuccess', { filename: file.name, chars: formatNumber(plan.totalChars), chunks: plan.chunks.length }))
       setActivityLog([])
       setProgress(0)
       await reloadRuns(run.id)

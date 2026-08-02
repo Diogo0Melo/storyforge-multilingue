@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import i18n from '../../i18n/i18n'
+import { formatNumber } from '../../i18n/format'
 import {
   Check,
   ChevronDown,
@@ -447,7 +448,7 @@ export default function NodeModeWorkspace(props: {
                 <p className="text-[10px] text-text-muted">{t('nodeFlow.selectNodeToViewInput')}</p>
               ) : (
                 <div className="space-y-2 text-[10px] text-text-secondary">
-                  <p>{t('nodeFlow.estimatedInput', { tokens: selectedSnapshot.totalTokens.toLocaleString() })}</p>
+                  <p>{t('nodeFlow.estimatedInput', { tokens: formatNumber(selectedSnapshot.totalTokens) })}</p>
                   {selectedSnapshot.inputs.map(item => (
                     <details key={`${item.sourceNodeId}:${item.targetSlotId}`} className="rounded border border-border bg-bg-base p-2">
                       <summary className="cursor-pointer">{item.targetSlotLabel} ← {item.sourceTitle} · {item.tokens} tokens</summary>

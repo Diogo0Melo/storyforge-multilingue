@@ -1,6 +1,7 @@
 import { estimateTokens } from '../ai/context-budget'
 import type { ChatMessage } from '../types'
 import i18n from '../../i18n/i18n'
+import { formatNumber } from '../../i18n/format'
 
 export const AGENT_TEAM_BUDGET_PROFILES = ['economy', 'balanced', 'expanded'] as const
 export type AgentTeamBudgetProfile = typeof AGENT_TEAM_BUDGET_PROFILES[number]
@@ -85,10 +86,10 @@ export class AgentTeamBudgetTracker {
     if (projected > this.policy.maxTokens) {
       throw new AgentTeamBudgetExceededError(
         i18n.t('common:errors.agent.budgetTokenLimit', {
-          used: this.usedTokens.toLocaleString(),
+          used: formatNumber(this.usedTokens),
           label: input.label,
-          needed: (estimatedInputTokens + reservedOutputTokens).toLocaleString(),
-          max: this.policy.maxTokens.toLocaleString(),
+          needed: formatNumber(estimatedInputTokens + reservedOutputTokens),
+          max: formatNumber(this.policy.maxTokens),
         }),
       )
     }

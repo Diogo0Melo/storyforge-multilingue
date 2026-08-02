@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { X, Wand2, AlertTriangle, Info, Gauge, Timer, Coins, BookOpen, ChevronDown, ChevronRight, Microscope } from 'lucide-react'
+import { formatNumber } from '../../../i18n/format'
 import type { ChunkPlan } from '../../../lib/import/chunker'
 import type { VolumeDetectResult } from '../../../lib/import/volume-detector'
 import type { WorldGroup, ReferenceAnalysisDepth } from '../../../lib/types'
@@ -100,7 +101,7 @@ export default function ImportConfirmModal({
             <div className="text-xs text-text-muted mb-1">{t('confirm.file')}</div>
             <div className="text-sm text-text-primary font-medium break-all">{filename}</div>
             <div className="text-xs text-text-muted mt-1">
-              {t('confirm.charsAndChunks', { chars: totalChars.toLocaleString(), chunks: stats.totalChunks })}
+              {t('confirm.charsAndChunks', { chars: formatNumber(totalChars), chunks: stats.totalChunks })}
             </div>
           </div>
 
@@ -155,7 +156,7 @@ export default function ImportConfirmModal({
               <label className="text-xs text-text-secondary flex items-center gap-1">
                 <Gauge className="w-3 h-3" /> {t('confirm.charsPerChunk')}
               </label>
-              <span className="text-xs text-accent font-mono">{t('confirm.charsPerChunkValue', { count: chunkSize.toLocaleString() })}</span>
+              <span className="text-xs text-accent font-mono">{t('confirm.charsPerChunkValue', { count: formatNumber(chunkSize) })}</span>
             </div>
             <input
               type="range"

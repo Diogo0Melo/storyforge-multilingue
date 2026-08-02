@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Sparkles, Brain, Loader2, Check, AlertCircle, Power } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { useChapterStore } from '../../stores/chapter'
 import { useUserStyleStore } from '../../stores/user-style'
 import { useAIConfigStore } from '../../stores/ai-config'
@@ -154,7 +155,7 @@ export default function StyleLearningPanel({ project }: Props) {
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium text-text-primary">{t('style.learning.corpus')}</span>
             <span className="text-xs text-text-muted">
-              {t('style.learning.selectedChapters', { count: selected.length, words: sampleWords.toLocaleString() })}
+              {t('style.learning.selectedChapters', { count: selected.length, words: formatNumber(sampleWords) })}
             </span>
           </div>
 
@@ -177,7 +178,7 @@ export default function StyleLearningPanel({ project }: Props) {
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent shrink-0">
                     {c.status in STATUS_LABEL_KEYS ? t(STATUS_LABEL_KEYS[c.status as keyof typeof STATUS_LABEL_KEYS]!) : c.status}
                   </span>
-                  <span className="text-[10px] text-text-muted shrink-0">{(c.wordCount || c.content.length).toLocaleString()}</span>
+                  <span className="text-[10px] text-text-muted shrink-0">{formatNumber(c.wordCount || c.content.length)}</span>
                 </label>
               ))}
             </div>
@@ -194,7 +195,7 @@ export default function StyleLearningPanel({ project }: Props) {
           </button>
 
           <p className="text-[11px] leading-5 text-text-muted">
-            {t('style.learning.limit', { chapters: MAX_CORPUS_CHAPTERS, chars: PER_CHAPTER_CHARS.toLocaleString() })}
+            {t('style.learning.limit', { chapters: MAX_CORPUS_CHAPTERS, chars: formatNumber(PER_CHAPTER_CHARS) })}
           </p>
 
           {error && (
@@ -238,7 +239,7 @@ export default function StyleLearningPanel({ project }: Props) {
             </div>
 
             <p className="text-[11px] text-text-muted">
-              {t('style.learning.profileBased', { chapters: profile.sampleCount, words: profile.sampleWords.toLocaleString() })} {t('style.learning.profileEditable')}
+              {t('style.learning.profileBased', { chapters: profile.sampleCount, words: formatNumber(profile.sampleWords) })} {t('style.learning.profileEditable')}
             </p>
 
             <textarea

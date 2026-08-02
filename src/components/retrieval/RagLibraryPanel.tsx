@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber } from '../../i18n/format'
 import {
   ChevronDown,
   Database,
@@ -199,10 +200,10 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
 
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            [t('retrieval.library.visibleRecords'), stats.documents.toLocaleString()],
+            [t('retrieval.library.visibleRecords'), formatNumber(stats.documents)],
             [t('retrieval.library.visibleFields'), `${stats.enabled}/${stats.fields}`],
-            [t('retrieval.library.contentEstimate'), `${stats.tokens.toLocaleString()} tokens`],
-            [t('retrieval.library.chapterChunks'), stats.totalChunks.toLocaleString()],
+            [t('retrieval.library.contentEstimate'), `${formatNumber(stats.tokens)} tokens`],
+            [t('retrieval.library.chapterChunks'), formatNumber(stats.totalChunks)],
           ].map(([label, value]) => (
             <div key={label} className="rounded-lg border border-border bg-bg-surface p-3">
               <p className="text-[10px] text-text-muted">{label}</p>
@@ -268,7 +269,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                           <span className="mr-2 text-text-muted">{group.sourceLabel}</span>{group.title}
                         </p>
                         <p className="mt-0.5 text-[10px] text-text-muted">
-                          {t('retrieval.library.fields', { count: group.fields.length })} · {totalTokens.toLocaleString()} tokens ·
+                          {t('retrieval.library.fields', { count: group.fields.length })} · {formatNumber(totalTokens)} tokens ·
                           {' '}{chunkCount ? `${t('retrieval.library.chunks', { count: chunkCount })} · ` : ''}{t(VECTOR_LABELS[vectorState])} ·
                           {' '}{t('retrieval.library.updated', { date: group.updatedAt ? new Date(group.updatedAt).toLocaleString() : t('retrieval.library.unknown') })}
                         </p>

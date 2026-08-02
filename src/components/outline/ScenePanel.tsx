@@ -6,6 +6,7 @@
 import { useState, useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus, Trash2, Sparkles, ChevronDown, ChevronRight, Wand2 } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { useDetailedOutlineStore } from '../../stores/detailed-outline'
 import { useOutlineStore } from '../../stores/outline'
 import { useCharacterStore } from '../../stores/character'
@@ -165,7 +166,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
         <span className="text-sm font-medium text-text-primary">{t('scene.title')}</span>
         {hasScenes && (
           <span className="text-xs text-text-muted">
-            {t('scene.scenesCount', { count: scenes.length, words: totalWords.toLocaleString() })}
+            {t('scene.scenesCount', { count: scenes.length, words: formatNumber(totalWords) })}
           </span>
         )}
         <div className="flex-1" />

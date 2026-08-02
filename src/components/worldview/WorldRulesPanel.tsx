@@ -7,6 +7,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Eye, EyeOff } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { useWorldRulesStore } from '../../stores/world-rules'
 import { useWorldGroupStore } from '../../stores/world-group'
 import {
@@ -395,7 +396,7 @@ export default function WorldRulesPanel({ project }: Props) {
               {t('worldRules.previewTitle')}
             </h3>
             <span className="text-xs text-text-muted">
-              {t('worldRules.previewStats', { tokens: previewTokens.toLocaleString(), chars: previewText.length.toLocaleString() })}
+              {t('worldRules.previewStats', { tokens: formatNumber(previewTokens), chars: formatNumber(previewText.length) })}
             </span>
           </div>
           {previewText ? (

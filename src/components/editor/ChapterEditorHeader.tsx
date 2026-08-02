@@ -1,6 +1,7 @@
 import { Columns2, Eye, Loader2, Save } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { ChapterStatus } from '../../lib/types'
+import { formatNumber } from '../../i18n/format'
 
 const STATUS_OPTIONS: { value: ChapterStatus; labelKey: 'status.outline' | 'status.draft' | 'status.revised' | 'status.polished' | 'status.final' }[] = [
   { value: 'outline', labelKey: 'status.outline' },
@@ -60,7 +61,7 @@ export default function ChapterEditorHeader({
           <h2 className="font-serif text-xl font-semibold text-text-primary">{title}</h2>
         </div>
         <span className="rounded-full border border-border bg-bg-elevated px-2.5 py-1 text-xs text-text-muted">
-          {t('chapter.wordCount', { count: wordCount.toLocaleString() })}
+          {t('chapter.wordCount', { count: formatNumber(wordCount) })}
         </span>
         <select
           aria-label={t('header.chapterStatus')}

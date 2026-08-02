@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber } from '../../i18n/format'
 import {
   AlertTriangle,
   Check,
@@ -386,8 +387,8 @@ export default function ChapterOutlineWorkshop({
               <span className="ml-2 text-text-muted">{OUTLINE_WORKSHOP_STAGE_META[activeStage].description}</span>
             </span>
             <span className="text-text-muted">
-              {t('workshop.registeredContext', { count: evidence.assembled.totalInputTokens.toLocaleString() })}
-              {lastInputTokens > 0 && ` · ${t('workshop.thisNode', { count: lastInputTokens.toLocaleString() })}`}
+              {t('workshop.registeredContext', { count: formatNumber(evidence.assembled.totalInputTokens) })}
+              {lastInputTokens > 0 && ` · ${t('workshop.thisNode', { count: formatNumber(lastInputTokens) })}`}
             </span>
           </div>
 

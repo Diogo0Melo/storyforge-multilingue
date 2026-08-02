@@ -6,7 +6,7 @@ import { useCharacterStore } from '../../stores/character'
 import { useCharacterRelationStore } from '../../stores/character-relation'
 import { useGeographyStore } from '../../stores/project-singletons'
 import { useForeshadowStore } from '../../stores/foreshadow'
-import { formatDateTime } from '../../i18n/format'
+import { formatDateTime, formatNumber } from '../../i18n/format'
 import type { SidebarModule } from './Sidebar'
 
 interface Props {
@@ -60,13 +60,13 @@ function OutlineProps() {
         <Stat label={t('properties.arcs')} value={arcs} />
         <Stat label={t('properties.chapters')} value={chapterNodes} />
         <Stat label={t('properties.writtenChapters')} value={`${writtenChapters} / ${chapterNodes}`} />
-        <Stat label={t('properties.totalWords')} value={`${totalWords.toLocaleString()} ${t('properties.wordsUnit')}`} />
+        <Stat label={t('properties.totalWords')} value={`${formatNumber(totalWords)} ${t('properties.wordsUnit')}`} />
       </Section>
       {currentChapter && (
         <Section title={t('properties.currentChapter')} icon={PenTool}>
           <Stat label={t('properties.chapterTitle')} value={currentChapter.title} />
           <Stat label={t('properties.status')} value={currentChapter.status} />
-          <Stat label={t('properties.wordCount')} value={`${currentChapter.wordCount.toLocaleString()} ${t('properties.wordsUnit')}`} />
+          <Stat label={t('properties.wordCount')} value={`${formatNumber(currentChapter.wordCount)} ${t('properties.wordsUnit')}`} />
           <Stat label={t('properties.updateTime')} value={formatDate(currentChapter.updatedAt)} />
         </Section>
       )}

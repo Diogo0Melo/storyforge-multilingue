@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Upload, Sparkles, AlertTriangle, FileText, Wand2 } from 'lucide-react'
+import { formatNumber } from '../../../i18n/format'
 import { ACCEPT_ATTR } from '../../../lib/doc-parser'
 import type { ChunkPlan } from '../../../lib/import/chunker'
 
@@ -79,7 +80,7 @@ export default function ImportUploadZone({
       {previewPlans && previewPlans.length > 0 && (
         <div className="mt-2 text-xs text-text-muted flex items-center gap-1">
           <Wand2 className="w-3 h-3 text-accent" />
-          {t('upload.previewChunks', { count: previewPlans.length, chunkSize: chunkSize.toLocaleString(), totalChars: rawText.length.toLocaleString() })}
+          {t('upload.previewChunks', { count: previewPlans.length, chunkSize: formatNumber(chunkSize), totalChars: formatNumber(rawText.length) })}
         </div>
       )}
 

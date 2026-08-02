@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Info } from 'lucide-react'
+import { formatNumber } from '../../../i18n/format'
 import { FILE_LIMIT_HINTS } from '../../../lib/doc-parser'
 import type { ImportSession } from '../../../lib/types/import-session'
 import type { ImportKeys } from '../../../i18n/generated-resources'
@@ -30,7 +31,7 @@ export function ImportDocIntro({ chunkSize }: { chunkSize: number }) {
           ))}
         </div>
         <div className="mt-2 text-[11px] text-text-muted leading-relaxed">
-          {t('intro.largeDocNote', { chars: chunkSize.toLocaleString() })}<br />
+          {t('intro.largeDocNote', { chars: formatNumber(chunkSize) })}<br />
           ✨ <strong>{t('intro.autoArchiveStrong')}</strong>{t('intro.autoArchiveSuffix')}<strong>{t('intro.resumeStrong')}</strong>{t('intro.autoArchiveEnd')}
         </div>
       </div>
@@ -59,7 +60,7 @@ export function ImportReusableSessionBanner({
   return (
     <div className="rounded-lg border border-purple-400/40 bg-purple-400/5 p-3 text-xs">
       <div className="flex items-center gap-1.5 font-medium text-purple-300 mb-1">
-        {t('reuse.detected', { filename: session.filename, chars: session.totalChars.toLocaleString(), chunks: session.totalChunks })}
+        {t('reuse.detected', { filename: session.filename, chars: formatNumber(session.totalChars), chunks: session.totalChunks })}
       </div>
       <div className="text-text-muted mb-2 leading-relaxed">
         {t('reuse.descriptionPrefix')}<strong className="text-accent">{t('reuse.descriptionStrong')}</strong>{t('reuse.descriptionSuffix')}{!originalTextAvailable && t('reuse.originalNotAvailable')}：

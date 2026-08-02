@@ -3,6 +3,7 @@ import { extractTextFromFile } from '../../../lib/doc-parser'
 import { chunkDocument, type ChunkPlan } from '../../../lib/import/chunker'
 import { detectVolumeStructure, type VolumeDetectResult } from '../../../lib/import/volume-detector'
 import i18n from '../../../i18n/i18n'
+import { formatNumber } from '../../../i18n/format'
 
 const DEFAULT_CHUNK_SIZE = 50000
 
@@ -34,7 +35,7 @@ export default function useImportDocumentPreparation() {
       setRawText(result.text)
       const parts = [
         i18n.t('import:prep.fileSize', { size: (file.size / 1024 / 1024).toFixed(2) }),
-        i18n.t('import:prep.extractedChars', { count: result.rawChars.toLocaleString() }),
+        i18n.t('import:prep.extractedChars', { count: formatNumber(result.rawChars) }),
       ]
       if (result.pageCount) parts.push(i18n.t('import:prep.pages', { count: result.pageCount }))
       setExtractInfo(parts.join(' · '))

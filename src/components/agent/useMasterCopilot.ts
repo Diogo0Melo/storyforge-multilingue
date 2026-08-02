@@ -17,6 +17,7 @@ import { parseAgentEventPayload } from '../../lib/types'
 import { AgentTeamBudgetTracker } from '../../lib/agent/team-budget'
 import { useAIConfigStore } from '../../stores/ai-config'
 import i18n from '../../i18n/i18n'
+import { formatNumber } from '../../i18n/format'
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) return error.message
@@ -188,7 +189,7 @@ export function useMasterCopilot(input: {
         role: 'assistant',
         content: [
           i18n.t('panels:agent.master.completedSummary', { count: candidates.length }),
-          i18n.t('panels:agent.master.budgetSummary', { used: teamBudget.snapshot().usedTokens.toLocaleString(), max: teamBudget.snapshot().maxTokens.toLocaleString(), calls: teamBudget.snapshot().calls, retries: teamBudget.snapshot().canonRetries }),
+          i18n.t('panels:agent.master.budgetSummary', { used: formatNumber(teamBudget.snapshot().usedTokens), max: formatNumber(teamBudget.snapshot().maxTokens), calls: teamBudget.snapshot().calls, retries: teamBudget.snapshot().canonRetries }),
         ].join(' '),
       })
     } catch (error) {

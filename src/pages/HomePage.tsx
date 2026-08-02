@@ -13,7 +13,7 @@ import {
   GENRE_OPTIONS, GENRE_GROUP_LABEL_KEYS, PROJECT_STATUS_LABELS,
   type ProjectStatus, type CreateProjectInput,
 } from '../lib/types'
-import { formatDate } from '../i18n/format'
+import { formatDate, formatNumber } from '../i18n/format'
 
 // 按 group 分组
 const GENRE_GROUPS = Array.from(
@@ -43,7 +43,7 @@ function getGlyph(name: string, fallback: string) {
 // 获取字数友好展示
 function formatWords(words: number, unitWan: string) {
   if (words >= 10000) return `${(words / 10000).toFixed(1)}${unitWan}`
-  return `${words.toLocaleString()}`
+  return `${formatNumber(words)}`
 }
 
 export default function HomePage() {

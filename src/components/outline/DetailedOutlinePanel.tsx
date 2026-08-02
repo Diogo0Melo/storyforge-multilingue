@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Plus, Sparkles, Wand2, AlertTriangle } from 'lucide-react'
+import { formatNumber } from '../../i18n/format'
 import { useOutlineStore } from '../../stores/outline'
 import { useDetailedOutlineStore } from '../../stores/detailed-outline'
 import { useCharacterStore } from '../../stores/character'
@@ -319,7 +320,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
               </p>
               {currentDetailed && currentDetailed.scenes.length > 0 && (
                 <p className="text-xs text-text-muted mt-1">
-                  {t('detailed.scenesCount', { count: currentDetailed.scenes.length, words: totalWords.toLocaleString() })}
+                  {t('detailed.scenesCount', { count: currentDetailed.scenes.length, words: formatNumber(totalWords) })}
                 </p>
               )}
             </div>
