@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { formatNumber } from '../../i18n/format'
 import { AlertTriangle, Save, X } from 'lucide-react'
 import type { RichEditorHandle } from './RichEditor'
 import RichEditor from './RichEditor'
@@ -38,7 +39,7 @@ export default function ComparePolishPanel({
   onSaved,
   onClose,
 }: Props) {
-  const { t } = useTranslation('editor')
+  const { t } = useTranslation(['editor', 'common'])
   const [draftHtml, setDraftHtml] = useState(sourceHtml)
   const [saving, setSaving] = useState(false)
   const editorRef = useRef<RichEditorHandle>(null)
@@ -154,7 +155,7 @@ export default function ComparePolishPanel({
         <div className="min-w-0">
           <div className="mb-2 flex items-center justify-between text-xs">
             <span className="font-medium text-text-secondary">{t('compare.originalReadonly')}</span>
-            <span className="text-text-muted">{sourceWords.toLocaleString()} 字</span>
+            <span className="text-text-muted">{t('common:unit.characters', { count: formatNumber(sourceWords) })}</span>
           </div>
           <RichEditor
             value={sourceHtml}
@@ -169,7 +170,7 @@ export default function ComparePolishPanel({
         <div className="min-w-0">
           <div className="mb-2 flex items-center justify-between text-xs">
             <span className="font-medium text-text-secondary">{t('compare.draft')}</span>
-            <span className="text-text-muted">{draftWords.toLocaleString()} 字</span>
+            <span className="text-text-muted">{t('common:unit.characters', { count: formatNumber(draftWords) })}</span>
           </div>
           <RichEditor
             ref={editorRef}

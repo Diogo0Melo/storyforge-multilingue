@@ -5,6 +5,8 @@
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TokenUsage } from '../shared/TokenUsage'
+import { formatNumber } from '../../i18n/format'
 import { Sparkles, Loader2, RefreshCw, Map, Box, Globe } from 'lucide-react'
 import { useGeographyStore } from '../../stores/project-singletons'
 import { useWorldviewStore } from '../../stores/worldview'
@@ -223,7 +225,7 @@ export default function WorldMapPanel({ project }: Props) {
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
             {t('geography.aiAnalyzingWorld')}
             {ai.output.length > 0 && (
-              <span className="text-xs text-text-muted">≈ ~{Math.round(ai.output.length * 1.5).toLocaleString()} tokens</span>
+              <span className="text-xs text-text-muted">≈ ~{formatNumber(Math.round(ai.output.length * 1.5))} tokens</span>
             )}
           </div>
           <div className="text-xs text-text-muted max-h-20 overflow-y-auto font-mono">
@@ -233,9 +235,7 @@ export default function WorldMapPanel({ project }: Props) {
         </div>
       )}
       {ai.tokenUsage && !ai.isStreaming && (
-        <div className="mb-2 text-[10px] text-text-muted">
-          Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
-        </div>
+        <TokenUsage inputTokens={ai.tokenUsage.inputTokens} outputTokens={ai.tokenUsage.outputTokens} className="mb-2 text-[10px] text-text-muted" />
       )}
 
       {/* 主内容区域：世界树 + 地图 */}

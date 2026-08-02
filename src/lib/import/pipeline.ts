@@ -26,6 +26,8 @@ import { useImportStatusStore } from '../../stores/import-status'
 import { extractJSON, IMPORT_MAX_TOKENS } from '../ai/adapters/import-adapter'
 import type { UnifiedParseResult } from '../types'
 import type { AIConfig } from '../types'
+import i18n from '../../i18n/i18n'
+import { formatNumber } from '../../i18n/format'
 import { resolveRequestConfig } from '../ai/client'
 import type { ImportSession, ChunkState } from '../types'
 import {
@@ -257,7 +259,7 @@ async function runChunk(
       `▶ 块 ${chunkIndex + 1}/${session.totalChunks} 解析中（第 ${attemptNo} 次）`,
       chunkIndex)
     await sessionStore.log(session.id!, chunkIndex, 'info',
-      `第 ${attemptNo} 次尝试 · ${chunkState.charCount.toLocaleString()} 字`)
+      `第 ${attemptNo} 次尝试 · ${i18n.t('common:unit.characters', { count: formatNumber(chunkState.charCount) })}`)
 
     try {
       const result = await parseChunkOnce({
@@ -399,7 +401,7 @@ export async function applyReferenceFromSession(
     title: session.filename.replace(/\.[^.]+$/, ''),
     author: '',
     type: 'story',
-    note: `从「${session.filename}」导入 · ${session.totalChars.toLocaleString()} 字`,
+    note: `从「${session.filename}」导入 · ${i18n.t('common:unit.characters', { count: formatNumber(session.totalChars) })}`,
     url: '',
     fileHash: session.fileHash,
     importSessionId: sessionId,

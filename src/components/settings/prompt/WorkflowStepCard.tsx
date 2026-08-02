@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TokenUsage as TokenUsageDisplay } from '../../shared/TokenUsage'
 import type { SettingsKeys } from '../../../i18n/generated-resources'
 import {
   Check,
@@ -119,9 +120,7 @@ export function WorkflowStepCard({
             </p>
           )}
           {result.status === 'done' && result.tokenUsage && (
-            <div className="text-[10px] text-text-muted">
-              Token: ↑{result.tokenUsage.inputTokens.toLocaleString()} ↓{result.tokenUsage.outputTokens.toLocaleString()}
-            </div>
+            <TokenUsageDisplay inputTokens={result.tokenUsage.inputTokens} outputTokens={result.tokenUsage.outputTokens} />
           )}
           {result.status === 'done' && (
             <>

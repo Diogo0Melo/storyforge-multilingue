@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TokenUsage } from '../shared/TokenUsage'
 import { Wand2, Expand, Minimize2, RefreshCw, Search, X, Loader2, Check } from 'lucide-react'
 import { useAIStream } from '../../hooks/useAIStream'
 import { buildPolishPrompt, buildExpandPrompt } from '../../lib/ai/adapters/chapter-adapter'
@@ -178,9 +179,7 @@ export default function FloatingToolbar({
             {result}
           </p>
           {ai.tokenUsage && (
-            <p className="text-[10px] text-text-muted mb-2">
-              Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
-            </p>
+            <TokenUsage inputTokens={ai.tokenUsage.inputTokens} outputTokens={ai.tokenUsage.outputTokens} className="text-[10px] text-text-muted mb-2" />
           )}
           <div className="flex items-center gap-2">
             <button onClick={handleAccept}

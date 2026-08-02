@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TokenUsage as TokenUsageDisplay } from './TokenUsage'
 import { Square, Check, RotateCcw, Loader2, ThumbsUp, ThumbsDown, Braces, ChevronDown, ChevronRight, X } from 'lucide-react'
 import { formatNumber } from '../../i18n/format'
 import { usePromptStore } from '../../stores/prompt'
@@ -158,7 +159,7 @@ export default function AIStreamOutput({
           {hasOutput && <span>{t('aiStream.charCount', { count: output.length })}</span>}
           {tokenUsage ? (
             <span title={t('aiStream.tokenUsageTitle', { input: tokenUsage.inputTokens, output: tokenUsage.outputTokens })}>
-              Token: ↑{tokenUsage.inputTokens.toLocaleString()} ↓{tokenUsage.outputTokens.toLocaleString()}
+              <TokenUsageDisplay inputTokens={tokenUsage.inputTokens} outputTokens={tokenUsage.outputTokens} />
             </span>
           ) : estimatedOutputTokens ? (
             <span className="text-text-muted" title={t('aiStream.estimatedTokensHint')}>

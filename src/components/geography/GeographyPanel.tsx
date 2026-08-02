@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TokenUsage } from '../shared/TokenUsage'
+import { formatNumber } from '../../i18n/format'
 import { Plus, Trash2, ChevronDown, ChevronRight, MapPin, GitBranch, List, Sparkles, Image, Copy, Check, Loader2 } from 'lucide-react'
 import { useGeographyStore } from '../../stores/project-singletons'
 import { useWorldGroupStore } from '../../stores/world-group'
@@ -243,14 +245,12 @@ export default function GeographyPanel({ project }: Props) {
               <Loader2 className="w-4 h-4 animate-spin" />
               {t('geography.drawingMap')}
               {ai.output.length > 0 && (
-                <span className="text-xs">≈ ~{Math.round(ai.output.length * 1.5).toLocaleString()} tokens</span>
+                <span className="text-xs">≈ ~{formatNumber(Math.round(ai.output.length * 1.5))} tokens</span>
               )}
             </div>
           )}
           {ai.tokenUsage && !ai.isStreaming && (
-            <div className="text-[10px] text-text-muted mb-2">
-              Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
-            </div>
+            <TokenUsage inputTokens={ai.tokenUsage.inputTokens} outputTokens={ai.tokenUsage.outputTokens} className="text-[10px] text-text-muted mb-2" />
           )}
           {ai.error && (
             <div className="text-error text-sm p-3 bg-error/10 rounded-lg">{ai.error}</div>

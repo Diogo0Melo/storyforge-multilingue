@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TokenUsage } from '../shared/TokenUsage'
 import { X, ShieldCheck, Bot, TrendingUp, Loader2, AlertTriangle, AlertCircle, Info, Wand2, ScanSearch } from 'lucide-react'
 import { formatNumber } from '../../i18n/format'
 import { useAIStream } from '../../hooks/useAIStream'
@@ -271,13 +272,13 @@ export default function ReviewPanel(props: Props) {
             <Loader2 className="w-4 h-4 animate-spin" />
             {t('review.aiAnalyzing')}
             {ai.output.length > 0 && (
-              <span className="text-xs">≈ ~{Math.round(ai.output.length * 1.5).toLocaleString()} tokens</span>
+              <span className="text-xs">≈ ~{formatNumber(Math.round(ai.output.length * 1.5))} tokens</span>
             )}
           </div>
         )}
         {ai.tokenUsage && !ai.isStreaming && (
-          <div className="text-[10px] text-text-muted mb-2" title={`${t('review.tokenInput')} ${ai.tokenUsage.inputTokens} + ${t('review.tokenOutput')} ${ai.tokenUsage.outputTokens}`}>
-            Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
+          <div title={`${t('review.tokenInput')} ${ai.tokenUsage.inputTokens} + ${t('review.tokenOutput')} ${ai.tokenUsage.outputTokens}`}>
+            <TokenUsage inputTokens={ai.tokenUsage.inputTokens} outputTokens={ai.tokenUsage.outputTokens} className="text-[10px] text-text-muted mb-2" />
           </div>
         )}
 

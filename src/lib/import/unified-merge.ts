@@ -7,6 +7,8 @@
 
 import type { UnifiedParseResult } from '../types'
 import type { ImportSession } from '../types'
+import i18n from '../../i18n/i18n'
+import { formatNumber } from '../../i18n/format'
 import type { CodexImportCategoryOption } from './codex-classification'
 import {
   mergeCodexImportCandidates,
@@ -266,8 +268,8 @@ export function buildFinalReport(session: ImportSession): string {
   const codexCandidates = session.merged?.codexCandidates?.length || 0
   const lines = [
     `📊 任务汇报：${session.filename}`,
-    `· 文件总字数：${session.totalChars.toLocaleString()} 字`,
-    `· 分块：${session.totalChunks} 块（每块约 ${session.chunkSize.toLocaleString()} 字）`,
+    `· 文件总字数：${i18n.t('common:unit.characters', { count: formatNumber(session.totalChars) })}`,
+    `· 分块：${session.totalChunks} 块（每块约 ${i18n.t('common:unit.characters', { count: formatNumber(session.chunkSize) })}）`,
     `· 成功：${done} 块；失败：${failed} 块`,
     `· 累计入库：世界观字段 ${totalWv}、角色 ${totalChars}（合并前）、大纲节点 ${totalOl}、写作技法已分析`,
     `· 待作者审查：Codex 词条候选 ${codexCandidates} 条（尚未自动入库）`,

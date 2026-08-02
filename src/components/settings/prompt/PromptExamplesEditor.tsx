@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { TokenUsage } from '../../shared/TokenUsage'
 import { Plus, Trash2, Sparkles, ThumbsUp, ThumbsDown, Loader2 } from 'lucide-react'
 import { useAIStream } from '../../../hooks/useAIStream'
 import { useAIConfigStore } from '../../../stores/ai-config'
@@ -199,9 +200,7 @@ export default function PromptExamplesEditor({ template, onChange, readOnly }: P
         {renderList('bad')}
       </div>
       {ai.tokenUsage && !ai.isStreaming && (
-        <div className="mt-2 text-[10px] text-text-muted">
-          Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
-        </div>
+        <TokenUsage inputTokens={ai.tokenUsage.inputTokens} outputTokens={ai.tokenUsage.outputTokens} className="mt-2 text-[10px] text-text-muted" />
       )}
       <p className="mt-3 text-xs text-text-muted">
         {t('prompt.examples.hint')}

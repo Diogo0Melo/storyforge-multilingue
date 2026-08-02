@@ -6,6 +6,8 @@ import { CInput } from '../../components/shared/CompositionInput'
 import { useState, useEffect } from 'react'
 import { Heart, Sparkles, ChevronUp, Trash2, Edit3, Save, Plus, X, RotateCcw } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { TokenUsage } from '../shared/TokenUsage'
+import { formatNumber } from '../../i18n/format'
 import type { TFunction } from 'i18next'
 import { useEmotionBeatStore } from '../../stores/emotion-beat'
 import { useAIStream } from '../../hooks/useAIStream'
@@ -309,14 +311,12 @@ export default function EmotionBeatCard({
         <p className="text-xs text-text-muted mt-2 animate-pulse">
           <Sparkles className="w-3 h-3 inline mr-1" />{t('emotionBeat.generatingFull')}
           {ai.output.length > 0 && (
-            <span className="ml-1">≈ ~{Math.round(ai.output.length * 1.5).toLocaleString()} tokens</span>
+            <span className="ml-1">≈ ~{formatNumber(Math.round(ai.output.length * 1.5))} tokens</span>
           )}
         </p>
       )}
       {ai.tokenUsage && !ai.isStreaming && (
-        <div className="mt-1 text-[10px] text-text-muted">
-          Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
-        </div>
+        <TokenUsage inputTokens={ai.tokenUsage.inputTokens} outputTokens={ai.tokenUsage.outputTokens} className="mt-1 text-[10px] text-text-muted" />
       )}
     </div>
   )

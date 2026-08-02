@@ -6,8 +6,8 @@
  */
 import { useState, useEffect, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { formatNumber } from '../../i18n/format'
+import { ChevronDown, ChevronRight, Search } from 'lucide-react'
 import { useOutlineStore } from '../../stores/outline'
 import { useChapterStore } from '../../stores/chapter'
 import { useCharacterStore } from '../../stores/character'
@@ -41,7 +41,7 @@ const STATUS_DOT: Record<ChapterStatus, string> = {
 }
 
 export default function ChaptersListPanel({ project, initialNodeId }: Props) {
-  const { t } = useTranslation('editor')
+  const { t } = useTranslation(['editor', 'common'])
   const { nodes, loadAll: loadOutline } = useOutlineStore()
   const { chapters, loadAll: loadChapters } = useChapterStore()
   const loadCharacters = useCharacterStore(state => state.loadAll)
@@ -174,7 +174,7 @@ export default function ChaptersListPanel({ project, initialNodeId }: Props) {
                         </p>
                         <div className="flex items-center gap-1.5">
                           {wc > 0 && (
-                            <span className="text-[9px] text-text-muted">{wc.toLocaleString()} 字</span>
+                            <span className="text-[9px] text-text-muted">{t('common:unit.characters', { count: formatNumber(wc) })}</span>
                           )}
                           {chRec?.summary && (
                             <span className="text-[9px] text-accent/60" title={chRec.summary}>📝</span>
