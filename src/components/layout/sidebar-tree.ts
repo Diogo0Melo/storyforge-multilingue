@@ -325,8 +325,7 @@ export function buildNavTree(): TreeSection[] {
   ]
 }
 
-/** Static accessor kept for backward compatibility — prefer buildNavTree() in React components. */
-export const NAV_TREE: TreeSection[] = buildNavTree()
+
 
 // ── 工具 ─────────────────────────────────────────────────────────────
 
