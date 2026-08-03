@@ -2215,6 +2215,9 @@ export type PanelsKeys =
   | 'agent.master.notCompleted'
   | 'agent.master.planSummary'
   | 'agent.master.rejected'
+  | 'chapter.impactAnalysis.factsFrom'
+  | 'chapter.impactAnalysis.stale'
+  | 'chapter.impactAnalysis.valid'
   | 'chapterMemory.applyOutlineCandidate'
   | 'chapterMemory.completedGoals'
   | 'chapterMemory.confirmProgress'
@@ -3169,6 +3172,7 @@ export type PanelsKeys =
   | 'history.errorPrepareFailed'
   | 'history.errorSaveFailed'
   | 'history.errorSaveNotWritten'
+  | 'history.writebackValidationFailed'
   | 'history.eventAttribute'
   | 'history.eventName'
   | 'history.fictional'
@@ -5440,6 +5444,7 @@ export type SettingsKeys =
 
 
 export type WorldsKeys =
+  | 'defaultWorld'
   | 'cultivation.addFirstStage'
   | 'cultivation.addStage'
   | 'cultivation.addSystem'

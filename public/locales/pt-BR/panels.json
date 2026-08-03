@@ -42,6 +42,13 @@
     "master.planSummary": "{{summary}} Vou completar {{count}} tarefas de domínio em segundo plano.",
     "master.rejected": "Candidato rejeitado, nada foi gravado no projeto."
   },
+  "chapter": {
+    "impactAnalysis": {
+      "factsFrom": "Baseado em {{count}} fatos deste capítulo",
+      "stale": "{{count}} evidências invalidadas → marcadas para revisão",
+      "valid": "Todas as evidências ainda válidas"
+    }
+  },
   "chapterMemory": {
     "applyOutlineCandidate": "Atualizar esboço deste capítulo com candidato",
     "completedGoals": "Concluído",
@@ -1206,6 +1213,7 @@
     "errorPrepareFailed": "Falha na preparação da IA histórica: {{error}}.",
     "errorSaveFailed": "Falha ao salvar o resultado da IA histórica: {{error}}.",
     "errorSaveNotWritten": "O resultado da IA histórica não foi salvo: {{reason}}.",
+    "writebackValidationFailed": "Falha na validação de gravação",
     "eventAttribute": "Atributo do Evento",
     "eventName": "Nome do Evento",
     "fictional": "Ficcional/Alternativo",

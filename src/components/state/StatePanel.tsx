@@ -187,7 +187,7 @@ function CharacterStateCard({
   const [draft, setDraft] = useState<StateField[]>(fields)
 
   useEffect(() => {
-    if (editing) setDraft(fields.length ? fields : [{ key: '当前状态', value: '' }])
+    if (editing) setDraft(fields.length ? fields : [{ key: t('state.panel.currentStatus'), value: '' }])
   }, [editing, fields])
 
   const location = findField(fields, LOCATION_KEYS) || character.location || t('state.panel.notRecorded')

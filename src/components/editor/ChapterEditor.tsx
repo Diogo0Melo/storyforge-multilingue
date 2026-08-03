@@ -364,7 +364,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         const candidate = await runBackgroundConsistencyAgent({
           projectId: project.id!,
           chapterId,
-          chapterTitle: outlineNode?.title || currentChapter.title || '未知章节',
+          chapterTitle: outlineNode?.title || currentChapter.title || t('chapter.unknownChapter'),
           worldGroupId: chapterWorldGroupId ?? null,
           chapterContent: savedContent,
           budget,
@@ -822,7 +822,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         scopedCharacterIds.has(relation.fromCharacterId)
         && scopedCharacterIds.has(relation.toCharacterId)
       ))
-      const chapterTitle = outlineNode?.title || currentChapter.title || '未知章节'
+      const chapterTitle = outlineNode?.title || currentChapter.title || t('chapter.unknownChapter')
       const budget = new AgentTeamBudgetTracker(useAIConfigStore.getState().agentTeamBudgetProfile)
       const candidate = await runChapterOrganization({
         projectId: project.id!,
@@ -892,8 +892,8 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       const { demotedFacts } = await propagateChapterEditStale(project.id, currentChapter.id)
       const { factsFromChapter, downstreamChapterIds } = await analyzeEditImpact(project.id, currentChapter.id)
       const parts = [
-        `源自本章事实 ${factsFromChapter.length} 条`,
-        demotedFacts > 0 ? `其中 ${demotedFacts} 条证据已失效→标记 stale 待复核` : '证据均仍成立',
+        t('panels:chapter.impactAnalysis.factsFrom' as any, { count: factsFromChapter.length }),
+        demotedFacts > 0 ? t('panels:chapter.impactAnalysis.stale' as any, { count: demotedFacts }) : t('panels:chapter.impactAnalysis.valid' as any),
         `建议复核后续 ${downstreamChapterIds.length} 章`,
       ]
       setImpactInfo(parts.join('；'))
@@ -952,7 +952,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleManualMemory = async () => {
     if (!currentChapter?.id || !plainText.trim() || autoProcessing === 'memory') return
     const chapterId = currentChapter.id
-    const chapterTitle = outlineNode?.title || currentChapter.title || '未知章节'
+    const chapterTitle = outlineNode?.title || currentChapter.title || t('chapter.unknownChapter')
     const persisted = await persistCurrentEditorContent()
     if (!persisted) return
     await handleChapterMemory({ chapterId, chapterTitle, chapterContent: persisted.html })
@@ -1049,7 +1049,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleAcceptAI = async (text: string) => {
     if (!editorRef.current || !currentChapter?.id) return
     const acceptedChapterId = currentChapter.id
-    const acceptedChapterTitle = outlineNode?.title || currentChapter.title || '未知章节'
+    const acceptedChapterTitle = outlineNode?.title || currentChapter.title || t('chapter.unknownChapter')
     const aiAction = ai.operation
     if (
       (aiAction === 'polish' || aiAction === 'expand' || aiAction === 'deai')

@@ -1,4 +1,5 @@
 {
+  "defaultWorld": "Mundo padrão",
   "cultivation": {
     "addFirstStage": "Adicionar Primeiro Estágio Inicial",
     "addStage": "Adicionar Próximo Estágio",

@@ -220,7 +220,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
     } catch (err) {
       console.error('[import] 复用应用到项目失败：', err)
       statusStore.setPhase('failed')
-      toast.error(t('panel.reuseFailed', { error: err instanceof Error ? err.message : '未知错误' }))
+      toast.error(t('panel.reuseFailed', { error: err instanceof Error ? err.message : t('report.unknownError') }))
     } finally {
       setApplyingReuse(false)
     }
@@ -242,7 +242,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
     } catch (err) {
       console.error('[import] 复用应用到参考失败：', err)
       statusStore.setPhase('failed')
-      toast.error(t('panel.reuseFailed', { error: err instanceof Error ? err.message : '未知错误' }))
+      toast.error(t('panel.reuseFailed', { error: err instanceof Error ? err.message : t('report.unknownError') }))
     } finally {
       setApplyingReuse(false)
     }

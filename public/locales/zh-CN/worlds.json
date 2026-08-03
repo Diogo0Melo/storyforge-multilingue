@@ -1,4 +1,5 @@
 {
+  "defaultWorld": "默认世界",
   "cultivation": {
     "addFirstStage": "添加第一个起始境界",
     "addStage": "添加后续境界",

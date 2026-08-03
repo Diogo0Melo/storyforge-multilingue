@@ -151,7 +151,7 @@ export function useHistoryAI({
         data: { [field]: text },
       })
       if (result.written.length === 0) {
-        onError(i18n.t('panels:history.errorSaveNotWritten', { reason: result.skipped[0]?.reason ?? '写回校验未通过' }) as string)
+        onError(i18n.t('panels:history.errorSaveNotWritten', { reason: result.skipped[0]?.reason ?? i18n.t('panels:history.writebackValidationFailed') }) as string)
         return
       }
       if (eventId != null) await reloadEvents()

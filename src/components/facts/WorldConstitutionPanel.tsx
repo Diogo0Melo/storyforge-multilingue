@@ -69,7 +69,7 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
     const subjects = {
       worldGroups: worldGroups.length
         ? worldGroups.map(item => ({ id: item.id!, name: item.name }))
-        : [{ id: null, name: '默认世界' }],
+        : [{ id: null, name: t('worlds:defaultWorld' as any) }],
       characters: characters
         .filter(item => item.id != null)
         .map(item => ({

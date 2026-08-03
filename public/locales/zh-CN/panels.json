@@ -42,6 +42,13 @@
     "master.planSummary": "{{summary}} 我会在后台完成 {{count}} 个领域任务。",
     "master.rejected": "候选已拒绝，没有写入项目。"
   },
+  "chapter": {
+    "impactAnalysis": {
+      "factsFrom": "源自本章事实 {{count}} 条",
+      "stale": "其中 {{count}} 条证据已失效→标记 stale 待复核",
+      "valid": "证据均仍成立"
+    }
+  },
   "chapterMemory": {
     "applyOutlineCandidate": "用候选更新本章章纲",
     "completedGoals": "已完成",
@@ -1177,6 +1184,7 @@
     "errorPrepareFailed": "历史 AI 准备失败：{{error}}。",
     "errorSaveFailed": "历史 AI 结果保存失败：{{error}}。",
     "errorSaveNotWritten": "历史 AI 结果未能保存：{{reason}}。",
+    "writebackValidationFailed": "写回校验未通过",
     "eventAttribute": "事件属性",
     "eventName": "事件名称",
     "fictional": "虚构/架空",
