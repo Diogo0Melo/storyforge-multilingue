@@ -325,12 +325,12 @@ function descriptors(): RagDescriptor<any>[] {
       sourceKey: 'itemLedger',
       sourceLabel: '角色物品流水',
       sourceLabelKey: 'rag.source.itemLedger',
-      title: (row: ItemLedgerEntry) => `${row.heldByName || '未知持有人'} · ${row.itemName}`,
+      title: (row: ItemLedgerEntry) => `${row.heldByName || i18n.t('panels:rag.unknownHolder', '未知持有人')} · ${row.itemName}`,
       fields: (row: ItemLedgerEntry) => [
         field(
           'event',
           '物品事件',
-          `${row.heldByName || '未知持有人'}${row.action === 'gain' ? '获得' : '消耗'}`
+          `${row.heldByName || i18n.t('panels:rag.unknownHolder', '未知持有人')}${row.action === 'gain' ? i18n.t('panels:rag.gained', '获得') : i18n.t('panels:rag.consumed', '消耗')}`
             + `${row.quantity} × ${row.itemName}${row.chapterTitle ? `（${row.chapterTitle}）` : ''}`,
           'rag.field.itemEvent',
         ),

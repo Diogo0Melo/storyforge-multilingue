@@ -43,10 +43,11 @@
     "master.rejected": "候选已拒绝，没有写入项目。"
   },
   "chapter": {
+    "unknownWriteError": "未知写入错误",
     "impactAnalysis": {
       "factsFrom": "源自本章事实 {{count}} 条",
       "stale": "其中 {{count}} 条证据已失效→标记 stale 待复核",
-      "valid": "证据均仍成立"
+      "valid": "证据均成立"
     }
   },
   "chapterMemory": {
@@ -1326,6 +1327,7 @@
     "inventory.to": "至",
     "inventory.totalHeld": "持有总量",
     "inventory.unclaimed": "未归属物品（历史数据）。可在这里选择角色认领，原始记录不会丢失。",
+    "inventory.unknownHistorical": "未知(历史数据)",
     "inventory.viewCharacter": "查看角色：",
     "roleWeight.extra": "路人",
     "roleWeight.main": "主要角色",
@@ -2023,6 +2025,12 @@
     "power.rules": "核心规则",
     "power.rulesPlaceholder": "例如：越级战斗的限制、突破条件、禁忌..."
   },
+  "settings": {
+    "unknownModel": "未知模型"
+  },
+  "storyline": {
+    "unknownReason": "未知原因"
+  },
   "contextSource": {
     "characterDrivenPlan": "当前生效角色驱动方案",
     "powerSystem": "力量体系",
@@ -2068,6 +2076,9 @@
     "volumeOutlineEmpty": "（尚未填写卷纲）"
   },
   "rag": {
+    "unknownHolder": "未知持有人",
+    "gained": "获得",
+    "consumed": "消耗",
     "source.worldview": "世界观",
     "source.storyCore": "故事核心",
     "source.characters": "角色档案",
@@ -2131,6 +2142,13 @@
     "title.mainWorldHistory": "主世界历史",
     "title.currentWorldHistory": "当前世界历史",
     "title.character": "角色"
+  },
+  "import": {
+    "report.codexCandidates": "待作者审查：Codex 词条候选 {{count}} 条（尚未自动入库）",
+    "report.failedBlocks": "❗ 失败块（可单独重试）：",
+    "report.chunk": "块",
+    "report.unnamed": "未命名",
+    "report.unknownReason": "原因未知"
   },
   "canonSource": {
     "worldviews": "世界观",

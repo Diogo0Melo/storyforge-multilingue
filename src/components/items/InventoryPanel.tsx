@@ -389,7 +389,7 @@ export default function InventoryPanel({ project }: Props) {
                   {isOpen ? <ChevronDown className="w-4 h-4 text-text-muted shrink-0" /> : <ChevronRight className="w-4 h-4 text-text-muted shrink-0" />}
                   <span className="text-sm font-semibold text-text-primary min-w-0 truncate">{item.itemName}</span>
                   {item.heldByName && (
-                    <span className="text-[10px] text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded shrink-0">{item.heldByName}</span>
+                    <span className="text-[10px] text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded shrink-0">{item.heldByName === '未知(历史数据)' ? t('items.inventory.unknownHistorical', '未知(历史数据)') : item.heldByName}</span>
                   )}
                   <span className="text-[10px] text-text-muted flex-1">
                     {t('items.inventory.cumulativeGain', { count: gained, count2: consumed })}

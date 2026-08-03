@@ -354,7 +354,7 @@ function requireWrittenId(result: Awaited<ReturnType<typeof adopt>>, label: stri
   if (id == null) {
     const reason = result.skipped[0]?.reason
       || result.fkErrors.map(item => `${item.field}=${String(item.refValue)}`).join(', ')
-      || '未知原因'
+      || i18n.t('panels:storyline.unknownReason', '未知原因')
     throw new Error(i18n.t('common:errors.storyline.adoptionFailed', { label, reason }))
   }
   return id

@@ -272,14 +272,14 @@ export function buildFinalReport(session: ImportSession): string {
     `· 分块：${session.totalChunks} 块（每块约 ${i18n.t('common:unit.characters', { count: formatNumber(session.chunkSize) })}）`,
     `· 成功：${done} 块；失败：${failed} 块`,
     `· 累计入库：世界观字段 ${totalWv}、角色 ${totalChars}（合并前）、大纲节点 ${totalOl}、写作技法已分析`,
-    `· 待作者审查：Codex 词条候选 ${codexCandidates} 条（尚未自动入库）`,
+    `· ${i18n.t('panels:import.report.codexCandidates', { count: codexCandidates })}`,
   ]
   if (failed > 0) {
     lines.push('')
-    lines.push('❗ 失败块（可单独重试）：')
+    lines.push(i18n.t('panels:import.report.failedBlocks', '❗ 失败块（可单独重试）：'))
     for (const c of session.chunks) {
       if (c.status === 'failed') {
-        lines.push(`  - 第 ${c.index + 1} 块（${c.label || '未命名'}）：${c.errorMessage || '原因未知'}`)
+        lines.push(`  - 第 ${c.index + 1} ${i18n.t('panels:import.report.chunk', '块')}（${c.label || i18n.t('panels:import.report.unnamed', '未命名')}）：${c.errorMessage || i18n.t('panels:import.report.unknownReason', '原因未知')}`)
       }
     }
   }

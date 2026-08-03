@@ -43,6 +43,7 @@
     "master.rejected": "Candidato rejeitado, nada foi gravado no projeto."
   },
   "chapter": {
+    "unknownWriteError": "Erro de gravação desconhecido",
     "impactAnalysis": {
       "factsFrom": "Baseado em {{count}} fatos deste capítulo",
       "stale": "{{count}} evidências invalidadas → marcadas para revisão",
@@ -1338,6 +1339,7 @@
     "inventory.to": "até",
     "inventory.totalHeld": "Total em posse",
     "inventory.unclaimed": "Itens não atribuídos (dados históricos). Selecione um personagem aqui para reivindicar, o registro original não será perdido.",
+    "inventory.unknownHistorical": "Desconhecido (dados legados)",
     "inventory.viewCharacter": "Ver personagem:",
     "roleWeight.extra": "Figurante",
     "roleWeight.main": "Personagem principal",
@@ -2043,6 +2045,12 @@
     "power.rules": "Regras Fundamentais",
     "power.rulesPlaceholder": "Ex.: limitações de combate acima do nível, condições de avanço, tabus..."
   },
+  "settings": {
+    "unknownModel": "Modelo desconhecido"
+  },
+  "storyline": {
+    "unknownReason": "Motivo desconhecido"
+  },
   "contextSource": {
     "characterDrivenPlan": "Plano de personagem ativo",
     "powerSystem": "Sistema de poder",
@@ -2088,9 +2096,19 @@
     "volumeOutlineEmpty": "(Sinopse do volume não preenchida)"
   },
   "rag": {
+    "unknownHolder": "Portador desconhecido",
+    "gained": "obtido",
+    "consumed": "consumido",
     "title": {
       "character": "Personagens"
     }
+  },
+  "import": {
+    "report.codexCandidates": "Aguardando revisão do autor: {{count}} candidatos a verbete Codex (ainda não importados)",
+    "report.failedBlocks": "❗ Blocos com falha (podem ser retentados individualmente):",
+    "report.chunk": "bloco",
+    "report.unnamed": "Sem nome",
+    "report.unknownReason": "Motivo desconhecido"
   },
   "workshop": {
     "scan.title": "Varredura de Estado",
