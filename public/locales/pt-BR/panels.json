@@ -293,217 +293,358 @@
       "save": "Salvar"
     },
     "field": {
-      "mineral.appearance": "Aparência",
-      "mineral.rank": "Classificação",
-      "mineral.rank.option.0": "Comum",
-      "mineral.rank.option.1": "Inferior",
-      "mineral.rank.option.2": "Médio",
-      "mineral.rank.option.3": "Superior",
-      "mineral.rank.option.4": "Excelente",
-      "mineral.rank.option.5": "Divino",
-      "mineral.effect": "Efeito",
-      "mineral.origin": "Origem",
-      "mineral.rarity": "Raridade",
-      "mineral.rarity.option.0": "Comum",
-      "mineral.rarity.option.1": "Escasso",
-      "mineral.rarity.option.2": "Raro",
-      "mineral.rarity.option.3": "Precioso",
-      "mineral.rarity.option.4": "Incomparável",
-      "mineral.craftInto": "Pode ser forjado em",
-      "herb.form": "Forma",
-      "herb.effect": "Efeito",
-      "herb.rank": "Classificação",
-      "herb.rank.option.0": "Comum",
-      "herb.rank.option.1": "Inferior",
-      "herb.rank.option.2": "Médio",
-      "herb.rank.option.3": "Superior",
-      "herb.rank.option.4": "Excelente",
-      "herb.rank.option.5": "Divino",
-      "herb.habitat": "Habitat",
-      "herb.maturity": "Ciclo de Maturação",
-      "herb.difficulty": "Dificuldade de Coleta",
-      "herb.difficulty.option.0": "Fácil",
-      "herb.difficulty.option.1": "Moderado",
-      "herb.difficulty.option.2": "Difícil",
-      "herb.difficulty.option.3": "Extremo",
-      "herb.craftInto": "Pode ser refinado em",
-      "beast.kind": "Tipo",
-      "beast.kind.option.0": "Terrestre",
-      "beast.kind.option.1": "Voador",
-      "beast.kind.option.2": "Aquático",
-      "beast.kind.option.3": "Inseto",
-      "beast.kind.option.4": "Mutante",
-      "beast.cultivation": "Sistema de Cultivo",
-      "beast.realm": "Reino",
-      "beast.body": "Aparência Física",
-      "beast.habit": "Temperamento",
-      "beast.habitat": "Habitat",
-      "beast.threat": "Nível de Ameaça",
-      "beast.threat.option.0": "Inofensivo",
-      "beast.threat.option.1": "Baixo Risco",
-      "beast.threat.option.2": "Risco Médio",
-      "beast.threat.option.3": "Alto Risco",
-      "beast.threat.option.4": "Nível Destruidor",
-      "beast.ability": "Habilidade Especial",
-      "beast.drops": "Materiais Produzidos",
-      "race.appearance": "Características Físicas",
-      "race.talent": "Talento Racial",
-      "race.lifespan": "Expectativa de Vida",
-      "race.population": "População",
-      "race.settlement": "Assentamentos",
-      "race.custom": "Costumes Culturais",
-      "race.faith": "Crença",
-      "race.relations": "Relações com Outras Raças",
-      "race.representatives": "Representantes",
-      "faction.type": "Tipo",
-      "faction.type.option.0": "Seita",
-      "faction.type.option.1": "Corte Imperial",
-      "faction.type.option.2": "Associação Comercial",
-      "faction.type.option.3": "Tribo",
-      "faction.type.option.4": "Ordem Religiosa",
-      "faction.type.option.5": "Família Nobre",
-      "faction.type.option.6": "Outro",
-      "faction.territory": "Território",
-      "faction.leader": "Líder",
-      "faction.coreMembers": "Membros Principais",
-      "faction.power": "Nível de Poder",
-      "faction.goal": "Objetivo",
-      "faction.relations": "Relações",
-      "faction.banner": "Bandeira/Símbolo",
-      "faction.mapRegion": "Região no Mapa",
-      "faction.color": "Cor",
-      "city.faction": "Facção Pertencente",
-      "city.locationNote": "Nota de Localização",
-      "city.scale": "Escala/População",
-      "city.ruler": "Governante",
-      "city.economy": "Economia/Especialidades",
-      "city.strategic": "Importância Estratégica",
-      "city.style": "Estilo Urbano",
-      "city.landmark": "Marcos Arquitetônicos",
-      "artifact.type": "Tipo",
-      "artifact.type.option.0": "Arma",
-      "artifact.type.option.1": "Armadura",
-      "artifact.type.option.2": "Artefato",
-      "artifact.type.option.3": "Elixir",
-      "artifact.type.option.4": "Técnica Secreta",
-      "artifact.type.option.5": "Formação",
-      "artifact.type.option.6": "Material",
-      "artifact.type.option.7": "Outro",
-      "artifact.rank": "Classificação",
-      "artifact.rank.option.0": "Comum",
-      "artifact.rank.option.1": "Inferior",
-      "artifact.rank.option.2": "Médio",
-      "artifact.rank.option.3": "Superior",
-      "artifact.rank.option.4": "Excelente",
-      "artifact.rank.option.5": "Divino",
-      "artifact.appearance": "Aparência",
-      "artifact.effect": "Efeito/Habilidade",
-      "artifact.craft": "Método de Forja",
-      "artifact.materials": "Materiais Necessários",
-      "artifact.origin": "Origem",
-      "artifact.owner": "Portador Atual",
-      "natStructure.type": "Tipo de Camada",
-      "natStructure.scope": "Escopo",
-      "natStructure.feature": "Descrição de Características",
-      "natDimension.scale": "Escala/Extensão",
-      "natDimension.feature": "Características Regionais",
-      "natTerrain.type": "Tipo",
-      "natTerrain.type.option.0": "Continente",
-      "natTerrain.type.option.1": "Cordilheira",
-      "natTerrain.type.option.2": "Planalto",
-      "natTerrain.type.option.3": "Planície",
-      "natTerrain.type.option.4": "Bacia",
-      "natTerrain.type.option.5": "Colina",
-      "natTerrain.type.option.6": "Cânion",
-      "natTerrain.type.option.7": "Deserto",
-      "natTerrain.type.option.8": "Floresta",
-      "natTerrain.type.option.9": "Outro",
-      "natTerrain.location": "Região",
-      "natTerrain.feature": "Características",
-      "natWater.type": "Tipo",
-      "natWater.type.option.0": "Montanha",
-      "natWater.type.option.1": "Pico",
-      "natWater.type.option.2": "Rio",
-      "natWater.type.option.3": "Lago",
-      "natWater.type.option.4": "Oceano",
-      "natWater.type.option.5": "Canal",
-      "natWater.type.option.6": "Cachoeira",
-      "natWater.type.option.7": "Outro",
-      "natWater.scale": "Escala",
-      "natWater.feature": "Características",
-      "natClimate.region": "Região",
-      "natClimate.type": "Tipo Climático",
-      "natClimate.hazard": "Desastres Naturais",
-      "humEra.period": "Período/Ano",
-      "humEra.feature": "Características da Era",
-      "humEvent.type": "Tipo",
-      "humEvent.type.option.0": "Guerra",
-      "humEvent.type.option.1": "Mudança de Dinastia",
-      "humEvent.type.option.2": "Calamidade",
-      "humEvent.type.option.3": "Reforma",
-      "humEvent.type.option.4": "Descoberta",
-      "humEvent.type.option.5": "Outro",
-      "humEvent.time": "Tempo/Ano",
-      "humEvent.impact": "Impacto",
-      "humSociety.type": "Tipo de Sistema",
-      "humSociety.type.option.0": "Forma de Governo",
-      "humSociety.type.option.1": "Moeda",
-      "humSociety.type.option.2": "Impostos",
-      "humSociety.type.option.3": "Sistema de Classes",
-      "humSociety.type.option.4": "Religião",
-      "humSociety.type.option.5": "Costumes e Festivais",
-      "humSociety.type.option.6": "Outro",
-      "humSociety.detail": "Descrição do Sistema",
-      "humPolitics.type": "Tipo",
-      "humPolitics.type.option.0": "Forma de Governo",
-      "humPolitics.type.option.1": "Sistema Oficial",
-      "humPolitics.type.option.2": "Leis",
-      "humPolitics.type.option.3": "Militar",
-      "humPolitics.type.option.4": "Diplomacia",
-      "humPolitics.type.option.5": "Classes Sociais",
-      "humPolitics.type.option.6": "Outro",
-      "humPolitics.scope": "Abrangência",
-      "humPolitics.authority": "Autoridade",
-      "humPolitics.detail": "Descrição",
-      "humEconomy.type": "Tipo",
-      "humEconomy.type.option.0": "Moeda",
-      "humEconomy.type.option.1": "Impostos",
-      "humEconomy.type.option.2": "Comércio",
-      "humEconomy.type.option.3": "Indústria",
-      "humEconomy.type.option.4": "Distribuição de Recursos",
-      "humEconomy.type.option.5": "Finanças",
-      "humEconomy.type.option.6": "Outro",
-      "humEconomy.scope": "Abrangência",
-      "humEconomy.actors": "Participantes",
-      "humEconomy.detail": "Descrição",
-      "humCulture.type": "Tipo",
-      "humCulture.type.option.0": "Linguagem",
-      "humCulture.type.option.1": "Religião",
-      "humCulture.type.option.2": "Educação",
-      "humCulture.type.option.3": "Etiqueta",
-      "humCulture.type.option.4": "Festivais",
-      "humCulture.type.option.5": "Artes",
-      "humCulture.type.option.6": "Costumes",
-      "humCulture.type.option.7": "Outro",
-      "humCulture.region": "Região/Grupo",
-      "humCulture.taboo": "Tabus",
-      "humCulture.detail": "Descrição",
-      "humConflict.type": "Tipo",
-      "humConflict.sides": "Facções Opostas",
-      "humConflict.tension": "Tensão/Raiz",
-      "originPower.rank": "Nível/Camada",
-      "originPower.mark": "Marca Central",
-      "originPower.condition": "Condição de Ascensão",
-      "originDeity.type": "Tipo",
-      "originDeity.type.option.0": "Deus Principal",
-      "originDeity.type.option.1": "Deus Menor",
-      "originDeity.type.option.2": "Semideus",
-      "originDeity.type.option.3": "Religião Estatal",
-      "originDeity.type.option.4": "Crença Popular",
-      "originDeity.type.option.5": "Deus Maligno",
-      "originDeity.type.option.6": "Outro",
-      "originDeity.title": "Título/Domínio",
-      "originDeity.rule": "Regra/Tabu"
+      "mineral": {
+        "appearance": "Aparência",
+        "rank": "Classificação",
+        "effect": "Efeito",
+        "origin": "Origem",
+        "rarity": "Raridade",
+        "craftInto": "Pode ser forjado em"
+      },
+      "herb": {
+        "form": "Forma",
+        "effect": "Efeito",
+        "rank": "Classificação",
+        "habitat": "Habitat",
+        "maturity": "Ciclo de Maturação",
+        "difficulty": "Dificuldade de Coleta",
+        "craftInto": "Pode ser refinado em"
+      },
+      "beast": {
+        "kind": "Tipo",
+        "cultivation": "Sistema de Cultivo",
+        "realm": "Reino",
+        "body": "Aparência Física",
+        "habit": "Temperamento",
+        "habitat": "Habitat",
+        "threat": "Nível de Ameaça",
+        "ability": "Habilidade Especial",
+        "drops": "Materiais Produzidos"
+      },
+      "race": {
+        "appearance": "Características Físicas",
+        "talent": "Talento Racial",
+        "lifespan": "Expectativa de Vida",
+        "population": "População",
+        "settlement": "Assentamentos",
+        "custom": "Costumes Culturais",
+        "faith": "Crença",
+        "relations": "Relações com Outras Raças",
+        "representatives": "Representantes"
+      },
+      "faction": {
+        "type": "Tipo",
+        "territory": "Território",
+        "leader": "Líder",
+        "coreMembers": "Membros Principais",
+        "power": "Nível de Poder",
+        "goal": "Objetivo",
+        "relations": "Relações",
+        "banner": "Bandeira/Símbolo",
+        "mapRegion": "Região no Mapa",
+        "color": "Cor"
+      },
+      "city": {
+        "faction": "Facção Pertencente",
+        "locationNote": "Nota de Localização",
+        "scale": "Escala/População",
+        "ruler": "Governante",
+        "economy": "Economia/Especialidades",
+        "strategic": "Importância Estratégica",
+        "style": "Estilo Urbano",
+        "landmark": "Marcos Arquitetônicos"
+      },
+      "artifact": {
+        "type": "Tipo",
+        "rank": "Classificação",
+        "appearance": "Aparência",
+        "effect": "Efeito/Habilidade",
+        "craft": "Método de Forja",
+        "materials": "Materiais Necessários",
+        "origin": "Origem",
+        "owner": "Portador Atual"
+      },
+      "natStructure": {
+        "type": "Tipo de Camada",
+        "scope": "Escopo",
+        "feature": "Descrição de Características"
+      },
+      "natDimension": {
+        "scale": "Escala/Extensão",
+        "feature": "Características Regionais"
+      },
+      "natTerrain": {
+        "type": "Tipo",
+        "location": "Região",
+        "feature": "Características"
+      },
+      "natWater": {
+        "type": "Tipo",
+        "scale": "Escala",
+        "feature": "Características"
+      },
+      "natClimate": {
+        "region": "Região",
+        "type": "Tipo Climático",
+        "hazard": "Desastres Naturais"
+      },
+      "humEra": {
+        "period": "Período/Ano",
+        "feature": "Características da Era"
+      },
+      "humEvent": {
+        "type": "Tipo",
+        "time": "Tempo/Ano",
+        "impact": "Impacto"
+      },
+      "humSociety": {
+        "type": "Tipo de Sistema",
+        "detail": "Descrição do Sistema"
+      },
+      "humPolitics": {
+        "type": "Tipo",
+        "scope": "Abrangência",
+        "authority": "Autoridade",
+        "detail": "Descrição"
+      },
+      "humEconomy": {
+        "type": "Tipo",
+        "scope": "Abrangência",
+        "actors": "Participantes",
+        "detail": "Descrição"
+      },
+      "humCulture": {
+        "type": "Tipo",
+        "region": "Região/Grupo",
+        "taboo": "Tabus",
+        "detail": "Descrição"
+      },
+      "humConflict": {
+        "type": "Tipo",
+        "sides": "Facções Opostas",
+        "tension": "Tensão/Raiz"
+      },
+      "originPower": {
+        "rank": "Nível/Camada",
+        "mark": "Marca Central",
+        "condition": "Condição de Ascensão"
+      },
+      "originDeity": {
+        "type": "Tipo",
+        "title": "Título/Domínio",
+        "rule": "Regra/Tabu"
+      }
+    },
+    "fieldOption": {
+      "mineral": {
+        "rank": {
+          "0": "Comum",
+          "1": "Inferior",
+          "2": "Médio",
+          "3": "Superior",
+          "4": "Excelente",
+          "5": "Divino"
+        },
+        "rarity": {
+          "0": "Comum",
+          "1": "Escasso",
+          "2": "Raro",
+          "3": "Precioso",
+          "4": "Incomparável"
+        }
+      },
+      "herb": {
+        "rank": {
+          "0": "Comum",
+          "1": "Inferior",
+          "2": "Médio",
+          "3": "Superior",
+          "4": "Excelente",
+          "5": "Divino"
+        },
+        "difficulty": {
+          "0": "Fácil",
+          "1": "Moderado",
+          "2": "Difícil",
+          "3": "Extremo"
+        }
+      },
+      "beast": {
+        "kind": {
+          "0": "Terrestre",
+          "1": "Voador",
+          "2": "Aquático",
+          "3": "Inseto",
+          "4": "Mutante"
+        },
+        "threat": {
+          "0": "Inofensivo",
+          "1": "Baixo Risco",
+          "2": "Risco Médio",
+          "3": "Alto Risco",
+          "4": "Nível Destruidor"
+        }
+      },
+      "faction": {
+        "type": {
+          "0": "Seita",
+          "1": "Corte Imperial",
+          "2": "Associação Comercial",
+          "3": "Tribo",
+          "4": "Ordem Religiosa",
+          "5": "Família Nobre",
+          "6": "Outro"
+        }
+      },
+      "artifact": {
+        "type": {
+          "0": "Arma",
+          "1": "Armadura",
+          "2": "Artefato",
+          "3": "Elixir",
+          "4": "Técnica Secreta",
+          "5": "Formação",
+          "6": "Material",
+          "7": "Outro"
+        },
+        "rank": {
+          "0": "Comum",
+          "1": "Inferior",
+          "2": "Médio",
+          "3": "Superior",
+          "4": "Excelente",
+          "5": "Divino"
+        }
+      },
+      "natTerrain": {
+        "type": {
+          "0": "Continente",
+          "1": "Cordilheira",
+          "2": "Planalto",
+          "3": "Planície",
+          "4": "Bacia",
+          "5": "Colina",
+          "6": "Cânion",
+          "7": "Deserto",
+          "8": "Floresta",
+          "9": "Outro"
+        }
+      },
+      "natWater": {
+        "type": {
+          "0": "Montanha",
+          "1": "Pico",
+          "2": "Rio",
+          "3": "Lago",
+          "4": "Oceano",
+          "5": "Canal",
+          "6": "Cachoeira",
+          "7": "Outro"
+        }
+      },
+      "humEvent": {
+        "type": {
+          "0": "Guerra",
+          "1": "Mudança de Dinastia",
+          "2": "Calamidade",
+          "3": "Reforma",
+          "4": "Descoberta",
+          "5": "Outro"
+        }
+      },
+      "humSociety": {
+        "type": {
+          "0": "Forma de Governo",
+          "1": "Moeda",
+          "2": "Impostos",
+          "3": "Sistema de Classes",
+          "4": "Religião",
+          "5": "Costumes e Festivais",
+          "6": "Outro"
+        }
+      },
+      "humPolitics": {
+        "type": {
+          "0": "Forma de Governo",
+          "1": "Sistema Oficial",
+          "2": "Leis",
+          "3": "Militar",
+          "4": "Diplomacia",
+          "5": "Classes Sociais",
+          "6": "Outro"
+        }
+      },
+      "humEconomy": {
+        "type": {
+          "0": "Moeda",
+          "1": "Impostos",
+          "2": "Comércio",
+          "3": "Indústria",
+          "4": "Distribuição de Recursos",
+          "5": "Finanças",
+          "6": "Outro"
+        }
+      },
+      "humCulture": {
+        "type": {
+          "0": "Linguagem",
+          "1": "Religião",
+          "2": "Educação",
+          "3": "Etiqueta",
+          "4": "Festivais",
+          "5": "Artes",
+          "6": "Costumes",
+          "7": "Outro"
+        }
+      },
+      "originDeity": {
+        "type": {
+          "0": "Deus Principal",
+          "1": "Deus Menor",
+          "2": "Semideus",
+          "3": "Religião Estatal",
+          "4": "Crença Popular",
+          "5": "Deus Maligno",
+          "6": "Outro"
+        }
+      }
+    },
+    "fieldPlaceholder": {
+      "mineral": {
+        "appearance": {
+          "placeholder": "Forma / Cor / Textura"
+        }
+      },
+      "beast": {
+        "cultivation": {
+          "placeholder": "Compatível com dados antigos; para novos dados use a associação estruturada acima"
+        }
+      },
+      "faction": {
+        "color": {
+          "placeholder": "Ex: #C17D5E"
+        }
+      },
+      "city": {
+        "locationNote": {
+          "placeholder": "Para localização estruturada use a associação 「Local Importante」 acima"
+        }
+      },
+      "natStructure": {
+        "type": {
+          "placeholder": "Ex: Planeta / Continente / Plano / Espaço Paralelo"
+        }
+      },
+      "natClimate": {
+        "type": {
+          "placeholder": "Ex: Temperado / Gélido / Quente e Úmido"
+        }
+      },
+      "humConflict": {
+        "type": {
+          "placeholder": "Ex: Classe / Raça / Crença / Recurso"
+        }
+      }
     }
   },
   "cultivation": {
@@ -1041,7 +1182,23 @@
     "digitalYear": "Ano Digital (para ordenação)",
     "digitalYearAriaLabel": "Ano Digital",
     "digitalYearPlaceholder": "Números negativos representam a.C.",
-    "era": "Período Histórico Aplicável",
+    "era": {
+      "preQin": "Pré-Qin",
+      "qinHan": "Qin-Han",
+      "weiJin": "Wei-Jin",
+      "suiTang": "Sui-Tang",
+      "songYuan": "Song-Yuan",
+      "mingQing": "Ming-Qing",
+      "republic": "República",
+      "modern": "Moderno",
+      "ancientGlobal": "Antiguidade Global",
+      "medievalGlobal": "Medieval Global",
+      "renaissanceGlobal": "Renascimento Global",
+      "industrialGlobal": "Era Industrial Global",
+      "worldWarsGlobal": "Guerras Mundiais Global",
+      "coldWarGlobal": "Guerra Fria Global",
+      "custom": "Personalizado/Ficcional"
+    },
     "eraAriaLabel": "Período Histórico Aplicável",
     "eraSystemDescription": "Descreva o método de datação deste mundo, como: datação por era imperial, troncos celestes e ramos terrestres, etc...",
     "eraSystemLabel": "Sistema de Datação",
@@ -1120,23 +1277,6 @@
     "eventDescriptionDefault": "Digite a descrição do evento aqui...",
     "keywordDefault": "Nova palavra-chave",
     "keywordDescriptionDefault": "Digite a descrição da palavra-chave aqui...",
-    "era": {
-      "preQin": "Pré-Qin",
-      "qinHan": "Qin-Han",
-      "weiJin": "Wei-Jin",
-      "suiTang": "Sui-Tang",
-      "songYuan": "Song-Yuan",
-      "mingQing": "Ming-Qing",
-      "republic": "República",
-      "modern": "Moderno",
-      "ancientGlobal": "Antiguidade Global",
-      "medievalGlobal": "Medieval Global",
-      "renaissanceGlobal": "Renascimento Global",
-      "industrialGlobal": "Era Industrial Global",
-      "worldWarsGlobal": "Guerras Mundiais Global",
-      "coldWarGlobal": "Guerra Fria Global",
-      "custom": "Personalizado/Ficcional"
-    },
     "keywordCategory": {
       "technology": "Artefatos e Tecnologia",
       "institution": "Instituições e Cargos",
@@ -1940,68 +2080,9 @@
     "volumeOutlineEmpty": "(Sinopse do volume não preenchida)"
   },
   "rag": {
-    "source.worldview": "Visão de mundo",
-    "source.storyCore": "Núcleo da história",
-    "source.characters": "Fichas de personagem",
-    "source.characterRelations": "Relações de personagem",
-    "source.chapterContent": "Capítulo e texto anterior",
-    "source.codex": "Entradas de codex",
-    "source.locations": "Locais importantes",
-    "source.historical": "História",
-    "source.foreshadows": "Foreshadowing",
-    "source.references": "Referências do projeto",
-    "source.itemLedger": "Registro de itens de personagem",
-    "field.shortDescription": "Resumo em uma frase",
-    "field.identity": "Identidade",
-    "field.profile": "Perfil básico",
-    "field.appearance": "Aparência",
-    "field.personality": "Personalidade",
-    "field.background": "Histórico",
-    "field.motivation": "Motivação",
-    "field.values": "Valores",
-    "field.strengths": "Pontos fortes",
-    "field.weaknesses": "Fraquezas",
-    "field.fears": "Medos",
-    "field.goals": "Objetivos",
-    "field.innerConflict": "Conflito interno",
-    "field.abilities": "Habilidades",
-    "field.powerLevel": "Nível de poder",
-    "field.relationships": "Descrição de relações",
-    "field.arc": "Arco do personagem",
-    "field.keyEvents": "Eventos-chave",
-    "field.speechStyle": "Estilo de fala",
-    "field.habits": "Hábitos",
-    "field.signatureItem": "Item característico",
-    "field.relationType": "Tipo de relação",
-    "field.relationLabel": "Rótulo de relação",
-    "field.relationDescription": "Descrição de relação",
-    "field.isBidirectional": "Bidirecional",
-    "field.bidirectional": "Bidirecional",
-    "field.unidirectional": "Unidirecional",
-    "field.content": "Texto",
-    "field.chapterSummary": "Resumo do capítulo",
-    "field.authorNotes": "Notas do autor",
-    "field.summary": "Resumo",
-    "field.description": "Descrição detalhada",
-    "field.tags": "Tags",
-    "field.locationDescription": "Descrição do local",
-    "field.significance": "Significado na trama",
-    "field.locationTags": "Tags do local",
-    "field.overview": "Visão geral histórica",
-    "field.eraSystem": "Sistema de era",
-    "field.events": "Eventos históricos",
-    "field.foreshadowDescription": "Descrição do foreshadowing",
-    "field.foreshadowNotes": "Notas do autor",
-    "field.foreshadowStatus": "Estado atual",
-    "field.referenceNote": "Notas do autor",
-    "field.analysisSummary": "Resumo da análise",
-    "field.importedData": "Referência estruturada",
-    "field.itemEvent": "Evento de item",
-    "field.itemNote": "Notas do item",
-    "title.mainWorldview": "Visão de mundo principal",
-    "title.currentWorldview": "Visão de mundo atual",
-    "title.mainWorldHistory": "História do mundo principal",
-    "title.currentWorldHistory": "História do mundo atual"
+    "title": {
+      "character": "Personagens"
+    }
   },
   "workshop": {
     "scan.title": "Varredura de Estado",
@@ -2040,11 +2121,6 @@
     "background": "Antecedentes",
     "relationships": "Relacionamentos",
     "identity": "Identidade"
-  },
-  "rag": {
-    "title": {
-      "character": "Personagens"
-    }
   },
   "emotion": {
     "rising": "📈 Crescente",

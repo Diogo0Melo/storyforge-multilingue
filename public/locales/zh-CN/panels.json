@@ -283,217 +283,358 @@
       "save": "保存"
     },
     "field": {
-      "mineral.appearance": "外观",
-      "mineral.rank": "品级品阶",
-      "mineral.rank.option.0": "凡品",
-      "mineral.rank.option.1": "下品",
-      "mineral.rank.option.2": "中品",
-      "mineral.rank.option.3": "上品",
-      "mineral.rank.option.4": "极品",
-      "mineral.rank.option.5": "神品",
-      "mineral.effect": "功效作用",
-      "mineral.origin": "产地分布",
-      "mineral.rarity": "稀有度",
-      "mineral.rarity.option.0": "常见",
-      "mineral.rarity.option.1": "稀少",
-      "mineral.rarity.option.2": "罕见",
-      "mineral.rarity.option.3": "珍稀",
-      "mineral.rarity.option.4": "绝世",
-      "mineral.craftInto": "可炼器物",
-      "herb.form": "形态",
-      "herb.effect": "药效",
-      "herb.rank": "品级",
-      "herb.rank.option.0": "凡品",
-      "herb.rank.option.1": "下品",
-      "herb.rank.option.2": "中品",
-      "herb.rank.option.3": "上品",
-      "herb.rank.option.4": "极品",
-      "herb.rank.option.5": "神品",
-      "herb.habitat": "生长环境",
-      "herb.maturity": "成熟周期",
-      "herb.difficulty": "采集难度",
-      "herb.difficulty.option.0": "容易",
-      "herb.difficulty.option.1": "一般",
-      "herb.difficulty.option.2": "困难",
-      "herb.difficulty.option.3": "极难",
-      "herb.craftInto": "可炼丹药",
-      "beast.kind": "类别",
-      "beast.kind.option.0": "走兽",
-      "beast.kind.option.1": "飞禽",
-      "beast.kind.option.2": "水族",
-      "beast.kind.option.3": "虫豸",
-      "beast.kind.option.4": "异种",
-      "beast.cultivation": "修炼体系（旧文本备注）",
-      "beast.realm": "境界（旧文本备注）",
-      "beast.body": "体型外貌",
-      "beast.habit": "习性性情",
-      "beast.habitat": "栖息地",
-      "beast.threat": "威胁等级",
-      "beast.threat.option.0": "无害",
-      "beast.threat.option.1": "低危",
-      "beast.threat.option.2": "中危",
-      "beast.threat.option.3": "高危",
-      "beast.threat.option.4": "毁灭级",
-      "beast.ability": "特殊能力",
-      "beast.drops": "可产出材料",
-      "race.appearance": "外貌特征",
-      "race.talent": "种族天赋",
-      "race.lifespan": "平均寿命",
-      "race.population": "人口规模",
-      "race.settlement": "聚居地",
-      "race.custom": "文化习俗",
-      "race.faith": "信仰",
-      "race.relations": "与其他种族关系",
-      "race.representatives": "代表人物",
-      "faction.type": "类型",
-      "faction.type.option.0": "门派",
-      "faction.type.option.1": "朝廷",
-      "faction.type.option.2": "商会",
-      "faction.type.option.3": "部落",
-      "faction.type.option.4": "教派",
-      "faction.type.option.5": "世家",
-      "faction.type.option.6": "其他",
-      "faction.territory": "势力范围",
-      "faction.leader": "领导者",
-      "faction.coreMembers": "核心成员",
-      "faction.power": "实力等级",
-      "faction.goal": "宗旨目标",
-      "faction.relations": "敌友关系",
-      "faction.banner": "标志旗帜",
-      "faction.mapRegion": "绑定地图区域",
-      "faction.color": "颜色",
-      "city.faction": "所属势力",
-      "city.locationNote": "位置备注（旧文本）",
-      "city.scale": "规模人口",
-      "city.ruler": "统治者",
-      "city.economy": "经济特产",
-      "city.strategic": "战略地位",
-      "city.style": "城市风貌",
-      "city.landmark": "地标建筑",
-      "artifact.type": "类别",
-      "artifact.type.option.0": "武器",
-      "artifact.type.option.1": "防具",
-      "artifact.type.option.2": "法器",
-      "artifact.type.option.3": "丹药",
-      "artifact.type.option.4": "功法秘籍",
-      "artifact.type.option.5": "阵法",
-      "artifact.type.option.6": "材料",
-      "artifact.type.option.7": "其他",
-      "artifact.rank": "品级品阶",
-      "artifact.rank.option.0": "凡品",
-      "artifact.rank.option.1": "下品",
-      "artifact.rank.option.2": "中品",
-      "artifact.rank.option.3": "上品",
-      "artifact.rank.option.4": "极品",
-      "artifact.rank.option.5": "神品",
-      "artifact.appearance": "外观",
-      "artifact.effect": "能力效果",
-      "artifact.craft": "炼制方式",
-      "artifact.materials": "所需材料",
-      "artifact.origin": "来历",
-      "artifact.owner": "当前持有者",
-      "natStructure.type": "层级类型",
-      "natStructure.scope": "范围",
-      "natStructure.feature": "特征说明",
-      "natDimension.scale": "尺度范围",
-      "natDimension.feature": "区域特征",
-      "natTerrain.type": "类型",
-      "natTerrain.type.option.0": "大陆",
-      "natTerrain.type.option.1": "山脉",
-      "natTerrain.type.option.2": "高原",
-      "natTerrain.type.option.3": "平原",
-      "natTerrain.type.option.4": "盆地",
-      "natTerrain.type.option.5": "丘陵",
-      "natTerrain.type.option.6": "峡谷",
-      "natTerrain.type.option.7": "沙漠",
-      "natTerrain.type.option.8": "森林",
-      "natTerrain.type.option.9": "其他",
-      "natTerrain.location": "位置",
-      "natTerrain.feature": "地形特征",
-      "natWater.type": "类型",
-      "natWater.type.option.0": "山脉",
-      "natWater.type.option.1": "山峰",
-      "natWater.type.option.2": "河流",
-      "natWater.type.option.3": "湖泊",
-      "natWater.type.option.4": "海洋",
-      "natWater.type.option.5": "运河",
-      "natWater.type.option.6": "瀑布",
-      "natWater.type.option.7": "其他",
-      "natWater.scale": "规模",
-      "natWater.feature": "特征",
-      "natClimate.region": "所在区域",
-      "natClimate.type": "气候类型",
-      "natClimate.hazard": "季节/自然灾害",
-      "humEra.period": "时间/纪年",
-      "humEra.feature": "时代特征/大事",
-      "humEvent.type": "类型",
-      "humEvent.type.option.0": "战争",
-      "humEvent.type.option.1": "王朝兴替",
-      "humEvent.type.option.2": "灾劫",
-      "humEvent.type.option.3": "变法",
-      "humEvent.type.option.4": "发现",
-      "humEvent.type.option.5": "其他",
-      "humEvent.time": "发生时间",
-      "humEvent.impact": "影响",
-      "humSociety.type": "类别",
-      "humSociety.type.option.0": "政体",
-      "humSociety.type.option.1": "货币",
-      "humSociety.type.option.2": "赋税",
-      "humSociety.type.option.3": "阶层制度",
-      "humSociety.type.option.4": "宗教信仰",
-      "humSociety.type.option.5": "风俗节庆",
-      "humSociety.type.option.6": "其他",
-      "humSociety.detail": "说明",
-      "humPolitics.type": "制度类型",
-      "humPolitics.type.option.0": "政体",
-      "humPolitics.type.option.1": "官制",
-      "humPolitics.type.option.2": "法律",
-      "humPolitics.type.option.3": "军事",
-      "humPolitics.type.option.4": "外交",
-      "humPolitics.type.option.5": "阶层",
-      "humPolitics.type.option.6": "其他",
-      "humPolitics.scope": "适用范围",
-      "humPolitics.authority": "权力主体",
-      "humPolitics.detail": "制度说明",
-      "humEconomy.type": "制度类型",
-      "humEconomy.type.option.0": "货币",
-      "humEconomy.type.option.1": "税赋",
-      "humEconomy.type.option.2": "贸易",
-      "humEconomy.type.option.3": "产业",
-      "humEconomy.type.option.4": "资源分配",
-      "humEconomy.type.option.5": "金融",
-      "humEconomy.type.option.6": "其他",
-      "humEconomy.scope": "流通范围",
-      "humEconomy.actors": "主要参与者",
-      "humEconomy.detail": "制度说明",
-      "humCulture.type": "文化类型",
-      "humCulture.type.option.0": "语言",
-      "humCulture.type.option.1": "宗教",
-      "humCulture.type.option.2": "教育",
-      "humCulture.type.option.3": "礼仪",
-      "humCulture.type.option.4": "节庆",
-      "humCulture.type.option.5": "艺术",
-      "humCulture.type.option.6": "习俗",
-      "humCulture.type.option.7": "其他",
-      "humCulture.region": "流行区域/群体",
-      "humCulture.taboo": "禁忌",
-      "humCulture.detail": "文化说明",
-      "humConflict.type": "类型",
-      "humConflict.sides": "对立方",
-      "humConflict.tension": "张力/根源",
-      "originPower.rank": "等级/层级",
-      "originPower.mark": "核心标志",
-      "originPower.condition": "晋升条件",
-      "originDeity.type": "类型",
-      "originDeity.type.option.0": "主神",
-      "originDeity.type.option.1": "次神",
-      "originDeity.type.option.2": "半神",
-      "originDeity.type.option.3": "国教",
-      "originDeity.type.option.4": "民间信仰",
-      "originDeity.type.option.5": "邪神",
-      "originDeity.type.option.6": "其他",
-      "originDeity.title": "名号/职司",
-      "originDeity.rule": "规则/禁忌"
+      "mineral": {
+        "appearance": "外观",
+        "rank": "品级品阶",
+        "effect": "功效作用",
+        "origin": "产地分布",
+        "rarity": "稀有度",
+        "craftInto": "可炼器物"
+      },
+      "herb": {
+        "form": "形态",
+        "effect": "药效",
+        "rank": "品级",
+        "habitat": "生长环境",
+        "maturity": "成熟周期",
+        "difficulty": "采集难度",
+        "craftInto": "可炼丹药"
+      },
+      "beast": {
+        "kind": "类别",
+        "cultivation": "修炼体系（旧文本备注）",
+        "realm": "境界（旧文本备注）",
+        "body": "体型外貌",
+        "habit": "习性性情",
+        "habitat": "栖息地",
+        "threat": "威胁等级",
+        "ability": "特殊能力",
+        "drops": "可产出材料"
+      },
+      "race": {
+        "appearance": "外貌特征",
+        "talent": "种族天赋",
+        "lifespan": "平均寿命",
+        "population": "人口规模",
+        "settlement": "聚居地",
+        "custom": "文化习俗",
+        "faith": "信仰",
+        "relations": "与其他种族关系",
+        "representatives": "代表人物"
+      },
+      "faction": {
+        "type": "类型",
+        "territory": "势力范围",
+        "leader": "领导者",
+        "coreMembers": "核心成员",
+        "power": "实力等级",
+        "goal": "宗旨目标",
+        "relations": "敌友关系",
+        "banner": "标志旗帜",
+        "mapRegion": "绑定地图区域",
+        "color": "颜色"
+      },
+      "city": {
+        "faction": "所属势力",
+        "locationNote": "位置备注（旧文本）",
+        "scale": "规模人口",
+        "ruler": "统治者",
+        "economy": "经济特产",
+        "strategic": "战略地位",
+        "style": "城市风貌",
+        "landmark": "地标建筑"
+      },
+      "artifact": {
+        "type": "类别",
+        "rank": "品级品阶",
+        "appearance": "外观",
+        "effect": "能力效果",
+        "craft": "炼制方式",
+        "materials": "所需材料",
+        "origin": "来历",
+        "owner": "当前持有者"
+      },
+      "natStructure": {
+        "type": "层级类型",
+        "scope": "范围",
+        "feature": "特征说明"
+      },
+      "natDimension": {
+        "scale": "尺度范围",
+        "feature": "区域特征"
+      },
+      "natTerrain": {
+        "type": "类型",
+        "location": "位置",
+        "feature": "地形特征"
+      },
+      "natWater": {
+        "type": "类型",
+        "scale": "规模",
+        "feature": "特征"
+      },
+      "natClimate": {
+        "region": "所在区域",
+        "type": "气候类型",
+        "hazard": "季节/自然灾害"
+      },
+      "humEra": {
+        "period": "时间/纪年",
+        "feature": "时代特征/大事"
+      },
+      "humEvent": {
+        "type": "类型",
+        "time": "发生时间",
+        "impact": "影响"
+      },
+      "humSociety": {
+        "type": "类别",
+        "detail": "说明"
+      },
+      "humPolitics": {
+        "type": "制度类型",
+        "scope": "适用范围",
+        "authority": "权力主体",
+        "detail": "制度说明"
+      },
+      "humEconomy": {
+        "type": "制度类型",
+        "scope": "流通范围",
+        "actors": "主要参与者",
+        "detail": "制度说明"
+      },
+      "humCulture": {
+        "type": "文化类型",
+        "region": "流行区域/群体",
+        "taboo": "禁忌",
+        "detail": "文化说明"
+      },
+      "humConflict": {
+        "type": "类型",
+        "sides": "对立方",
+        "tension": "张力/根源"
+      },
+      "originPower": {
+        "rank": "等级/层级",
+        "mark": "核心标志",
+        "condition": "晋升条件"
+      },
+      "originDeity": {
+        "type": "类型",
+        "title": "名号/职司",
+        "rule": "规则/禁忌"
+      }
+    },
+    "fieldOption": {
+      "mineral": {
+        "rank": {
+          "0": "凡品",
+          "1": "下品",
+          "2": "中品",
+          "3": "上品",
+          "4": "极品",
+          "5": "神品"
+        },
+        "rarity": {
+          "0": "常见",
+          "1": "稀少",
+          "2": "罕见",
+          "3": "珍稀",
+          "4": "绝世"
+        }
+      },
+      "herb": {
+        "rank": {
+          "0": "凡品",
+          "1": "下品",
+          "2": "中品",
+          "3": "上品",
+          "4": "极品",
+          "5": "神品"
+        },
+        "difficulty": {
+          "0": "容易",
+          "1": "一般",
+          "2": "困难",
+          "3": "极难"
+        }
+      },
+      "beast": {
+        "kind": {
+          "0": "走兽",
+          "1": "飞禽",
+          "2": "水族",
+          "3": "虫豸",
+          "4": "异种"
+        },
+        "threat": {
+          "0": "无害",
+          "1": "低危",
+          "2": "中危",
+          "3": "高危",
+          "4": "毁灭级"
+        }
+      },
+      "faction": {
+        "type": {
+          "0": "门派",
+          "1": "朝廷",
+          "2": "商会",
+          "3": "部落",
+          "4": "教派",
+          "5": "世家",
+          "6": "其他"
+        }
+      },
+      "artifact": {
+        "type": {
+          "0": "武器",
+          "1": "防具",
+          "2": "法器",
+          "3": "丹药",
+          "4": "功法秘籍",
+          "5": "阵法",
+          "6": "材料",
+          "7": "其他"
+        },
+        "rank": {
+          "0": "凡品",
+          "1": "下品",
+          "2": "中品",
+          "3": "上品",
+          "4": "极品",
+          "5": "神品"
+        }
+      },
+      "natTerrain": {
+        "type": {
+          "0": "大陆",
+          "1": "山脉",
+          "2": "高原",
+          "3": "平原",
+          "4": "盆地",
+          "5": "丘陵",
+          "6": "峡谷",
+          "7": "沙漠",
+          "8": "森林",
+          "9": "其他"
+        }
+      },
+      "natWater": {
+        "type": {
+          "0": "山脉",
+          "1": "山峰",
+          "2": "河流",
+          "3": "湖泊",
+          "4": "海洋",
+          "5": "运河",
+          "6": "瀑布",
+          "7": "其他"
+        }
+      },
+      "humEvent": {
+        "type": {
+          "0": "战争",
+          "1": "王朝兴替",
+          "2": "灾劫",
+          "3": "变法",
+          "4": "发现",
+          "5": "其他"
+        }
+      },
+      "humSociety": {
+        "type": {
+          "0": "政体",
+          "1": "货币",
+          "2": "赋税",
+          "3": "阶层制度",
+          "4": "宗教信仰",
+          "5": "风俗节庆",
+          "6": "其他"
+        }
+      },
+      "humPolitics": {
+        "type": {
+          "0": "政体",
+          "1": "官制",
+          "2": "法律",
+          "3": "军事",
+          "4": "外交",
+          "5": "阶层",
+          "6": "其他"
+        }
+      },
+      "humEconomy": {
+        "type": {
+          "0": "货币",
+          "1": "税赋",
+          "2": "贸易",
+          "3": "产业",
+          "4": "资源分配",
+          "5": "金融",
+          "6": "其他"
+        }
+      },
+      "humCulture": {
+        "type": {
+          "0": "语言",
+          "1": "宗教",
+          "2": "教育",
+          "3": "礼仪",
+          "4": "节庆",
+          "5": "艺术",
+          "6": "习俗",
+          "7": "其他"
+        }
+      },
+      "originDeity": {
+        "type": {
+          "0": "主神",
+          "1": "次神",
+          "2": "半神",
+          "3": "国教",
+          "4": "民间信仰",
+          "5": "邪神",
+          "6": "其他"
+        }
+      }
+    },
+    "fieldPlaceholder": {
+      "mineral": {
+        "appearance": {
+          "placeholder": "形状 / 颜色 / 质感"
+        }
+      },
+      "beast": {
+        "cultivation": {
+          "placeholder": "旧数据兼容；新数据请使用上方结构化关联"
+        }
+      },
+      "faction": {
+        "color": {
+          "placeholder": "如 #C17D5E"
+        }
+      },
+      "city": {
+        "locationNote": {
+          "placeholder": "结构化位置请使用上方「重要地点」关联"
+        }
+      },
+      "natStructure": {
+        "type": {
+          "placeholder": "如 星球 / 大陆 / 位面 / 平行空间"
+        }
+      },
+      "natClimate": {
+        "type": {
+          "placeholder": "如 温带 / 苦寒 / 湿热"
+        }
+      },
+      "humConflict": {
+        "type": {
+          "placeholder": "如 阶级 / 种族 / 信仰 / 资源"
+        }
+      }
     }
   },
   "cultivation": {
