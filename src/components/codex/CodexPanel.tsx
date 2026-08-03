@@ -51,7 +51,7 @@ interface Props {
 const DOMAINS: CodexDomain[] = ['natural', 'humanity']
 
 export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, embedded, extractionSourceText = '' }: Props) {
-  const { t } = useTranslation('panels')
+  const { t } = useTranslation(['panels', 'settings'])
   const dialog = useDialog()
   const toast = useToast()
   const aiConfig = useAIConfigStore(s => s.config)

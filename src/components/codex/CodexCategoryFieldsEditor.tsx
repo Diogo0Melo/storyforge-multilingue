@@ -25,7 +25,7 @@ interface Props {
 }
 
 export default function CodexCategoryFieldsEditor({ category, onClose, onSave }: Props) {
-  const { t } = useTranslation('panels')
+  const { t } = useTranslation(['panels', 'settings'])
   const [defs, setDefs] = useState<CodexFieldDef[]>(() => parseFieldSchema(category.fieldSchema))
 
   const fieldTypes = useMemo(() => FIELD_TYPE_VALUES.map(value => ({

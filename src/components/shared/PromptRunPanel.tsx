@@ -41,7 +41,7 @@ export default function PromptRunPanel({
   open: controlledOpen,
   onOpenChange,
 }: Props) {
-  const { t } = useTranslation('panels')
+  const { t } = useTranslation(['panels', 'settings'])
   const dialog = useDialog()
   const toast = useToast()
   const templates = usePromptStore(s => s.templates)
@@ -217,7 +217,7 @@ function ParamControl({
   value: unknown
   onChange: (v: unknown) => void
 }) {
-  const { t } = useTranslation('panels')
+  const { t } = useTranslation(['panels', 'settings'])
   const aiConfig = useAIConfigStore(s => s.config)
   const enabled = !param.optional || (value !== undefined && value !== '')
   // 显示用值（用户值或默认值）

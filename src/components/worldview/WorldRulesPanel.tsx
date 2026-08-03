@@ -176,13 +176,13 @@ export default function WorldRulesPanel({ project }: Props) {
     // L1 级别
     const l1 = WORLD_RULE_TREE.find(n => n.id === selectedNode)
     if (l1?.hints) {
-      return l1.hintKeys ? l1.hintKeys.map((key, i) => t(key, l1.hints![i])) : l1.hints
+      return l1.hintKeys ? l1.hintKeys.map((key, i) => t(`worlds:${key}`, l1.hints![i])) : l1.hints
     }
     // L2 预定义
     for (const l1Node of WORLD_RULE_TREE) {
       const l2 = l1Node.children?.find(n => n.id === selectedNode)
       if (l2?.hints) {
-        return l2.hintKeys ? l2.hintKeys.map((key, i) => t(key, l2.hints![i])) : l2.hints
+        return l2.hintKeys ? l2.hintKeys.map((key, i) => t(`worlds:${key}`, l2.hints![i])) : l2.hints
       }
     }
     // 自定义
@@ -196,11 +196,11 @@ export default function WorldRulesPanel({ project }: Props) {
     if (!selectedNode) return ''
     // L1
     const l1 = WORLD_RULE_TREE.find(n => n.id === selectedNode)
-    if (l1) return `${l1.icon} ${l1.labelKey ? t(l1.labelKey, l1.label) : l1.label}`
+    if (l1) return `${l1.icon} ${l1.labelKey ? t(`worlds:${l1.labelKey}`, l1.label) : l1.label}`
     // L2 预定义
     for (const l1Node of WORLD_RULE_TREE) {
       const l2 = l1Node.children?.find(n => n.id === selectedNode)
-      if (l2) return `${l2.icon} ${l2.labelKey ? t(l2.labelKey, l2.label) : l2.label}`
+      if (l2) return `${l2.icon} ${l2.labelKey ? t(`worlds:${l2.labelKey}`, l2.label) : l2.label}`
     }
     // 自定义
     const custom = profile?.customNodes.find(n => n.id === selectedNode)
