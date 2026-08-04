@@ -2,17 +2,43 @@
 
 ## Unreleased
 
-## v3.9.0-i18n.1 — 2026-08-03 · Trilingual docs and fork release baseline / Docs trilíngues e linha de release do fork
+## v3.9.0-i18n.1 — 2026-07-29 → 2026-08-04 · Migração i18n completa (pt-BR como idioma principal) + baseline do fork / Complete i18n migration (pt-BR as primary language) + fork baseline
 
 ### Português (BR)
-- README reestruturado em três idiomas: pt-BR (principal, `README.md`), inglês (`README.en.md`) e chinês (`README.zh-CN.md`, conteúdo original do upstream preservado), com seletor de idioma no topo de cada arquivo.
-- Entradas novas do changelog do fork passam a ser bilíngues (pt-BR + inglês); o histórico do upstream permanece em chinês original abaixo do divisor.
-- Nova versão do fork `3.9.0-i18n.1`: a base acompanha o release do upstream e o sufixo numerado marca as iterações deste fork pessoal.
+
+**Migração completa para react-i18next**
+- Infraestrutura i18n (`i18next.config.ts`, namespaces, tipos) + seletor de idioma.
+- Extração de todas as strings chinesas para namespaces (`common`, `nav`, `project`, `editor`, `outline`, `settings`, `import`, `panels`).
+- Migração total: hooks, services e componentes usam `t()`.
+- Remediação visual e de UI  cobrindo tags, stores, erros estruturados, painéis e toolbar.
+
+**Formatação locale-aware**
+- Helpers (`formatNumber()`) substituem datas/números hardcoded em zh-CN.
+- Componente `TokenUsage` limpo do caractere 「字」.
+
+**Qualidade e estrutura do fork**
+- README em 3 idiomas (PT-BR principal, EN, ZH-CN original) com seletor.
+- Changelog bilíngue (PT-BR + EN) no topo; histórico upstream preservado.
+- Versão `3.9.0-i18n.1` (base upstream + contador próprio).
+
+---
 
 ### English
-- README restructured into three languages: pt-BR (primary, `README.md`), English (`README.en.md`), and Chinese (`README.zh-CN.md`, original upstream content preserved), with a language selector at the top of each file.
-- New fork changelog entries are now bilingual (pt-BR + English); upstream history remains in the original Chinese below the divider.
-- New fork version `3.9.0-i18n.1`: the base tracks the upstream release and the numbered suffix marks this personal fork's iterations.
+
+**Full react-i18next migration**
+- i18n infrastructure (`i18next.config.ts`, namespaces, types) + language switcher.
+- All hardcoded Chinese strings extracted into namespaces (`common`, `nav`, `project`, `editor`, `outline`, `settings`, `import`, `panels`).
+- Complete migration: hooks, services, components use `t()`.
+- Visual and UI remediation covering tags, stores, structured errors, panels, and toolbar.
+
+**Locale‑aware formatting**
+- Helpers (`formatNumber()`) replace hardcoded zh-CN dates/numbers.
+- `TokenUsage` component cleaned of the 「字」 character.
+
+**Quality and fork structure**
+- README in 3 languages (PT-BR primary, EN, ZH-CN original) with selector.
+- Bilingual changelog (PT-BR + EN) on top; upstream history preserved.
+- Version `3.9.0-i18n.1` (upstream base + own counter).
 
 > ---
 > **Upstream history below — original Chinese / 以下为上游 yuanbw2025/storyforge 的原始更新历史，保留中文原文。**
