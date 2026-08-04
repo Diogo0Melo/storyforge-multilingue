@@ -1,10 +1,6 @@
 🌐 **README:** [Português (BR)](./README.md) · [English](./README.en.md) · **中文**
 
 > 这是 [yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge) 的个人分支，仅供本人使用。相较于上游，唯一的添加是 **i18n 层（pt-BR / zh-CN）**。
->
-> This is a personal fork of [yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge), maintained for my own use. The only addition over upstream is an **i18n layer (pt-BR / zh-CN)**.
->
-> Fork pessoal do [yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge), mantido para uso próprio. A única adição em relação ao original é a camada de internacionalização **(pt-BR / zh-CN)**.
 
 ---
 
