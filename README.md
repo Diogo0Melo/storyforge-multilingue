@@ -1,3 +1,9 @@
+> This is a personal fork of [yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge), maintained for my own use. The only addition over upstream is an **i18n layer (pt-BR / zh-CN)**.
+>
+> Fork pessoal do [yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge), mantido para uso próprio. A única adição em relação ao original é a camada de internacionalização **(pt-BR / zh-CN)**.
+
+---
+
 # StoryForge · 故事熔炉
 
 > AI 辅助小说创作工作台。纯前端、本地优先、提示词全透明，让作者掌控从灵感、设定、大纲到正文、审校、导出的一整条创作链路。
