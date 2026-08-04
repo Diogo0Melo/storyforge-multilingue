@@ -89,11 +89,11 @@
 
 | 当前事实 | 数值 | 单一事实源 |
 |---|---:|---|
-| 应用语义版本 | `3.9.0` | `package.json` |
-| TypeScript 生产源码 | 509 个文件 / 106287 行 | `tsconfig.json` |
+| 应用语义版本 | `3.9.0-i18n.1` | `package.json` |
+| TypeScript 生产源码 | 514 个文件 / 107953 行 | `tsconfig.json` |
 | IndexedDB schema | v48 / 58 张 required tables | `schema.ts` / `REQUIRED_TABLES` |
 | PROJECT_TABLES | 59 张表 | `project-tables.ts` |
-| Prompt 主线 | 61 个 moduleKey / 206 条内置模板 | `PromptModuleKey` / `prompt-seeds*.ts` |
+| Prompt 主线 | 67 个 moduleKey / 206 条内置模板 | `PromptModuleKey` / `prompt-seeds*.ts` |
 | CONTEXT_SOURCES | 45 个上下文源 | `context-sources.ts` |
 | 写回治理 | 23 个通用 adopt target / 14 个领域扩展 | `adoption-schema.ts` |
 <!-- project-metrics:end -->

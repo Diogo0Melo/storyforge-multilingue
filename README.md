@@ -1,21 +1,21 @@
-> This is a personal fork of [yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge), maintained for my own use. The only addition over upstream is an **i18n layer (pt-BR / zh-CN)**.
->
-> Fork pessoal do [yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge), mantido para uso próprio. A única adição em relação ao original é a camada de internacionalização **(pt-BR / zh-CN)**.
+🌐 **README:** **Português (BR)** · [English](./README.en.md) · [中文](./README.zh-CN.md)
+
+> Fork pessoal do [yuanbw2025/storyforge](https://github.com/yuanbw2025/storyforge), mantido para uso próprio; a única adição em relação ao original é a camada de internacionalização (pt-BR / zh-CN).
 
 ---
 
-# StoryForge · 故事熔炉
+# StoryForge · Forja de Histórias
 
-> AI 辅助小说创作工作台。纯前端、本地优先、提示词全透明，让作者掌控从灵感、设定、大纲到正文、审校、导出的一整条创作链路。
+> Oficina de criação literária com IA. Puramente front-end, prioridade local, prompts totalmente transparentes — para que o autor tenha controle total sobre toda a cadeia criativa, da inspiração, ambientação e esboço até o texto final, revisão e exportação.
 
-**交流与教程**
+**Comunicação e tutoriais**
 
 - GitHub: https://github.com/yuanbw2025/storyforge
-- 个人网站主页: https://yuanbw.vercel.app/
-- 个人知乎主页: https://www.zhihu.com/people/dan-ran-xing-yuan-59
-- 知乎专栏文档: https://zhuanlan.zhihu.com/p/2038714210188780594
-- B 站项目视频说明书: https://www.bilibili.com/video/BV1q37j6QExh/
-- QQ 交流群: 1082374587
+- Página pessoal do autor original: https://yuanbw.vercel.app/
+- Perfil do autor no Zhihu: https://www.zhihu.com/people/dan-ran-xing-yuan-59
+- Coluna de documentação no Zhihu: https://zhuanlan.zhihu.com/p/2038714210188780594
+- Vídeo explicativo do projeto no Bilibili: https://www.bilibili.com/video/BV1q37j6QExh/
+- Grupo de discussão no QQ: 1082374587
 
 ---
 
@@ -30,14 +30,14 @@
 
 ---
 
-## English TL;DR
+## Resumo (TL;DR)
 
-**StoryForge** is a local-first, browser-based AI writing studio for long-form fiction.
+**StoryForge** é uma oficina de escrita com IA, local-first e baseada no navegador, voltada para ficção longa.
 
-- **Local-first by default**: manuscript data lives in the browser's IndexedDB. AI calls, cloud backup, or custom proxy/base URLs send only the relevant content to the third-party service configured by the user.
-- **Bring your own AI**: supports many OpenAI-compatible providers, Anthropic Claude, Gemini, local models, and custom endpoints.
-- **No black box**: prompts are visible, editable, cloneable, parameterized, and reusable.
-- **Built for long stories**: multiworld settings, story arcs, foreshadowing, state cards, item ledger, temporal facts, retrieval memory, chapter review, style learning, and export/backup workflows.
+- **Local por padrão**: os dados do manuscrito ficam no IndexedDB do navegador. Chamadas de IA, backup em nuvem ou proxy/base URL personalizados enviam apenas o conteúdo relevante ao serviço de terceiros configurado pelo usuário.
+- **Traga sua própria IA**: compatível com diversos provedores no padrão OpenAI, Anthropic Claude, Gemini, modelos locais e endpoints personalizados.
+- **Sem caixa-preta**: prompts são visíveis, editáveis, clonáveis, parametrizáveis e reutilizáveis.
+- **Feito para histórias longas**: ambientação multi-mundo, arcos narrativos, foreshadowing, cartões de estado, livro de registros de itens, fatos temporais, memória de recuperação, revisão de capítulos, aprendizado de estilo e fluxos de exportação/backup.
 
 ```bash
 npm install
@@ -45,128 +45,128 @@ npm run dev      # http://localhost:1111/storyforge/
 npm run ci       # schema checks + AI manual check + architecture check + typecheck + coverage + build
 ```
 
-Read [CONTRIBUTING.md](./CONTRIBUTING.md) before contributing.
+Leia [CONTRIBUTING.md](./CONTRIBUTING.md) antes de contribuir.
 
 ---
 
-## 目录
+## Índice
 
-- [项目定位](#项目定位)
-- [核心能力](#核心能力)
-- [功能全景](#功能全景)
-- [AI 与提示词系统](#ai-与提示词系统)
-- [数据与安全边界](#数据与安全边界)
-- [技术架构](#技术架构)
-- [快速启动](#快速启动)
-- [开发与验证](#开发与验证)
-- [适合谁](#适合谁)
-- [文档入口](#文档入口)
+- [Posicionamento do projeto](#posicionamento-do-projeto)
+- [Capacidades principais](#capacidades-principais)
+- [Visão geral das funcionalidades](#visão-geral-das-funcionalidades)
+- [IA e sistema de prompts](#ia-e-sistema-de-prompts)
+- [Dados e fronteiras de segurança](#dados-e-fronteiras-de-segurança)
+- [Arquitetura técnica](#arquitetura-técnica)
+- [Início rápido](#início-rápido)
+- [Desenvolvimento e validação](#desenvolvimento-e-validação)
+- [Para quem é](#para-quem-é)
+- [Portal de documentação](#portal-de-documentação)
 - [License](#license)
 - [Star History](#star-history)
 
 ---
 
-## 项目定位
+## Posicionamento do projeto
 
-StoryForge 不是“一键生成完本小说”的黑箱工具，而是给作者使用的 AI 创作工坊：
+O StoryForge não é uma ferramenta de "caixa-preta" que gera um romance completo com um clique, mas sim uma oficina de criação com IA feita para o autor:
 
-| 目标 | StoryForge 的做法 |
+| Objetivo | Abordagem do StoryForge |
 |---|---|
-| 作者掌控创作 | 所有 AI 输出都经过预览、编辑、采纳；AI 是助手，不直接替作者定稿 |
-| 提示词可见可改 | 每个 AI 功能背后的 System Prompt、User Template、参数和示例都能查看与克隆 |
-| 长篇设定不散 | 世界观、角色、大纲、伏笔、状态、物品、事实、故事线都进入结构化本地数据库 |
-| 资料能反哺写作 | 项目参考、历史资料、文风学习、场景考证可进入后续 AI 上下文 |
-| 数据本地优先 | 默认无 StoryForge 后端；项目数据存在用户浏览器 IndexedDB |
+| Autor no controle da criação | Toda saída da IA passa por pré-visualização, edição e adoção; a IA é assistente, não substitui o autor na finalização |
+| Prompts visíveis e editáveis | O System Prompt, o User Template, os parâmetros e os exemplos por trás de cada recurso de IA podem ser inspecionados e clonados |
+| Ambientação organizada para obras longas | Mundo, personagens, esboço, foreshadowing, estados, itens, fatos e arcos narrativos vão para um banco de dados local estruturado |
+| Referências alimentam a escrita | Referências do projeto, material histórico, aprendizado de estilo e pesquisa de cena podem compor o contexto das próximas chamadas de IA |
+| Dados com prioridade local | Sem back-end próprio do StoryForge por padrão; os dados do projeto ficam no IndexedDB do navegador do usuário |
 
 ---
 
-## 核心能力
+## Capacidades principais
 
-### 从灵感到项目
+### Da inspiração ao projeto
 
-- 首页管理所有小说项目，支持新建、删除、从本地文件夹恢复。
-- 项目概况维护名称、简介、流派、目标字数、写作状态与多世界开关。
-- 灵感反推支持把短梗、片段、想法反推为故事核心、世界观、角色、大纲等可采纳结构。
-- 项目参考支持故事参考、风格参考、历史资料，以及上传后的多维分析。
+- A página inicial gerencia todos os projetos de romance, com criação, exclusão e restauração a partir de pastas locais.
+- As informações do projeto mantêm nome, sinopse, gênero, meta de palavras, status de escrita e o toggle de multi-mundo.
+- Inspiração reversa: transforma ideias curtas, trechos e conceitos em estruturas adotáveis como núcleo da história, mundo, personagens e esboço.
+- Referências do projeto: aceita referências de história, de estilo, material histórico e análises multidimensionais após upload.
 
-### 设定库
+### Biblioteca de ambientação
 
-- 多世界总览：管理世界组、世界关系、主世界和跨世界结构。
-- 真实与幻想：按维度声明哪些内容取自真实、哪些允许架空改造，给历史考证和架空创作共同使用。
-- 世界观：世界起源、自然环境、人文环境、历史年表、世界地图。
-- 故事设计：一句话故事、故事概念、主题、核心冲突、故事模式、主线、复线。
-- 角色设计：角色生成、主要角色、次要角色、NPC、路人、关系网。
+- Visão geral multi-mundo: gerencia grupos de mundos, relações entre mundos, mundo principal e estruturas entre mundos.
+- Real e fantasia: declare por dimensão o que é baseado na realidade e o que admite invenção — útil tanto para pesquisa histórica quanto para criação de mundos fictícios.
+- Worldbuilding: origem do mundo, ambiente natural, ambiente cultural, cronologia histórica, mapa-múndi.
+- Design de história: logline, conceito da história, tema, conflito central, modo narrativo, trama principal, tramas secundárias.
+- Design de personagens: geração de personagens, personagens principais, personagens secundários, NPCs, figurantes, rede de relacionamentos.
 
-### 创作区
+### Área de criação
 
-- 创作规则：写作风格、叙事视角、基调、禁忌、一致性规则和参考作品注入。
-- 大纲：卷/章树、AI 生成卷纲、章节展开、章节预览。
-- 角色驱动：根据人物动机、关系和弧光反推剧情推进。
-- 故事线：主线/支线、阶段卡、进度和 AI 生成。
-- 章节：章节列表、TipTap 正文编辑、自动保存、续写、润色、扩写、去 AI 味、审校、便签。
-- 伏笔：伏笔类型、埋设/呼应/回收状态、紧急度、看板和 AI 建议。
-- 文风学习：从已写章节与作者确认的改前/改后短样本提取画像，并通过互动校准持续反哺后续生成。
-- 重要地点：地点树、标签、层级关系和地点资料。
-- 状态表：角色、地点、物品、势力等状态卡和事件时间线。
-- 物品栏：追踪物品获得、持有、转移、消耗等账本。
-- 事实库：章节正文中抽取的时序事实候选，支持确认/否决后用于长期一致性。
-- 故事年表：按章节和剧情时间记录全局事件。
-- 场景考证：结合世界观、历史年表和规则检查具体场景细节。
+- Regras de criação: estilo de escrita, ponto de vista narrativo, tom, restrições, regras de consistência e injeção de obras de referência.
+- Esboço: árvore de volumes/capítulos, geração de volumes por IA, expansão de capítulos, pré-visualização de capítulos.
+- Condução por personagens: avança o enredo a partir das motivações, relacionamentos e arcos dos personagens.
+- Arcos narrativos: trama principal/secundária, cartões de estágio, progresso e geração por IA.
+- Capítulos: lista de capítulos, edição de texto no TipTap, salvamento automático, continuação, polimento, expansão, remoção de "sabor de IA", revisão, anotações.
+- Foreshadowing: tipos de foreshadowing, status de plantar/payoff/resolver, urgência, quadro kanban e sugestões de IA.
+- Aprendizado de estilo: extrai um perfil a partir de capítulos escritos e de amostras curtas antes/depois validadas pelo autor, e recalibra continuamente a geração seguinte por meio de calibração interativa.
+- Locais importantes: árvore de locais, tags, relações hierárquicas e material de referência por local.
+- Tabelas de estado: cartões de estado de personagens, locais, itens, facções etc. e linha do tempo de eventos.
+- Inventário de itens: registra aquisição, posse, transferência e consumo de itens em forma de livro de registros.
+- Biblioteca de fatos: candidatos a fatos temporais extraídos do texto dos capítulos, que podem ser confirmados ou rejeitados para manter a consistência de longo prazo.
+- Cronologia da história: registra eventos globais por capítulo e por tempo narrativo.
+- Pesquisa de cena: combina worldbuilding, cronologia histórica e regras para verificar detalhes de cenas específicas.
 
-### 提示词库与工作流
+### Biblioteca de prompts e fluxos de trabalho
 
-- 模板管理：系统模板、用户模板、参数、示例/反例、实时预览。
-- 题材包：历史、仙侠、言情、现实主义、悬疑推理等风格可热切换。
-- PromptRunPanel：运行时调参、临时改 prompt、流式输出、采纳、标记好/坏示例。
-- 工作流：把多个 AI 步骤串起来，支持从故事核心到世界观、角色、大纲、章节的自动编排和写回。
+- Gestão de templates: templates do sistema, templates do usuário, parâmetros, exemplos/anti-exemplos, pré-visualização em tempo real.
+- Pacotes de gênero: histórico, xianxia, romance, realismo, suspense/mistério e outros estilos, trocáveis a quente.
+- PromptRunPanel: ajuste de parâmetros em tempo de execução, alteração temporária de prompt, saída em streaming, adoção, marcação de bons/maus exemplos.
+- Fluxos de trabalho: encadeia múltiplas etapas de IA, com orquestração automática e write-back do núcleo da história para mundo, personagens, esboço e capítulos.
 
-### 导入、导出与备份
+### Importação, exportação e backup
 
-- 文档解析：上传或粘贴文本，分块解析为当前项目设定或项目参考。
-- 大文档流水线：Blob 持久化、断点续跑、暂停/取消、日志追踪、角色去重合并。
-- 数据管理：JSON 完整备份、Markdown/TXT/HTML 导出、本地文件夹自动备份、GitHub Gist 云备份。
-- 版本历史：自动快照与手动快照，恢复时创建新项目，避免覆盖当前稿件。
-- 消耗统计：按项目或全局查看 AI 调用次数、token 和估算费用。
-
----
-
-## 功能全景
-
-当前侧边栏由 5 个一级模块组成：
-
-| 一级模块 | 二级入口 |
-|---|---|
-| 著作信息 | 项目概况、灵感反推、项目参考 |
-| 设定库 | 世界总览、真实与幻想、世界起源、自然环境、人文环境、历史年表、世界地图、故事设计、角色生成、主要角色、次要角色、NPC、路人、关系网 |
-| 创作区 | 创作规则、大纲、角色驱动、故事线、章节、伏笔、文风学习、重要地点、状态表、物品栏、事实库、故事年表、场景考证 |
-| 提示词库 | 模板、题材包、参数、示例/反例、工作流 |
-| 设置区 | 版本历史、文档解析、数据管理、消耗统计、设置 |
-
-更细的用户版图文说明书见 [docs/FEATURE-GUIDE.md](./docs/FEATURE-GUIDE.md)。该文档会按页面和二级页签展开，并配套截图。
+- Análise de documentos: faça upload ou cole texto, que é analisado em blocos e convertido em ambientação do projeto atual ou em referências do projeto.
+- Pipeline de documentos grandes: persistência via Blob, retomada a partir de ponto de interrupção, pausa/cancelamento, rastreamento de logs, deduplicação e mesclagem de personagens.
+- Gestão de dados: backup completo em JSON, exportação para Markdown/TXT/HTML, backup automático em pasta local, backup em nuvem via GitHub Gist.
+- Histórico de versões: snapshots automáticos e manuais; a restauração cria um novo projeto, evitando sobrescrever o manuscrito atual.
+- Estatísticas de consumo: visualize chamadas de IA, tokens e custos estimados por projeto ou globalmente.
 
 ---
 
-## AI 与提示词系统
+## Visão geral das funcionalidades
 
-StoryForge 的 AI 能力分成三层：
+A barra lateral atual é composta por 5 módulos de primeiro nível:
 
-1. **上下文装配**：根据当前任务读取项目概况、世界观、角色、大纲、伏笔、状态、事实、参考资料等内容。
-2. **提示词渲染**：用模板变量、条件块、参数开关和 few-shot 示例生成最终 prompt。
-3. **结构化采纳**：AI 输出不会直接变成事实，用户确认后才写入字段、集合或章节正文。
-
-### 支持的 AI Provider
-
-设置页内置的 provider 包括：
-
-| 类型 | Provider |
+| Módulo de 1º nível | Entradas de 2º nível |
 |---|---|
-| 国际/聚合 | OpenAI、Anthropic Claude、Google Gemini、Poe、NVIDIA NIM |
-| 国内云服务 | DeepSeek、通义千问、豆包、智谱 GLM、文心一言、Kimi、MiniMax、ModelScope、Agnes AI、LongCat、OpenCode Go |
-| 本地/自定义 | Ollama、LM Studio 等 OpenAI-compatible 本地服务、自定义 Base URL |
+| Informações da obra | Visão geral do projeto, Inspiração reversa, Referências do projeto |
+| Biblioteca de ambientação | Visão geral dos mundos, Real e fantasia, Origem do mundo, Ambiente natural, Ambiente cultural, Cronologia histórica, Mapa-múndi, Design de história, Geração de personagens, Personagens principais, Personagens secundários, NPCs, Figurantes, Rede de relacionamentos |
+| Área de criação | Regras de criação, Esboço, Condução por personagens, Arcos narrativos, Capítulos, Foreshadowing, Aprendizado de estilo, Locais importantes, Tabelas de estado, Inventário de itens, Biblioteca de fatos, Cronologia da história, Pesquisa de cena |
+| Biblioteca de prompts | Templates, Pacotes de gênero, Parâmetros, Exemplos/Anti-exemplos, Fluxos de trabalho |
+| Área de configurações | Histórico de versões, Análise de documentos, Gestão de dados, Estatísticas de consumo, Configurações |
 
-国内或浏览器 CORS 受限的服务可通过本地 Vite 代理转发；自定义接口只要兼容 OpenAI `chat/completions` 即可接入。
+O guia ilustrado completo para o usuário está em [docs/FEATURE-GUIDE.md](./docs/FEATURE-GUIDE.md). Esse documento detalha cada página e aba de segundo nível, com capturas de tela correspondentes.
 
-### 提示词模板能力
+---
+
+## IA e sistema de prompts
+
+As capacidades de IA do StoryForge se organizam em três camadas:
+
+1. **Montagem de contexto**: lê informações do projeto, mundo, personagens, esboço, foreshadowing, estados, fatos, referências e demais conteúdos conforme a tarefa atual.
+2. **Renderização de prompts**: gera o prompt final usando variáveis de template, blocos condicionais, chaves de parâmetros e exemplos few-shot.
+3. **Adoção estruturada**: a saída da IA não vira fato diretamente; só é gravada em campos, coleções ou texto de capítulo após confirmação do usuário.
+
+### Provedores de IA suportados
+
+Os providers integrados na página de configurações incluem:
+
+| Tipo | Provider |
+|---|---|
+| Internacional/Agregadores | OpenAI, Anthropic Claude, Google Gemini, Poe, NVIDIA NIM |
+| Serviços em nuvem da China | DeepSeek, Tongyi Qianwen, Doubao, Zhipu GLM, ERNIE Bot, Kimi, MiniMax, ModelScope, Agnes AI, LongCat, OpenCode Go |
+| Local/Personalizado | Ollama, LM Studio e outros serviços locais compatíveis com OpenAI, Base URL personalizado |
+
+Serviços na China ou com restrições de CORS no navegador podem ser encaminhados via proxy local do Vite; qualquer endpoint personalizado compatível com `chat/completions` da OpenAI pode ser integrado.
+
+### Capacidades dos templates de prompt
 
 ```ts
 renderPrompt(template, context, {
@@ -175,61 +175,61 @@ renderPrompt(template, context, {
 })
 ```
 
-| 能力 | 说明 |
+| Capacidade | Descrição |
 |---|---|
-| `{{var}}` | 模板变量替换 |
-| `{{#if var}}...{{/if}}` | 条件块 |
-| 参数控件 | select、slider、number、text、boolean |
-| 示例/反例 | 好示例和坏示例自动拼入 prompt |
-| 克隆编辑 | 系统模板可克隆为用户模板后自由修改 |
-| 工作流写回 | 多步生成结果可自动写回故事、角色、大纲、伏笔等目标 |
+| `{{var}}` | Substituição de variável de template |
+| `{{#if var}}...{{/if}}` | Bloco condicional |
+| Controles de parâmetro | select, slider, number, text, boolean |
+| Exemplos/Anti-exemplos | Bons e maus exemplos são injetados automaticamente no prompt |
+| Clonar e editar | Templates do sistema podem ser clonados como templates do usuário e modificados livremente |
+| Write-back de fluxo de trabalho | Resultados de geração em múltiplas etapas podem ser gravados automaticamente em história, personagens, esboço, foreshadowing e outros alvos |
 
 ---
 
-## 数据与安全边界
+## Dados e fronteiras de segurança
 
-StoryForge 是纯前端项目，没有自建应用后端。
+O StoryForge é um projeto puramente front-end, sem back-end de aplicação próprio.
 
-| 数据/动作 | 去向 |
+| Dado/Ação | Destino |
 |---|---|
-| 项目数据 | 默认保存在浏览器 IndexedDB |
-| AI API Key | 默认 sessionStorage；用户显式“记住本机”才写 localStorage |
-| GitHub PAT | 默认 sessionStorage；用户显式“记住本机”才写 localStorage |
-| AI 生成 | 会把相关上下文发送到用户配置的 AI 服务 |
-| Gist 云备份 | 会把完整项目 JSON 上传到用户自己的 GitHub 私密 Gist |
-| 本地文件夹备份 | 通过浏览器 File System Access API 写入用户授权的本地目录 |
+| Dados do projeto | Salvos por padrão no IndexedDB do navegador |
+| Chave de API de IA | sessionStorage por padrão; só vai para localStorage se o usuário marcar explicitamente "lembrar neste computador" |
+| PAT do GitHub | sessionStorage por padrão; só vai para localStorage se o usuário marcar explicitamente "lembrar neste computador" |
+| Geração por IA | Envia o contexto relevante ao serviço de IA configurado pelo usuário |
+| Backup em nuvem via Gist | Faz upload do JSON completo do projeto para um Gist privado do próprio GitHub do usuário |
+| Backup em pasta local | Grava no diretório local autorizado pelo usuário via File System Access API do navegador |
 
-生产环境检测到 IndexedDB schema 缺表时不会自动删库；开发环境才允许自动 reset。启动期会申请浏览器持久化存储，降低 IndexedDB 被浏览器清理的风险。
+Em produção, a ausência de tabelas no schema do IndexedDB não dispara exclusão automática do banco; o reset automático só é permitido em ambiente de desenvolvimento. Na inicialização, o app solicita armazenamento persistente ao navegador para reduzir o risco de o IndexedDB ser limpo.
 
 ---
 
-## 技术架构
+## Arquitetura técnica
 
-### 从存储到用户价值的六层架构
+### Arquitetura em seis camadas: do armazenamento ao valor para o usuário
 
-StoryForge 按“底层能力向上支撑用户价值”的方向分为六层。UI 只表达用户意图和确认；AI 读、AI 写与表生命周期分别收口到三个注册表，不允许面板各自形成平行管线。
+O StoryForge se divide em seis camadas, nas quais as capacidades de baixo nível sustentam o valor entregue ao usuário. A UI apenas expressa a intenção e as confirmações do usuário; leitura de IA, escrita de IA e ciclo de vida das tabelas são centralizados em três registros, sem que os painéis formem pipelines paralelos.
 
-[![StoryForge 从存储到用户价值的六层架构](./docs/assets/architecture/storyforge-architecture-overview.png)](./docs/assets/architecture/storyforge-architecture-overview.png)
+[![Arquitetura em seis camadas do StoryForge: do armazenamento ao valor para o usuário](./docs/assets/architecture/storyforge-architecture-overview.png)](./docs/assets/architecture/storyforge-architecture-overview.png)
 
-图中同时展示 `PROJECT_TABLES` 的代码映射、统一 AI 读写主路径和 42 张表的领域分布。对应实现见 [`src/lib/registry`](./src/lib/registry)、[`src/lib/db/schema.ts`](./src/lib/db/schema.ts) 与 [`scripts/check-architecture.mjs`](./scripts/check-architecture.mjs)。
+O diagrama mostra também o mapeamento de código do `PROJECT_TABLES`, os caminhos unificados de leitura e escrita por IA e a distribuição de domínio das 42 tabelas. A implementação correspondente está em [`src/lib/registry`](./src/lib/registry), [`src/lib/db/schema.ts`](./src/lib/db/schema.ts) e [`scripts/check-architecture.mjs`](./scripts/check-architecture.mjs).
 
-### 三个注册表
+### Os três registros
 
-项目扩展必须收口到三个单一事实源：
+Qualquer extensão do projeto deve ser centralizada em três fontes únicas de verdade:
 
-| 注册表 | 负责 |
+| Registro | Responsabilidade |
 |---|---|
-| `CONTEXT_SOURCES` | AI 读什么，上下文如何装配 |
-| `FIELD_REGISTRY` + `ADOPTION_SCHEMAS` | AI 写什么，采纳时如何校验与去重 |
-| `PROJECT_TABLES` | 表生命周期，导出/导入/删除/迁移如何覆盖 |
+| `CONTEXT_SOURCES` | O que a IA lê e como o contexto é montado |
+| `FIELD_REGISTRY` + `ADOPTION_SCHEMAS` | O que a IA escreve e como a adoção valida e deduplica |
+| `PROJECT_TABLES` | Ciclo de vida das tabelas, cobertura de exportação/importação/exclusão/migração |
 
-详见 [CLAUDE.md](./CLAUDE.md) 与 [docs/MASTER-BLUEPRINT.md](./docs/MASTER-BLUEPRINT.md)。
+Veja [CLAUDE.md](./CLAUDE.md) e [docs/MASTER-BLUEPRINT.md](./docs/MASTER-BLUEPRINT.md).
 
 ---
 
-## 快速启动
+## Início rápido
 
-### macOS / Linux / Windows 通用
+### macOS / Linux / Windows em geral
 
 ```bash
 git clone https://github.com/yuanbw2025/storyforge.git
@@ -238,30 +238,30 @@ npm install
 npm run dev
 ```
 
-打开：
+Abra:
 
 ```text
 http://localhost:1111/storyforge/
 ```
 
-### Windows 零基础用户
+### Usuários iniciantes no Windows
 
-StoryForge 不再提供 `.bat`、`.exe` 或 Windows Portable 启动器。Windows 用户请下载源码 ZIP，并使用 npm 启动：
+O StoryForge não oferece mais iniciadores `.bat`, `.exe` ou Windows Portable. Usuários de Windows devem baixar o ZIP do código-fonte e iniciar via npm:
 
-1. 到 GitHub Release 下载 `Source code (zip)`。
-2. 解压后进入包含 `package.json` 的目录。
-3. 安装 Node.js LTS：https://nodejs.org/
-4. 在项目目录打开 PowerShell。
-5. 执行 `npm install` 和 `npm run dev`。
-6. 浏览器打开 `http://localhost:1111/storyforge/`。
+1. Baixe o `Source code (zip)` no GitHub Release.
+2. Extraia e entre no diretório que contém o `package.json`.
+3. Instale o Node.js LTS: https://nodejs.org/
+4. Abra o PowerShell na pasta do projeto.
+5. Execute `npm install` e `npm run dev`.
+6. Abra `http://localhost:1111/storyforge/` no navegador.
 
-详细图文步骤见 [使用npm指令启动项目.md](./使用npm指令启动项目.md)。
+Passo a passo ilustrado em [使用npm指令启动项目.md](./使用npm指令启动项目.md).
 
 ---
 
-## 开发与验证
+## Desenvolvimento e validação
 
-常用命令：
+Comandos mais usados:
 
 ```bash
 npm run dev
@@ -274,48 +274,48 @@ npm run check:architecture
 npm run ci
 ```
 
-提交前建议至少跑：
+Antes de commitar, recomenda-se rodar ao menos:
 
 ```bash
 npm run ci
 ```
 
-如果只改文档，可按变更范围选择更轻的验证；涉及数据表、AI 读写、导出导入、删除、迁移时必须跑完整验证，并遵守 [CLAUDE.md](./CLAUDE.md) 的三注册表规则。
+Se a mudança for apenas documental, é possível escolher uma validação mais leve conforme o escopo; quando envolver tabelas de dados, leitura/escrita de IA, exportação/importação, exclusão ou migração, a validação completa é obrigatória, respeitando a regra dos três registros do [CLAUDE.md](./CLAUDE.md).
 
 ---
 
-## 适合谁
+## Para quem é
 
-| 适合 | 不适合 |
+| Indicada para | Não é indicada para |
 |---|---|
-| 想掌控提示词和 AI 输出的小说作者 | 只想一键生成完整小说的人 |
-| 长篇、系列文、多世界、群像创作者 | 不愿维护设定和大纲的人 |
-| 想沉淀个人题材包、风格模板、工作流的人 | 需要多人实时协作和云端团队权限的人 |
-| 想把资料、考证、参考作品纳入写作流程的人 | 希望所有数据都托管在官方后端的人 |
-| 希望本地优先、可换模型、可自定义接口的人 | 不想配置任何 AI Key 或本地模型的人 |
+| Autores que desejam controle total sobre prompts e saídas de IA | Quem só quer gerar um romance completo com um clique |
+| Escritores de obras longas, séries, multi-mundo e narrativas de elenco | Quem não quer manter ambientação e esboço |
+| Quem deseja consolidar pacotes de gênero, templates de estilo e fluxos de trabalho pessoais | Quem precisa de colaboração em tempo real e permissões de equipe na nuvem |
+| Quem quer incorporar referências, pesquisas e obras de referência ao fluxo de escrita | Quem prefere que todos os dados fiquem em um back-end oficial |
+| Quem busca prioridade local, troca de modelos e endpoints personalizáveis | Quem não quer configurar nenhuma chave de IA ou modelo local |
 
 ---
 
-## 文档入口
+## Portal de documentação
 
-| 文档 | 用途 |
+| Documento | Finalidade |
 |---|---|
-| [docs/FEATURE-GUIDE.md](./docs/FEATURE-GUIDE.md) | 面向用户的完整功能说明书 |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | 贡献指南 |
-| [CHANGELOG.md](./CHANGELOG.md) | 版本变更记录 |
-| [CLAUDE.md](./CLAUDE.md) | AI/开发者接手项目必须遵守的规则 |
-| [docs/MASTER-BLUEPRINT.md](./docs/MASTER-BLUEPRINT.md) | 重构施工蓝图与架构权威 |
-| [docs/roadmap/README.md](./docs/roadmap/README.md) | 当前功能体系、待开发组合与施工顺序 |
-| [docs/roadmap/CAPABILITY-BASELINE.md](./docs/roadmap/CAPABILITY-BASELINE.md) | 当前已有能力与禁止重复建设边界 |
-| [docs/roadmap/COMPLETED.md](./docs/roadmap/COMPLETED.md) | 已完成开发单位与历史证据入口 |
-| [docs/AI-FUNCTIONS-MANUAL.generated.md](./docs/AI-FUNCTIONS-MANUAL.generated.md) | 由代码生成的 AI 功能清单 |
-| [SECURITY.md](./SECURITY.md) | 漏洞报告、响应流程与支持版本政策 |
+| [docs/FEATURE-GUIDE.md](./docs/FEATURE-GUIDE.md) | Manual funcional completo voltado ao usuário |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Guia de contribuição |
+| [CHANGELOG.md](./CHANGELOG.md) | Registro de mudanças por versão |
+| [CLAUDE.md](./CLAUDE.md) | Regras obrigatórias para IA/desenvolvedores que recebem o projeto |
+| [docs/MASTER-BLUEPRINT.md](./docs/MASTER-BLUEPRINT.md) | Planta da refatoração e autoridade arquitetural |
+| [docs/roadmap/README.md](./docs/roadmap/README.md) | Sistemas de funcionalidades atuais, backlog combinado e ordem de construção |
+| [docs/roadmap/CAPABILITY-BASELINE.md](./docs/roadmap/CAPABILITY-BASELINE.md) | Capacidades existentes e fronteiras contra reimplementação |
+| [docs/roadmap/COMPLETED.md](./docs/roadmap/COMPLETED.md) | Unidades de desenvolvimento concluídas e ponto de entrada para evidências históricas |
+| [docs/AI-FUNCTIONS-MANUAL.generated.md](./docs/AI-FUNCTIONS-MANUAL.generated.md) | Catálogo de funções de IA gerado a partir do código |
+| [SECURITY.md](./SECURITY.md) | Reporte de vulnerabilidades, fluxo de resposta e política de versões suportadas |
 
 ---
 
 ## License
 
-StoryForge 使用 [MIT License](./LICENSE) 开源。你可以自由使用、复制、修改、分发和商用本项目代码；请保留原始版权与许可声明。
+O StoryForge é distribuído como código aberto sob a [MIT License](./LICENSE). Você pode usar, copiar, modificar, distribuir e comercializar o código deste projeto livremente; mantenha os avisos de copyright e de licença originais.
 
 ---
 
@@ -323,10 +323,10 @@ StoryForge 使用 [MIT License](./LICENSE) 开源。你可以自由使用、复�
 
 [![StoryForge Star History](./docs/assets/architecture/storyforge-star-history.svg)](https://star-history.com/#yuanbw2025/storyforge&Date)
 
-折线图由 GitHub 官方 stargazer 时间数据生成；更新命令：`node scripts/generate-star-history.mjs`。
+O gráfico de linhas é gerado a partir dos dados oficiais de timestamps dos stargazers do GitHub; comando de atualização: `node scripts/generate-star-history.mjs`.
 
 ---
 
-## 功能全景指南
+## Guia detalhado das funcionalidades
 
-完整图文版功能说明书见 [docs/FEATURE-GUIDE.md](./docs/FEATURE-GUIDE.md)。文档按页面和二级页签展开，包含功能说明、项目逻辑说明和配套截图。
+A versão ilustrada completa do manual de funcionalidades está em [docs/FEATURE-GUIDE.md](./docs/FEATURE-GUIDE.md). O documento detalha cada página e aba de segundo nível, com descrições de funcionalidades, explicações da lógica do projeto e capturas de tela correspondentes.

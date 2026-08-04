@@ -200,18 +200,18 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `chapter.memory` | `src/components/editor/ChapterEditor.tsx:474` |
 | `chapter.organize` | `src/components/editor/ChapterEditor.tsx:839` |
 | `chapter.polish` | `src/components/editor/ChapterEditor.tsx:728` |
-| `chapter.toolbar` | `src/components/editor/FloatingToolbar.tsx:107` |
+| `chapter.toolbar` | `src/components/editor/FloatingToolbar.tsx:108` |
 | `character.generate` | `src/components/character/CharacterPanel.tsx:162` |
 | `character.structure` | `src/lib/ai/parse-character-output.ts:80` |
 | `character.supplement` | `src/components/character/CharacterSupplementAction.tsx:82` |
 | `codex.extract` | `src/components/codex/CodexPanel.tsx:229` |
 | `cultivation.progress` | `src/components/cultivation/CultivationProgressPanel.tsx:145` |
-| `detail.scene` | `src/components/outline/DetailedOutlinePanel.tsx:153`<br/>`src/components/outline/ScenePanel.tsx:128`<br/>`src/lib/ai/batch-detail-runner.ts:109` |
-| `emotion.beat` | `src/components/editor/EmotionBeatCard.tsx:68` |
+| `detail.scene` | `src/components/outline/DetailedOutlinePanel.tsx:155`<br/>`src/components/outline/ScenePanel.tsx:129`<br/>`src/lib/ai/batch-detail-runner.ts:109` |
+| `emotion.beat` | `src/components/editor/EmotionBeatCard.tsx:95` |
 | `foreshadow.structure` | `src/components/foreshadow/ForeshadowPanel.tsx:84` |
 | `foreshadow.suggest` | `src/components/foreshadow/ForeshadowPanel.tsx:234` |
-| `geography.concept-map` | `src/components/geography/GeographyPanel.tsx:130` |
-| `geography.world-map` | `src/components/geography/WorldMapPanel.tsx:109` |
+| `geography.concept-map` | `src/components/geography/GeographyPanel.tsx:132` |
+| `geography.world-map` | `src/components/geography/WorldMapPanel.tsx:111` |
 | `history.consult` | `src/components/history/useHistoryAI.ts:120` |
 | `history.storm` | `src/components/history/useHistoryAI.ts:122` |
 | `inspiration.reverse` | `src/hooks/useIncrementalInspiration.ts:213` |
@@ -226,14 +226,14 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `outline.workshop.motivation` | `src/lib/outline/workshop.ts:478` |
 | `outline.workshop.scan` | `src/lib/outline/workshop.ts:475` |
 | `outline.workshop.scenes` | `src/lib/outline/workshop.ts:486` |
-| `prompt.examples` | `src/components/settings/prompt/PromptExamplesEditor.tsx:83` |
+| `prompt.examples` | `src/components/settings/prompt/PromptExamplesEditor.tsx:84` |
 | `reference.characters` | `src/components/project/AnalysisReportViewer.tsx:156` |
 | `reference.summary` | `src/components/project/AnalysisReportViewer.tsx:124` |
 | `relation.extract` | `src/components/relations/CharacterRelationPanel.tsx:91` |
-| `review.anti-ai` | `src/components/editor/ReviewPanel.tsx:108` |
+| `review.anti-ai` | `src/components/editor/ReviewPanel.tsx:110` |
 | `review.outline-workshop` | `src/lib/outline/workshop.ts:484` |
-| `review.quality` | `src/components/editor/ReviewPanel.tsx:100` |
-| `review.readability` | `src/components/editor/ReviewPanel.tsx:117` |
+| `review.quality` | `src/components/editor/ReviewPanel.tsx:102` |
+| `review.readability` | `src/components/editor/ReviewPanel.tsx:119` |
 | `review.revise` | `src/components/editor/ChapterEditor.tsx:771` |
 | `rules.generate` | `src/components/rules/CreativeRulesPanel.tsx:82` |
 | `scene.verify` | `src/components/scene/SceneVerifyPanel.tsx:83` |
@@ -241,8 +241,8 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `story.generate` | `src/components/worldview/StoryCorePanel.tsx:214` |
 | `story.timeline` | `src/components/timeline/StoryTimelinePanel.tsx:87` |
 | `storyline-progress.map` | `src/components/outline/StorylineProgressPanel.tsx:79` |
-| `style.calibrate` | `src/components/style/StyleCalibrationPanel.tsx:65` |
-| `style.learn` | `src/components/style/StyleLearningPanel.tsx:124` |
+| `style.calibrate` | `src/components/style/StyleCalibrationPanel.tsx:66` |
+| `style.learn` | `src/components/style/StyleLearningPanel.tsx:125` |
 | `world-group.expand` | `src/components/world-group/WorldGroupDetail.tsx:100` |
 | `world-group.suggest` | `src/components/world-group/WorldGroupOverview.tsx:59` |
 | `worldview.dimension` | `src/components/worldview/WorldviewHumanityPanel.tsx:357`<br/>`src/components/worldview/WorldviewNaturalPanel.tsx:292`<br/>`src/components/worldview/WorldviewOriginPanel.tsx:268` |
@@ -251,7 +251,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ### 动态 category 调用
 
-- `src/components/editor/ReviewPanel.tsx:141 · ai.start`
+- `src/components/editor/ReviewPanel.tsx:143 · ai.start`
 - `src/components/settings/NS0EvalPanel.tsx:51 · chat`
 - `src/lib/agent/character-copilot.ts:405 · chat`
 - `src/lib/agent/inspiration-copilot.ts:262 · chat`
@@ -262,4 +262,4 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ---
 
-生成时间基准:commit `6eda574`
+生成时间基准:commit `87ad414`

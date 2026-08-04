@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+## v3.9.0-i18n.1 — 2026-08-03 · Trilingual docs and fork release baseline / Docs trilíngues e linha de release do fork
+
+### Português (BR)
+- README reestruturado em três idiomas: pt-BR (principal, `README.md`), inglês (`README.en.md`) e chinês (`README.zh-CN.md`, conteúdo original do upstream preservado), com seletor de idioma no topo de cada arquivo.
+- Entradas novas do changelog do fork passam a ser bilíngues (pt-BR + inglês); o histórico do upstream permanece em chinês original abaixo do divisor.
+- Nova versão do fork `3.9.0-i18n.1`: a base acompanha o release do upstream e o sufixo numerado marca as iterações deste fork pessoal.
+
+### English
+- README restructured into three languages: pt-BR (primary, `README.md`), English (`README.en.md`), and Chinese (`README.zh-CN.md`, original upstream content preserved), with a language selector at the top of each file.
+- New fork changelog entries are now bilingual (pt-BR + English); upstream history remains in the original Chinese below the divider.
+- New fork version `3.9.0-i18n.1`: the base tracks the upstream release and the numbered suffix marks this personal fork's iterations.
+
+> ---
+> **Upstream history below — original Chinese / 以下为上游 yuanbw2025/storyforge 的原始更新历史，保留中文原文。**
+
 ## v3.9.0 — 2026-07-26 · 主 Agent、自由节点与长篇一致性平台
 
 - 重构主 Agent 为单一对话入口：由主 Agent 规划并在后台调度世界来源、角色和灵感领域任务，所有候选保持可见、可编辑，只有作者明确确认后才写入 Canon。
