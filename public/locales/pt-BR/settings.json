@@ -220,8 +220,65 @@
       "title": "Parâmetros Ajustáveis",
       "tone": "Tom",
       "detailLevel": "Nível de Detalhe",
+      "archetype": "Arquétipo",
       "pace": "Ritmo Geral",
       "volumeCount": "Volumes Sugeridos",
+      "wordsPerChapter": "Palavras por Capítulo",
+      "chaptersPerVolume": "Capítulos por Volume",
+      "chapterLength": "Contagem de Palavras Alvo",
+      "continueLength": "Contagem de Palavras da Continuação",
+      "style": "Estilo",
+      "expandRatio": "Taxa de Expansão",
+      "addType": "Adicionar Principalmente",
+      "aggressiveness": "Intensidade da Reescrita",
+      "density": "Densidade",
+      "count": "Quantidade Sugerida",
+      "strictness": "Força da Restrição",
+      "archetypeOption": {
+        "0": "Pessoa Comum",
+        "1": "Gênio",
+        "2": "Anti-herói",
+        "3": "Ascensão do Fraco",
+        "4": "Resiliência Silenciosa",
+        "5": "Herdeiro de Clã",
+        "6": "Renascimento do Perdedor",
+        "7": "Mestre Misterioso"
+      },
+      "styleOption": {
+        "0": "Coloquial",
+        "1": "Literário",
+        "2": "Conciso",
+        "3": "Ornamentado",
+        "4": "Frio",
+        "5": "Acolhedor"
+      },
+      "expandRatioOption": {
+        "0": "1.5x",
+        "1": "2x",
+        "2": "3x"
+      },
+      "addTypeOption": {
+        "0": "Descrição Psicológica",
+        "1": "Atmosfera Ambiental",
+        "2": "Desenvolvimento de Diálogo",
+        "3": "Detalhes de Ação",
+        "4": "Descrição Sensorial"
+      },
+      "aggressivenessOption": {
+        "0": "Leve",
+        "1": "Moderado",
+        "2": "Agressivo"
+      },
+      "densityOption": {
+        "0": "Esparso",
+        "1": "Médio",
+        "2": "Denso"
+      },
+      "strictnessOption": {
+        "0": "Flexível",
+        "1": "Médio",
+        "2": "Rigoroso"
+      },
       "toneOption": {
         "0": "Sério",
         "1": "Épico",

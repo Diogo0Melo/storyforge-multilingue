@@ -6,7 +6,7 @@ import {
   codexEntryInWorld,
   parseEntryFields,
   parseEntryRefs,
-  parseFieldSchema,
+  resolveFieldSchema,
   stringifyEntryFields,
   stringifyEntryRefs,
 } from '../../lib/types/codex'
@@ -38,7 +38,7 @@ export default function CodexEntryDetail({
   onChange,
 }: Props) {
   const { t } = useTranslation('panels')
-  const schema = useMemo(() => parseFieldSchema(category.fieldSchema), [category.fieldSchema])
+  const schema = useMemo(() => resolveFieldSchema(category), [category])
   const fields = useMemo(() => parseEntryFields(entry.fields), [entry.fields])
   const refs = useMemo(() => parseEntryRefs(entry.refs), [entry.refs])
   const tags = useMemo(() => {

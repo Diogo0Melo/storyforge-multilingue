@@ -9,6 +9,7 @@ import {
 } from '../lib/storage/folder-backup'
 import { importProjectJSON } from '../lib/export/json-export'
 import { APP_BUILD_ID } from '../lib/version'
+import LanguageSwitcher from '../components/shared/LanguageSwitcher'
 import {
   GENRE_OPTIONS, GENRE_GROUP_LABEL_KEYS, PROJECT_STATUS_LABELS,
   type ProjectStatus, type CreateProjectInput,
@@ -165,15 +166,18 @@ export default function HomePage() {
           </div>
         </div>
 
-        <a
-          href="https://github.com/yuanbw2025/storyforge"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="p-2 rounded-lg hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors ml-auto"
-          title="GitHub"
-        >
-          <Github className="w-4 h-4" />
-        </a>
+        <div className="flex items-center gap-1 ml-auto">
+          <LanguageSwitcher />
+          <a
+            href="https://github.com/yuanbw2025/storyforge"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-lg hover:bg-bg-hover text-text-secondary hover:text-text-primary transition-colors"
+            title="GitHub"
+          >
+            <Github className="w-4 h-4" />
+          </a>
+        </div>
       </header>
 
       {/* ── 主体 ──────────────────────────────────────── */}

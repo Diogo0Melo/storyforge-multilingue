@@ -211,8 +211,65 @@
       "title": "可调参数",
       "tone": "基调",
       "detailLevel": "详尽度",
+      "archetype": "原型",
       "pace": "整体节奏",
       "volumeCount": "建议卷数",
+      "wordsPerChapter": "每章字数",
+      "chaptersPerVolume": "本卷章节数",
+      "chapterLength": "目标字数",
+      "continueLength": "续写字数",
+      "style": "风格",
+      "expandRatio": "扩写倍数",
+      "addType": "主要增加",
+      "aggressiveness": "改写力度",
+      "density": "密度",
+      "count": "建议数量",
+      "strictness": "约束力度",
+      "archetypeOption": {
+        "0": "普通人",
+        "1": "天才",
+        "2": "反英雄",
+        "3": "小人物逆袭",
+        "4": "隐忍蛰伏",
+        "5": "世家子弟",
+        "6": "废柴重生",
+        "7": "神秘高人"
+      },
+      "styleOption": {
+        "0": "口语化",
+        "1": "文艺",
+        "2": "精炼",
+        "3": "华丽",
+        "4": "冷峻",
+        "5": "温润"
+      },
+      "expandRatioOption": {
+        "0": "1.5x",
+        "1": "2x",
+        "2": "3x"
+      },
+      "addTypeOption": {
+        "0": "心理描写",
+        "1": "环境氛围",
+        "2": "对话铺陈",
+        "3": "动作细节",
+        "4": "感官描写"
+      },
+      "aggressivenessOption": {
+        "0": "轻度",
+        "1": "中度",
+        "2": "激进"
+      },
+      "densityOption": {
+        "0": "稀疏",
+        "1": "中等",
+        "2": "密集"
+      },
+      "strictnessOption": {
+        "0": "宽松",
+        "1": "中等",
+        "2": "严格"
+      },
       "toneOption": {
         "0": "严肃",
         "1": "史诗",

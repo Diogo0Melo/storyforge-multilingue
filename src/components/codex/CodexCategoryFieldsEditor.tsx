@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, ChevronUp, Plus, Settings2, Trash2, X } from 'lucide-react'
 import {
-  parseFieldSchema,
+  resolveFieldSchema,
   stringifyFieldSchema,
   BUILTIN_CATEGORIES,
 } from '../../lib/types/codex'
@@ -26,7 +26,7 @@ interface Props {
 
 export default function CodexCategoryFieldsEditor({ category, onClose, onSave }: Props) {
   const { t } = useTranslation(['panels', 'settings'])
-  const [defs, setDefs] = useState<CodexFieldDef[]>(() => parseFieldSchema(category.fieldSchema))
+  const [defs, setDefs] = useState<CodexFieldDef[]>(() => resolveFieldSchema(category))
 
   const fieldTypes = useMemo(() => FIELD_TYPE_VALUES.map(value => ({
     value,
@@ -73,8 +73,8 @@ export default function CodexCategoryFieldsEditor({ category, onClose, onSave }:
             <div key={definition.key} className="border border-border rounded-lg p-2 space-y-1.5 bg-bg-base">
               <div className="flex items-center gap-1.5">
                 <input
-                  value={definition.label}
-                  onChange={event => update(index, { label: event.target.value })}
+                  value={definition.labelKey ? t(definition.labelKey as PanelsKeys, definition.label) : definition.label}
+                  onChange={event => update(index, { label: event.target.value, labelKey: undefined })}
                   placeholder={t('codex.fields.fieldNamePlaceholder')}
                   className="flex-1 px-2 py-1 text-sm rounded bg-bg-elevated border border-border focus:outline-none focus:border-accent"
                 />
@@ -98,8 +98,8 @@ export default function CodexCategoryFieldsEditor({ category, onClose, onSave }:
               </div>
               {definition.type === 'select' && (
                 <input
-                  value={(definition.options || []).join(' / ')}
-                  onChange={event => update(index, { options: event.target.value.split('/').map(item => item.trim()).filter(Boolean) })}
+                  value={(definition.options || []).map((option, i) => definition.optionKeys?.[i] ? t(definition.optionKeys[i] as PanelsKeys, option) : option).join(' / ')}
+                  onChange={event => update(index, { options: event.target.value.split('/').map(item => item.trim()).filter(Boolean), optionKeys: undefined })}
                   placeholder={t('codex.fields.selectOptionsPlaceholder')}
                   className="w-full px-2 py-1 text-xs rounded bg-bg-elevated border border-border focus:outline-none focus:border-accent"
                 />

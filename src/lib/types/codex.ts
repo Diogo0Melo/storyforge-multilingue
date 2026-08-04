@@ -137,6 +137,39 @@ export function parseFieldSchema(json: string | undefined): CodexFieldDef[] {
   }
 }
 
+/**
+ * 归一化持久化的 fieldSchema（read-time，不写库）。
+ *
+ * 内置分类的 schema 在项目创建时序列化入库；老项目落库的字段定义可能缺少
+ * labelKey/optionKeys/placeholderKey（这些键是后补进 seed 的），导致表单
+ * 回退显示硬编码中文。这里按 builtInKey 找到 seed，把 seed 上的 i18n 键合并
+ * 回来：持久化定义优先（用户改动过的字段不被覆盖），仅补充缺失的 i18n 键。
+ * optionKeys 只在选项与 seed 完全一致时才注入，避免用户自定义选项拿到错位翻译。
+ */
+export function resolveFieldSchema(
+  category: Pick<CodexCategory, 'fieldSchema' | 'builtInKey'>,
+): CodexFieldDef[] {
+  const defs = parseFieldSchema(category.fieldSchema)
+  if (!category.builtInKey || defs.length === 0) return defs
+  const seed = BUILTIN_CATEGORIES.find(s => s.builtInKey === category.builtInKey)
+  if (!seed) return defs
+  const seedByKey = new Map(seed.fields.map(f => [f.key, f]))
+  return defs.map(def => {
+    const s = seedByKey.get(def.key)
+    if (!s) return def
+    const sameOptions =
+      s.options && def.options &&
+      s.options.length === def.options.length &&
+      s.options.every((o, i) => o === def.options![i])
+    return {
+      ...def,
+      labelKey: def.labelKey ?? s.labelKey,
+      placeholderKey: def.placeholderKey ?? s.placeholderKey,
+      optionKeys: def.optionKeys ?? (sameOptions ? s.optionKeys : undefined),
+    }
+  })
+}
+
 export function stringifyFieldSchema(defs: CodexFieldDef[]): string {
   return JSON.stringify(defs)
 }
