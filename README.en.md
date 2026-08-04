@@ -4,7 +4,7 @@
 
 ---
 
-# StoryForge · Story Crucible
+# StoryForge
 
 > AI-assisted novel-writing workbench. Pure frontend, local-first, fully transparent prompts — giving authors control over the entire creative pipeline from inspiration, worldbuilding, and outlining to drafting, reviewing, and exporting.
 
