@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { Sparkles, Loader2, RefreshCw, Map, Box, Globe } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useGeographyStore } from '../../stores/project-singletons'
 import { useWorldviewStore } from '../../stores/worldview'
 import { useWorldNodeStore } from '../../stores/world-node'
@@ -32,6 +33,7 @@ interface Props {
 type ViewMode = '3d' | 'voronoi'
 
 export default function WorldMapPanel({ project }: Props) {
+  const { t } = useDomainT('geography')
   const { geography } = useGeographyStore()
   const { worldview } = useWorldviewStore()
   const { nodes, activeWorldId, loadNodes, ensureRootWorld, updateNode } = useWorldNodeStore()
@@ -127,7 +129,7 @@ export default function WorldMapPanel({ project }: Props) {
       }
     } catch (err) {
       console.error('Failed to parse AI Voronoi config:', err)
-      setParseError(`AI 返回的地图参数解析失败，请重试。错误：${err instanceof Error ? err.message : '未知错误'}`)
+      setParseError(t('worldMap.parseError', { message: err instanceof Error ? err.message : t('worldMap.parseErrorUnknown') }))
     }
   }
 
@@ -142,7 +144,7 @@ export default function WorldMapPanel({ project }: Props) {
   }, [activeWorldId, updateNode, voronoiConfig])
 
   // ── 渲染 ─────────────────────────────────────────────────
-  const generateButtonLabel = voronoiConfig ? 'AI 重新生成' : 'AI 生成地图'
+  const generateButtonLabel = voronoiConfig ? t('worldMap.aiRegenerate') : t('worldMap.aiGenerate')
 
   return (
     <div className="h-full flex flex-col">
@@ -150,7 +152,7 @@ export default function WorldMapPanel({ project }: Props) {
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
           <Map className="w-5 h-5" />
-          世界地图
+          {t('worldMap.title')}
           {activeNode && (
             <span className="text-sm font-normal text-text-muted ml-1">
               — {activeNode.icon} {activeNode.name}
@@ -170,15 +172,15 @@ export default function WorldMapPanel({ project }: Props) {
                   : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <Globe className="w-3 h-3" /> 奇幻
+              <Globe className="w-3 h-3" /> {t('worldMap.viewFantasy')}
             </button>
             <button
               type="button"
               disabled
-              title="3D 地图仍处于 Labs 阶段，当前不可用"
+              title={t('worldMap.view3dTooltip')}
               className="flex items-center gap-1 px-2.5 py-1 text-xs rounded transition-colors text-text-muted/50 cursor-not-allowed"
             >
-              <Box className="w-3 h-3" /> 3D Labs
+              <Box className="w-3 h-3" /> {t('worldMap.view3dLabs')}
             </button>
           </div>
 
@@ -190,7 +192,7 @@ export default function WorldMapPanel({ project }: Props) {
             {ai.isStreaming ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                AI 分析中...
+                {t('worldMap.aiAnalyzing')}
               </>
             ) : voronoiConfig ? (
               <>
@@ -200,7 +202,7 @@ export default function WorldMapPanel({ project }: Props) {
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                AI 生成地图
+                {t('worldMap.aiGenerate')}
               </>
             )}
           </button>
@@ -219,7 +221,7 @@ export default function WorldMapPanel({ project }: Props) {
         <div className="mb-3 p-3 bg-accent/10 border border-accent/20 rounded-lg">
           <div className="flex items-center gap-2 text-sm text-accent mb-1">
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
-            AI 正在分析世界设定，生成地图参数...
+            {t('worldMap.aiGeneratingParams')}
             {ai.output.length > 0 && (
               <span className="text-xs text-text-muted">≈ ~{Math.round(ai.output.length * 1.5).toLocaleString()} tokens</span>
             )}
@@ -247,7 +249,7 @@ export default function WorldMapPanel({ project }: Props) {
             <div className="w-full h-full flex items-center justify-center bg-[#1a1f2e]">
               <div className="text-center text-text-muted">
                 <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-accent" />
-                <p className="text-sm">加载地图引擎...</p>
+                <p className="text-sm">{t('worldMap.loadingEngine')}</p>
               </div>
             </div>
           }>

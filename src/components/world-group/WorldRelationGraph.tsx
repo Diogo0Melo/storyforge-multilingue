@@ -10,17 +10,26 @@
  */
 import { useState, useMemo } from 'react'
 import { useWorldGroupStore } from '../../stores/world-group'
-import { WORLD_LINK_TYPE_LABELS } from '../../lib/types/world-group'
+import { useDomainT } from '../../i18n'
 import type { WorldGroup, WorldGroupLink, WorldGroupLinkType } from '../../lib/types'
 
 type LayoutMode = 'flow' | 'radial' | 'ladder' | 'tree'
 
-const LAYOUT_LABELS: Record<LayoutMode, string> = {
-  flow: '横向流程',
-  radial: '中心辐射',
-  ladder: '纵向阶梯',
-  tree: '树状分支',
-}
+const LAYOUT_KEY = {
+  flow: 'graph.layoutFlow',
+  radial: 'graph.layoutRadial',
+  ladder: 'graph.layoutLadder',
+  tree: 'graph.layoutTree',
+} as const satisfies Record<LayoutMode, string>
+
+const LINK_TYPE_KEY = {
+  portal: 'linkType.portal',
+  ascension: 'linkType.ascension',
+  summon: 'linkType.summon',
+  branch: 'linkType.branch',
+  return: 'linkType.return',
+  custom: 'linkType.custom',
+} as const satisfies Record<WorldGroupLinkType, string>
 
 /** 连线颜色/样式（按关系类型区分） */
 const LINK_STYLE: Record<WorldGroupLinkType, { color: string; dash?: string }> = {
@@ -88,6 +97,7 @@ interface Props {
 }
 
 export default function WorldRelationGraph({ onNodeClick }: Props) {
+  const { t } = useDomainT('world-group')
   const { groups, links } = useWorldGroupStore()
   const [mode, setMode] = useState<LayoutMode | null>(null)
 
@@ -100,8 +110,8 @@ export default function WorldRelationGraph({ onNodeClick }: Props) {
     <div className="space-y-2">
       {/* 布局切换 */}
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-text-muted">布局</span>
-        {(Object.keys(LAYOUT_LABELS) as LayoutMode[]).map(m => (
+        <span className="text-xs text-text-muted">{t('graph.layoutLabel')}</span>
+        {(['flow', 'radial', 'ladder', 'tree'] as LayoutMode[]).map(m => (
           <button
             key={m}
             onClick={() => setMode(m)}
@@ -111,7 +121,7 @@ export default function WorldRelationGraph({ onNodeClick }: Props) {
                 : 'bg-bg-base text-text-secondary border-border hover:border-accent/50'
             }`}
           >
-            {LAYOUT_LABELS[m]}
+            {t(LAYOUT_KEY[m])}
           </button>
         ))}
       </div>
@@ -157,7 +167,7 @@ export default function WorldRelationGraph({ onNodeClick }: Props) {
                   markerEnd={`url(#arrow-${l.linkType})`}
                 />
                 <text x={mx} y={my - 4} textAnchor="middle" className="fill-text-muted" style={{ fontSize: 9 }}>
-                  {l.name || WORLD_LINK_TYPE_LABELS[l.linkType]}
+                  {l.name || t(LINK_TYPE_KEY[l.linkType])}
                 </text>
               </g>
             )

@@ -3,6 +3,7 @@
  */
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT } from '../i18n'
 import type { WorldGroup, WorldGroupLink } from '../lib/types'
 import { requireBackupBefore } from '../lib/safety/require-backup-before'
 import { cascadeDeleteGroup, stampPrimaryWorld } from '../lib/registry/lifecycle'
@@ -88,10 +89,11 @@ export const useWorldGroupStore = create<WorldGroupStore>((set, get) => ({
     if (!group || group.type === 'primary') return // 不允许删主世界
 
     // 数据红线:删世界组前强制提示备份(Pre-Phase 0 安全网)
+    const t = getT()
     const proceed = await requireBackupBefore({
-      operation: `删除世界「${group.name}」`,
+      operation: t('errors:project.deleteGroupOperation', { name: group.name }),
       projectId: group.projectId,
-      details: '此操作将清除该世界的全部设定数据(世界观、力量体系、地理、历史、词条等),不可恢复。',
+      details: t('errors:project.deleteGroupDetails'),
     })
     if (!proceed) return  // 用户取消
 
@@ -148,7 +150,7 @@ export const useWorldGroupStore = create<WorldGroupStore>((set, get) => ({
 
       return db.worldGroups.add({
         projectId,
-        name: '主世界',
+        name: getT()('common:defaults.primaryWorldName'),
         description: '',
         type: 'primary',
         icon: '🏠',
@@ -171,10 +173,11 @@ export const useWorldGroupStore = create<WorldGroupStore>((set, get) => ({
     // 理由:此操作会给现有数据盖章 worldGroupId,虽然不删数据,但当前代码已知有
     //       P0-1/P0-2/P0-8 三处事务作用域 + 漏盖章问题,失败时可能让大纲消失。
     //       Phase 0 修完后这个安全网可以减弱(但保留)。
+    const t = getT()
     const proceed = await requireBackupBefore({
-      operation: '启用多世界模式',
+      operation: t('errors:project.enableMultiWorldOperation'),
       projectId,
-      details: '此操作将把现有项目数据(世界观、力量体系、大纲、词条等)迁移到「主世界」归属。建议先导出备份。',
+      details: t('errors:project.enableMultiWorldDetails'),
     })
     if (!proceed) return false  // 用户取消
 

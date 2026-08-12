@@ -29,6 +29,7 @@ import {
   loadCodexImportCategoryOptions,
   type CodexImportCategoryOption,
 } from '../../lib/import/codex-classification'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   project: Project
@@ -50,6 +51,7 @@ interface Props {
 export default function ImportDocPanel({ project, onNavigate }: Props) {
   const dialog = useDialog()
   const toast = useToast()
+  const { t } = useDomainT('system')
   const source = useImportDocumentPreparation()
   const [targetWorldGroupId, setTargetWorldGroupId] = useState<number | null>(null)
 
@@ -116,7 +118,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
   const handleConfirmStart = async (importTarget: ImportTarget, selectedWorldGroupId?: number | null, depth?: import('../../lib/types').ReferenceAnalysisDepth) => {
     if (!plans) return
     if (importTarget === 'project' && project.enableMultiWorld && selectedWorldGroupId == null) {
-      toast.error('请先选择本次导入要写入的目标世界。')
+      toast.error(t('importDoc.selectTargetWorldError'))
       return
     }
     closeConfirm()
@@ -127,7 +129,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
     const fileHash = quickHash(rawText)
     const sessionData: Omit<ImportSession, 'id' | 'createdAt' | 'updatedAt'> = {
       projectId: project.id!,
-      filename: filename || '未命名文档',
+      filename: filename || t('importDoc.unnamedDocument'),
       fileHash,
       totalChars: rawText.length,
       totalChunks: plans.length,
@@ -184,7 +186,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
         }
         useImportStatusStore.getState().pushActivity(
           'info',
-          `📚 已创建 ${volumeDetect.volumes.length} 个卷结构骨架`,
+          t('importDoc.volumeSkeletonCreated', { count: volumeDetect.volumes.length }),
         )
       } catch (err) {
         console.warn('[import] 预写卷结构失败（不影响主流程）：', err)
@@ -209,16 +211,16 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
     const statusStore = useImportStatusStore.getState()
     statusStore.reset()
     statusStore.setPhase('preparing')
-    statusStore.pushActivity('info', `♻️ 复用已解析《${reusable.filename}》→ 当前项目设定库（不重新解析）`)
+    statusStore.pushActivity('info', t('importDoc.reuseToProjectActivity', { filename: reusable.filename }))
     try {
       await applyProjectFromSession(project.id!, reusable, null, statusStore)
       statusStore.setPhase('done')
       clearReusable()
-      toast.success('对标设定已灌入当前项目的世界观 / 角色 / 大纲')
+      toast.success(t('importDoc.reuseToProjectSuccess'))
     } catch (err) {
       console.error('[import] 复用应用到项目失败：', err)
       statusStore.setPhase('failed')
-      toast.error(`复用失败：${err instanceof Error ? err.message : '未知错误'}`)
+      toast.error(t('importDoc.reuseFailed', { error: err instanceof Error ? err.message : t('common:unknownError') }))
     } finally {
       setApplyingReuse(false)
     }
@@ -231,7 +233,10 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
     const statusStore = useImportStatusStore.getState()
     statusStore.reset()
     statusStore.setPhase('preparing')
-    statusStore.pushActivity('info', `♻️ 复用已解析《${reusable.filename}》→ 项目参考·${depth === 'deep' ? '深层' : '浅层'}（不重新解析）`)
+    statusStore.pushActivity('info', t('importDoc.reuseToReferenceActivity', {
+      filename: reusable.filename,
+      depth: depth === 'deep' ? t('importDoc.referenceDepthDeep') : t('importDoc.referenceDepthQuick'),
+    }))
     try {
       await applyReferenceFromSession(project.id!, reusable, reusable.id!, statusStore, depth)
       statusStore.setPhase('done')
@@ -240,7 +245,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
     } catch (err) {
       console.error('[import] 复用应用到参考失败：', err)
       statusStore.setPhase('failed')
-      toast.error(`复用失败：${err instanceof Error ? err.message : '未知错误'}`)
+      toast.error(t('importDoc.reuseFailed', { error: err instanceof Error ? err.message : t('common:unknownError') }))
     } finally {
       setApplyingReuse(false)
     }
@@ -250,7 +255,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
   const handleResume = async () => {
     if (!unfinished?.id) return
     if (!hasChunkTexts(unfinished.id)) {
-      toast.error('原文丢失且 Blob 恢复失败。请重新上传同一文件后再点"用当前文件续跑"。')
+      toast.error(t('importDoc.resumeMissingSource'))
       return
     }
     autoReportShown.current = null
@@ -264,19 +269,22 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
     const newHash = quickHash(rawText)
     if (newHash !== unfinished.fileHash) {
       const ok = await dialog.confirm({
-        title: '上传文件与未完成任务不一致',
-        message:
-          `原任务文件 hash: ${unfinished.fileHash}\n` +
-          `当前上传 hash:   ${newHash}\n\n` +
-          '仍要用当前文件继续吗？强烈不建议，可能会出现角色/章节错位。',
-        confirmText: '仍要继续',
+        title: t('importDoc.resumeMismatchTitle'),
+        message: t('importDoc.resumeMismatchMessage', {
+          originalHash: unfinished.fileHash,
+          newHash,
+        }),
+        confirmText: t('importDoc.resumeMismatchConfirm'),
         tone: 'danger',
       })
       if (!ok) return
     }
     const p = chunkDocument(rawText, { targetChars: unfinished.chunkSize })
     if (p.length !== unfinished.totalChunks) {
-      toast.error(`重新切块得到 ${p.length} 块，与原任务的 ${unfinished.totalChunks} 块不一致，无法续跑。建议清理该任务后重新开始解析。`)
+      toast.error(t('importDoc.resumeChunkCountMismatch', {
+        newCount: p.length,
+        originalCount: unfinished.totalChunks,
+      }))
       return
     }
     registerChunkTexts(unfinished.id, p.map(c => ({ index: c.index, text: c.text })))
@@ -297,7 +305,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
   const handleRetryFailed = async () => {
     if (!reportSession?.id) return
     if (!hasChunkTexts(reportSession.id)) {
-      toast.error('原文已从内存清除，请重新上传同一文件后才能重试失败块。')
+      toast.error(t('importDoc.retryMissingSource'))
       return
     }
     setReportSession(null)
@@ -315,9 +323,9 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
   const handleDiscardSession = async () => {
     if (!reportSession?.id) return
     const ok = await dialog.confirm({
-      title: '清理本次会话记录？',
-      message: '已入库的解析数据不会被删除。',
-      confirmText: '清理',
+      title: t('importDoc.discardSessionTitle'),
+      message: t('importDoc.discardSessionMessage'),
+      confirmText: t('importDoc.discardSessionConfirm'),
       tone: 'danger',
     })
     if (!ok) return
@@ -330,9 +338,9 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
 
   const handleCancelCurrent = async () => {
     const ok = await dialog.confirm({
-      title: '取消本次任务？',
-      message: '已入库的解析数据不会被删除。',
-      confirmText: '取消任务',
+      title: t('importDoc.cancelTaskTitle'),
+      message: t('importDoc.cancelTaskMessage'),
+      confirmText: t('importDoc.cancelTaskConfirm'),
       tone: 'danger',
     })
     if (ok) cancelPipeline()
@@ -357,7 +365,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
       const categories = await loadCodexImportCategoryOptions(project.id!)
       setCodexReview({ session, categories })
     } catch (error) {
-      toast.error(`加载词条分类失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('importDoc.loadCodexCategoriesFailed', { error: error instanceof Error ? error.message : String(error) }))
     }
   }
 
@@ -369,7 +377,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
       ? session.targetWorldGroupId ?? null
       : (project.enableMultiWorld ? targetWorldGroupId : null)
     if (project.enableMultiWorld && worldGroupId == null) {
-      toast.error('请先选择词条候选要写入的目标世界。')
+      toast.error(t('importDoc.selectCodexTargetWorldError'))
       return
     }
     try {
@@ -394,10 +402,15 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
       }
       setCodexReview(null)
       clearReusable()
-      const detail = result.errors.length ? `；${result.errors.slice(0, 2).join('；')}` : ''
-      toast.success(`词条审查完成：新增 ${result.imported}、补全 ${result.updated}、跳过 ${result.skipped}${detail}`)
+      const detail = result.errors.length ? `${t('common:colon')}${result.errors.slice(0, 2).join(t('common:colon'))}` : ''
+      toast.success(t('importDoc.codexReviewSuccess', {
+        imported: result.imported,
+        updated: result.updated,
+        skipped: result.skipped,
+        detail,
+      }))
     } catch (error) {
-      toast.error(`词条写入失败，候选仍保留：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('importDoc.codexWriteFailed', { error: error instanceof Error ? error.message : String(error) }))
     }
   }
 
@@ -436,9 +449,9 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
           onShowDetail={() => setReportSession(unfinished)}
           onDiscard={async () => {
             const ok = await dialog.confirm({
-              title: '放弃这个未完成任务？',
-              message: '已入库数据不会被删除。',
-              confirmText: '放弃任务',
+              title: t('importDoc.abandonUnfinishedTitle'),
+              message: t('importDoc.abandonUnfinishedMessage'),
+              confirmText: t('importDoc.abandonUnfinishedConfirm'),
               tone: 'danger',
             })
             if (!ok) return
@@ -494,7 +507,7 @@ export default function ImportDocPanel({ project, onNavigate }: Props) {
       {/* Confirm Modal */}
       {showConfirm && plans && (
         <ImportConfirmModal
-          filename={filename || '未命名文档'}
+          filename={filename || t('importDoc.unnamedDocument')}
           totalChars={rawText.length}
           chunks={plans}
           chunkSize={chunkSize}

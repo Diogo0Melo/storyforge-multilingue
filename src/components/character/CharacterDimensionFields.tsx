@@ -1,5 +1,5 @@
 import type { Character } from '../../lib/types'
-import { dimensionsByGroup, type CharacterDimensionKey, type CharacterDimensionSpec } from '../../lib/character/character-dimensions'
+import { dimensionsByGroup, getDimensionLabel, getDimensionGroupLabel, type CharacterDimensionKey, type CharacterDimensionSpec } from '../../lib/character/character-dimensions'
 import { CTextarea } from '../shared/CompositionInput'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
@@ -68,7 +68,7 @@ function CharacterDimensionField({ dimension, value, onCommit }: DimensionFieldP
         timerRef.current = setTimeout(flushDraft, 400)
       }}
       onBlur={flushDraft}
-      placeholder={`${dimension.label}…`}
+      placeholder={`${getDimensionLabel(dimension.key)}…`}
       rows={dimension.rows}
       className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
     />
@@ -85,16 +85,16 @@ export default function CharacterDimensionFields({ character, onChange, exclude 
 
   return (
     <div className="space-y-3">
-      {dimensionsByGroup().map(({ group, dims }) => {
+      {dimensionsByGroup().map(({ groupKey, dims }) => {
         const shown = dims.filter(d => !skip.has(d.key))
         if (!shown.length) return null
         return (
-          <div key={group}>
-            <div className="mb-1 text-[10px] uppercase tracking-wider text-text-muted/70">{group}</div>
+          <div key={groupKey}>
+            <div className="mb-1 text-[10px] uppercase tracking-wider text-text-muted/70">{getDimensionGroupLabel(groupKey)}</div>
             <div className="space-y-1.5">
               {shown.map(d => (
                 <div key={d.key} className="flex gap-2">
-                  <span className="w-20 flex-shrink-0 pt-1.5 text-xs text-text-muted">{d.label}</span>
+                  <span className="w-20 flex-shrink-0 pt-1.5 text-xs text-text-muted">{getDimensionLabel(d.key)}</span>
                   <CharacterDimensionField
                     key={`${character.id ?? 'draft'}:${d.key}`}
                     dimension={d}

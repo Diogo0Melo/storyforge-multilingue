@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import { db } from '../db/schema'
 import { transactionTablesForReferences } from '../registry/lifecycle'
 import {
@@ -67,31 +68,31 @@ function isObject(value: unknown): value is JsonObject {
 function parseJsonObject(value: string, label: string): JsonObject {
   try {
     const parsed = JSON.parse(value)
-    if (!isObject(parsed)) throw new Error(`${label} 必须是 JSON 对象。`)
+    if (!isObject(parsed)) throw new Error(getT()('simulation:runtime.json.mustBeObject', { label: label }))
     return parsed
   } catch (error) {
-    if (error instanceof Error && error.message.endsWith('必须是 JSON 对象。')) throw error
-    throw new Error(`${label} 不是合法 JSON。`)
+    if (error instanceof Error && error.message.endsWith(getT()('simulation:runtime.json.mustBeObject', { label: '' }).slice(1))) throw error
+    throw new Error(getT()('simulation:runtime.json.invalid', { label: label }))
   }
 }
 
 function assertFiniteInteger(value: unknown, label: string, min: number, max: number): number {
   if (!Number.isInteger(value) || Number(value) < min || Number(value) > max) {
-    throw new Error(`${label} 必须是 ${min}..${max} 的整数。`)
+    throw new Error(getT()('simulation:runtime.validation.finiteInteger', { label: label, min: min, max: max }))
   }
   return Number(value)
 }
 
 function assertRuntimeAttributes(value: unknown): RuntimeAttributes {
-  if (!isObject(value)) throw new Error('运行时 attributes 必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.attributes.mustBeObject'))
   const result: RuntimeAttributes = {}
   for (const [key, raw] of Object.entries(value)) {
-    if (!key.trim() || key.length > 80) throw new Error('运行时属性键无效。')
+    if (!key.trim() || key.length > 80) throw new Error(getT()('simulation:runtime.attributes.keyInvalid'))
     if (raw !== null && !['string', 'number', 'boolean'].includes(typeof raw)) {
-      throw new Error(`运行时属性 ${key} 只能是标量。`)
+      throw new Error(getT()('simulation:runtime.attributes.scalarOnly', { key: key }))
     }
     if (typeof raw === 'number' && !Number.isFinite(raw)) {
-      throw new Error(`运行时属性 ${key} 不是有限数字。`)
+      throw new Error(getT()('simulation:runtime.attributes.notFinite', { key: key }))
     }
     result[key] = raw as RuntimeAttributes[string]
   }
@@ -99,18 +100,18 @@ function assertRuntimeAttributes(value: unknown): RuntimeAttributes {
 }
 
 function assertRuntimeEntity(value: unknown): RuntimeEntityState {
-  if (!isObject(value)) throw new Error('运行时实体必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.entity.mustBeObject'))
   const entityKey = String(value.entityKey ?? '').trim()
   const name = String(value.name ?? '').trim()
   const kind = String(value.kind ?? '')
   const lifecycleStatus = String(value.lifecycleStatus ?? '')
-  if (!entityKey || entityKey.length > 160) throw new Error('运行时实体缺少有效 entityKey。')
-  if (!name || name.length > 200) throw new Error('运行时实体缺少有效名称。')
+  if (!entityKey || entityKey.length > 160) throw new Error(getT()('simulation:runtime.entity.missingEntityKey'))
+  if (!name || name.length > 200) throw new Error(getT()('simulation:runtime.entity.missingName'))
   if (!RUNTIME_ENTITY_KINDS.includes(kind as RuntimeEntityState['kind'])) {
-    throw new Error(`未知运行时实体类型: ${kind}`)
+    throw new Error(getT()('simulation:runtime.entity.unknownKind', { kind: kind }))
   }
   if (!RUNTIME_LIFECYCLE_STATUSES.includes(lifecycleStatus as RuntimeEntityState['lifecycleStatus'])) {
-    throw new Error(`未知运行时生命周期: ${lifecycleStatus}`)
+    throw new Error(getT()('simulation:runtime.entity.unknownLifecycle', { lifecycleStatus: lifecycleStatus }))
   }
   const sourceId = value.sourceId == null
     ? null
@@ -128,16 +129,16 @@ function assertRuntimeEntity(value: unknown): RuntimeEntityState {
 }
 
 function assertRuntimeMemory(value: unknown): RuntimeMemory {
-  if (!isObject(value)) throw new Error('运行时记忆必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.memory.mustBeObject'))
   const id = String(value.id ?? '').trim()
   const subjectKey = String(value.subjectKey ?? '').trim()
   const content = String(value.content ?? '').trim()
   const status = String(value.status ?? '')
-  if (!id || id.length > 160) throw new Error('运行时记忆缺少有效 id。')
-  if (!subjectKey || subjectKey.length > 160) throw new Error('运行时记忆缺少主体。')
-  if (!content || content.length > 4_000) throw new Error('运行时记忆内容无效。')
+  if (!id || id.length > 160) throw new Error(getT()('simulation:runtime.memory.missingId'))
+  if (!subjectKey || subjectKey.length > 160) throw new Error(getT()('simulation:runtime.memory.missingSubject'))
+  if (!content || content.length > 4_000) throw new Error(getT()('simulation:runtime.memory.contentInvalid'))
   if (!['known', 'mistaken', 'forgotten'].includes(status)) {
-    throw new Error(`未知运行时记忆状态: ${status}`)
+    throw new Error(getT()('simulation:runtime.memory.unknownStatus', { status: status }))
   }
   return {
     id,
@@ -164,7 +165,7 @@ export function isNpcRuntimeEntity(entity: RuntimeEntityState): boolean {
 export function parseSimulationNpcEvolutionCandidate(
   value: unknown,
 ): SimulationNpcEvolutionCandidate {
-  if (!isObject(value)) throw new Error('NPC 演进候选必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.npc.candidateMustBeObject'))
   const allowed = new Set([
     'baseSequence',
     'entityKey',
@@ -176,39 +177,39 @@ export function parseSimulationNpcEvolutionCandidate(
     'rationale',
   ])
   const unknown = Object.keys(value).filter(key => !allowed.has(key))
-  if (unknown.length) throw new Error(`NPC 演进候选包含未知字段: ${unknown.join(', ')}`)
+  if (unknown.length) throw new Error(getT()('simulation:runtime.npc.candidateUnknownFields', { fields: unknown.join(', ') }))
   const entityKey = String(value.entityKey ?? '').trim()
-  if (!entityKey || entityKey.length > 160) throw new Error('NPC 演进候选缺少有效实体。')
+  if (!entityKey || entityKey.length > 160) throw new Error(getT()('simulation:runtime.npc.candidateMissingEntity'))
   const rawLocationKey = value.locationKey
   if (rawLocationKey != null && typeof rawLocationKey !== 'string') {
-    throw new Error('NPC 演进地点必须是稳定实体键或 null。')
+    throw new Error(getT()('simulation:runtime.npc.locationMustBeEntityOrNull'))
   }
   const locationKey = typeof rawLocationKey === 'string'
     ? rawLocationKey.trim() || null
     : null
   const lifecycleStatus = String(value.lifecycleStatus ?? '')
   if (!RUNTIME_LIFECYCLE_STATUSES.includes(lifecycleStatus as RuntimeEntityState['lifecycleStatus'])) {
-    throw new Error(`未知 NPC 生命周期状态: ${lifecycleStatus}`)
+    throw new Error(getT()('simulation:runtime.npc.unknownLifecycle', { lifecycleStatus: lifecycleStatus }))
   }
   const narrative = String(value.narrative ?? '').trim()
-  if (narrative.length > 20_000) throw new Error('NPC 演进叙事过长。')
+  if (narrative.length > 20_000) throw new Error(getT()('simulation:runtime.npc.narrativeTooLong'))
   const rationale = String(value.rationale ?? '').trim()
-  if (rationale.length > 4_000) throw new Error('NPC 演进理由过长。')
+  if (rationale.length > 4_000) throw new Error(getT()('simulation:runtime.npc.rationaleTooLong'))
   let memory: SimulationNpcEvolutionCandidate['memory'] = null
   if (value.memory != null) {
-    if (!isObject(value.memory)) throw new Error('NPC 演进记忆必须是对象或 null。')
+    if (!isObject(value.memory)) throw new Error(getT()('simulation:runtime.npc.memoryMustBeObjectOrNull'))
     const status = String(value.memory.status ?? '')
     const content = String(value.memory.content ?? '').trim()
     if (!['known', 'mistaken', 'forgotten'].includes(status)) {
-      throw new Error(`未知 NPC 记忆状态: ${status}`)
+      throw new Error(getT()('simulation:runtime.npc.unknownMemoryStatus', { status: status }))
     }
-    if (!content || content.length > 4_000) throw new Error('NPC 演进记忆内容无效。')
+    if (!content || content.length > 4_000) throw new Error(getT()('simulation:runtime.npc.memoryContentInvalid'))
     memory = { status: status as RuntimeMemory['status'], content }
   }
   return {
     baseSequence: assertFiniteInteger(
       value.baseSequence,
-      'NPC 演进基线序号',
+      getT()('simulation:runtime.labels.npcEvolutionBaselineSequence'),
       0,
       Number.MAX_SAFE_INTEGER,
     ),
@@ -227,12 +228,12 @@ function prepareNpcEvolution(
   candidate: SimulationNpcEvolutionCandidate,
 ): RuntimeEntityState {
   const existing = state.entities[candidate.entityKey]
-  if (!existing) throw new Error(`要演进的运行时实体不存在: ${candidate.entityKey}`)
-  if (!isNpcRuntimeEntity(existing)) throw new Error('只有运行时 NPC 可以进入演进候选。')
+  if (!existing) throw new Error(getT()('simulation:runtime.npc.targetEntityNotFound', { entityKey: candidate.entityKey }))
+  if (!isNpcRuntimeEntity(existing)) throw new Error(getT()('simulation:runtime.npc.targetNotNpc'))
   if (candidate.locationKey != null) {
     const location = state.entities[candidate.locationKey]
     if (!location || location.kind !== 'location') {
-      throw new Error(`NPC 演进目标地点不存在: ${candidate.locationKey}`)
+      throw new Error(getT()('simulation:runtime.npc.targetLocationNotFound', { locationKey: candidate.locationKey }))
     }
   }
   const next = assertRuntimeEntity({
@@ -249,7 +250,7 @@ function prepareNpcEvolution(
     && !attributesChanged
     && !candidate.narrative
     && !candidate.memory
-  ) throw new Error('NPC 演进候选没有任何状态或经历变化。')
+  ) throw new Error(getT()('simulation:runtime.npc.noChange'))
   return next
 }
 
@@ -274,50 +275,50 @@ function applyNpcEvolution(
 }
 
 function assertTtrpgScene(value: unknown): SimulationTtrpgScene {
-  if (!isObject(value)) throw new Error('跑团场景必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.sceneMustBeObject'))
   const sceneId = String(value.sceneId ?? '').trim()
   const title = String(value.title ?? '').trim()
   const description = String(value.description ?? '').trim()
   const locationKey = value.locationKey == null ? null : String(value.locationKey).trim() || null
   const status = String(value.status ?? 'active')
-  if (!sceneId || sceneId.length > 160) throw new Error('跑团场景缺少有效 ID。')
-  if (!title || title.length > 200) throw new Error('跑团场景标题无效。')
-  if (description.length > 8_000) throw new Error('跑团场景描述过长。')
-  if (status !== 'active' && status !== 'resolved') throw new Error('跑团场景状态无效。')
+  if (!sceneId || sceneId.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.sceneMissingId'))
+  if (!title || title.length > 200) throw new Error(getT()('simulation:runtime.ttrpg.sceneTitleInvalid'))
+  if (description.length > 8_000) throw new Error(getT()('simulation:runtime.ttrpg.sceneDescriptionTooLong'))
+  if (status !== 'active' && status !== 'resolved') throw new Error(getT()('simulation:runtime.ttrpg.sceneStatusInvalid'))
   return { sceneId, title, description, locationKey, status: status as SimulationTtrpgScene['status'] }
 }
 
 function assertTtrpgAction(value: unknown): SimulationTtrpgAction {
-  if (!isObject(value)) throw new Error('跑团动作必须是对象。')
-  const eventSequence = assertFiniteInteger(value.eventSequence, '跑团动作事件序号', 1, Number.MAX_SAFE_INTEGER)
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.actionMustBeObject'))
+  const eventSequence = assertFiniteInteger(value.eventSequence, getT()('simulation:runtime.labels.ttrpgActionEventSequence'), 1, Number.MAX_SAFE_INTEGER)
   const actorKey = String(value.actorKey ?? '').trim()
   const text = String(value.text ?? '').trim()
-  if (!actorKey || actorKey.length > 160) throw new Error('跑团动作缺少行动者。')
-  if (!text || text.length > 4_000) throw new Error('跑团动作文本无效。')
+  if (!actorKey || actorKey.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.actionMissingActor'))
+  if (!text || text.length > 4_000) throw new Error(getT()('simulation:runtime.ttrpg.actionTextInvalid'))
   return { eventSequence, actorKey, text }
 }
 
 function assertTtrpgCheck(value: unknown): SimulationTtrpgCheck {
-  if (!isObject(value)) throw new Error('跑团检定必须是对象。')
-  const eventSequence = assertFiniteInteger(value.eventSequence, '跑团检定事件序号', 1, Number.MAX_SAFE_INTEGER)
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.checkMustBeObject'))
+  const eventSequence = assertFiniteInteger(value.eventSequence, getT()('simulation:runtime.labels.ttrpgCheckEventSequence'), 1, Number.MAX_SAFE_INTEGER)
   const actorKey = String(value.actorKey ?? '').trim()
   const skill = String(value.skill ?? '').trim()
   const expression = String(value.expression ?? '').trim()
-  const dc = assertFiniteInteger(value.dc, '检定难度', 0, 1_000)
+  const dc = assertFiniteInteger(value.dc, getT()('simulation:runtime.labels.checkDc'), 0, 1_000)
   const dice = value.dice
-  if (!actorKey || actorKey.length > 160) throw new Error('跑团检定缺少行动者。')
-  if (!skill || skill.length > 120) throw new Error('跑团检定技能无效。')
-  if (!Array.isArray(dice)) throw new Error('跑团检定缺少骰子结果。')
+  if (!actorKey || actorKey.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.checkMissingActor'))
+  if (!skill || skill.length > 120) throw new Error(getT()('simulation:runtime.ttrpg.checkSkillInvalid'))
+  if (!Array.isArray(dice)) throw new Error(getT()('simulation:runtime.ttrpg.checkMissingDice'))
   const parsed = parseDiceExpression(expression)
-  if (dice.length !== parsed.count) throw new Error('跑团检定骰子数量与骰式不一致。')
-  const normalizedDice = dice.map(die => assertFiniteInteger(die, '检定骰子点数', 1, parsed.sides))
+  if (dice.length !== parsed.count) throw new Error(getT()('simulation:runtime.ttrpg.checkDiceCountMismatch'))
+  const normalizedDice = dice.map(die => assertFiniteInteger(die, getT()('simulation:runtime.labels.checkDiceValue'), 1, parsed.sides))
   const modifier = Number(value.modifier)
   const total = Number(value.total)
   const success = value.success
   if (modifier !== parsed.modifier || total !== normalizedDice.reduce((sum, die) => sum + die, modifier)) {
-    throw new Error('跑团检定合计与骰式不一致。')
+    throw new Error(getT()('simulation:runtime.ttrpg.checkTotalMismatch'))
   }
-  if (success !== (total >= dc)) throw new Error('跑团检定成功状态与合计不一致。')
+  if (success !== (total >= dc)) throw new Error(getT()('simulation:runtime.ttrpg.checkSuccessMismatch'))
   return {
     eventSequence,
     actorKey,
@@ -332,123 +333,123 @@ function assertTtrpgCheck(value: unknown): SimulationTtrpgCheck {
 }
 
 function assertTtrpgResource(value: unknown): SimulationTtrpgResource {
-  if (!isObject(value)) throw new Error('跑团资源必须是对象。')
-  const current = assertFiniteInteger(value.current, '资源当前值', 0, 1_000_000_000)
-  const maximum = assertFiniteInteger(value.maximum, '资源上限', 1, 1_000_000_000)
-  if (current > maximum) throw new Error('资源当前值不能超过上限。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.resourceMustBeObject'))
+  const current = assertFiniteInteger(value.current, getT()('simulation:runtime.labels.resourceCurrent'), 0, 1_000_000_000)
+  const maximum = assertFiniteInteger(value.maximum, getT()('simulation:runtime.labels.resourceMaximum'), 1, 1_000_000_000)
+  if (current > maximum) throw new Error(getT()('simulation:runtime.ttrpg.resourceCurrentExceedsMax'))
   return { current, maximum }
 }
 
 function assertTtrpgCondition(value: unknown): SimulationTtrpgCondition {
-  if (!isObject(value)) throw new Error('跑团状态效果必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.conditionMustBeObject'))
   const conditionId = String(value.conditionId ?? '').trim()
   const name = String(value.name ?? '').trim()
   const description = String(value.description ?? '').trim()
   const duration = value.duration == null
     ? null
-    : assertFiniteInteger(value.duration, '状态效果持续回合', 0, 1_000_000)
-  const stacks = assertFiniteInteger(value.stacks ?? 1, '状态效果层数', 1, 1_000)
-  if (!conditionId || conditionId.length > 160) throw new Error('状态效果缺少有效 ID。')
-  if (!name || name.length > 120) throw new Error('状态效果名称无效。')
-  if (description.length > 2_000) throw new Error('状态效果描述过长。')
+    : assertFiniteInteger(value.duration, getT()('simulation:runtime.labels.conditionDurationRounds'), 0, 1_000_000)
+  const stacks = assertFiniteInteger(value.stacks ?? 1, getT()('simulation:runtime.labels.conditionStacks'), 1, 1_000)
+  if (!conditionId || conditionId.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.conditionMissingId'))
+  if (!name || name.length > 120) throw new Error(getT()('simulation:runtime.ttrpg.conditionNameInvalid'))
+  if (description.length > 2_000) throw new Error(getT()('simulation:runtime.ttrpg.conditionDescriptionTooLong'))
   return { conditionId, name, description, duration, stacks }
 }
 
 function assertTtrpgCombatant(value: unknown): SimulationTtrpgCombatant {
-  if (!isObject(value)) throw new Error('战斗参与者必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.combatantMustBeObject'))
   const entityKey = String(value.entityKey ?? '').trim()
-  const initiative = assertFiniteInteger(value.initiative, '先攻值', 0, 1_000)
-  const armorClass = assertFiniteInteger(value.armorClass, '护甲等级', 0, 1_000)
-  if (!entityKey || entityKey.length > 160) throw new Error('战斗参与者缺少实体键。')
-  if (!isObject(value.resources)) throw new Error('战斗资源必须是对象。')
+  const initiative = assertFiniteInteger(value.initiative, getT()('simulation:runtime.labels.initiative'), 0, 1_000)
+  const armorClass = assertFiniteInteger(value.armorClass, getT()('simulation:runtime.labels.armorClass'), 0, 1_000)
+  if (!entityKey || entityKey.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.combatantMissingEntityKey'))
+  if (!isObject(value.resources)) throw new Error(getT()('simulation:runtime.ttrpg.combatResourcesMustBeObject'))
   const resources: Record<string, SimulationTtrpgResource> = {}
   for (const [key, resource] of Object.entries(value.resources)) {
-    if (!key.trim() || key.length > 80) throw new Error('战斗资源键无效。')
+    if (!key.trim() || key.length > 80) throw new Error(getT()('simulation:runtime.ttrpg.combatResourceKeyInvalid'))
     resources[key] = assertTtrpgResource(resource)
   }
-  if (!resources.hp) throw new Error('战斗参与者必须拥有 hp 资源。')
-  if (!Array.isArray(value.conditions)) throw new Error('战斗状态效果必须是数组。')
+  if (!resources.hp) throw new Error(getT()('simulation:runtime.ttrpg.combatantMissingHp'))
+  if (!Array.isArray(value.conditions)) throw new Error(getT()('simulation:runtime.ttrpg.combatConditionsMustBeArray'))
   const conditions = value.conditions.map(assertTtrpgCondition)
   if (new Set(conditions.map(condition => condition.conditionId)).size !== conditions.length) {
-    throw new Error('战斗状态效果不能重复。')
+    throw new Error(getT()('simulation:runtime.ttrpg.combatConditionsDuplicate'))
   }
   return { entityKey, initiative, armorClass, resources, conditions }
 }
 
 function assertTtrpgEncounter(value: unknown): SimulationTtrpgEncounter {
-  if (!isObject(value)) throw new Error('跑团遭遇必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.encounterMustBeObject'))
   const encounterId = String(value.encounterId ?? '').trim()
   const title = String(value.title ?? '').trim()
   const description = String(value.description ?? '').trim()
   const status = String(value.status ?? 'active')
-  const round = assertFiniteInteger(value.round, '战斗回合', 1, Number.MAX_SAFE_INTEGER)
+  const round = assertFiniteInteger(value.round, getT()('simulation:runtime.labels.combatRound'), 1, Number.MAX_SAFE_INTEGER)
   const activeActorKey = value.activeActorKey == null ? null : String(value.activeActorKey).trim() || null
-  if (!encounterId || encounterId.length > 160) throw new Error('遭遇缺少有效 ID。')
-  if (!title || title.length > 200) throw new Error('遭遇标题无效。')
-  if (description.length > 8_000) throw new Error('遭遇描述过长。')
-  if (status !== 'active' && status !== 'resolved') throw new Error('遭遇状态无效。')
-  if (!Array.isArray(value.turnOrder) || value.turnOrder.length === 0) throw new Error('遭遇必须有回合顺序。')
+  if (!encounterId || encounterId.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.encounterMissingId'))
+  if (!title || title.length > 200) throw new Error(getT()('simulation:runtime.ttrpg.encounterTitleInvalid'))
+  if (description.length > 8_000) throw new Error(getT()('simulation:runtime.ttrpg.encounterDescriptionTooLong'))
+  if (status !== 'active' && status !== 'resolved') throw new Error(getT()('simulation:runtime.ttrpg.encounterStatusInvalid'))
+  if (!Array.isArray(value.turnOrder) || value.turnOrder.length === 0) throw new Error(getT()('simulation:runtime.ttrpg.encounterRequiresTurnOrder'))
   const turnOrder = value.turnOrder.map(raw => String(raw).trim())
   if (turnOrder.some(key => !key || key.length > 160) || new Set(turnOrder).size !== turnOrder.length) {
-    throw new Error('遭遇回合顺序包含无效或重复参与者。')
+    throw new Error(getT()('simulation:runtime.ttrpg.encounterTurnOrderInvalidOrDuplicate'))
   }
-  if (activeActorKey != null && !turnOrder.includes(activeActorKey)) throw new Error('遭遇当前行动者不在回合顺序中。')
-  if (!isObject(value.combatants)) throw new Error('遭遇缺少战斗参与者。')
+  if (activeActorKey != null && !turnOrder.includes(activeActorKey)) throw new Error(getT()('simulation:runtime.ttrpg.encounterActiveActorNotInTurnOrder'))
+  if (!isObject(value.combatants)) throw new Error(getT()('simulation:runtime.ttrpg.encounterMissingCombatants'))
   const combatants: Record<string, SimulationTtrpgCombatant> = {}
   for (const [key, raw] of Object.entries(value.combatants)) {
     const combatant = assertTtrpgCombatant(raw)
-    if (combatant.entityKey !== key) throw new Error(`遭遇参与者索引与实体键不一致: ${key}`)
+    if (combatant.entityKey !== key) throw new Error(getT()('simulation:runtime.ttrpg.encounterCombatantIndexMismatch', { key: key }))
     combatants[key] = combatant
   }
   if (turnOrder.some(key => !combatants[key]) || Object.keys(combatants).some(key => !turnOrder.includes(key))) {
-    throw new Error('遭遇回合顺序与参与者不一致。')
+    throw new Error(getT()('simulation:runtime.ttrpg.encounterTurnOrderCombatantMismatch'))
   }
   return { encounterId, title, description, status: status as SimulationTtrpgEncounter['status'], round, activeActorKey, turnOrder, combatants }
 }
 
 function assertTtrpgAttackResult(value: unknown): SimulationTtrpgAttackResult {
-  if (!isObject(value)) throw new Error('攻击结果必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.attackMustBeObject'))
   const actorKey = String(value.actorKey ?? '').trim()
   const targetKey = String(value.targetKey ?? '').trim()
   const attackExpression = String(value.attackExpression ?? '').trim()
   const damageExpression = value.damageExpression == null ? null : String(value.damageExpression).trim() || null
   const resourceKey = String(value.resourceKey ?? 'hp').trim()
   const reason = String(value.reason ?? '').trim()
-  if (!actorKey || !targetKey || actorKey.length > 160 || targetKey.length > 160) throw new Error('攻击缺少有效行动者或目标。')
+  if (!actorKey || !targetKey || actorKey.length > 160 || targetKey.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.attackMissingActorOrTarget'))
   const attack = parseDiceExpression(attackExpression)
   const attackDice = value.attackDice
-  if (!Array.isArray(attackDice) || attackDice.length !== attack.count) throw new Error('攻击骰子数量与骰式不一致。')
-  const normalizedAttackDice = attackDice.map(die => assertFiniteInteger(die, '攻击骰子点数', 1, attack.sides))
+  if (!Array.isArray(attackDice) || attackDice.length !== attack.count) throw new Error(getT()('simulation:runtime.ttrpg.attackDiceCountMismatch'))
+  const normalizedAttackDice = attackDice.map(die => assertFiniteInteger(die, getT()('simulation:runtime.labels.attackDiceValue'), 1, attack.sides))
   const attackModifier = Number(value.attackModifier)
   const attackTotal = Number(value.attackTotal)
-  const armorClass = assertFiniteInteger(value.armorClass, '护甲等级', 0, 1_000)
+  const armorClass = assertFiniteInteger(value.armorClass, getT()('simulation:runtime.labels.armorClass'), 0, 1_000)
   const hit = value.hit
   if (attackModifier !== attack.modifier || attackTotal !== normalizedAttackDice.reduce((sum, die) => sum + die, attackModifier)) {
-    throw new Error('攻击合计与骰式不一致。')
+    throw new Error(getT()('simulation:runtime.ttrpg.attackTotalMismatch'))
   }
-  if (hit !== (attackTotal >= armorClass)) throw new Error('攻击命中状态与合计不一致。')
+  if (hit !== (attackTotal >= armorClass)) throw new Error(getT()('simulation:runtime.ttrpg.attackHitMismatch'))
   let normalizedDamageExpression: string | null = null
   let damageDice: number[] = []
   let damageModifier = 0
   const damageTotal = Number(value.damageTotal ?? 0)
   if (damageExpression) {
     const damage = parseDiceExpression(damageExpression)
-    if (!Array.isArray(value.damageDice) || value.damageDice.length !== damage.count) throw new Error('伤害骰子数量与骰式不一致。')
-    damageDice = value.damageDice.map(die => assertFiniteInteger(die, '伤害骰子点数', 1, damage.sides))
+    if (!Array.isArray(value.damageDice) || value.damageDice.length !== damage.count) throw new Error(getT()('simulation:runtime.ttrpg.damageDiceCountMismatch'))
+    damageDice = value.damageDice.map(die => assertFiniteInteger(die, getT()('simulation:runtime.labels.damageDiceValue'), 1, damage.sides))
     damageModifier = Number(value.damageModifier)
     if (damageModifier !== damage.modifier || damageTotal !== damageDice.reduce((sum, die) => sum + die, damageModifier)) {
-      throw new Error('伤害合计与骰式不一致。')
+      throw new Error(getT()('simulation:runtime.ttrpg.damageTotalMismatch'))
     }
-    if (damageTotal < 0) throw new Error('伤害合计不能为负数。')
+    if (damageTotal < 0) throw new Error(getT()('simulation:runtime.ttrpg.damageTotalNegative'))
     normalizedDamageExpression = damage.normalized
   } else if (damageTotal !== 0 || (Array.isArray(value.damageDice) && value.damageDice.length > 0)) {
-    throw new Error('没有伤害骰式时不能提交伤害结果。')
+    throw new Error(getT()('simulation:runtime.ttrpg.damageWithoutExpression'))
   }
-  const resourceDelta = assertFiniteInteger(value.resourceDelta, '资源变化量', -1_000_000_000, 1_000_000_000)
-  if (!hit && (damageTotal !== 0 || resourceDelta !== 0)) throw new Error('未命中攻击不能造成伤害。')
-  if (hit && resourceDelta !== -damageTotal) throw new Error('攻击资源变化必须等于伤害负值。')
-  if (!resourceKey || resourceKey.length > 80) throw new Error('攻击资源键无效。')
-  if (reason.length > 2_000) throw new Error('攻击理由过长。')
+  const resourceDelta = assertFiniteInteger(value.resourceDelta, getT()('simulation:runtime.labels.resourceDelta'), -1_000_000_000, 1_000_000_000)
+  if (!hit && (damageTotal !== 0 || resourceDelta !== 0)) throw new Error(getT()('simulation:runtime.ttrpg.missCannotDealDamage'))
+  if (hit && resourceDelta !== -damageTotal) throw new Error(getT()('simulation:runtime.ttrpg.resourceDeltaMustEqualNegativeDamage'))
+  if (!resourceKey || resourceKey.length > 80) throw new Error(getT()('simulation:runtime.ttrpg.attackResourceKeyInvalid'))
+  if (reason.length > 2_000) throw new Error(getT()('simulation:runtime.ttrpg.attackReasonTooLong'))
   return { actorKey, targetKey, attackExpression: attack.normalized, attackDice: normalizedAttackDice, attackModifier, attackTotal, armorClass, hit: Boolean(hit), damageExpression: normalizedDamageExpression, damageDice, damageModifier, damageTotal, resourceKey, resourceDelta, reason }
 }
 
@@ -468,18 +469,18 @@ function emptyTtrpgState(): SimulationTtrpgState {
 
 function parseTtrpgState(value: unknown): SimulationTtrpgState | null {
   if (value == null) return null
-  if (!isObject(value)) throw new Error('跑团状态必须是对象或 null。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.stateMustBeObjectOrNull'))
   const scene = value.scene == null ? null : assertTtrpgScene(value.scene)
-  const round = assertFiniteInteger(value.round, '跑团回合', 0, Number.MAX_SAFE_INTEGER)
+  const round = assertFiniteInteger(value.round, getT()('simulation:runtime.labels.ttrpgRound'), 0, Number.MAX_SAFE_INTEGER)
   const activeActorKey = value.activeActorKey == null ? null : String(value.activeActorKey).trim() || null
-  if (!Array.isArray(value.turnOrder)) throw new Error('跑团回合顺序必须是数组。')
+  if (!Array.isArray(value.turnOrder)) throw new Error(getT()('simulation:runtime.ttrpg.turnOrderMustBeArray'))
   const turnOrder = value.turnOrder.map(raw => String(raw).trim())
   if (turnOrder.some(key => !key || key.length > 160) || new Set(turnOrder).size !== turnOrder.length) {
-    throw new Error('跑团回合顺序包含无效或重复行动者。')
+    throw new Error(getT()('simulation:runtime.ttrpg.turnOrderInvalidOrDuplicate'))
   }
-  if (activeActorKey != null && !turnOrder.includes(activeActorKey)) throw new Error('跑团当前行动者不在回合顺序中。')
-  if (!Array.isArray(value.actions) || !Array.isArray(value.checks)) throw new Error('跑团动作与检定记录必须是数组。')
-  if (value.attacks != null && !Array.isArray(value.attacks)) throw new Error('跑团攻击记录必须是数组。')
+  if (activeActorKey != null && !turnOrder.includes(activeActorKey)) throw new Error(getT()('simulation:runtime.ttrpg.activeActorNotInTurnOrder'))
+  if (!Array.isArray(value.actions) || !Array.isArray(value.checks)) throw new Error(getT()('simulation:runtime.ttrpg.actionsAndChecksMustBeArrays'))
+  if (value.attacks != null && !Array.isArray(value.attacks)) throw new Error(getT()('simulation:runtime.ttrpg.attacksMustBeArray'))
   return {
     scene,
     round,
@@ -498,39 +499,39 @@ function emptyTtrpgCampaignState(): SimulationTtrpgCampaignState {
 }
 
 function assertTtrpgQuest(value: unknown): SimulationTtrpgQuest {
-  if (!isObject(value)) throw new Error('战役任务必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.questMustBeObject'))
   const questId = String(value.questId ?? '').trim()
   const title = String(value.title ?? '').trim()
   const description = String(value.description ?? '').trim()
   const status = String(value.status ?? '') as SimulationTtrpgQuestStatus
-  if (!questId || questId.length > 160) throw new Error('战役任务 ID 无效。')
-  if (!title || title.length > 240) throw new Error('战役任务标题无效。')
-  if (description.length > 8_000) throw new Error('战役任务描述过长。')
-  if (!SIMULATION_TTRPG_QUEST_STATUSES.includes(status)) throw new Error(`未知战役任务状态: ${status}`)
-  const dueClock = value.dueClock == null ? null : assertFiniteInteger(value.dueClock, '任务期限', 0, Number.MAX_SAFE_INTEGER)
+  if (!questId || questId.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.questIdInvalid'))
+  if (!title || title.length > 240) throw new Error(getT()('simulation:runtime.ttrpg.questTitleInvalid'))
+  if (description.length > 8_000) throw new Error(getT()('simulation:runtime.ttrpg.questDescriptionTooLong'))
+  if (!SIMULATION_TTRPG_QUEST_STATUSES.includes(status)) throw new Error(getT()('simulation:runtime.ttrpg.questUnknownStatus', { status: status }))
+  const dueClock = value.dueClock == null ? null : assertFiniteInteger(value.dueClock, getT()('simulation:runtime.labels.questDueClock'), 0, Number.MAX_SAFE_INTEGER)
   return {
     questId,
     title,
     description,
     status,
-    priority: assertFiniteInteger(value.priority ?? 0, '任务优先级', 0, 5),
+    priority: assertFiniteInteger(value.priority ?? 0, getT()('simulation:runtime.labels.questPriority'), 0, 5),
     dueClock,
-    updatedSequence: assertFiniteInteger(value.updatedSequence, '任务更新时间序号', 1, Number.MAX_SAFE_INTEGER),
+    updatedSequence: assertFiniteInteger(value.updatedSequence, getT()('simulation:runtime.labels.questUpdatedSequence'), 1, Number.MAX_SAFE_INTEGER),
   }
 }
 
 function assertTtrpgNpcSchedule(value: unknown): SimulationTtrpgNpcSchedule {
-  if (!isObject(value)) throw new Error('NPC 日程必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.scheduleMustBeObject'))
   const scheduleId = String(value.scheduleId ?? '').trim()
   const entityKey = String(value.entityKey ?? '').trim()
   const activity = String(value.activity ?? '').trim()
   const recurrence = String(value.recurrence ?? 'once')
-  if (!scheduleId || scheduleId.length > 160) throw new Error('NPC 日程 ID 无效。')
-  if (!entityKey || entityKey.length > 160) throw new Error('NPC 日程缺少 NPC。')
-  if (!activity || activity.length > 2_000) throw new Error('NPC 日程活动无效。')
-  if (!['once', 'daily', 'weekly'].includes(recurrence)) throw new Error(`未知 NPC 日程重复方式: ${recurrence}`)
-  const startClock = assertFiniteInteger(value.startClock, 'NPC 日程开始时间', 0, Number.MAX_SAFE_INTEGER)
-  const endClock = value.endClock == null ? null : assertFiniteInteger(value.endClock, 'NPC 日程结束时间', startClock, Number.MAX_SAFE_INTEGER)
+  if (!scheduleId || scheduleId.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.scheduleIdInvalid'))
+  if (!entityKey || entityKey.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.scheduleMissingNpc'))
+  if (!activity || activity.length > 2_000) throw new Error(getT()('simulation:runtime.ttrpg.scheduleActivityInvalid'))
+  if (!['once', 'daily', 'weekly'].includes(recurrence)) throw new Error(getT()('simulation:runtime.ttrpg.scheduleUnknownRecurrence', { recurrence: recurrence }))
+  const startClock = assertFiniteInteger(value.startClock, getT()('simulation:runtime.labels.npcScheduleStartClock'), 0, Number.MAX_SAFE_INTEGER)
+  const endClock = value.endClock == null ? null : assertFiniteInteger(value.endClock, getT()('simulation:runtime.labels.npcScheduleEndClock'), startClock, Number.MAX_SAFE_INTEGER)
   const locationKey = value.locationKey == null ? null : String(value.locationKey).trim() || null
   return {
     scheduleId,
@@ -540,83 +541,83 @@ function assertTtrpgNpcSchedule(value: unknown): SimulationTtrpgNpcSchedule {
     locationKey,
     activity,
     recurrence: recurrence as SimulationTtrpgNpcSchedule['recurrence'],
-    updatedSequence: assertFiniteInteger(value.updatedSequence, '日程更新时间序号', 1, Number.MAX_SAFE_INTEGER),
+    updatedSequence: assertFiniteInteger(value.updatedSequence, getT()('simulation:runtime.labels.scheduleUpdatedSequence'), 1, Number.MAX_SAFE_INTEGER),
   }
 }
 
 function parseTtrpgCampaignState(value: unknown): SimulationTtrpgCampaignState {
   if (value == null) return emptyTtrpgCampaignState()
-  if (!isObject(value)) throw new Error('长期战役状态必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.campaignMustBeObject'))
   const summary = String(value.summary ?? '').trim()
-  if (summary.length > 20_000) throw new Error('长期战役摘要过长。')
+  if (summary.length > 20_000) throw new Error(getT()('simulation:runtime.ttrpg.campaignSummaryTooLong'))
   if (!Array.isArray(value.quests) || !Array.isArray(value.npcSchedules)) {
-    throw new Error('长期战役任务和 NPC 日程必须是数组。')
+    throw new Error(getT()('simulation:runtime.ttrpg.campaignQuestsAndSchedulesMustBeArrays'))
   }
   const quests = value.quests.map(assertTtrpgQuest)
   const npcSchedules = value.npcSchedules.map(assertTtrpgNpcSchedule)
-  if (new Set(quests.map(quest => quest.questId)).size !== quests.length) throw new Error('战役任务 ID 不能重复。')
-  if (new Set(npcSchedules.map(schedule => schedule.scheduleId)).size !== npcSchedules.length) throw new Error('NPC 日程 ID 不能重复。')
+  if (new Set(quests.map(quest => quest.questId)).size !== quests.length) throw new Error(getT()('simulation:runtime.ttrpg.questIdDuplicate'))
+  if (new Set(npcSchedules.map(schedule => schedule.scheduleId)).size !== npcSchedules.length) throw new Error(getT()('simulation:runtime.ttrpg.scheduleIdDuplicate'))
   return { summary, quests, npcSchedules }
 }
 
 function assertChatIdentity(value: unknown): SimulationChatIdentity {
-  if (!isObject(value)) throw new Error('聊天用户身份必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.chat.identityMustBeObject'))
   const name = String(value.name ?? '').trim()
   const description = String(value.description ?? '').trim()
-  if (!name || name.length > 160) throw new Error('聊天用户身份名称无效。')
-  if (description.length > 2_000) throw new Error('聊天用户身份描述过长。')
+  if (!name || name.length > 160) throw new Error(getT()('simulation:runtime.chat.identityNameInvalid'))
+  if (description.length > 2_000) throw new Error(getT()('simulation:runtime.chat.identityDescriptionTooLong'))
   return { name, description }
 }
 
 function assertChatScene(value: unknown): SimulationChatScene {
-  if (!isObject(value)) throw new Error('聊天场景必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.chat.sceneMustBeObject'))
   const title = String(value.title ?? '').trim()
   const description = String(value.description ?? '').trim()
-  if (!title || title.length > 200) throw new Error('聊天场景标题无效。')
-  if (description.length > 8_000) throw new Error('聊天场景描述过长。')
+  if (!title || title.length > 200) throw new Error(getT()('simulation:runtime.chat.sceneTitleInvalid'))
+  if (description.length > 8_000) throw new Error(getT()('simulation:runtime.chat.sceneDescriptionTooLong'))
   return { title, description }
 }
 
 function assertChatMessage(value: unknown): SimulationChatMessage {
-  if (!isObject(value)) throw new Error('聊天消息必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.chat.messageMustBeObject'))
   const messageId = String(value.messageId ?? '').trim()
-  const eventSequence = assertFiniteInteger(value.eventSequence, '聊天消息事件序号', 1, Number.MAX_SAFE_INTEGER)
+  const eventSequence = assertFiniteInteger(value.eventSequence, getT()('simulation:runtime.labels.chatMessageEventSequence'), 1, Number.MAX_SAFE_INTEGER)
   const role = String(value.role ?? '')
   const speakerKey = value.speakerKey == null ? null : String(value.speakerKey).trim() || null
   const text = String(value.text ?? '').trim()
   const replyToSequence = value.replyToSequence == null
     ? null
-    : assertFiniteInteger(value.replyToSequence, '聊天回复目标序号', 1, Number.MAX_SAFE_INTEGER)
+    : assertFiniteInteger(value.replyToSequence, getT()('simulation:runtime.labels.chatReplyTargetSequence'), 1, Number.MAX_SAFE_INTEGER)
   const supersededBySequence = value.supersededBySequence == null
     ? null
-    : assertFiniteInteger(value.supersededBySequence, '聊天替代序号', 1, Number.MAX_SAFE_INTEGER)
-  if (!messageId || messageId.length > 160) throw new Error('聊天消息 ID 无效。')
-  if (role !== 'user' && role !== 'character') throw new Error('聊天消息角色无效。')
-  if (role === 'user' && speakerKey != null) throw new Error('用户消息不能绑定角色实体。')
-  if (role === 'character' && !speakerKey) throw new Error('角色回复缺少角色实体。')
-  if (!text || text.length > 20_000) throw new Error('聊天消息文本无效。')
-  if (role === 'user' && replyToSequence != null) throw new Error('用户消息不能引用回复目标。')
-  if (role === 'character' && replyToSequence == null) throw new Error('角色回复必须引用用户消息。')
+    : assertFiniteInteger(value.supersededBySequence, getT()('simulation:runtime.labels.chatSupersededSequence'), 1, Number.MAX_SAFE_INTEGER)
+  if (!messageId || messageId.length > 160) throw new Error(getT()('simulation:runtime.chat.messageIdInvalid'))
+  if (role !== 'user' && role !== 'character') throw new Error(getT()('simulation:runtime.chat.messageRoleInvalid'))
+  if (role === 'user' && speakerKey != null) throw new Error(getT()('simulation:runtime.chat.userMessageCannotBindCharacter'))
+  if (role === 'character' && !speakerKey) throw new Error(getT()('simulation:runtime.chat.characterReplyMissingCharacter'))
+  if (!text || text.length > 20_000) throw new Error(getT()('simulation:runtime.chat.messageTextInvalid'))
+  if (role === 'user' && replyToSequence != null) throw new Error(getT()('simulation:runtime.chat.userMessageCannotReplyTo'))
+  if (role === 'character' && replyToSequence == null) throw new Error(getT()('simulation:runtime.chat.characterReplyMustReferenceUser'))
   return { messageId, eventSequence, role: role as SimulationChatMessage['role'], speakerKey, text, replyToSequence, supersededBySequence }
 }
 
 function parseChatState(value: unknown): SimulationChatState | null {
   if (value == null) return null
-  if (!isObject(value)) throw new Error('角色聊天状态必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.chat.stateMustBeObject'))
   const characterKey = String(value.characterKey ?? '').trim()
-  if (!characterKey || characterKey.length > 160) throw new Error('角色聊天缺少有效角色。')
+  if (!characterKey || characterKey.length > 160) throw new Error(getT()('simulation:runtime.chat.missingCharacter'))
   const identity = assertChatIdentity(value.identity)
   const scene = assertChatScene(value.scene)
-  if (!Array.isArray(value.messages)) throw new Error('角色聊天消息必须是数组。')
+  if (!Array.isArray(value.messages)) throw new Error(getT()('simulation:runtime.chat.messagesMustBeArray'))
   const messages = value.messages.map(assertChatMessage)
   if (new Set(messages.map(message => message.messageId)).size !== messages.length) {
-    throw new Error('角色聊天消息 ID 不能重复。')
+    throw new Error(getT()('simulation:runtime.chat.messageIdDuplicate'))
   }
   return { characterKey, identity, scene, messages }
 }
 
 function requireChatState(state: SimulationRuntimeState): SimulationChatState {
-  if (!state.chat) throw new Error('角色聊天尚未配置。')
+  if (!state.chat) throw new Error(getT()('simulation:runtime.chat.notConfigured'))
   return state.chat
 }
 
@@ -626,68 +627,68 @@ function requireTtrpgState(state: SimulationRuntimeState): SimulationTtrpgState 
 }
 
 export function parseSimulationTtrpgTurnCandidate(value: unknown): SimulationTtrpgTurnCandidate {
-  if (!isObject(value)) throw new Error('跑团回合候选必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateMustBeObject'))
   const allowed = new Set(['baseSequence', 'actorKey', 'action', 'narrative', 'check', 'outcomes', 'nextActorKey'])
   const unknown = Object.keys(value).filter(key => !allowed.has(key))
-  if (unknown.length) throw new Error(`跑团回合候选包含未知字段: ${unknown.join(', ')}`)
-  const baseSequence = assertFiniteInteger(value.baseSequence, '跑团候选基线序号', 0, Number.MAX_SAFE_INTEGER)
+  if (unknown.length) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateUnknownFields', { fields: unknown.join(', ') }))
+  const baseSequence = assertFiniteInteger(value.baseSequence, getT()('simulation:runtime.labels.ttrpgTurnCandidateBaselineSequence'), 0, Number.MAX_SAFE_INTEGER)
   const actorKey = String(value.actorKey ?? '').trim()
   const action = String(value.action ?? '').trim()
   const narrative = String(value.narrative ?? '').trim()
   const nextActorKey = value.nextActorKey == null ? null : String(value.nextActorKey).trim() || null
-  if (!actorKey || actorKey.length > 160) throw new Error('跑团候选缺少行动者。')
-  if (!action || action.length > 4_000) throw new Error('跑团候选动作无效。')
-  if (!narrative || narrative.length > 20_000) throw new Error('跑团候选叙事无效。')
+  if (!actorKey || actorKey.length > 160) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateMissingActor'))
+  if (!action || action.length > 4_000) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateActionInvalid'))
+  if (!narrative || narrative.length > 20_000) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateNarrativeInvalid'))
   let check: SimulationTtrpgCheckRequest | null = null
   if (value.check != null) {
-    if (!isObject(value.check)) throw new Error('跑团检定候选必须是对象或 null。')
+    if (!isObject(value.check)) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateCheckMustBeObjectOrNull'))
     const skill = String(value.check.skill ?? '').trim()
     const expression = String(value.check.expression ?? '').trim()
     const reason = String(value.check.reason ?? '').trim()
-    const dc = assertFiniteInteger(value.check.dc, '检定难度', 0, 1_000)
+    const dc = assertFiniteInteger(value.check.dc, getT()('simulation:runtime.labels.checkDc'), 0, 1_000)
     parseDiceExpression(expression)
-    if (!skill || skill.length > 120) throw new Error('跑团候选技能无效。')
-    if (!reason || reason.length > 1_000) throw new Error('跑团候选检定理由无效。')
+    if (!skill || skill.length > 120) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateSkillInvalid'))
+    if (!reason || reason.length > 1_000) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateCheckReasonInvalid'))
     check = { skill, expression, dc, reason }
   }
   let outcomes: SimulationTtrpgTurnCandidate['outcomes'] = null
   if (value.outcomes != null) {
-    if (!isObject(value.outcomes)) throw new Error('跑团检定分支叙事必须是对象或 null。')
+    if (!isObject(value.outcomes)) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateOutcomesMustBeObjectOrNull'))
     const success = String(value.outcomes.success ?? '').trim()
     const failure = String(value.outcomes.failure ?? '').trim()
     if (!success || !failure || success.length > 20_000 || failure.length > 20_000) {
-      throw new Error('跑团检定成功/失败叙事无效。')
+      throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateOutcomesInvalid'))
     }
     outcomes = { success, failure }
   }
-  if ((check == null) !== (outcomes == null)) throw new Error('跑团检定与成功/失败叙事必须同时提供。')
+  if ((check == null) !== (outcomes == null)) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateCheckOutcomesPairing'))
   return { baseSequence, actorKey, action, narrative, check, outcomes, nextActorKey }
 }
 
 export function parseSimulationState(value: string | SimulationRuntimeState): SimulationRuntimeState {
-  const parsed = typeof value === 'string' ? parseJsonObject(value, '运行时状态') : value
-  if (parsed.version !== 1) throw new Error('不支持的运行时状态版本。')
-  const clock = assertFiniteInteger(parsed.clock, '运行时时钟', 0, Number.MAX_SAFE_INTEGER)
+  const parsed = typeof value === 'string' ? parseJsonObject(value, getT()('simulation:runtime.labels.runtimeStateLabel')) : value
+  if (parsed.version !== 1) throw new Error(getT()('simulation:runtime.state.unsupportedVersion'))
+  const clock = assertFiniteInteger(parsed.clock, getT()('simulation:runtime.labels.runtimeClock'), 0, Number.MAX_SAFE_INTEGER)
   const lastSequence = assertFiniteInteger(
     parsed.lastSequence,
     'lastSequence',
     0,
     Number.MAX_SAFE_INTEGER,
   )
-  if (!isObject(parsed.entities)) throw new Error('运行时 entities 必须是对象。')
+  if (!isObject(parsed.entities)) throw new Error(getT()('simulation:runtime.state.entitiesMustBeObject'))
   const entities: Record<string, RuntimeEntityState> = {}
   for (const [key, raw] of Object.entries(parsed.entities)) {
     const entity = assertRuntimeEntity(raw)
-    if (entity.entityKey !== key) throw new Error(`实体索引与 entityKey 不一致: ${key}`)
+    if (entity.entityKey !== key) throw new Error(getT()('simulation:runtime.entity.indexMismatch', { key: key }))
     entities[key] = entity
   }
-  if (!Array.isArray(parsed.memories)) throw new Error('运行时 memories 必须是数组。')
-  if (!Array.isArray(parsed.narratives)) throw new Error('运行时 narratives 必须是数组。')
+  if (!Array.isArray(parsed.memories)) throw new Error(getT()('simulation:runtime.state.memoriesMustBeArray'))
+  if (!Array.isArray(parsed.narratives)) throw new Error(getT()('simulation:runtime.state.narrativesMustBeArray'))
   const memories = parsed.memories.map(assertRuntimeMemory)
   const narratives = parsed.narratives.map(raw => {
-    if (!isObject(raw)) throw new Error('运行时叙事记录必须是对象。')
+    if (!isObject(raw)) throw new Error(getT()('simulation:runtime.narrative.mustBeObject'))
     const text = String(raw.text ?? '').trim()
-    if (!text || text.length > 20_000) throw new Error('运行时叙事文本无效。')
+    if (!text || text.length > 20_000) throw new Error(getT()('simulation:runtime.narrative.textInvalid'))
     return {
       eventSequence: assertFiniteInteger(
         raw.eventSequence,
@@ -716,9 +717,9 @@ function cloneState(state: SimulationRuntimeState): SimulationRuntimeState {
 
 function parseEventPayload(event: SimulationEvent): JsonObject {
   if (!SIMULATION_EVENT_TYPES.includes(event.type)) {
-    throw new Error(`未知模拟事件类型: ${event.type}`)
+    throw new Error(getT()('simulation:runtime.event.unknownType', { type: event.type }))
   }
-  return parseJsonObject(event.payloadJson, `模拟事件 ${event.type}`)
+  return parseJsonObject(event.payloadJson, getT()('simulation:runtime.labels.simulationEventPayloadLabel', { type: event.type }))
 }
 
 export function applySimulationEvent(
@@ -727,13 +728,13 @@ export function applySimulationEvent(
 ): SimulationRuntimeState {
   const state = cloneState(parseSimulationState(current))
   if (event.sequence !== state.lastSequence + 1) {
-    throw new Error(`模拟事件序号不连续: 期望 ${state.lastSequence + 1}，收到 ${event.sequence}`)
+    throw new Error(getT()('simulation:runtime.event.sequenceGap', { expected: state.lastSequence + 1, received: event.sequence }))
   }
   const payload = parseEventPayload(event)
   switch (event.type) {
     case 'time.advanced': {
-      const amount = assertFiniteInteger(payload.amount, '时间推进量', 1, 1_000_000_000)
-      if (state.clock + amount > Number.MAX_SAFE_INTEGER) throw new Error('运行时时钟溢出。')
+      const amount = assertFiniteInteger(payload.amount, getT()('simulation:runtime.labels.timeAdvanceAmount'), 1, 1_000_000_000)
+      if (state.clock + amount > Number.MAX_SAFE_INTEGER) throw new Error(getT()('simulation:runtime.state.clockOverflow'))
       state.clock += amount
       break
     }
@@ -745,11 +746,11 @@ export function applySimulationEvent(
     case 'entity.patched': {
       const entityKey = String(payload.entityKey ?? '').trim()
       const existing = state.entities[entityKey]
-      if (!existing) throw new Error(`运行时实体不存在: ${entityKey}`)
-      if (!isObject(payload.patch)) throw new Error('实体补丁必须是对象。')
+      if (!existing) throw new Error(getT()('simulation:runtime.entity.notFound', { entityKey: entityKey }))
+      if (!isObject(payload.patch)) throw new Error(getT()('simulation:runtime.entity.patchMustBeObject'))
       const allowed = new Set(['name', 'locationKey', 'lifecycleStatus', 'attributes'])
       for (const key of Object.keys(payload.patch)) {
-        if (!allowed.has(key)) throw new Error(`实体补丁禁止字段: ${key}`)
+        if (!allowed.has(key)) throw new Error(getT()('simulation:runtime.entity.patchForbiddenField', { key: key }))
       }
       state.entities[entityKey] = assertRuntimeEntity({
         ...existing,
@@ -765,14 +766,14 @@ export function applySimulationEvent(
     }
     case 'entity.removed': {
       const entityKey = String(payload.entityKey ?? '').trim()
-      if (!state.entities[entityKey]) throw new Error(`运行时实体不存在: ${entityKey}`)
+      if (!state.entities[entityKey]) throw new Error(getT()('simulation:runtime.entity.notFound', { entityKey: entityKey }))
       delete state.entities[entityKey]
       break
     }
     case 'memory.recorded': {
       const memory = assertRuntimeMemory(payload.memory)
       if (memory.sourceEventSequence !== event.sequence) {
-        throw new Error('运行时记忆必须引用自身事件序号。')
+        throw new Error(getT()('simulation:runtime.memory.selfReferenceRequired'))
       }
       const index = state.memories.findIndex(row => row.id === memory.id)
       if (index >= 0) state.memories[index] = memory
@@ -785,7 +786,7 @@ export function applySimulationEvent(
     }
     case 'narrative.recorded': {
       const text = String(payload.text ?? '').trim()
-      if (!text || text.length > 20_000) throw new Error('运行时叙事文本无效。')
+      if (!text || text.length > 20_000) throw new Error(getT()('simulation:runtime.narrative.textInvalid'))
       state.narratives.push({ eventSequence: event.sequence, text })
       break
     }
@@ -793,13 +794,13 @@ export function applySimulationEvent(
       const characterKey = String(payload.characterKey ?? '').trim()
       const character = state.entities[characterKey]
       if (!character || !['character', 'npc'].includes(character.kind)) {
-        throw new Error(`角色聊天角色不存在或类型不支持: ${characterKey}`)
+        throw new Error(getT()('simulation:runtime.chat.characterNotFoundOrUnsupported', { characterKey: characterKey }))
       }
       const identity = assertChatIdentity(payload.identity)
       const scene = assertChatScene(payload.scene)
       const current = state.chat
       if (current && current.messages.length > 0 && current.characterKey !== characterKey) {
-        throw new Error('已有聊天消息后不能更换角色；请从当前会话建立分支。')
+        throw new Error(getT()('simulation:runtime.chat.cannotSwitchCharacterWithMessages'))
       }
       state.chat = {
         characterKey,
@@ -813,7 +814,7 @@ export function applySimulationEvent(
       const chat = requireChatState(state)
       if (chat.messages.some(message => message.role === 'user' && message.supersededBySequence == null && message.replyToSequence == null)) {
         const last = chat.messages[chat.messages.length - 1]
-        if (last?.role === 'user') throw new Error('上一条用户消息尚未得到角色回复。')
+        if (last?.role === 'user') throw new Error(getT()('simulation:runtime.chat.previousUserMessageUnreplied'))
       }
       const message = assertChatMessage({
         ...payload,
@@ -828,9 +829,9 @@ export function applySimulationEvent(
     }
     case 'chat.reply.recorded': {
       const chat = requireChatState(state)
-      const replyToSequence = assertFiniteInteger(payload.replyToSequence, '聊天回复目标序号', 1, event.sequence - 1)
+      const replyToSequence = assertFiniteInteger(payload.replyToSequence, getT()('simulation:runtime.labels.chatReplyTargetSequence'), 1, event.sequence - 1)
       const target = chat.messages.find(message => message.eventSequence === replyToSequence)
-      if (!target || target.role !== 'user') throw new Error('聊天回复必须引用当前会话中的用户消息。')
+      if (!target || target.role !== 'user') throw new Error(getT()('simulation:runtime.chat.replyMustReferenceCurrentUserMessage'))
       const activeReply = chat.messages.find(message => (
         message.role === 'character'
         && message.replyToSequence === replyToSequence
@@ -838,14 +839,14 @@ export function applySimulationEvent(
       ))
       const supersedesSequence = payload.supersedesSequence == null
         ? null
-        : assertFiniteInteger(payload.supersedesSequence, '聊天替代回复序号', 1, event.sequence - 1)
+        : assertFiniteInteger(payload.supersedesSequence, getT()('simulation:runtime.labels.chatReplySupersedesSequence'), 1, event.sequence - 1)
       if (activeReply && supersedesSequence !== activeReply.eventSequence) {
-        throw new Error('该用户消息已有当前回复；重生成必须明确替代原回复。')
+        throw new Error(getT()('simulation:runtime.chat.existingReplyMustSupersede'))
       }
       if (supersedesSequence != null) {
         const superseded = chat.messages.find(message => message.eventSequence === supersedesSequence)
         if (!superseded || superseded.role !== 'character' || superseded.replyToSequence !== replyToSequence || superseded.supersededBySequence != null) {
-          throw new Error('待替代的聊天回复无效或已经被替代。')
+          throw new Error(getT()('simulation:runtime.chat.supersededReplyInvalidOrAlreadySuperseded'))
         }
         superseded.supersededBySequence = event.sequence
       }
@@ -866,19 +867,19 @@ export function applySimulationEvent(
       const scene = assertTtrpgScene(payload.scene)
       const rawTurnOrder = payload.turnOrder
       if (!Array.isArray(rawTurnOrder) || rawTurnOrder.length === 0) {
-        throw new Error('跑团场景至少需要一个行动者。')
+        throw new Error(getT()('simulation:runtime.ttrpg.sceneRequiresAtLeastOneActor'))
       }
       const turnOrder = rawTurnOrder.map(raw => String(raw).trim())
-      if (new Set(turnOrder).size !== turnOrder.length) throw new Error('跑团回合顺序不能重复。')
+      if (new Set(turnOrder).size !== turnOrder.length) throw new Error(getT()('simulation:runtime.ttrpg.turnOrderCannotDuplicate'))
       for (const actorKey of turnOrder) {
         const actor = state.entities[actorKey]
         if (!actor || !['player', 'character', 'npc'].includes(actor.kind)) {
-          throw new Error(`跑团行动者不存在或类型不支持: ${actorKey}`)
+          throw new Error(getT()('simulation:runtime.ttrpg.actorNotFoundOrUnsupported', { actorKey: actorKey }))
         }
       }
       if (scene.locationKey != null) {
         const location = state.entities[scene.locationKey]
-        if (!location || location.kind !== 'location') throw new Error(`跑团场景地点不存在: ${scene.locationKey}`)
+        if (!location || location.kind !== 'location') throw new Error(getT()('simulation:runtime.ttrpg.sceneLocationNotFound', { locationKey: scene.locationKey }))
       }
       ttrpg.scene = scene
       ttrpg.round = 1
@@ -892,55 +893,55 @@ export function applySimulationEvent(
     }
     case 'ttrpg.action.recorded': {
       const ttrpg = requireTtrpgState(state)
-      if (!ttrpg.scene || ttrpg.scene.status !== 'active') throw new Error('跑团尚未开始活动场景。')
+      if (!ttrpg.scene || ttrpg.scene.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveScene'))
       const action = assertTtrpgAction({
         eventSequence: event.sequence,
         actorKey: payload.actorKey,
         text: payload.text,
       })
-      if (!ttrpg.turnOrder.includes(action.actorKey)) throw new Error('跑团动作行动者不在当前回合顺序中。')
-      if (ttrpg.activeActorKey !== action.actorKey) throw new Error('当前还没轮到该行动者。')
+      if (!ttrpg.turnOrder.includes(action.actorKey)) throw new Error(getT()('simulation:runtime.ttrpg.actionActorNotInTurnOrder'))
+      if (ttrpg.activeActorKey !== action.actorKey) throw new Error(getT()('simulation:runtime.ttrpg.notActorsTurn'))
       ttrpg.actions.push(action)
       break
     }
     case 'ttrpg.check.resolved': {
       const ttrpg = requireTtrpgState(state)
-      if (!isObject(payload.check)) throw new Error('跑团检定缺少 check 对象。')
+      if (!isObject(payload.check)) throw new Error(getT()('simulation:runtime.ttrpg.checkMissingObject'))
       const check = assertTtrpgCheck({ ...payload.check, eventSequence: event.sequence })
-      if (!ttrpg.turnOrder.includes(check.actorKey)) throw new Error('跑团检定行动者不在当前回合顺序中。')
+      if (!ttrpg.turnOrder.includes(check.actorKey)) throw new Error(getT()('simulation:runtime.ttrpg.checkActorNotInTurnOrder'))
       ttrpg.checks.push(check)
       break
     }
     case 'ttrpg.gm.response.recorded': {
       const ttrpg = requireTtrpgState(state)
-      if (!ttrpg.scene || ttrpg.scene.status !== 'active') throw new Error('跑团尚未开始活动场景。')
-      const actionSequence = assertFiniteInteger(payload.actionSequence, '跑团动作序号', 1, event.sequence - 1)
+      if (!ttrpg.scene || ttrpg.scene.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveScene'))
+      const actionSequence = assertFiniteInteger(payload.actionSequence, getT()('simulation:runtime.labels.ttrpgActionSequence'), 1, event.sequence - 1)
       if (!ttrpg.actions.some(action => action.eventSequence === actionSequence)) {
-        throw new Error('AI GM 叙事没有对应的玩家动作。')
+        throw new Error(getT()('simulation:runtime.ttrpg.gmNarrativeNoMatchingAction'))
       }
       if (payload.checkSequence != null) {
-        const checkSequence = assertFiniteInteger(payload.checkSequence, '跑团检定序号', 1, event.sequence - 1)
+        const checkSequence = assertFiniteInteger(payload.checkSequence, getT()('simulation:runtime.labels.ttrpgCheckSequence'), 1, event.sequence - 1)
         if (!ttrpg.checks.some(check => check.eventSequence === checkSequence)) {
-          throw new Error('AI GM 叙事引用了不存在的检定。')
+          throw new Error(getT()('simulation:runtime.ttrpg.gmNarrativeReferencesMissingCheck'))
         }
       }
       const text = String(payload.text ?? '').trim()
-      if (!text || text.length > 20_000) throw new Error('AI GM 叙事文本无效。')
+      if (!text || text.length > 20_000) throw new Error(getT()('simulation:runtime.ttrpg.gmNarrativeTextInvalid'))
       state.narratives.push({ eventSequence: event.sequence, text })
       break
     }
     case 'ttrpg.turn.advanced': {
       const ttrpg = requireTtrpgState(state)
-      if (!ttrpg.scene || ttrpg.scene.status !== 'active') throw new Error('跑团尚未开始活动场景。')
+      if (!ttrpg.scene || ttrpg.scene.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveScene'))
       const nextActorKey = String(payload.nextActorKey ?? '').trim()
-      const round = assertFiniteInteger(payload.round, '跑团回合', 1, Number.MAX_SAFE_INTEGER)
-      if (!ttrpg.turnOrder.includes(nextActorKey)) throw new Error('下一个行动者不在当前回合顺序中。')
+      const round = assertFiniteInteger(payload.round, getT()('simulation:runtime.labels.ttrpgRound'), 1, Number.MAX_SAFE_INTEGER)
+      if (!ttrpg.turnOrder.includes(nextActorKey)) throw new Error(getT()('simulation:runtime.ttrpg.nextActorNotInTurnOrder'))
       const currentIndex = ttrpg.turnOrder.indexOf(ttrpg.activeActorKey ?? '')
       const nextIndex = (currentIndex + 1) % ttrpg.turnOrder.length
       const expectedActorKey = ttrpg.turnOrder[nextIndex]
       const expectedRound = ttrpg.round + (nextIndex === 0 ? 1 : 0)
       if (nextActorKey !== expectedActorKey || round !== expectedRound) {
-        throw new Error('跑团回合推进与确定性顺序不一致。')
+        throw new Error(getT()('simulation:runtime.ttrpg.turnAdvanceMismatch'))
       }
       ttrpg.activeActorKey = nextActorKey
       ttrpg.round = round
@@ -948,41 +949,41 @@ export function applySimulationEvent(
     }
     case 'ttrpg.encounter.started': {
       const ttrpg = requireTtrpgState(state)
-      if (!ttrpg.scene || ttrpg.scene.status !== 'active') throw new Error('请先开始一个跑团场景。')
-      if (ttrpg.encounter?.status === 'active') throw new Error('当前已有进行中的战斗遭遇。')
+      if (!ttrpg.scene || ttrpg.scene.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireSceneFirst'))
+      if (ttrpg.encounter?.status === 'active') throw new Error(getT()('simulation:runtime.ttrpg.encounterAlreadyActive'))
       const encounter = assertTtrpgEncounter(payload.encounter)
       for (const actorKey of encounter.turnOrder) {
         const actor = state.entities[actorKey]
         if (!actor || !['player', 'character', 'npc'].includes(actor.kind)) {
-          throw new Error(`遭遇参与者不存在或类型不支持: ${actorKey}`)
+          throw new Error(getT()('simulation:runtime.ttrpg.encounterParticipantNotFoundOrUnsupported', { actorKey: actorKey }))
         }
       }
-      if (encounter.activeActorKey !== encounter.turnOrder[0]) throw new Error('遭遇必须从先攻最高者开始。')
+      if (encounter.activeActorKey !== encounter.turnOrder[0]) throw new Error(getT()('simulation:runtime.ttrpg.encounterMustStartWithHighestInitiative'))
       ttrpg.encounter = encounter
       break
     }
     case 'ttrpg.encounter.resolved': {
       const ttrpg = requireTtrpgState(state)
       const encounter = ttrpg.encounter
-      if (!encounter || encounter.status !== 'active') throw new Error('当前没有进行中的战斗遭遇。')
+      if (!encounter || encounter.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.noActiveEncounter'))
       const reason = String(payload.reason ?? '').trim()
-      if (reason.length > 2_000) throw new Error('遭遇结束理由过长。')
+      if (reason.length > 2_000) throw new Error(getT()('simulation:runtime.ttrpg.encounterEndReasonTooLong'))
       encounter.status = 'resolved'
       encounter.activeActorKey = null
-      if (reason) state.narratives.push({ eventSequence: event.sequence, text: `遭遇结束：${reason}` })
+      if (reason) state.narratives.push({ eventSequence: event.sequence, text: getT()('simulation:runtime.ttrpg.encounterEndNarrative', { reason: reason }) })
       break
     }
     case 'ttrpg.combat.attack.resolved': {
       const ttrpg = requireTtrpgState(state)
       const encounter = ttrpg.encounter
-      if (!encounter || encounter.status !== 'active') throw new Error('请先开始一个战斗遭遇。')
+      if (!encounter || encounter.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveEncounter'))
       const attack = assertTtrpgAttackResult(payload.attack)
       if (attack.actorKey !== event.actorKey || attack.targetKey !== event.targetKey) {
-        throw new Error('攻击事件的行动者或目标与事件元数据不一致。')
+        throw new Error(getT()('simulation:runtime.ttrpg.attackActorOrTargetMismatch'))
       }
-      if (encounter.activeActorKey !== attack.actorKey) throw new Error('当前还没轮到该战斗行动者。')
+      if (encounter.activeActorKey !== attack.actorKey) throw new Error(getT()('simulation:runtime.ttrpg.notCombatActorsTurn'))
       if (!encounter.combatants[attack.actorKey] || !encounter.combatants[attack.targetKey]) {
-        throw new Error('攻击行动者或目标不在当前遭遇中。')
+        throw new Error(getT()('simulation:runtime.ttrpg.combatantNotInEncounter'))
       }
       ttrpg.attacks.push(attack)
       break
@@ -990,29 +991,29 @@ export function applySimulationEvent(
     case 'ttrpg.combat.resource.changed': {
       const ttrpg = requireTtrpgState(state)
       const encounter = ttrpg.encounter
-      if (!encounter || encounter.status !== 'active') throw new Error('请先开始一个战斗遭遇。')
+      if (!encounter || encounter.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveEncounter'))
       const entityKey = String(payload.entityKey ?? '').trim()
       const resourceKey = String(payload.resourceKey ?? '').trim()
-      const delta = assertFiniteInteger(payload.delta, '资源变化量', -1_000_000_000, 1_000_000_000)
+      const delta = assertFiniteInteger(payload.delta, getT()('simulation:runtime.labels.resourceDelta'), -1_000_000_000, 1_000_000_000)
       const combatant = encounter.combatants[entityKey]
-      if (!combatant || !resourceKey || resourceKey.length > 80) throw new Error('资源变化目标无效。')
-      if (event.targetKey !== entityKey) throw new Error('资源变化事件目标与实体不一致。')
+      if (!combatant || !resourceKey || resourceKey.length > 80) throw new Error(getT()('simulation:runtime.ttrpg.resourceChangeTargetInvalid'))
+      if (event.targetKey !== entityKey) throw new Error(getT()('simulation:runtime.ttrpg.resourceChangeEventTargetMismatch'))
       const resource = combatant.resources[resourceKey]
-      if (!resource) throw new Error(`战斗参与者没有资源: ${resourceKey}`)
+      if (!resource) throw new Error(getT()('simulation:runtime.ttrpg.combatantMissingResource', { resourceKey: resourceKey }))
       const expectedCurrent = Math.max(0, Math.min(resource.maximum, resource.current + delta))
-      const current = assertFiniteInteger(payload.current, '资源当前值', 0, resource.maximum)
-      if (current !== expectedCurrent) throw new Error('资源变化结果与当前资源不一致。')
+      const current = assertFiniteInteger(payload.current, getT()('simulation:runtime.labels.resourceCurrent'), 0, resource.maximum)
+      if (current !== expectedCurrent) throw new Error(getT()('simulation:runtime.ttrpg.resourceChangeResultMismatch'))
       combatant.resources[resourceKey] = { ...resource, current }
       break
     }
     case 'ttrpg.combat.condition.applied': {
       const ttrpg = requireTtrpgState(state)
       const encounter = ttrpg.encounter
-      if (!encounter || encounter.status !== 'active') throw new Error('请先开始一个战斗遭遇。')
+      if (!encounter || encounter.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveEncounter'))
       const entityKey = String(payload.entityKey ?? '').trim()
       const combatant = encounter.combatants[entityKey]
-      if (!combatant) throw new Error('状态效果目标不在当前遭遇中。')
-      if (event.targetKey !== entityKey) throw new Error('状态效果事件目标与实体不一致。')
+      if (!combatant) throw new Error(getT()('simulation:runtime.ttrpg.conditionTargetNotInEncounter'))
+      if (event.targetKey !== entityKey) throw new Error(getT()('simulation:runtime.ttrpg.conditionEventTargetMismatch'))
       const condition = assertTtrpgCondition(payload.condition)
       const existing = combatant.conditions.find(item => item.conditionId === condition.conditionId)
       if (existing) {
@@ -1027,27 +1028,27 @@ export function applySimulationEvent(
     case 'ttrpg.combat.condition.removed': {
       const ttrpg = requireTtrpgState(state)
       const encounter = ttrpg.encounter
-      if (!encounter || encounter.status !== 'active') throw new Error('请先开始一个战斗遭遇。')
+      if (!encounter || encounter.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveEncounter'))
       const entityKey = String(payload.entityKey ?? '').trim()
       const conditionId = String(payload.conditionId ?? '').trim()
       const combatant = encounter.combatants[entityKey]
-      if (!combatant || !conditionId) throw new Error('状态效果移除目标无效。')
-      if (event.targetKey !== entityKey) throw new Error('状态效果事件目标与实体不一致。')
+      if (!combatant || !conditionId) throw new Error(getT()('simulation:runtime.ttrpg.conditionRemoveTargetInvalid'))
+      if (event.targetKey !== entityKey) throw new Error(getT()('simulation:runtime.ttrpg.conditionEventTargetMismatch'))
       combatant.conditions = combatant.conditions.filter(condition => condition.conditionId !== conditionId)
       break
     }
     case 'ttrpg.combat.turn.advanced': {
       const ttrpg = requireTtrpgState(state)
       const encounter = ttrpg.encounter
-      if (!encounter || encounter.status !== 'active') throw new Error('请先开始一个战斗遭遇。')
+      if (!encounter || encounter.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveEncounter'))
       const nextActorKey = String(payload.nextActorKey ?? '').trim()
-      const round = assertFiniteInteger(payload.round, '战斗回合', 1, Number.MAX_SAFE_INTEGER)
-      if (!encounter.turnOrder.includes(nextActorKey)) throw new Error('下一个战斗行动者不在遭遇中。')
+      const round = assertFiniteInteger(payload.round, getT()('simulation:runtime.labels.combatRound'), 1, Number.MAX_SAFE_INTEGER)
+      if (!encounter.turnOrder.includes(nextActorKey)) throw new Error(getT()('simulation:runtime.ttrpg.nextCombatActorNotInEncounter'))
       const currentIndex = encounter.turnOrder.indexOf(encounter.activeActorKey ?? '')
       const nextIndex = (currentIndex + 1) % encounter.turnOrder.length
       const expectedActorKey = encounter.turnOrder[nextIndex]
       const expectedRound = encounter.round + (nextIndex === 0 ? 1 : 0)
-      if (nextActorKey !== expectedActorKey || round !== expectedRound) throw new Error('战斗回合推进与先攻顺序不一致。')
+      if (nextActorKey !== expectedActorKey || round !== expectedRound) throw new Error(getT()('simulation:runtime.ttrpg.combatTurnAdvanceMismatch'))
       const leaving = encounter.activeActorKey ? encounter.combatants[encounter.activeActorKey] : null
       if (leaving) {
         leaving.conditions = leaving.conditions
@@ -1060,10 +1061,10 @@ export function applySimulationEvent(
     }
     case 'ttrpg.campaign.summary.updated': {
       const ttrpg = requireTtrpgState(state)
-      const baseSequence = assertFiniteInteger(payload.baseSequence, '战役摘要基线序号', 0, event.sequence - 1)
-      if (baseSequence !== event.sequence - 1) throw new Error('战役摘要基线与事件序号不一致。')
+      const baseSequence = assertFiniteInteger(payload.baseSequence, getT()('simulation:runtime.labels.campaignSummaryBaselineSequence'), 0, event.sequence - 1)
+      if (baseSequence !== event.sequence - 1) throw new Error(getT()('simulation:runtime.ttrpg.campaignSummaryBaseMismatch'))
       const summary = String(payload.summary ?? '').trim()
-      if (summary.length > 20_000) throw new Error('长期战役摘要过长。')
+      if (summary.length > 20_000) throw new Error(getT()('simulation:runtime.ttrpg.campaignSummaryTooLong'))
       ttrpg.campaign = ttrpg.campaign ?? emptyTtrpgCampaignState()
       ttrpg.campaign.summary = summary
       break
@@ -1071,7 +1072,7 @@ export function applySimulationEvent(
     case 'ttrpg.campaign.quest.upserted': {
       const ttrpg = requireTtrpgState(state)
       const quest = assertTtrpgQuest(payload.quest)
-      if (quest.updatedSequence !== event.sequence) throw new Error('战役任务更新时间序号不一致。')
+      if (quest.updatedSequence !== event.sequence) throw new Error(getT()('simulation:runtime.ttrpg.questUpdatedSequenceMismatch'))
       ttrpg.campaign = ttrpg.campaign ?? emptyTtrpgCampaignState()
       const index = ttrpg.campaign.quests.findIndex(item => item.questId === quest.questId)
       if (index >= 0) ttrpg.campaign.quests[index] = quest
@@ -1081,12 +1082,12 @@ export function applySimulationEvent(
     case 'ttrpg.campaign.schedule.upserted': {
       const ttrpg = requireTtrpgState(state)
       const schedule = assertTtrpgNpcSchedule(payload.schedule)
-      if (schedule.updatedSequence !== event.sequence) throw new Error('NPC 日程更新时间序号不一致。')
+      if (schedule.updatedSequence !== event.sequence) throw new Error(getT()('simulation:runtime.ttrpg.scheduleUpdatedSequenceMismatch'))
       const npc = state.entities[schedule.entityKey]
-      if (!npc || !isNpcRuntimeEntity(npc)) throw new Error('NPC 日程目标不是当前运行时 NPC。')
+      if (!npc || !isNpcRuntimeEntity(npc)) throw new Error(getT()('simulation:runtime.ttrpg.scheduleTargetNotNpc'))
       if (schedule.locationKey != null) {
         const location = state.entities[schedule.locationKey]
-        if (!location || location.kind !== 'location') throw new Error('NPC 日程地点不是当前运行时地点。')
+        if (!location || location.kind !== 'location') throw new Error(getT()('simulation:runtime.ttrpg.scheduleLocationNotRuntimeLocation'))
       }
       ttrpg.campaign = ttrpg.campaign ?? emptyTtrpgCampaignState()
       const index = ttrpg.campaign.npcSchedules.findIndex(item => item.scheduleId === schedule.scheduleId)
@@ -1097,7 +1098,7 @@ export function applySimulationEvent(
     case 'npc.evolution.proposed': {
       const candidate = parseSimulationNpcEvolutionCandidate(payload.candidate)
       if (candidate.baseSequence !== state.lastSequence) {
-        throw new Error('NPC 演进候选基线与当前事件序号不一致。')
+        throw new Error(getT()('simulation:runtime.npc.baseMismatch'))
       }
       prepareNpcEvolution(state, candidate)
       break
@@ -1105,16 +1106,16 @@ export function applySimulationEvent(
     case 'npc.evolution.accepted': {
       const proposalSequence = assertFiniteInteger(
         payload.proposalSequence,
-        'NPC 演进提案序号',
+        getT()('simulation:runtime.labels.npcEvolutionProposalSequence'),
         1,
         event.sequence - 1,
       )
       if (state.lastSequence !== proposalSequence) {
-        throw new Error('NPC 演进候选已过期，请重新生成。')
+        throw new Error(getT()('simulation:runtime.npc.candidateExpired'))
       }
       const candidate = parseSimulationNpcEvolutionCandidate(payload.candidate)
       if (candidate.baseSequence !== proposalSequence - 1) {
-        throw new Error('NPC 演进候选与提案序号不一致。')
+        throw new Error(getT()('simulation:runtime.npc.candidateProposalMismatch'))
       }
       applyNpcEvolution(state, candidate, event.sequence)
       break
@@ -1122,12 +1123,12 @@ export function applySimulationEvent(
     case 'npc.evolution.rejected': {
       assertFiniteInteger(
         payload.proposalSequence,
-        'NPC 演进提案序号',
+        getT()('simulation:runtime.labels.npcEvolutionProposalSequence'),
         1,
         event.sequence - 1,
       )
       const reason = String(payload.reason ?? '').trim()
-      if (reason.length > 1_000) throw new Error('NPC 演进拒绝原因过长。')
+      if (reason.length > 1_000) throw new Error(getT()('simulation:runtime.npc.rejectReasonTooLong'))
       break
     }
   }
@@ -1152,11 +1153,11 @@ async function assertSessionScope(input: {
   projectId: number
   worldGroupId?: number | null
 }): Promise<void> {
-  if (!await db.projects.get(input.projectId)) throw new Error('模拟会话所属项目不存在。')
+  if (!await db.projects.get(input.projectId)) throw new Error(getT()('simulation:runtime.session.projectNotFound'))
   if (input.worldGroupId != null) {
     const world = await db.worldGroups.get(input.worldGroupId)
     if (!world || world.projectId !== input.projectId) {
-      throw new Error('模拟会话所属世界不存在或不属于当前项目。')
+      throw new Error(getT()('simulation:runtime.session.worldNotFoundOrMismatch'))
     }
   }
 }
@@ -1169,13 +1170,13 @@ export async function createSimulationSession(
   input: CreateSimulationSessionInput,
 ): Promise<SimulationSession> {
   await assertSessionScope(input)
-  if (!SIMULATION_SESSION_KINDS.includes(input.kind)) throw new Error('未知模拟会话类型。')
+  if (!SIMULATION_SESSION_KINDS.includes(input.kind)) throw new Error(getT()('simulation:runtime.session.unknownKind'))
   const title = input.title.trim()
-  if (!title || title.length > 200) throw new Error('模拟会话标题无效。')
+  if (!title || title.length > 200) throw new Error(getT()('simulation:runtime.session.titleInvalid'))
   const initialState = parseSimulationState(input.initialState ?? EMPTY_SIMULATION_STATE)
-  if (initialState.lastSequence !== 0) throw new Error('模拟会话初始状态 lastSequence 必须为 0。')
+  if (initialState.lastSequence !== 0) throw new Error(getT()('simulation:runtime.session.initialLastSequenceNotZero'))
   const canonSnapshot = input.canonSnapshot ?? { version: 1, sources: [] }
-  if (!isObject(canonSnapshot)) throw new Error('Canon 冻结快照必须是对象。')
+  if (!isObject(canonSnapshot)) throw new Error(getT()('simulation:runtime.session.canonSnapshotMustBeObject'))
   const now = Date.now()
   const session: SimulationSession = {
     projectId: input.projectId,
@@ -1206,7 +1207,7 @@ async function readSessionEvents(
       event.projectId !== session.projectId
       || (event.worldGroupId ?? null) !== (session.worldGroupId ?? null)
     ) {
-      throw new Error(`模拟事件 ${event.id ?? '?'} 作用域与会话不一致。`)
+      throw new Error(getT()('simulation:runtime.event.scopeMismatch', { id: event.id ?? '?' }))
     }
   }
   return events.filter(event => event.sequence <= throughSequence)
@@ -1217,7 +1218,7 @@ export async function readSimulationState(
   throughSequence = Number.MAX_SAFE_INTEGER,
 ): Promise<SimulationRuntimeState> {
   const session = await db.simulationSessions.get(sessionId)
-  if (!session) throw new Error('模拟会话不存在。')
+  if (!session) throw new Error(getT()('simulation:runtime.session.notFound'))
   const events = await readSessionEvents(session, throughSequence)
   return replaySimulationEvents(parseSimulationState(session.initialStateJson), events, throughSequence)
 }
@@ -1237,8 +1238,8 @@ async function appendBuiltEvent(
     db.simulationEvents,
     async () => {
       const session = await db.simulationSessions.get(sessionId)
-      if (!session) throw new Error('模拟会话不存在。')
-      if (session.status !== 'active') throw new Error('只有 active 会话可以追加事件。')
+      if (!session) throw new Error(getT()('simulation:runtime.session.notFound'))
+      if (session.status !== 'active') throw new Error(getT()('simulation:runtime.session.onlyActiveCanAppend'))
       const events = await readSessionEvents(session)
       const state = replaySimulationEvents(parseSimulationState(session.initialStateJson), events)
       const sequence = state.lastSequence + 1
@@ -1267,7 +1268,7 @@ export async function appendSimulationEvent(input: {
   payload: unknown
 }): Promise<SimulationEvent> {
   if (input.type === 'random.resolved') {
-    throw new Error('随机判定只能通过 resolveSimulationDice() 生成。')
+    throw new Error(getT()('simulation:runtime.event.randomOnlyViaResolver'))
   }
   if (
     input.type === 'npc.evolution.proposed'
@@ -1292,7 +1293,7 @@ export async function appendSimulationEvent(input: {
     || input.type === 'chat.message.recorded'
     || input.type === 'chat.reply.recorded'
   ) {
-    throw new Error('受治理的互动事件只能通过对应的专用 API 生成。')
+    throw new Error(getT()('simulation:runtime.event.governedOnlyViaApi'))
   }
   return appendBuiltEvent(input.sessionId, ({ sequence }) => {
     let payload = input.payload
@@ -1329,13 +1330,13 @@ export async function configureChatSession(input: {
   const identity = assertChatIdentity(input.identity)
   const scene = assertChatScene(input.scene)
   return appendBuiltEvent(input.sessionId, ({ session, state }) => {
-    if (session.kind !== 'chatgame') throw new Error('角色聊天配置只能写入角色聊天会话。')
+    if (session.kind !== 'chatgame') throw new Error(getT()('simulation:runtime.chat.onlyChatgameSessionCanConfigure'))
     if (input.baseSequence != null && input.baseSequence !== state.lastSequence) {
-      throw new Error('聊天场景配置生成期间会话已变化，请刷新后重试。')
+      throw new Error(getT()('simulation:runtime.chat.sessionChangedDuringSceneConfig'))
     }
     const character = state.entities[characterKey]
     if (!character || !['character', 'npc'].includes(character.kind)) {
-      throw new Error('角色聊天必须绑定当前会话中的角色或 NPC。')
+      throw new Error(getT()('simulation:runtime.chat.mustBindCharacterOrNpc'))
     }
     return {
       type: 'chat.session.configured',
@@ -1351,13 +1352,13 @@ export async function appendChatMessage(input: {
   text: string
 }): Promise<SimulationEvent> {
   const text = input.text.trim()
-  if (!text || text.length > 12_000) throw new Error('用户聊天消息无效。')
+  if (!text || text.length > 12_000) throw new Error(getT()('simulation:runtime.chat.userMessageInvalid'))
   return appendBuiltEvent(input.sessionId, ({ session, state, sequence }) => {
-    if (session.kind !== 'chatgame') throw new Error('聊天消息只能写入角色聊天会话。')
+    if (session.kind !== 'chatgame') throw new Error(getT()('simulation:runtime.chat.onlyChatgameSessionCanSendMessage'))
     const chat = requireChatState(state)
     const last = chat.messages[chat.messages.length - 1]
     if (last?.role === 'user' && last.supersededBySequence == null) {
-      throw new Error('上一条用户消息尚未得到角色回复。')
+      throw new Error(getT()('simulation:runtime.chat.previousUserMessageUnreplied'))
     }
     return {
       type: 'chat.message.recorded',
@@ -1374,13 +1375,13 @@ export async function appendChatReply(input: {
   supersedesSequence?: number | null
 }): Promise<SimulationEvent> {
   const text = input.text.trim()
-  if (!text || text.length > 20_000) throw new Error('角色回复无效。')
+  if (!text || text.length > 20_000) throw new Error(getT()('simulation:runtime.chat.characterReplyInvalid'))
   return appendBuiltEvent(input.sessionId, ({ session, state, sequence }) => {
-    if (session.kind !== 'chatgame') throw new Error('角色回复只能写入角色聊天会话。')
+    if (session.kind !== 'chatgame') throw new Error(getT()('simulation:runtime.chat.onlyChatgameSessionCanReply'))
     const chat = requireChatState(state)
-    if (input.baseSequence !== state.lastSequence) throw new Error('角色回复生成期间会话已变化，请重新生成。')
+    if (input.baseSequence !== state.lastSequence) throw new Error(getT()('simulation:runtime.chat.sessionChangedDuringReplyGeneration'))
     const target = chat.messages.find(message => message.eventSequence === input.replyToSequence)
-    if (!target || target.role !== 'user') throw new Error('角色回复目标已不存在，请重新发送。')
+    if (!target || target.role !== 'user') throw new Error(getT()('simulation:runtime.chat.replyTargetGone'))
     const activeReply = chat.messages.find(message => (
       message.role === 'character'
       && message.replyToSequence === input.replyToSequence
@@ -1388,9 +1389,9 @@ export async function appendChatReply(input: {
     ))
     const supersedesSequence = input.supersedesSequence ?? null
     if (activeReply && supersedesSequence !== activeReply.eventSequence) {
-      throw new Error('该消息已有当前回复；重生成必须替代原回复。')
+      throw new Error(getT()('simulation:runtime.chat.existingReplyMustBeSuperseded'))
     }
-    if (!activeReply && supersedesSequence != null) throw new Error('没有可替代的角色回复。')
+    if (!activeReply && supersedesSequence != null) throw new Error(getT()('simulation:runtime.chat.noReplyToSupersede'))
     return {
       type: 'chat.reply.recorded',
       actorKey: chat.characterKey,
@@ -1437,10 +1438,10 @@ export async function appendNpcEvolutionProposal(input: {
   const candidate = parseSimulationNpcEvolutionCandidate(input.candidate)
   return appendBuiltEvent(input.sessionId, ({ session, state }) => {
     if (session.kind !== 'npc-evolution') {
-      throw new Error('NPC 演进候选只能写入 NPC 演进会话。')
+      throw new Error(getT()('simulation:runtime.npc.onlyNpcEvolutionSession'))
     }
     if (candidate.baseSequence !== state.lastSequence) {
-      throw new Error('NPC 演进生成期间会话已变化，请重新生成。')
+      throw new Error(getT()('simulation:runtime.npc.sessionChangedDuringGeneration'))
     }
     prepareNpcEvolution(state, candidate)
     return {
@@ -1457,17 +1458,17 @@ export async function acceptNpcEvolutionProposal(input: {
   proposalSequence: number
 }): Promise<SimulationEvent> {
   return appendBuiltEvent(input.sessionId, ({ session, state, events }) => {
-    if (session.kind !== 'npc-evolution') throw new Error('当前不是 NPC 演进会话。')
+    if (session.kind !== 'npc-evolution') throw new Error(getT()('simulation:runtime.npc.notNpcEvolutionSession'))
     const proposal = events.find(event => (
       event.sequence === input.proposalSequence
       && event.type === 'npc.evolution.proposed'
     ))
-    if (!proposal) throw new Error('NPC 演进提案不存在。')
+    if (!proposal) throw new Error(getT()('simulation:runtime.npc.proposalNotFound'))
     if (events.some(event => proposalSequenceFromResolution(event) === input.proposalSequence)) {
-      throw new Error('NPC 演进提案已经处理。')
+      throw new Error(getT()('simulation:runtime.npc.proposalAlreadyHandled'))
     }
     if (state.lastSequence !== input.proposalSequence) {
-      throw new Error('NPC 演进候选已过期，请重新生成。')
+      throw new Error(getT()('simulation:runtime.npc.candidateExpired'))
     }
     const candidate = parseSimulationNpcEvolutionCandidate(parseEventPayload(proposal).candidate)
     return {
@@ -1485,16 +1486,16 @@ export async function rejectNpcEvolutionProposal(input: {
   reason?: string
 }): Promise<SimulationEvent> {
   const reason = input.reason?.trim() ?? ''
-  if (reason.length > 1_000) throw new Error('NPC 演进拒绝原因过长。')
+  if (reason.length > 1_000) throw new Error(getT()('simulation:runtime.npc.rejectReasonTooLong'))
   return appendBuiltEvent(input.sessionId, ({ session, events }) => {
-    if (session.kind !== 'npc-evolution') throw new Error('当前不是 NPC 演进会话。')
+    if (session.kind !== 'npc-evolution') throw new Error(getT()('simulation:runtime.npc.notNpcEvolutionSession'))
     const proposal = events.find(event => (
       event.sequence === input.proposalSequence
       && event.type === 'npc.evolution.proposed'
     ))
-    if (!proposal) throw new Error('NPC 演进提案不存在。')
+    if (!proposal) throw new Error(getT()('simulation:runtime.npc.proposalNotFound'))
     if (events.some(event => proposalSequenceFromResolution(event) === input.proposalSequence)) {
-      throw new Error('NPC 演进提案已经处理。')
+      throw new Error(getT()('simulation:runtime.npc.proposalAlreadyHandled'))
     }
     return {
       type: 'npc.evolution.rejected',
@@ -1530,27 +1531,27 @@ function parseDiceExpression(expression: string): {
   modifier: number
 } {
   const match = expression.trim().toLowerCase().match(/^(\d{1,3})d(\d{1,4})(?:([+-])(\d{1,7}))?$/)
-  if (!match) throw new Error('骰式必须是 NdM±K，例如 1d20+3。')
-  const count = assertFiniteInteger(Number(match[1]), '骰子数量', 1, 100)
-  const sides = assertFiniteInteger(Number(match[2]), '骰子面数', 2, 1_000)
+  if (!match) throw new Error(getT()('simulation:runtime.dice.expressionFormat'))
+  const count = assertFiniteInteger(Number(match[1]), getT()('simulation:runtime.labels.diceCount'), 1, 100)
+  const sides = assertFiniteInteger(Number(match[2]), getT()('simulation:runtime.labels.diceSides'), 2, 1_000)
   const rawModifier = match[4] ? Number(match[4]) : 0
   const modifier = match[3] === '-' ? -rawModifier : rawModifier
-  if (Math.abs(modifier) > 1_000_000) throw new Error('骰式修正值过大。')
+  if (Math.abs(modifier) > 1_000_000) throw new Error(getT()('simulation:runtime.dice.modifierTooLarge'))
   const normalized = `${count}d${sides}${modifier > 0 ? `+${modifier}` : modifier < 0 ? modifier : ''}`
   return { normalized, count, sides, modifier }
 }
 
 function assertDiceResolution(value: unknown): DiceResolution {
-  if (!isObject(value)) throw new Error('随机判定结果必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.dice.resolutionMustBeObject'))
   const parsed = parseDiceExpression(String(value.expression ?? ''))
   if (!Array.isArray(value.dice) || value.dice.length !== parsed.count) {
-    throw new Error('随机判定骰子数量与骰式不一致。')
+    throw new Error(getT()('simulation:runtime.dice.resolutionDiceCountMismatch'))
   }
-  const dice = value.dice.map(die => assertFiniteInteger(die, '骰子点数', 1, parsed.sides))
+  const dice = value.dice.map(die => assertFiniteInteger(die, getT()('simulation:runtime.labels.diceValue'), 1, parsed.sides))
   const modifier = Number(value.modifier)
   const total = Number(value.total)
   if (modifier !== parsed.modifier || total !== dice.reduce((sum, die) => sum + die, modifier)) {
-    throw new Error('随机判定合计与骰式不一致。')
+    throw new Error(getT()('simulation:runtime.dice.resolutionTotalMismatch'))
   }
   return {
     expression: parsed.normalized,
@@ -1591,7 +1592,7 @@ export async function resolveSimulationDice(input: {
 }): Promise<SimulationEvent> {
   const parsed = parseDiceExpression(input.expression)
   const nonce = input.nonce?.trim() ?? ''
-  if (nonce.length > 200) throw new Error('随机判定 nonce 过长。')
+  if (nonce.length > 200) throw new Error(getT()('simulation:runtime.dice.nonceTooLong'))
   return appendBuiltEvent(input.sessionId, ({ session, sequence }) => {
     const resolution = buildDiceResolution({ seed: session.seed, sequence, expression: parsed, nonce })
     return {
@@ -1606,12 +1607,12 @@ export async function resolveSimulationDice(input: {
 function assertTtrpgActor(state: SimulationRuntimeState, actorKey: string): void {
   const actor = state.entities[actorKey]
   if (!actor || !['player', 'character', 'npc'].includes(actor.kind)) {
-    throw new Error(`跑团行动者不存在或类型不支持: ${actorKey}`)
+    throw new Error(getT()('simulation:runtime.ttrpg.actorNotFoundOrUnsupported', { actorKey: actorKey }))
   }
   const ttrpg = state.ttrpg
-  if (!ttrpg?.scene || ttrpg.scene.status !== 'active') throw new Error('请先开始一个跑团场景。')
-  if (!ttrpg.turnOrder.includes(actorKey)) throw new Error('行动者不在当前回合顺序中。')
-  if (ttrpg.activeActorKey !== actorKey) throw new Error('当前还没轮到该行动者。')
+  if (!ttrpg?.scene || ttrpg.scene.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireSceneFirst'))
+  if (!ttrpg.turnOrder.includes(actorKey)) throw new Error(getT()('simulation:runtime.ttrpg.actorNotInTurnOrder'))
+  if (ttrpg.activeActorKey !== actorKey) throw new Error(getT()('simulation:runtime.ttrpg.notActorsTurn'))
 }
 
 export async function openTtrpgScene(input: {
@@ -1624,9 +1625,9 @@ export async function openTtrpgScene(input: {
   const title = input.title.trim()
   const description = input.description.trim()
   const turnOrder = [...new Set(input.turnOrder.map(key => key.trim()).filter(Boolean))]
-  if (!title || title.length > 200) throw new Error('跑团场景标题无效。')
-  if (description.length > 8_000) throw new Error('跑团场景描述过长。')
-  if (turnOrder.length === 0) throw new Error('跑团场景至少需要一个行动者。')
+  if (!title || title.length > 200) throw new Error(getT()('simulation:runtime.ttrpg.sceneTitleInvalid'))
+  if (description.length > 8_000) throw new Error(getT()('simulation:runtime.ttrpg.sceneDescriptionTooLong'))
+  if (turnOrder.length === 0) throw new Error(getT()('simulation:runtime.ttrpg.sceneRequiresAtLeastOneActor'))
   const scene: SimulationTtrpgScene = {
     sceneId: globalThis.crypto?.randomUUID?.() ?? `scene-${Date.now()}-${Math.random()}`,
     title,
@@ -1635,16 +1636,16 @@ export async function openTtrpgScene(input: {
     status: 'active',
   }
   return appendBuiltEvent(input.sessionId, ({ session, state }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以开始场景。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanStartScene'))
     for (const actorKey of turnOrder) {
       const actor = state.entities[actorKey]
       if (!actor || !['player', 'character', 'npc'].includes(actor.kind)) {
-        throw new Error(`跑团行动者不存在或类型不支持: ${actorKey}`)
+        throw new Error(getT()('simulation:runtime.ttrpg.actorNotFoundOrUnsupported', { actorKey: actorKey }))
       }
     }
     if (scene.locationKey != null) {
       const location = state.entities[scene.locationKey]
-      if (!location || location.kind !== 'location') throw new Error(`跑团场景地点不存在: ${scene.locationKey}`)
+      if (!location || location.kind !== 'location') throw new Error(getT()('simulation:runtime.ttrpg.sceneLocationNotFound', { locationKey: scene.locationKey }))
     }
     return {
       type: 'ttrpg.scene.opened',
@@ -1666,12 +1667,12 @@ export async function resolveTtrpgCheck(input: {
   const actorKey = input.actorKey.trim()
   const skill = input.skill.trim()
   const parsed = parseDiceExpression(input.expression)
-  const dc = assertFiniteInteger(input.dc, '检定难度', 0, 1_000)
+  const dc = assertFiniteInteger(input.dc, getT()('simulation:runtime.labels.checkDc'), 0, 1_000)
   const nonce = input.nonce?.trim() || `check:${skill}`
-  if (!skill || skill.length > 120) throw new Error('检定技能无效。')
-  if (nonce.length > 200) throw new Error('检定 nonce 过长。')
+  if (!skill || skill.length > 120) throw new Error(getT()('simulation:runtime.dice.checkSkillInvalid'))
+  if (nonce.length > 200) throw new Error(getT()('simulation:runtime.dice.checkNonceTooLong'))
   return appendBuiltEvent(input.sessionId, ({ session, state, sequence }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以进行技能检定。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanRollCheck'))
     assertTtrpgActor(state, actorKey)
     const resolution = buildDiceResolution({ seed: session.seed, sequence, expression: parsed, nonce })
     return {
@@ -1695,21 +1696,21 @@ export async function resolveTtrpgCheck(input: {
 }
 
 export function parseSimulationTtrpgEncounterCandidate(value: unknown): SimulationTtrpgEncounterCandidate {
-  if (!isObject(value)) throw new Error('跑团遭遇候选必须是对象。')
+  if (!isObject(value)) throw new Error(getT()('simulation:runtime.ttrpg.encounterCandidateMustBeObject'))
   const allowed = new Set(['baseSequence', 'title', 'description', 'participantKeys'])
   const unknown = Object.keys(value).filter(key => !allowed.has(key))
-  if (unknown.length) throw new Error(`跑团遭遇候选包含未知字段: ${unknown.join(', ')}`)
-  const baseSequence = assertFiniteInteger(value.baseSequence, '遭遇候选基线序号', 0, Number.MAX_SAFE_INTEGER)
+  if (unknown.length) throw new Error(getT()('simulation:runtime.ttrpg.encounterCandidateUnknownFields', { fields: unknown.join(', ') }))
+  const baseSequence = assertFiniteInteger(value.baseSequence, getT()('simulation:runtime.labels.encounterCandidateBaselineSequence'), 0, Number.MAX_SAFE_INTEGER)
   const title = String(value.title ?? '').trim()
   const description = String(value.description ?? '').trim()
-  if (!title || title.length > 200) throw new Error('遭遇候选标题无效。')
-  if (!description || description.length > 8_000) throw new Error('遭遇候选描述无效。')
-  if (!Array.isArray(value.participantKeys)) throw new Error('遭遇候选必须提供参与者列表。')
+  if (!title || title.length > 200) throw new Error(getT()('simulation:runtime.ttrpg.encounterCandidateTitleInvalid'))
+  if (!description || description.length > 8_000) throw new Error(getT()('simulation:runtime.ttrpg.encounterCandidateDescriptionInvalid'))
+  if (!Array.isArray(value.participantKeys)) throw new Error(getT()('simulation:runtime.ttrpg.encounterCandidateRequiresParticipants'))
   const participantKeys = value.participantKeys.map(raw => String(raw).trim())
   if (participantKeys.length < 2 || participantKeys.length > 40 || participantKeys.some(key => !key || key.length > 160)) {
-    throw new Error('遭遇候选参与者必须为 2..40 个有效实体。')
+    throw new Error(getT()('simulation:runtime.ttrpg.encounterCandidateParticipantsRange'))
   }
-  if (new Set(participantKeys).size !== participantKeys.length) throw new Error('遭遇候选参与者不能重复。')
+  if (new Set(participantKeys).size !== participantKeys.length) throw new Error(getT()('simulation:runtime.ttrpg.encounterCandidateParticipantsDuplicate'))
   return { baseSequence, title, description, participantKeys }
 }
 
@@ -1746,15 +1747,15 @@ export async function startTtrpgEncounter(input: {
 }): Promise<SimulationEvent> {
   const candidate = parseSimulationTtrpgEncounterCandidate(input.candidate)
   return appendBuiltEvent(input.sessionId, ({ session, state, sequence }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以开始遭遇。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanStartEncounter'))
     const ttrpg = state.ttrpg
-    if (!ttrpg?.scene || ttrpg.scene.status !== 'active') throw new Error('请先开始一个跑团场景。')
-    if (candidate.baseSequence !== state.lastSequence) throw new Error('遭遇候选已过期，请重新生成。')
-    if (ttrpg.encounter?.status === 'active') throw new Error('当前已有进行中的战斗遭遇。')
+    if (!ttrpg?.scene || ttrpg.scene.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireSceneFirst'))
+    if (candidate.baseSequence !== state.lastSequence) throw new Error(getT()('simulation:runtime.ttrpg.encounterCandidateExpired'))
+    if (ttrpg.encounter?.status === 'active') throw new Error(getT()('simulation:runtime.ttrpg.encounterAlreadyActive'))
     const combatants: Record<string, SimulationTtrpgCombatant> = {}
     for (const entityKey of candidate.participantKeys) {
       const entity = state.entities[entityKey]
-      if (!entity || !['player', 'character', 'npc'].includes(entity.kind)) throw new Error(`遭遇参与者不存在或类型不支持: ${entityKey}`)
+      if (!entity || !['player', 'character', 'npc'].includes(entity.kind)) throw new Error(getT()('simulation:runtime.ttrpg.encounterParticipantNotFoundOrUnsupported', { actorKey: entityKey }))
       const initiative = numericAttribute(entity, ['initiative'], deterministicDie(`${session.seed}\u0000${sequence}\u0000initiative:${entityKey}`, 20), 0, 1_000)
       combatants[entityKey] = combatantFromEntity(entity, initiative)
     }
@@ -1785,10 +1786,10 @@ export async function resolveTtrpgEncounter(input: {
   reason?: string
 }): Promise<SimulationEvent> {
   const reason = input.reason?.trim() ?? ''
-  if (reason.length > 2_000) throw new Error('遭遇结束理由过长。')
+  if (reason.length > 2_000) throw new Error(getT()('simulation:runtime.ttrpg.encounterEndReasonTooLong'))
   return appendBuiltEvent(input.sessionId, ({ session, state }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以结束遭遇。')
-    if (!state.ttrpg?.encounter || state.ttrpg.encounter.status !== 'active') throw new Error('当前没有进行中的战斗遭遇。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanEndEncounter'))
+    if (!state.ttrpg?.encounter || state.ttrpg.encounter.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.noActiveEncounter'))
     return {
       type: 'ttrpg.encounter.resolved',
       actorKey: null,
@@ -1807,15 +1808,15 @@ export async function changeTtrpgResource(input: {
 }): Promise<SimulationEvent> {
   const entityKey = input.entityKey.trim()
   const resourceKey = input.resourceKey.trim()
-  const delta = assertFiniteInteger(input.delta, '资源变化量', -1_000_000_000, 1_000_000_000)
+  const delta = assertFiniteInteger(input.delta, getT()('simulation:runtime.labels.resourceDelta'), -1_000_000_000, 1_000_000_000)
   const reason = input.reason?.trim() ?? ''
-  if (!entityKey || !resourceKey || resourceKey.length > 80) throw new Error('资源变化目标无效。')
-  if (reason.length > 2_000) throw new Error('资源变化理由过长。')
+  if (!entityKey || !resourceKey || resourceKey.length > 80) throw new Error(getT()('simulation:runtime.ttrpg.resourceChangeTargetInvalid'))
+  if (reason.length > 2_000) throw new Error(getT()('simulation:runtime.ttrpg.resourceChangeReasonTooLong'))
   return appendBuiltEvent(input.sessionId, ({ session, state }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以调整战斗资源。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanAdjustResource'))
     const encounter = state.ttrpg?.encounter
     const resource = encounter?.combatants[entityKey]?.resources[resourceKey]
-    if (!encounter || encounter.status !== 'active' || !resource) throw new Error('资源目标不在当前进行中的遭遇中。')
+    if (!encounter || encounter.status !== 'active' || !resource) throw new Error(getT()('simulation:runtime.ttrpg.resourceTargetNotInActiveEncounter'))
     const current = Math.max(0, Math.min(resource.maximum, resource.current + delta))
     return {
       type: 'ttrpg.combat.resource.changed',
@@ -1834,8 +1835,8 @@ export async function applyTtrpgCondition(input: {
   const entityKey = input.entityKey.trim()
   const condition = assertTtrpgCondition(input.condition)
   return appendBuiltEvent(input.sessionId, ({ session, state }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以施加状态效果。')
-    if (!state.ttrpg?.encounter?.combatants[entityKey]) throw new Error('状态效果目标不在当前遭遇中。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanApplyCondition'))
+    if (!state.ttrpg?.encounter?.combatants[entityKey]) throw new Error(getT()('simulation:runtime.ttrpg.conditionTargetNotInEncounter'))
     return {
       type: 'ttrpg.combat.condition.applied',
       actorKey: entityKey,
@@ -1852,10 +1853,10 @@ export async function removeTtrpgCondition(input: {
 }): Promise<SimulationEvent> {
   const entityKey = input.entityKey.trim()
   const conditionId = input.conditionId.trim()
-  if (!entityKey || !conditionId) throw new Error('状态效果移除目标无效。')
+  if (!entityKey || !conditionId) throw new Error(getT()('simulation:runtime.ttrpg.conditionRemoveTargetInvalid'))
   return appendBuiltEvent(input.sessionId, ({ session, state }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以移除状态效果。')
-    if (!state.ttrpg?.encounter?.combatants[entityKey]) throw new Error('状态效果目标不在当前遭遇中。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanRemoveCondition'))
+    if (!state.ttrpg?.encounter?.combatants[entityKey]) throw new Error(getT()('simulation:runtime.ttrpg.conditionTargetNotInEncounter'))
     return {
       type: 'ttrpg.combat.condition.removed',
       actorKey: entityKey,
@@ -1880,24 +1881,24 @@ export async function resolveTtrpgAttack(input: {
   const damageExpression = input.damageExpression?.trim() ? parseDiceExpression(input.damageExpression) : null
   const resourceKey = input.resourceKey?.trim() || 'hp'
   const reason = input.reason?.trim() ?? ''
-  if (!actorKey || !targetKey || actorKey === targetKey) throw new Error('攻击者与目标必须是不同实体。')
-  if (resourceKey.length > 80) throw new Error('攻击资源键无效。')
-  if (reason.length > 2_000) throw new Error('攻击理由过长。')
+  if (!actorKey || !targetKey || actorKey === targetKey) throw new Error(getT()('simulation:runtime.ttrpg.attackerAndTargetMustDiffer'))
+  if (resourceKey.length > 80) throw new Error(getT()('simulation:runtime.ttrpg.attackResourceKeyInvalid'))
+  if (reason.length > 2_000) throw new Error(getT()('simulation:runtime.ttrpg.attackReasonTooLong'))
   return db.transaction('rw', db.simulationSessions, db.simulationEvents, async () => {
     const session = await db.simulationSessions.get(input.sessionId)
-    if (!session) throw new Error('模拟会话不存在。')
-    if (session.status !== 'active') throw new Error('只有 active 会话可以追加事件。')
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以执行攻击。')
+    if (!session) throw new Error(getT()('simulation:runtime.session.notFound'))
+    if (session.status !== 'active') throw new Error(getT()('simulation:runtime.session.onlyActiveCanAppend'))
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanAttack'))
     const events = await readSessionEvents(session)
     let state = replaySimulationEvents(parseSimulationState(session.initialStateJson), events)
     const encounter = state.ttrpg?.encounter
-    if (!encounter || encounter.status !== 'active') throw new Error('请先开始一个进行中的战斗遭遇。')
-    if (encounter.activeActorKey !== actorKey) throw new Error('当前还没轮到该战斗行动者。')
+    if (!encounter || encounter.status !== 'active') throw new Error(getT()('simulation:runtime.ttrpg.requireActiveEncounterForAttack'))
+    if (encounter.activeActorKey !== actorKey) throw new Error(getT()('simulation:runtime.ttrpg.notCombatActorsTurn'))
     const actor = encounter.combatants[actorKey]
     const target = encounter.combatants[targetKey]
-    if (!actor || !target) throw new Error('攻击行动者或目标不在当前遭遇中。')
+    if (!actor || !target) throw new Error(getT()('simulation:runtime.ttrpg.combatantNotInEncounter'))
     const targetResource = target.resources[resourceKey]
-    if (!targetResource) throw new Error(`目标没有资源: ${resourceKey}`)
+    if (!targetResource) throw new Error(getT()('simulation:runtime.ttrpg.targetMissingResource', { resourceKey: resourceKey }))
     const attackSequence = state.lastSequence + 1
     const attackDice = Array.from({ length: attackExpression.count }, (_, index) => deterministicDie(`${session.seed}\u0000${attackSequence}\u0000${attackExpression.normalized}\u0000attack:${actorKey}:${targetKey}\u0000${index}`, attackExpression.sides))
     const attackTotal = attackDice.reduce((sum, die) => sum + die, attackExpression.modifier)
@@ -1906,7 +1907,7 @@ export async function resolveTtrpgAttack(input: {
       ? Array.from({ length: damageExpression.count }, (_, index) => deterministicDie(`${session.seed}\u0000${attackSequence}\u0000${damageExpression.normalized}\u0000damage:${actorKey}:${targetKey}\u0000${index}`, damageExpression.sides))
       : []
     const damageTotal = hit && damageExpression ? damageDice.reduce((sum, die) => sum + die, damageExpression.modifier) : 0
-    if (damageTotal < 0) throw new Error('伤害骰式不能产生负数伤害。')
+    if (damageTotal < 0) throw new Error(getT()('simulation:runtime.ttrpg.damageExpressionCannotProduceNegative'))
     const resourceDelta = -damageTotal
     const attack: SimulationTtrpgAttackResult = {
       actorKey,
@@ -1973,11 +1974,11 @@ export async function updateTtrpgCampaignSummary(input: {
   baseSequence?: number
 }): Promise<SimulationEvent> {
   const summary = input.summary.trim()
-  if (summary.length > 20_000) throw new Error('长期战役摘要不能超过 20,000 个字符。')
+  if (summary.length > 20_000) throw new Error(getT()('simulation:runtime.ttrpg.campaignSummaryTooLongForUpdate'))
   return appendBuiltEvent(input.sessionId, ({ session, state }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以更新长期战役摘要。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanUpdateCampaignSummary'))
     const baseSequence = input.baseSequence ?? state.lastSequence
-    if (baseSequence !== state.lastSequence) throw new Error('长期战役摘要基线已变化，请刷新后重试。')
+    if (baseSequence !== state.lastSequence) throw new Error(getT()('simulation:runtime.ttrpg.campaignSummaryBaselineChanged'))
     return {
       type: 'ttrpg.campaign.summary.updated',
       actorKey: null,
@@ -1997,7 +1998,7 @@ export async function upsertTtrpgQuest(input: {
   dueClock?: number | null
 }): Promise<SimulationEvent> {
   return appendBuiltEvent(input.sessionId, ({ session, sequence }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以管理战役任务。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanManageQuests'))
     const quest = assertTtrpgQuest({
       questId: input.questId,
       title: input.title,
@@ -2027,14 +2028,14 @@ export async function upsertTtrpgNpcSchedule(input: {
   recurrence?: SimulationTtrpgNpcSchedule['recurrence']
 }): Promise<SimulationEvent> {
   return appendBuiltEvent(input.sessionId, ({ session, state, sequence }) => {
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以管理 NPC 日程。')
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanManageSchedules'))
     const entityKey = input.entityKey.trim()
     const npc = state.entities[entityKey]
-    if (!npc || !isNpcRuntimeEntity(npc)) throw new Error('NPC 日程目标不是当前运行时 NPC。')
+    if (!npc || !isNpcRuntimeEntity(npc)) throw new Error(getT()('simulation:runtime.ttrpg.scheduleTargetNotNpc'))
     const locationKey = input.locationKey?.trim() || null
     if (locationKey != null) {
       const location = state.entities[locationKey]
-      if (!location || location.kind !== 'location') throw new Error('NPC 日程地点不是当前运行时地点。')
+      if (!location || location.kind !== 'location') throw new Error(getT()('simulation:runtime.ttrpg.scheduleLocationNotRuntimeLocation'))
     }
     const schedule = assertTtrpgNpcSchedule({
       scheduleId: input.scheduleId,
@@ -2062,12 +2063,12 @@ export async function appendTtrpgTurn(input: {
   const candidate = parseSimulationTtrpgTurnCandidate(input.candidate)
   return db.transaction('rw', db.simulationSessions, db.simulationEvents, async () => {
     const session = await db.simulationSessions.get(input.sessionId)
-    if (!session) throw new Error('模拟会话不存在。')
-    if (session.status !== 'active') throw new Error('只有 active 会话可以追加事件。')
-    if (session.kind !== 'ttrpg') throw new Error('只有跑团会话可以记录回合。')
+    if (!session) throw new Error(getT()('simulation:runtime.session.notFound'))
+    if (session.status !== 'active') throw new Error(getT()('simulation:runtime.session.onlyActiveCanAppend'))
+    if (session.kind !== 'ttrpg') throw new Error(getT()('simulation:runtime.ttrpg.onlyTtrpgSessionCanRecordTurn'))
     const events = await readSessionEvents(session)
     let state = replaySimulationEvents(parseSimulationState(session.initialStateJson), events)
-    if (candidate.baseSequence !== state.lastSequence) throw new Error('跑团候选已过期，请重新生成。')
+    if (candidate.baseSequence !== state.lastSequence) throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateExpired'))
     assertTtrpgActor(state, candidate.actorKey)
     const ttrpg = state.ttrpg!
     const currentIndex = ttrpg.turnOrder.indexOf(ttrpg.activeActorKey!)
@@ -2075,7 +2076,7 @@ export async function appendTtrpgTurn(input: {
     const expectedNextActorKey = ttrpg.turnOrder[nextIndex]
     const expectedRound = ttrpg.round + (nextIndex === 0 ? 1 : 0)
     if (candidate.nextActorKey != null && candidate.nextActorKey !== expectedNextActorKey) {
-      throw new Error('跑团候选尝试改变确定性回合顺序。')
+      throw new Error(getT()('simulation:runtime.ttrpg.turnCandidateAltersDeterministicOrder'))
     }
     if (candidate.check) parseDiceExpression(candidate.check.expression)
     const appended: SimulationEvent[] = []
@@ -2174,12 +2175,12 @@ export async function createSimulationCheckpoint(input: {
   throughSequence?: number
 }): Promise<SimulationCheckpoint> {
   const session = await db.simulationSessions.get(input.sessionId)
-  if (!session) throw new Error('模拟会话不存在。')
+  if (!session) throw new Error(getT()('simulation:runtime.session.notFound'))
   const events = await readSessionEvents(session)
   const latest = events.reduce((max, event) => Math.max(max, event.sequence), 0)
   const throughSequence = input.throughSequence ?? latest
   if (!Number.isInteger(throughSequence) || throughSequence < 0 || throughSequence > latest) {
-    throw new Error('检查点序号不在会话事件范围内。')
+    throw new Error(getT()('simulation:runtime.checkpoint.sequenceOutOfRange'))
   }
   const state = replaySimulationEvents(
     parseSimulationState(session.initialStateJson),
@@ -2187,8 +2188,8 @@ export async function createSimulationCheckpoint(input: {
     throughSequence,
   )
   const stateJson = JSON.stringify(state)
-  const name = input.name.trim() || `检查点 ${throughSequence}`
-  if (name.length > 200) throw new Error('检查点名称不能超过 200 个字符。')
+  const name = input.name.trim() || getT()('simulation:runtime.checkpoint.defaultName', { throughSequence: throughSequence })
+  if (name.length > 200) throw new Error(getT()('simulation:runtime.checkpoint.nameTooLong'))
   const checkpoint: SimulationCheckpoint = {
     projectId: session.projectId,
     worldGroupId: session.worldGroupId ?? null,
@@ -2225,14 +2226,14 @@ export async function branchSimulationSession(input: {
   seed?: string
 }): Promise<SimulationSession> {
   const parent = await db.simulationSessions.get(input.parentSessionId)
-  if (!parent) throw new Error('父模拟会话不存在。')
+  if (!parent) throw new Error(getT()('simulation:runtime.session.parentNotFound'))
   const events = await readSessionEvents(parent)
   const latest = events.reduce((max, event) => Math.max(max, event.sequence), 0)
   if (
     !Number.isInteger(input.throughSequence)
     || input.throughSequence < 0
     || input.throughSequence > latest
-  ) throw new Error('分支序号不在父会话事件范围内。')
+  ) throw new Error(getT()('simulation:runtime.branch.sequenceOutOfRange'))
   const state = replaySimulationEvents(
     parseSimulationState(parent.initialStateJson),
     events,
@@ -2245,7 +2246,7 @@ export async function branchSimulationSession(input: {
     kind: parent.kind,
     title: input.title,
     seed: input.seed,
-    canonSnapshot: parseJsonObject(parent.canonSnapshotJson, 'Canon 冻结快照'),
+    canonSnapshot: parseJsonObject(parent.canonSnapshotJson, getT()('simulation:runtime.labels.canonFrozenSnapshotLabel')),
     initialState: state,
   })
   await db.simulationSessions.update(child.id!, {

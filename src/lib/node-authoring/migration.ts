@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import type { NodeFlowGraph, NodeFlowInputSlot, NodeFlowNode, NodeValueType } from '../types/node-flow'
 import { AUTHORING_NODE_BY_ID, defaultConfigForTemplate } from './catalog'
 import {
@@ -39,7 +40,7 @@ function migrateLegacyInput(slot: NodeFlowInputSlot): AuthoringPortDefinition {
 
 function migrateLegacyNode(node: NodeFlowNode): AuthoringNodeInstance {
   const template = LEGACY_TEMPLATE_BY_KIND.get(node.kind)
-  if (!template) throw new Error(`FLOW-2 节点类型没有兼容模板：${node.kind}`)
+  if (!template) throw new Error(getT()('node-authoring:migration.flow2NoTemplate', { kind: node.kind }))
   return {
     id: node.id,
     templateId: template.id,
@@ -65,7 +66,7 @@ export function migrateFlow2Graph(graph: NodeFlowGraph): AuthoringNodeGraph {
     nodes,
     edges: graph.edges.map(edge => {
       const source = nodeById.get(edge.sourceNodeId)
-      if (!source?.outputs[0]) throw new Error(`FLOW-2 连线来源缺少输出端口：${edge.sourceNodeId}`)
+      if (!source?.outputs[0]) throw new Error(getT()('node-authoring:migration.flow2MissingOutput', { sourceNodeId: edge.sourceNodeId }))
       return {
         id: edge.id,
         sourceNodeId: edge.sourceNodeId,
@@ -88,22 +89,22 @@ export function migrateFlow2Graph(graph: NodeFlowGraph): AuthoringNodeGraph {
 
 function assertObject(value: unknown, label: string): asserts value is Record<string, unknown> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
-    throw new Error(`${label} 必须是对象。`)
+    throw new Error(getT()('node-authoring:migration.mustBeObject', { label }))
   }
 }
 
 function parseAuthoringPort(value: unknown, label: string): AuthoringPortDefinition {
   assertObject(value, label)
-  if (typeof value.id !== 'string' || typeof value.label !== 'string') throw new Error(`${label} 缺少 ID 或名称。`)
-  if (!isAuthoringSemantic(value.semantic)) throw new Error(`${label} 使用未知语义。`)
-  if (value.cardinality !== 'one' && value.cardinality !== 'many') throw new Error(`${label} 基数无效。`)
-  if (!['canon', 'draft', 'candidate', 'control', 'any'].includes(String(value.state))) throw new Error(`${label} 状态无效。`)
+  if (typeof value.id !== 'string' || typeof value.label !== 'string') throw new Error(getT()('node-authoring:migration.missingIdOrLabel', { label }))
+  if (!isAuthoringSemantic(value.semantic)) throw new Error(getT()('node-authoring:migration.unknownSemantic', { label }))
+  if (value.cardinality !== 'one' && value.cardinality !== 'many') throw new Error(getT()('node-authoring:migration.invalidCardinality', { label }))
+  if (!['canon', 'draft', 'candidate', 'control', 'any'].includes(String(value.state))) throw new Error(getT()('node-authoring:migration.invalidState', { label }))
   return value as unknown as AuthoringPortDefinition
 }
 
 function parseVersion2(value: Record<string, unknown>): AuthoringNodeGraph {
   if (!Array.isArray(value.nodes) || !Array.isArray(value.edges)) {
-    throw new Error('FLOW-3 节点图缺少 nodes 或 edges。')
+    throw new Error(getT()('node-authoring:migration.flow3MissingNodesOrEdges'))
   }
   const viewport = value.viewport && typeof value.viewport === 'object'
     ? value.viewport as Record<string, unknown>
@@ -121,7 +122,7 @@ function parseVersion2(value: Record<string, unknown>): AuthoringNodeGraph {
         || !Array.isArray(raw.inputs)
         || !Array.isArray(raw.outputs)
       ) {
-        throw new Error(`nodes[${index}] 结构无效。`)
+        throw new Error(getT()('node-authoring:migration.nodeStructureInvalid', { index }))
       }
       return {
         ...raw,
@@ -142,7 +143,7 @@ function parseVersion2(value: Record<string, unknown>): AuthoringNodeGraph {
         || typeof raw.targetNodeId !== 'string'
         || typeof raw.targetPortId !== 'string'
       ) {
-        throw new Error(`edges[${index}] 结构无效。`)
+        throw new Error(getT()('node-authoring:migration.edgeStructureInvalid', { index }))
       }
       return raw as unknown as AuthoringNodeGraph['edges'][number]
     }),
@@ -159,16 +160,16 @@ function parseVersion2(value: Record<string, unknown>): AuthoringNodeGraph {
 export function parseAuthoringGraph(value: string | null | undefined): AuthoringGraphParseResult {
   if (!value?.trim()) return { graph: emptyAuthoringGraph(), sourceVersion: 2, migrated: false }
   const parsed = JSON.parse(value) as unknown
-  assertObject(parsed, '节点图')
+  assertObject(parsed, getT()('node-authoring:migration.graphLabel'))
   if (parsed.version === 2) {
     return { graph: parseVersion2(parsed), sourceVersion: 2, migrated: false }
   }
   if (parsed.version === 1) {
     const legacy = parsed as unknown as NodeFlowGraph
     if (!Array.isArray(legacy.nodes) || !Array.isArray(legacy.edges)) {
-      throw new Error('FLOW-2 节点图结构无效。')
+      throw new Error(getT()('node-authoring:migration.flow2StructureInvalid'))
     }
     return { graph: migrateFlow2Graph(legacy), sourceVersion: 1, migrated: true }
   }
-  throw new Error(`不支持的节点图版本：${String(parsed.version)}`)
+  throw new Error(getT()('node-authoring:migration.unsupportedVersion', { version: String(parsed.version) }))
 }

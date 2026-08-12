@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
+import { useDomainT } from '../../i18n'
 import {
   runBatchOutlineGeneration,
   type BatchOutlineProgress,
@@ -34,6 +35,7 @@ export function useOutlineBatchGeneration({
   reloadOutline,
   onError,
 }: Options) {
+  const { t } = useDomainT('outline')
   const [progress, setProgress] = useState<BatchOutlineProgress | null>(null)
   const [running, setRunning] = useState(false)
   const [result, setResult] = useState<Map<number, ParsedChapter[]> | null>(null)
@@ -76,12 +78,12 @@ export function useOutlineBatchGeneration({
       if (!generationResult.cancelled) setResult(generationResult.chaptersByVolume)
     } catch (error) {
       console.error('[BatchOutline] 失败:', error)
-      onError(`批量生成章节失败：${error instanceof Error ? error.message : '未知错误'}。`)
+      onError(t('batch.failed', { error: error instanceof Error ? error.message : t('common:unknownError') }))
     } finally {
       if (abortRef.current === controller) abortRef.current = null
       setRunning(false)
     }
-  }, [volumes, nodes, multiWorldEnabled, hint, assembleContext, onError])
+  }, [volumes, nodes, multiWorldEnabled, hint, assembleContext, onError, t])
 
   const cancel = useCallback(() => {
     abortRef.current?.abort()
@@ -104,13 +106,13 @@ export function useOutlineBatchGeneration({
       }
     } catch (error) {
       console.error('[Outline] 批量写入章节失败:', error)
-      onError(`批量写入章节时出错：${error instanceof Error ? error.message : '未知错误'}。请查看控制台获取详情。`)
+      onError(t('batch.writeError', { error: error instanceof Error ? error.message : t('common:unknownError') }))
       return
     }
     await reloadOutline()
     setResult(null)
     setProgress(null)
-  }, [result, nodes, projectId, reloadOutline, onError])
+  }, [result, nodes, projectId, reloadOutline, onError, t])
 
   const dismiss = useCallback(() => {
     setResult(null)

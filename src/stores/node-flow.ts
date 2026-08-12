@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT } from '../i18n'
 import type { NodeFlow, NodeRunRecord } from '../lib/types'
 import { parseAuthoringGraph } from '../lib/node-authoring/migration'
 import { emptyAuthoringGraph, safeAuthoringGraphJson } from '../lib/node-authoring/contracts'
@@ -35,7 +36,7 @@ export const useNodeFlowStore = create<NodeFlowStore>((set, get) => ({
     const row: NodeFlow = {
       projectId,
       worldGroupId,
-      name: options?.name ?? '未命名节点图',
+      name: options?.name ?? getT()('common:defaults.unnamedNodeFlow'),
       description: options?.description ?? '',
       graphJson: JSON.stringify(options?.graph ?? emptyAuthoringGraph()),
       createdAt: now,

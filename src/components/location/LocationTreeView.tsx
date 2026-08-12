@@ -3,6 +3,7 @@
  */
 import { useMemo, useRef, useEffect, useState } from 'react'
 import { stratify, tree } from 'd3-hierarchy'
+import { useDomainT } from '../../i18n'
 import type { LocationTreeNode } from '../../stores/location'
 import { TAG_EMOJI, type LocationTag } from '../../lib/types/location'
 
@@ -44,6 +45,7 @@ interface Props {
 }
 
 export default function LocationTreeView({ tree: treeData, onSelect }: Props) {
+  const { t } = useDomainT('location')
   const containerRef = useRef<HTMLDivElement>(null)
   const [svgSize, setSvgSize] = useState({ width: 700, height: 400 })
 
@@ -76,7 +78,7 @@ export default function LocationTreeView({ tree: treeData, onSelect }: Props) {
     if (flatNodes.length === 0) return null
 
     const allNodes: FlatNode[] = [
-      { id: -1, parentId: null, name: '世界', tags: [] },
+      { id: -1, parentId: null, name: t('treeView.rootName'), tags: [] },
       ...flatNodes.map(n => ({
         ...n,
         parentId: n.parentId ?? -1,
@@ -98,12 +100,12 @@ export default function LocationTreeView({ tree: treeData, onSelect }: Props) {
     } catch {
       return null
     }
-  }, [flatNodes, svgSize])
+  }, [flatNodes, svgSize, t])
 
   if (flatNodes.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-40 text-text-muted text-sm">
-        暂无地点数据，请添加地点
+        {t('treeView.empty')}
       </div>
     )
   }
@@ -111,7 +113,7 @@ export default function LocationTreeView({ tree: treeData, onSelect }: Props) {
   if (!treeLayout) {
     return (
       <div className="flex flex-col items-center justify-center h-40 text-text-muted text-sm">
-        地点层级结构有误，请检查父级关系
+        {t('treeView.invalidHierarchy')}
       </div>
     )
   }

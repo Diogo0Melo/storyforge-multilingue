@@ -3,7 +3,8 @@ import ForceGraph2D from 'react-force-graph-2d'
 
 type ForceGraphHandle = ComponentRef<typeof ForceGraph2D>
 import { moralAxisColor } from '../../lib/character/character-axes'
-import type { Character, CharacterRelation } from '../../lib/types'
+import type { Character, CharacterRelation, RelationType } from '../../lib/types'
+import { useDomainT } from '../../i18n'
 
 // 关系类型对应颜色
 const RELATION_COLORS: Record<string, string> = {
@@ -17,12 +18,6 @@ const RELATION_COLORS: Record<string, string> = {
   ally:       '#14b8a6',
   subordinate:'#94a3b8',
   other:      '#6b7280',
-}
-
-const RELATION_LABELS: Record<string, string> = {
-  family:'亲属', lover:'恋人', friend:'朋友', rival:'对手',
-  enemy:'敌人', master:'师父', student:'弟子', ally:'盟友',
-  subordinate:'上下级', other:'其他',
 }
 
 interface GraphNode { id: string; name: string; role: string; color: string }
@@ -43,7 +38,44 @@ interface Props {
 }
 
 export default function RelationGraph({ characters, relations, width = 700, height = 480 }: Props) {
+  const { t } = useDomainT('relations')
   const graphRef = useRef<ForceGraphHandle | undefined>(undefined)
+
+  const getLegendLabel = (type: string): string => {
+    // Static key map — RelationType is a closed union, so this covers every valid value.
+    const KEY_BY_TYPE: Record<RelationType, `graphLegend.${RelationType}`> = {
+      family: 'graphLegend.family',
+      lover: 'graphLegend.lover',
+      friend: 'graphLegend.friend',
+      rival: 'graphLegend.rival',
+      enemy: 'graphLegend.enemy',
+      master: 'graphLegend.master',
+      student: 'graphLegend.student',
+      ally: 'graphLegend.ally',
+      subordinate: 'graphLegend.subordinate',
+      other: 'graphLegend.other',
+    }
+    const key = KEY_BY_TYPE[type as RelationType]
+    return key ? t(key) : type
+  }
+
+  const getLinkLabel = (rel: CharacterRelation): string => {
+    if (rel.label) return rel.label
+    const KEY_BY_TYPE: Record<RelationType, `types.${RelationType}`> = {
+      family: 'types.family',
+      lover: 'types.lover',
+      friend: 'types.friend',
+      rival: 'types.rival',
+      enemy: 'types.enemy',
+      master: 'types.master',
+      student: 'types.student',
+      ally: 'types.ally',
+      subordinate: 'types.subordinate',
+      other: 'types.other',
+    }
+    const key = KEY_BY_TYPE[rel.relationType]
+    return key ? t(key) : rel.relationType
+  }
 
   const graphData = useMemo(() => {
     const nodes: GraphNode[] = characters.map(c => ({
@@ -58,12 +90,14 @@ export default function RelationGraph({ characters, relations, width = 700, heig
       target: String(r.toCharacterId),
       type: r.relationType,
       bidirectional: r.isBidirectional,
-      label: r.label ?? RELATION_LABELS[r.relationType] ?? r.relationType,
+      label: getLinkLabel(r),
       color: RELATION_COLORS[r.relationType] ?? '#6b7280',
     }))
 
     return { nodes, links }
-  }, [characters, relations])
+    // getLinkLabel reads t() which is stable across renders for the same language.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [characters, relations, t])
 
   // 初始化时居中
   useEffect(() => {
@@ -122,7 +156,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
   if (characters.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-text-muted">
-        <p className="text-sm">暂无角色数据，请先在「角色」模块添加角色</p>
+        <p className="text-sm">{t('graph.noCharacters')}</p>
       </div>
     )
   }
@@ -130,7 +164,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
   if (relations.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-64 text-text-muted">
-        <p className="text-sm">暂无关系数据，请在下方添加角色关系</p>
+        <p className="text-sm">{t('graph.noRelations')}</p>
       </div>
     )
   }
@@ -160,7 +194,7 @@ export default function RelationGraph({ characters, relations, width = 700, heig
         {Object.entries(RELATION_COLORS).map(([key, color]) => (
           <div key={key} className="flex items-center gap-1 text-xs text-text-muted">
             <span className="w-3 h-0.5 inline-block rounded" style={{ backgroundColor: color }} />
-            {RELATION_LABELS[key]}
+            {getLegendLabel(key)}
           </div>
         ))}
       </div>

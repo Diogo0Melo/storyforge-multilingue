@@ -7,6 +7,7 @@ import { useBackupStore } from '../../stores/backup'
 import type { Project } from '../../lib/types'
 import { useDialog } from '../shared/Dialog'
 import { useToast } from '../shared/Toast'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   project: Project
@@ -17,6 +18,7 @@ export default function VersionHistoryPanel({ project }: Props) {
   const navigate = useNavigate()
   const dialog = useDialog()
   const toast = useToast()
+  const { t } = useDomainT('system')
   const { snapshots, loading, loadSnapshots, createSnapshot, deleteSnapshot, restoreSnapshot } = useBackupStore()
   const [newLabel, setNewLabel] = useState('')
   const [creating, setCreating] = useState(false)
@@ -27,7 +29,11 @@ export default function VersionHistoryPanel({ project }: Props) {
   const handleCreate = async () => {
     setCreating(true)
     try {
-      await createSnapshot(project.id!, newLabel.trim() || `手动快照 · ${formatTime(Date.now())}`, 'manual')
+      await createSnapshot(
+        project.id!,
+        newLabel.trim() || t('versionHistory.defaultManualLabel', { time: formatTime(Date.now()) }),
+        'manual',
+      )
       setNewLabel('')
     } finally {
       setCreating(false)
@@ -36,9 +42,9 @@ export default function VersionHistoryPanel({ project }: Props) {
 
   const handleRestore = async (id: number, label: string) => {
     const ok = await dialog.confirm({
-      title: `从快照「${label}」恢复？`,
-      message: '将创建一个新项目，不会覆盖当前项目。',
-      confirmText: '恢复为新项目',
+      title: t('versionHistory.restoreConfirmTitle', { label }),
+      message: t('versionHistory.restoreConfirmMessage'),
+      confirmText: t('versionHistory.restoreConfirmButton'),
     })
     if (!ok) return
     setRestoring(id)
@@ -46,7 +52,7 @@ export default function VersionHistoryPanel({ project }: Props) {
       const newProjectId = await restoreSnapshot(id)
       navigate(`/workspace/${newProjectId}`)
     } catch (e) {
-      toast.error(`恢复失败：${e instanceof Error ? e.message : String(e)}`)
+      toast.error(t('versionHistory.restoreFailed', { error: e instanceof Error ? e.message : String(e) }))
     } finally {
       setRestoring(null)
     }
@@ -54,9 +60,9 @@ export default function VersionHistoryPanel({ project }: Props) {
 
   const handleDelete = async (id: number, label: string) => {
     const ok = await dialog.confirm({
-      title: `删除快照「${label}」？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('versionHistory.deleteConfirmTitle', { label }),
+      message: t('versionHistory.deleteConfirmMessage'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -70,10 +76,14 @@ export default function VersionHistoryPanel({ project }: Props) {
   return (
     <div className="max-w-4xl p-6 space-y-4">
       <div>
-        <h2 className="text-xl font-bold text-text-primary mb-1">🕘 版本历史</h2>
+        <h2 className="text-xl font-bold text-text-primary mb-1">{t('versionHistory.title')}</h2>
         <p className="text-sm text-text-muted">
-          基于 IndexedDB 快照。共 {snapshots.length} 个版本（自动 {autoCount} · 手动 {manualCount}）·
-          总占用 {formatSize(totalSize)}
+          {t('versionHistory.subtitle', {
+            total: snapshots.length,
+            autoCount,
+            manualCount,
+            size: formatSize(totalSize),
+          })}
         </p>
       </div>
 
@@ -83,7 +93,7 @@ export default function VersionHistoryPanel({ project }: Props) {
           <input
             value={newLabel}
             onChange={e => setNewLabel(e.target.value)}
-            placeholder="快照名称（可选 — 留空使用时间戳）"
+            placeholder={t('versionHistory.snapshotNamePlaceholder')}
             className="flex-1 px-3 py-2 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
           />
           <button
@@ -91,21 +101,21 @@ export default function VersionHistoryPanel({ project }: Props) {
             disabled={creating}
             className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white text-sm rounded hover:bg-accent-hover disabled:opacity-50"
           >
-            <Plus className="w-4 h-4" /> {creating ? '创建中...' : '创建快照'}
+            <Plus className="w-4 h-4" /> {creating ? t('versionHistory.creatingButton') : t('versionHistory.createButton')}
           </button>
         </div>
         <p className="mt-2 text-xs text-text-muted">
-          手动快照永久保留；自动快照每 5 分钟一次，最多保留 20 条（自动循环替换最旧的）。
+          {t('versionHistory.retentionPolicy')}
         </p>
       </div>
 
       {/* 时间线 */}
       {loading ? (
-        <div className="text-center py-12 text-text-muted text-sm">加载中...</div>
+        <div className="text-center py-12 text-text-muted text-sm">{t('versionHistory.loading')}</div>
       ) : snapshots.length === 0 ? (
         <div className="text-center py-12 text-text-muted text-sm">
           <History className="w-10 h-10 mx-auto mb-2 opacity-50" />
-          <p>还没有任何快照。点击上方「创建快照」开始备份。</p>
+          <p>{t('versionHistory.emptyState')}</p>
         </div>
       ) : (
         <div className="bg-bg-surface border border-border rounded-xl divide-y divide-border">
@@ -130,7 +140,7 @@ export default function VersionHistoryPanel({ project }: Props) {
                         ? 'bg-accent/15 text-accent'
                         : 'bg-info/15 text-info'
                     }`}>
-                      {s.type === 'manual' ? '手动' : '自动'}
+                      {s.type === 'manual' ? t('versionHistory.typeManual') : t('versionHistory.typeAuto')}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 mt-0.5 text-xs text-text-muted">
@@ -148,15 +158,15 @@ export default function VersionHistoryPanel({ project }: Props) {
                   <button
                     onClick={() => handleRestore(s.id!, s.label)}
                     disabled={restoring === s.id}
-                    title="恢复到新项目（不会覆盖当前）"
+                    title={t('versionHistory.restoreTitle')}
                     className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded disabled:opacity-50"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    {restoring === s.id ? '恢复中...' : '恢复'}
+                    {restoring === s.id ? t('versionHistory.restoringButton') : t('versionHistory.restoreButton')}
                   </button>
                   <button
                     onClick={() => handleDelete(s.id!, s.label)}
-                    title="删除快照"
+                    title={t('versionHistory.deleteSnapshotTitle')}
                     className="p-1 text-text-muted hover:text-error"
                   >
                     <Trash2 className="w-3.5 h-3.5" />

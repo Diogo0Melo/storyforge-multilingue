@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { getShortListFormatter } from '../i18n'
 import { db } from '../lib/db/schema'
 import {
   parseCultivationStages,
@@ -36,7 +37,7 @@ export const useCultivationStore = create<CultivationStore>((set, get) => ({
 
   addSystem: async (system) => {
     const validation = validateCultivationStages(parseCultivationStages(system.stages))
-    if (!validation.valid) throw new Error(validation.errors.join('；'))
+    if (!validation.valid) throw new Error(getShortListFormatter().format(validation.errors))
     const timestamp = now()
     const row = { ...system, createdAt: timestamp, updatedAt: timestamp }
     const id = await db.cultivationSystems.add(row) as number
@@ -51,7 +52,7 @@ export const useCultivationStore = create<CultivationStore>((set, get) => ({
     if (patch.stages !== undefined) {
       const nextStages = parseCultivationStages(patch.stages)
       const validation = validateCultivationStages(nextStages)
-      if (!validation.valid) throw new Error(validation.errors.join('；'))
+      if (!validation.valid) throw new Error(getShortListFormatter().format(validation.errors))
       const nextIds = new Set(nextStages.map(stage => stage.id))
       removedStageIds = new Set(parseCultivationStages(current.stages)
         .map(stage => stage.id)

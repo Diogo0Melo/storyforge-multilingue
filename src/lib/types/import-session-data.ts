@@ -89,7 +89,7 @@ export const FICTION_DIMENSIONS = [
 
 export type FictionDimension = (typeof FICTION_DIMENSIONS)[number]
 
-/** 13 个小说维度中文标签 */
+/** 13 个小说维度中文标签 — LEAVE for AI context-builder.ts prompt usage */
 export const FICTION_DIMENSION_LABELS: Record<FictionDimension, string> = {
   narrativeStyle: '叙事视角与手法',
   openingTechnique: '开篇技法 / 黄金三章',
@@ -104,4 +104,21 @@ export const FICTION_DIMENSION_LABELS: Record<FictionDimension, string> = {
   foreshadowing: '伏笔与回收',
   worldBuilding: '世界观构建',
   otherTechniques: '其他值得学习的技巧',
+}
+
+/** i18n keys for UI display (resolved at render time; FICTION_DIMENSION_LABELS remains for AI context building) */
+export const FICTION_DIMENSION_LABEL_KEYS: Record<FictionDimension, string> = {
+  narrativeStyle: 'editor:dimensionLabels.narrativeStyle',
+  openingTechnique: 'editor:dimensionLabels.openingTechnique',
+  plotStructure: 'editor:dimensionLabels.plotStructure',
+  pacingControl: 'editor:dimensionLabels.pacingControl',
+  climaxDesign: 'editor:dimensionLabels.climaxDesign',
+  conflictEscalation: 'editor:dimensionLabels.conflictEscalation',
+  characterCraft: 'editor:dimensionLabels.characterCraft',
+  dialogueTechnique: 'editor:dimensionLabels.dialogueTechnique',
+  proseStyle: 'editor:dimensionLabels.proseStyle',
+  emotionalBeats: 'editor:dimensionLabels.emotionalBeats',
+  foreshadowing: 'editor:dimensionLabels.foreshadowing',
+  worldBuilding: 'editor:dimensionLabels.worldBuilding',
+  otherTechniques: 'editor:dimensionLabels.otherTechniques',
 }

@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { Wand2, Expand, Minimize2, RefreshCw, Search, X, Loader2, Check } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useAIStream } from '../../hooks/useAIStream'
 import { buildPolishPrompt, buildExpandPrompt } from '../../lib/ai/adapters/chapter-adapter'
 import type { ChatMessage } from '../../lib/types'
@@ -23,17 +24,21 @@ interface Props {
 
 type ActionType = 'polish' | 'expand' | 'condense' | 'rewrite' | 'check'
 
-const ACTIONS: { type: ActionType; icon: typeof Wand2; label: string; desc: string }[] = [
-  { type: 'polish',   icon: Wand2,      label: '润色', desc: '优化文笔' },
-  { type: 'expand',   icon: Expand,     label: '扩写', desc: '丰富细节' },
-  { type: 'condense', icon: Minimize2,  label: '缩写', desc: '精简内容' },
-  { type: 'rewrite',  icon: RefreshCw,  label: '改写', desc: '换种写法' },
-  { type: 'check',    icon: Search,     label: '查漏', desc: '检查问题' },
-]
+function getActions(t: (...args: any[]) => string): { type: ActionType; icon: typeof Wand2; label: string; desc: string }[] {
+  return [
+    { type: 'polish',   icon: Wand2,      label: t('floatingToolbar.actionPolish'), desc: t('floatingToolbar.actionPolishDesc') },
+    { type: 'expand',   icon: Expand,     label: t('floatingToolbar.actionExpand'), desc: t('floatingToolbar.actionExpandDesc') },
+    { type: 'condense', icon: Minimize2,  label: t('floatingToolbar.actionCondense'), desc: t('floatingToolbar.actionCondenseDesc') },
+    { type: 'rewrite',  icon: RefreshCw,  label: t('floatingToolbar.actionRewrite'), desc: t('floatingToolbar.actionRewriteDesc') },
+    { type: 'check',    icon: Search,     label: t('floatingToolbar.actionCheck'), desc: t('floatingToolbar.actionCheckDesc') },
+  ]
+}
 
 export default function FloatingToolbar({
   getSelectedText, getSelectionRect, replaceSelectedText, disabled,
 }: Props) {
+  const { t } = useDomainT('editor')
+  const ACTIONS = getActions(t)
   const [visible, setVisible] = useState(false)
   const [position, setPosition] = useState({ top: 0, left: 0 })
   const [result, setResult] = useState<string | null>(null)
@@ -159,7 +164,7 @@ export default function FloatingToolbar({
         <div className="bg-bg-elevated border border-accent/30 rounded-lg shadow-lg px-3 py-2 min-w-[200px]">
           <div className="flex items-center gap-2 text-xs text-accent">
             <Loader2 className="w-3 h-3 animate-spin" />
-            AI 处理中...
+            {t('floatingToolbar.processing')}
           </div>
           {ai.output && (
             <p className="mt-1 text-xs text-text-secondary max-h-20 overflow-y-auto whitespace-pre-wrap">
@@ -183,11 +188,11 @@ export default function FloatingToolbar({
           <div className="flex items-center gap-2">
             <button onClick={handleAccept}
               className="flex items-center gap-1 px-2 py-1 text-xs bg-accent text-white rounded hover:bg-accent-hover">
-              <Check className="w-3 h-3" /> 替换
+              <Check className="w-3 h-3" /> {t('floatingToolbar.btnReplace')}
             </button>
             <button onClick={handleDismiss}
               className="flex items-center gap-1 px-2 py-1 text-xs text-text-muted hover:text-text-primary rounded hover:bg-bg-hover">
-              <X className="w-3 h-3" /> 取消
+              <X className="w-3 h-3" /> {t('common:cancel')}
             </button>
           </div>
         </div>

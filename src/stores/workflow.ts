@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT, getShortListFormatter } from '../i18n'
 import type { PromptWorkflow } from '../lib/types/workflow'
 import { SYSTEM_WORKFLOW_SEEDS } from '../lib/ai/workflow-seeds'
 import { validateWorkflowGraph } from '../lib/workflow/graph'
@@ -62,7 +63,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
   save: async (w) => {
     const graphIssues = validateWorkflowGraph(w)
     if (graphIssues.length) {
-      throw new Error(`工作流图无效：${graphIssues.map(issue => issue.message).join('；')}`)
+      throw new Error(getT()('errors:workflow.graphInvalid', { details: getShortListFormatter().format(graphIssues.map(issue => issue.message)) }))
     }
     const now = Date.now()
     const row: PromptWorkflow = { ...w, updatedAt: now, createdAt: w.createdAt || now }
@@ -85,7 +86,7 @@ export const useWorkflowStore = create<WorkflowStore>((set, get) => ({
     const cloneRow: PromptWorkflow = {
       ...rest,
       scope: 'user',
-      name: newName || `${src.name} (副本)`,
+      name: newName || `${src.name} (${getT()('common:defaults.workflowCloneSuffix')})`,
       isDefault: false,
       createdAt: now,
       updatedAt: now,

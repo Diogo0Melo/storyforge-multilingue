@@ -4,6 +4,7 @@ import type {
   InspirationSourceKind,
   InspirationVersion,
 } from '../types/inspiration-workspace'
+import { getT } from '../../i18n'
 
 export const MAX_INSPIRATION_FRAGMENTS = 24
 export const MAX_INSPIRATION_VERSIONS = 12
@@ -132,7 +133,7 @@ export function createInspirationVersion(input: {
 }): InspirationVersion {
   const resultJson = JSON.stringify(input.result)
   if (resultJson.length > MAX_INSPIRATION_RESULT_CHARS) {
-    throw new Error(`融合结果超过 ${MAX_INSPIRATION_RESULT_CHARS} 字符，未写入版本历史`)
+    throw new Error(getT()('project:fusionReview.fusionResultTooLarge', { limit: MAX_INSPIRATION_RESULT_CHARS }))
   }
   return {
     id: createId('idea-version'),

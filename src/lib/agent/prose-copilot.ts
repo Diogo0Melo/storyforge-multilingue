@@ -1,4 +1,5 @@
 import { useAIConfigStore } from '../../stores/ai-config'
+import { getT } from '../../i18n'
 import { buildChapterContentPrompt, buildContinuePrompt } from '../ai/adapters/chapter-adapter'
 import { chat, resolveRequestConfig } from '../ai/client'
 import { buildBestChapterByOutlineMap } from '../chapters/selectors'
@@ -107,7 +108,7 @@ const MAX_PROSE_CHARS = 200_000
 
 export class ProseCopilotStaleError extends Error {
   constructor() {
-    super('目标章节或正文已在候选生成后发生变化。为保护作者手稿，请重新生成候选。')
+    super(getT()('agent:copilot.prose.staleError'))
     this.name = 'ProseCopilotStaleError'
   }
 }
@@ -125,8 +126,8 @@ function fingerprintContent(value: string): string {
 
 export function parseProseCandidateDraft(draft: string): string {
   const value = draft.replace(/^```(?:markdown|text)?\s*/i, '').replace(/\s*```$/, '').trim()
-  if (value.length < MIN_PROSE_CHARS) throw new Error(`正文候选至少需要 ${MIN_PROSE_CHARS} 个字符。`)
-  if (value.length > MAX_PROSE_CHARS) throw new Error(`正文候选不能超过 ${MAX_PROSE_CHARS} 个字符。`)
+  if (value.length < MIN_PROSE_CHARS) throw new Error(getT()('agent:copilot.prose.candidateMinChars', { min: MIN_PROSE_CHARS }))
+  if (value.length > MAX_PROSE_CHARS) throw new Error(getT()('agent:copilot.prose.candidateMaxChars', { max: MAX_PROSE_CHARS }))
   return value
 }
 
@@ -164,7 +165,7 @@ function selectTarget(
   operation: ProseCopilotOperation,
 ): { outline: OutlineNode; chapter: Chapter | null; ordinal: number } {
   const candidates = scopedOutlineChapters(nodes, worldGroupId)
-  if (!candidates.length) throw new Error('当前世界还没有章纲，请先生成章节大纲。')
+  if (!candidates.length) throw new Error(getT()('agent:copilot.prose.noChapterOutlines'))
   const chaptersByOutline = buildBestChapterByOutlineMap(chapters)
   const named = candidates.find(item => (
     item.outlineNode.title.trim() && request.includes(item.outlineNode.title.trim())
@@ -186,16 +187,16 @@ function selectTarget(
   const selected = named ?? numbered ?? automatic
   if (!selected?.outlineNode.id) {
     throw new Error(operation === 'continue'
-      ? '没有可续写的已写章节，请明确章节或先生成正文。'
-      : '没有可安全生成的空白章节；已有正文不会被默认覆盖。')
+      ? getT()('agent:copilot.prose.noContinueTarget')
+      : getT()('agent:copilot.prose.noGenerateTarget'))
   }
   const chapter = chaptersByOutline.get(selected.outlineNode.id) ?? null
   const hasContent = Boolean(htmlToPlainText(chapter?.content ?? '').trim())
   if (operation === 'generate' && hasContent) {
-    throw new Error(`《${selected.outlineNode.title}》已有正文；请明确使用“续写”，本阶段不覆盖已有手稿。`)
+    throw new Error(getT()('agent:copilot.prose.alreadyHasContent', { title: selected.outlineNode.title }))
   }
   if (operation === 'continue' && !hasContent) {
-    throw new Error(`《${selected.outlineNode.title}》尚无正文，请先生成正文。`)
+    throw new Error(getT()('agent:copilot.prose.noContentYet', { title: selected.outlineNode.title }))
   }
   return { outline: selected.outlineNode, chapter, ordinal: selected.ordinal }
 }
@@ -247,7 +248,7 @@ function candidateIssues(output: string): GenerationGateIssue[] {
   } catch (error) {
     return [{
       code: 'prose-invalid',
-      message: error instanceof Error ? error.message : '正文候选无效。',
+      message: error instanceof Error ? error.message : getT()('agent:copilot.prose.invalidCandidate'),
     }]
   }
 }
@@ -345,7 +346,7 @@ async function adoptCandidate(input: {
           })
       const writtenId = result.written[0]?.id
       if (writtenId == null || result.skipped.length || result.typeErrors.length || result.fkErrors.length) {
-        throw new Error('正文候选没有完整写入，事务已回滚。')
+        throw new Error(getT()('agent:copilot.prose.writeIncomplete'))
       }
       const oldChunkIds = await db.retrievalChunks.where('sourceChapterId').equals(writtenId).primaryKeys()
       if (oldChunkIds.length) await db.retrievalChunks.bulkDelete(oldChunkIds as number[])
@@ -404,15 +405,15 @@ export async function prepareProseCopilot(input: {
   signal?: AbortSignal
 }): Promise<PreparedProseCopilot> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(getT()('agent:copilot.prose.projectNotFound'))
   if (project.enableMultiWorld && input.worldGroupId == null) {
-    throw new Error('多世界项目必须先选择一个世界，才能生成正文。')
+    throw new Error(getT()('agent:copilot.prose.multiWorldRequired'))
   }
   const worldGroupId = project.enableMultiWorld ? input.worldGroupId : null
   const request = input.authorRequest.trim()
-  if (request.length < 2 || request.length > 2000) throw new Error('正文要求长度必须在 2–2000 字符之间。')
+  if (request.length < 2 || request.length > 2000) throw new Error(getT()('agent:copilot.prose.requestLengthInvalid'))
   if (/重写|改写|覆盖|替换.{0,6}正文/.test(request)) {
-    throw new Error('主 Agent 正文领域当前不覆盖已有手稿；请使用正文编辑器的对照改写能力。')
+    throw new Error(getT()('agent:copilot.prose.overwriteNotAllowed'))
   }
   const [nodes, chapters] = await Promise.all([
     db.outlineNodes.where('projectId').equals(input.projectId).toArray(),
@@ -478,8 +479,8 @@ export async function prepareProseCopilot(input: {
     outlineNodeId: target.outline.id!,
     contextEvidence: evidenceFromContextResult(contextProfile, assembled),
     label: operation === 'continue'
-      ? `续写《${target.outline.title}》`
-      : `《${target.outline.title}》正文`,
+      ? getT()('agent:copilot.prose.labelContinue', { title: target.outline.title })
+      : getT()('agent:copilot.prose.labelGenerate', { title: target.outline.title }),
   }
 }
 

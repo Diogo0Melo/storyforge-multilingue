@@ -1,4 +1,5 @@
 import JSON5 from 'json5'
+import { getT } from '../../i18n'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { chat, resolveRequestConfig } from '../ai/client'
 import {
@@ -106,7 +107,7 @@ const MAX_SUMMARY_CHARS = 8_000
 
 export class OutlineCopilotStaleError extends Error {
   constructor() {
-    super('大纲已在候选生成后发生变化。为避免覆盖或错位追加，请重新生成候选。')
+    super(getT()('agent:copilot.outline.staleError'))
     this.name = 'OutlineCopilotStaleError'
   }
 }
@@ -179,8 +180,8 @@ async function readSnapshot(
 
 function assertAuthorRequest(value: string): string {
   const request = value.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的大纲要求。')
-  if (request.length > 2000) throw new Error('单次大纲要求不能超过 2000 个字符。')
+  if (request.length < 2) throw new Error(getT()('agent:copilot.outline.requestTooShort'))
+  if (request.length > 2000) throw new Error(getT()('agent:copilot.outline.requestTooLong'))
   return request
 }
 
@@ -199,9 +200,9 @@ function chooseTargetVolume(request: string, volumes: OutlineNode[]): OutlineNod
 
 function parseStrictArray(draft: string): unknown[] {
   const input = draft.trim()
-  if (!input) throw new Error('大纲候选为空。')
+  if (!input) throw new Error(getT()('agent:copilot.outline.candidateEmpty'))
   if (input.length > MAX_CANDIDATE_CHARS) {
-    throw new Error(`大纲候选超过 ${MAX_CANDIDATE_CHARS} 字符。`)
+    throw new Error(getT()('agent:copilot.outline.candidateTooLong', { max: MAX_CANDIDATE_CHARS }))
   }
   const fenced = /^```(?:json)?\s*([\s\S]*?)```\s*$/i.exec(input)
   const candidate = fenced?.[1]?.trim() ?? input
@@ -212,40 +213,40 @@ function parseStrictArray(draft: string): unknown[] {
     try {
       parsed = JSON5.parse(candidate)
     } catch {
-      throw new Error('大纲候选不是有效的 JSON 数组。')
+      throw new Error(getT()('agent:copilot.outline.candidateInvalidJson'))
     }
   }
-  if (!Array.isArray(parsed)) throw new Error('大纲候选必须是 JSON 数组。')
+  if (!Array.isArray(parsed)) throw new Error(getT()('agent:copilot.outline.candidateMustBeArray'))
   return parsed
 }
 
 export function parseOutlineCandidateDraft(draft: string): GeneratedOutlineItem[] {
   const rows = parseStrictArray(draft)
-  if (!rows.length) throw new Error('大纲候选至少需要一项。')
-  if (rows.length > MAX_ITEMS) throw new Error(`单次大纲候选不能超过 ${MAX_ITEMS} 项。`)
+  if (!rows.length) throw new Error(getT()('agent:copilot.outline.candidateMinItems'))
+  if (rows.length > MAX_ITEMS) throw new Error(getT()('agent:copilot.outline.candidateMaxItems', { max: MAX_ITEMS }))
   const result = rows.map((row, index) => {
     if (!row || typeof row !== 'object' || Array.isArray(row)) {
-      throw new Error(`大纲候选第 ${index + 1} 项必须是对象。`)
+      throw new Error(getT()('agent:copilot.outline.itemMustBeObject', { index: index + 1 }))
     }
     const source = row as Record<string, unknown>
     const unknown = Object.keys(source).filter(key => key !== 'title' && key !== 'summary')
     if (unknown.length) {
-      throw new Error(`大纲候选第 ${index + 1} 项包含不允许的字段：${unknown.join('、')}。`)
+      throw new Error(getT()('agent:copilot.outline.itemUnknownFields', { index: index + 1, fields: unknown.join('、') }))
     }
     if (typeof source.title !== 'string' || !source.title.trim()) {
-      throw new Error(`大纲候选第 ${index + 1} 项缺少 title。`)
+      throw new Error(getT()('agent:copilot.outline.itemMissingTitle', { index: index + 1 }))
     }
     if (typeof source.summary !== 'string' || !source.summary.trim()) {
-      throw new Error(`大纲候选第 ${index + 1} 项缺少 summary。`)
+      throw new Error(getT()('agent:copilot.outline.itemMissingSummary', { index: index + 1 }))
     }
     const title = source.title.trim()
     const summary = source.summary.trim()
-    if (title.length > MAX_TITLE_CHARS) throw new Error(`大纲候选标题“${title.slice(0, 20)}”过长。`)
-    if (summary.length > MAX_SUMMARY_CHARS) throw new Error(`大纲候选“${title}”的摘要过长。`)
+    if (title.length > MAX_TITLE_CHARS) throw new Error(getT()('agent:copilot.outline.titleTooLong', { title: title.slice(0, 20) }))
+    if (summary.length > MAX_SUMMARY_CHARS) throw new Error(getT()('agent:copilot.outline.summaryTooLong', { title }))
     return { title, summary }
   })
   const titles = result.map(item => normalizeTitle(item.title))
-  if (new Set(titles).size !== titles.length) throw new Error('大纲候选包含重复标题。')
+  if (new Set(titles).size !== titles.length) throw new Error(getT()('agent:copilot.outline.duplicateTitles'))
   return result
 }
 
@@ -260,7 +261,7 @@ function candidateIssues(
   } catch (error) {
     issues.push({
       code: 'outline-invalid-structure',
-      message: error instanceof Error ? error.message : '大纲候选结构无效。',
+      message: error instanceof Error ? error.message : getT()('agent:copilot.outline.invalidStructure'),
     })
   }
   const existing = new Set(snapshot.existingTitles)
@@ -268,7 +269,7 @@ function candidateIssues(
   if (duplicate) {
     issues.push({
       code: 'outline-duplicate-title',
-      message: `当前层级已存在标题“${duplicate.title}”。`,
+      message: getT()('agent:copilot.outline.duplicateTitleInScope', { title: duplicate.title }),
     })
   }
   return issues
@@ -276,7 +277,7 @@ function candidateIssues(
 
 function generationRequest(input: OutlineCopilotInput): OutlineGenerationRequest {
   if (input.mode === 'volumes') return { kind: 'volumes' }
-  if (input.parentVolumeId == null) throw new Error('章节大纲缺少目标卷。')
+  if (input.parentVolumeId == null) throw new Error(getT()('agent:copilot.outline.missingTargetVolume'))
   return { kind: 'chapters', volumeId: input.parentVolumeId }
 }
 
@@ -324,7 +325,7 @@ async function adoptCandidate(input: {
       startingOrder: current.startingOrder,
     })
     if (result.writtenCount !== input.items.length || result.skippedReasons.length) {
-      throw new Error(`大纲候选只写入 ${result.writtenCount}/${input.items.length} 项，已回滚。`)
+      throw new Error(getT()('agent:copilot.outline.writePartialRollback', { written: result.writtenCount, total: input.items.length }))
     }
     return result
   })
@@ -358,9 +359,9 @@ export async function prepareOutlineCopilot(input: {
   signal?: AbortSignal
 }): Promise<PreparedOutlineCopilot> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(getT()('agent:copilot.outline.projectNotFound'))
   if (project.enableMultiWorld && input.worldGroupId == null) {
-    throw new Error('多世界项目必须先选择一个世界，才能生成大纲。')
+    throw new Error(getT()('agent:copilot.outline.multiWorldRequired'))
   }
   const worldGroupId = project.enableMultiWorld ? input.worldGroupId : null
   const request = assertAuthorRequest(input.authorRequest)
@@ -371,7 +372,7 @@ export async function prepareOutlineCopilot(input: {
     .sort((left, right) => left.order - right.order)
   const mode = determineMode(request, volumes)
   const targetVolume = mode === 'chapters' ? chooseTargetVolume(request, volumes) : null
-  if (mode === 'chapters' && !targetVolume?.id) throw new Error('当前世界没有可展开的卷纲。')
+  if (mode === 'chapters' && !targetVolume?.id) throw new Error(getT()('agent:copilot.outline.noExpandableVolume'))
 
   const parentVolumeId = targetVolume?.id ?? null
   const before = snapshotOf(allNodes, worldGroupId, mode, parentVolumeId)
@@ -424,8 +425,8 @@ export async function prepareOutlineCopilot(input: {
     parentVolumeId,
     contextEvidence: evidenceFromContextResult(contextProfile, assembled),
     label: mode === 'volumes'
-      ? '卷级大纲'
-      : `《${targetVolume!.title}》章节大纲`,
+      ? getT()('agent:copilot.outline.labelVolumeOutline')
+      : getT()('agent:copilot.outline.labelChapterOutline', { title: targetVolume!.title }),
   }
 }
 

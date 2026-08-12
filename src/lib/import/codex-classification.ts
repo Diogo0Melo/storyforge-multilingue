@@ -10,6 +10,7 @@ import {
 } from '../types/codex'
 import type { CodexImportCandidate } from '../types/import-session-data'
 import { useCodexStore } from '../../stores/codex'
+import { getT } from '../../i18n'
 
 export interface CodexImportCategoryOption {
   ref: string
@@ -245,6 +246,7 @@ export async function applyCodexImportCandidates(args: {
   candidates: readonly CodexImportCandidate[]
 }): Promise<CodexImportApplyResult> {
   await useCodexStore.getState().ensureBuiltIns(args.projectId)
+  const t = getT()
   const categories = await db.codexCategories.where('projectId').equals(args.projectId).toArray()
   const options = buildCodexImportCategoryOptions(categories)
   const byRef = new Map(options.map(option => [option.ref, option]))
@@ -256,13 +258,13 @@ export async function applyCodexImportCandidates(args: {
       const option = byRef.get(candidate.categoryRef)
       if (!option) {
         result.skipped++
-        result.errors.push(`「${candidate.name}」的分类已不存在`)
+        result.errors.push(t('errors-lib:import.codexCategoryGone', { name: candidate.name }))
         continue
       }
       const name = candidate.name.trim()
       if (!name || candidate.evidence.length === 0) {
         result.skipped++
-        result.errors.push('存在空名称或无证据候选')
+        result.errors.push(t('errors-lib:import.codexEmptyOrNoEvidence'))
         continue
       }
       const fields = normalizeCandidateFields(candidate.fields, option)
@@ -305,7 +307,7 @@ export async function applyCodexImportCandidates(args: {
         }
         else {
           result.skipped++
-          result.errors.push(`「${name}」未通过写回校验`)
+          result.errors.push(t('errors-lib:import.codexWritebackFailed', { name }))
         }
         continue
       }
@@ -352,7 +354,7 @@ export async function applyCodexImportCandidates(args: {
       }
       else {
         result.skipped++
-        result.errors.push(`「${name}」未通过写回校验`)
+        result.errors.push(t('errors-lib:import.codexWritebackFailed', { name }))
       }
     }
   })

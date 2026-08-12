@@ -1,3 +1,4 @@
+import i18n, { getT } from '../../i18n'
 import { db } from '../db/schema'
 import {
   aggregateInventory,
@@ -12,6 +13,30 @@ import {
 } from '../types'
 
 const KIND_ORDER = new Map(SIMULATION_CANON_SOURCE_KINDS.map((kind, index) => [kind, index]))
+
+/**
+ * Pattern matching unresolved i18n key fragments (dot-separated identifiers,
+ * no spaces, no colons). Used to detect legacy persisted canon source names
+ * that were stored as raw keys when the namespace wasn't loaded.
+ */
+const UNRESOLVED_CANON_KEY_PATTERN = /^[a-zA-Z]+(\.[a-zA-Z]+)+$/
+
+/**
+ * Render-side repair for legacy persisted canon source names. If a name looks
+ * like an unresolved i18n key (e.g. "canonSource.worldviewName"), attempt to
+ * re-resolve it via t() with the world label for interpolation.
+ * Falls back to the stored name if resolution fails or worldLabel is unavailable
+ * (avoids dangling connectors like "Visão de mundo de ").
+ */
+export function repairCanonSourceName(name: string, worldLabel?: string): string {
+  if (!UNRESOLVED_CANON_KEY_PATTERN.test(name)) return name
+  if (!worldLabel) return name
+  const t = getT()
+  const resolved = t(`simulation:${name}` as never, { world: worldLabel })
+  return typeof resolved === 'string' && resolved !== name && resolved !== `simulation:${name}`
+    ? resolved
+    : name
+}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value)
@@ -93,13 +118,17 @@ export async function loadSimulationCanonCandidates(input: {
   projectId: number
   worldGroupId: number | null
 }): Promise<{ worldLabel: string; candidates: SimulationCanonCandidate[] }> {
+  // Ensure the 'simulation' namespace is loaded before translating candidate names.
+  // getT() is synchronous and returns the raw key if the ns hasn't been fetched yet.
+  await i18n.loadNamespaces('simulation')
   const project = await db.projects.get(input.projectId)
   if (!project) throw new Error('Canon 冻结所属项目不存在。')
   const world = input.worldGroupId == null ? null : await db.worldGroups.get(input.worldGroupId)
   if (input.worldGroupId != null && (!world || world.projectId !== input.projectId)) {
     throw new Error('Canon 冻结所属世界不存在或不属于当前项目。')
   }
-  const worldLabel = world?.name.trim() || project.name.trim() || '默认世界'
+  // Display names are translated at creation time and persisted in the frozen snapshot.
+  const worldLabel = world?.name.trim() || project.name.trim() || getT()('simulation:canonSource.defaultWorld')
   const [worldviews, powerSystems, rules, characters, locations, itemEntries] = await Promise.all([
     db.worldviews.where('projectId').equals(input.projectId).toArray(),
     db.powerSystems.where('projectId').equals(input.projectId).toArray(),
@@ -115,7 +144,7 @@ export async function loadSimulationCanonCandidates(input: {
     kind: 'world',
     recordId: world?.id ?? project.id ?? null,
     name: worldLabel,
-    summary: compact(world?.description || project.description || '当前项目默认世界'),
+    summary: compact(world?.description || project.description || getT()('simulation:canonSource.defaultWorldSummary')),
     fields: fields(world ? {
       type: world.type,
       entryCondition: world.entryCondition,
@@ -135,7 +164,7 @@ export async function loadSimulationCanonCandidates(input: {
       sourceKey: recordKey('worldview', worldview),
       kind: 'world',
       recordId: worldview.id ?? null,
-      name: `${worldLabel}世界观`,
+      name: getT()('simulation:canonSource.worldviewName', { world: worldLabel }),
       summary: compact(worldview.summary || worldview.worldOrigin || worldview.worldStructure),
       fields: fields({
         summary: worldview.summary,
@@ -159,8 +188,8 @@ export async function loadSimulationCanonCandidates(input: {
       sourceKey: `world-rules:${rule.id}`,
       kind: 'rule',
       recordId: rule.id ?? null,
-      name: `${worldLabel}世界规则`,
-      summary: compact(rule.globalNote || '真实与幻想规则配置'),
+      name: getT()('simulation:canonSource.worldRulesName', { world: worldLabel }),
+      summary: compact(rule.globalNote || getT()('simulation:canonSource.worldRulesSummary')),
       fields: fields({ entries: rule.entries, customNodes: rule.customNodes, globalNote: rule.globalNote }),
       updatedAt: rule.updatedAt,
     })
@@ -172,7 +201,7 @@ export async function loadSimulationCanonCandidates(input: {
       sourceKey: `power-system:${power.id}`,
       kind: 'rule',
       recordId: power.id ?? null,
-      name: power.name.trim() || '未命名力量体系',
+      name: power.name.trim() || getT()('simulation:canonSource.unnamedPowerSystem'),
       summary: compact(power.description || power.rules),
       fields: fields({ description: power.description, levels: power.levels, rules: power.rules }),
       updatedAt: power.updatedAt,
@@ -243,7 +272,10 @@ export async function loadSimulationCanonCandidates(input: {
       kind: 'item',
       recordId: latest.id,
       name: item.itemName.trim(),
-      summary: `${item.heldByName || '未指定持有人'}持有 ${item.quantity}`,
+      summary: getT()('simulation:canonSource.itemHolderSummary', {
+        holder: item.heldByName || getT()('simulation:canonSource.unspecifiedHolder'),
+        quantity: item.quantity,
+      }),
       fields: fields({
         quantity: item.quantity,
         heldByName: item.heldByName,

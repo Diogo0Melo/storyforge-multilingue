@@ -74,7 +74,11 @@ export interface WorldGroupLink {
   createdAt: number
 }
 
-/** 世界组类型标签 */
+/**
+ * 世界组类型标签 — 仅供 AI 上下文构建（lib/ai/world-group-context.ts）使用。
+ * UI 展示一律走 i18n `world-group:type.*`（见 WorldGroupOverview / WorldGroupDetail /
+ * WorldGroupSwitcher 的 TYPE_KEY），组件不得引用此中文映射。
+ */
 export const WORLD_GROUP_TYPE_LABELS: Record<WorldGroupType, string> = {
   primary: '主世界',
   traversal: '穿越目标',
@@ -83,13 +87,5 @@ export const WORLD_GROUP_TYPE_LABELS: Record<WorldGroupType, string> = {
   ascension: '上界/高维',
   custom: '自定义',
 }
-
-/** 世界关系类型标签 */
-export const WORLD_LINK_TYPE_LABELS: Record<WorldGroupLinkType, string> = {
-  portal: '传送门',
-  ascension: '飞升通道',
-  summon: '召唤',
-  branch: '分支点',
-  return: '回归通道',
-  custom: '自定义',
-}
+// 世界关系类型标签已删除：UI 一律走 i18n `world-group:linkType.*`
+//（见 WorldRelationGraph / WorldGroupOverview 的 LINK_TYPE_KEY）

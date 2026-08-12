@@ -11,6 +11,7 @@ import {
 import type { ReactNode } from 'react'
 import type { ReverseCharacter, ReverseResult } from '../../lib/ai/inspiration-reverse'
 import { characterAxesLabel } from '../../lib/character/character-axes'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   result: ReverseResult
@@ -41,6 +42,7 @@ export default function InspirationSingleResult({
   onAdoptCharacters,
   onAdoptAll,
 }: Props) {
+  const { t } = useDomainT('project')
   const allAdopted = adoptedSections.has('worldview')
     && adoptedSections.has('storyCore')
     && adoptedSections.has('characters')
@@ -48,7 +50,7 @@ export default function InspirationSingleResult({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-medium text-text-primary">反推结果</h3>
+        <h3 className="text-sm font-medium text-text-primary">{t('singleResult.heading')}</h3>
         {!allAdopted && (
           <button
             onClick={onAdoptAll}
@@ -56,13 +58,13 @@ export default function InspirationSingleResult({
             className="flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded text-xs font-medium hover:bg-green-700 disabled:opacity-40 transition-colors"
           >
             {adopting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowDownToLine className="w-3 h-3" />}
-            {adoptionLocked ? '先确认融合版本' : '一键全部采纳'}
+            {adoptionLocked ? t('singleResult.confirmFusionFirst') : t('singleResult.adoptAll')}
           </button>
         )}
       </div>
 
       <ResultCard
-        title="世界观草稿"
+        title={t('singleResult.worldviewTitle')}
         icon={<Globe className="w-4 h-4 text-blue-500" />}
         expanded={expandedSections.has('worldview')}
         onToggle={() => onToggleSection('worldview')}
@@ -70,21 +72,21 @@ export default function InspirationSingleResult({
         onAdopt={onAdoptWorldview}
         adopting={adopting}
         adoptionLocked={adoptionLocked}
-        adoptLabel="写入世界观"
+        adoptLabel={t('singleResult.adoptWorldview')}
       >
         <div className="space-y-2 text-sm">
-          {result.worldview.worldOrigin && <FieldRow label="世界来源" value={result.worldview.worldOrigin} />}
-          {result.worldview.powerHierarchy && <FieldRow label="力量体系" value={result.worldview.powerHierarchy} />}
-          {result.worldview.continentLayout && <FieldRow label="地貌分布" value={result.worldview.continentLayout} />}
-          {result.worldview.climateByRegion && <FieldRow label="气候环境" value={result.worldview.climateByRegion} />}
-          {result.worldview.historyLine && <FieldRow label="世界历史" value={result.worldview.historyLine} />}
-          {result.worldview.races && <FieldRow label="种族民族" value={result.worldview.races} />}
-          {result.worldview.factionLayout && <FieldRow label="势力分布" value={result.worldview.factionLayout} />}
+          {result.worldview.worldOrigin && <FieldRow label={t('singleResult.fieldWorldOrigin')} value={result.worldview.worldOrigin} />}
+          {result.worldview.powerHierarchy && <FieldRow label={t('singleResult.fieldPowerHierarchy')} value={result.worldview.powerHierarchy} />}
+          {result.worldview.continentLayout && <FieldRow label={t('singleResult.fieldContinentLayout')} value={result.worldview.continentLayout} />}
+          {result.worldview.climateByRegion && <FieldRow label={t('singleResult.fieldClimateByRegion')} value={result.worldview.climateByRegion} />}
+          {result.worldview.historyLine && <FieldRow label={t('singleResult.fieldHistoryLine')} value={result.worldview.historyLine} />}
+          {result.worldview.races && <FieldRow label={t('singleResult.fieldRaces')} value={result.worldview.races} />}
+          {result.worldview.factionLayout && <FieldRow label={t('singleResult.fieldFactionLayout')} value={result.worldview.factionLayout} />}
         </div>
       </ResultCard>
 
       <ResultCard
-        title="故事核心"
+        title={t('singleResult.storyCoreTitle')}
         icon={<BookOpen className="w-4 h-4 text-purple-500" />}
         expanded={expandedSections.has('storyCore')}
         onToggle={() => onToggleSection('storyCore')}
@@ -92,19 +94,19 @@ export default function InspirationSingleResult({
         onAdopt={onAdoptStoryCore}
         adopting={adopting}
         adoptionLocked={adoptionLocked}
-        adoptLabel="写入故事设计"
+        adoptLabel={t('singleResult.adoptStoryCore')}
       >
         <div className="space-y-2 text-sm">
-          {result.storyCore.logline && <FieldRow label="一句话故事" value={result.storyCore.logline} highlight />}
-          {result.storyCore.theme && <FieldRow label="主题" value={result.storyCore.theme} />}
-          {result.storyCore.centralConflict && <FieldRow label="核心冲突" value={result.storyCore.centralConflict} />}
-          {result.storyCore.plotPattern && <FieldRow label="情节模式" value={result.storyCore.plotPattern} />}
-          {result.storyCore.mainPlot && <FieldRow label="主线" value={result.storyCore.mainPlot} />}
+          {result.storyCore.logline && <FieldRow label={t('singleResult.fieldLogline')} value={result.storyCore.logline} highlight />}
+          {result.storyCore.theme && <FieldRow label={t('singleResult.fieldTheme')} value={result.storyCore.theme} />}
+          {result.storyCore.centralConflict && <FieldRow label={t('singleResult.fieldCentralConflict')} value={result.storyCore.centralConflict} />}
+          {result.storyCore.plotPattern && <FieldRow label={t('singleResult.fieldPlotPattern')} value={result.storyCore.plotPattern} />}
+          {result.storyCore.mainPlot && <FieldRow label={t('singleResult.fieldMainPlot')} value={result.storyCore.mainPlot} />}
         </div>
       </ResultCard>
 
       <ResultCard
-        title={`初始角色（${result.characters.length} 个）`}
+        title={t('singleResult.charactersTitle', { count: result.characters.length })}
         icon={<UserCircle className="w-4 h-4 text-orange-500" />}
         expanded={expandedSections.has('characters')}
         onToggle={() => onToggleSection('characters')}
@@ -112,7 +114,7 @@ export default function InspirationSingleResult({
         onAdopt={onAdoptCharacters}
         adopting={adopting}
         adoptionLocked={adoptionLocked}
-        adoptLabel={`写入角色库（${selectedChars.size} 个）`}
+        adoptLabel={t('singleResult.adoptCharacters', { count: selectedChars.size })}
       >
         <div className="space-y-3">
           {result.characters.map((character, index) => (
@@ -153,6 +155,7 @@ function ResultCard({
   adoptLabel: string
   children: ReactNode
 }) {
+  const { t } = useDomainT('project')
   return (
     <div className="border border-border rounded-lg overflow-hidden">
       <div
@@ -166,7 +169,7 @@ function ResultCard({
         </div>
         {adopted ? (
           <span className="flex items-center gap-1 text-xs text-green-600">
-            <Check className="w-3.5 h-3.5" /> 已采纳
+            <Check className="w-3.5 h-3.5" /> {t('singleResult.adopted')}
           </span>
         ) : (
           <button
@@ -178,7 +181,7 @@ function ResultCard({
             className="flex items-center gap-1 px-2.5 py-1 bg-green-600 text-white rounded text-xs hover:bg-green-700 disabled:opacity-40 transition-colors"
           >
             {adopting ? <Loader2 className="w-3 h-3 animate-spin" /> : <ArrowDownToLine className="w-3 h-3" />}
-            {adoptionLocked ? '先确认融合版本' : adoptLabel}
+            {adoptionLocked ? t('singleResult.confirmFusionFirst') : adoptLabel}
           </button>
         )}
       </div>
@@ -190,7 +193,7 @@ function ResultCard({
 function FieldRow({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
   return (
     <div>
-      <span className="text-xs text-text-muted">{label}：</span>
+      <span className="text-xs text-text-muted">{label}: </span>
       <span className={`text-text-primary ${highlight ? 'font-medium text-accent' : ''}`}>{value}</span>
     </div>
   )
@@ -207,6 +210,7 @@ function CharacterCard({
   onToggle: () => void
   adopted: boolean
 }) {
+  const { t } = useDomainT('project')
   return (
     <div className={`border rounded-lg p-3 transition-colors ${selected ? 'border-accent bg-accent/10' : 'border-border'}`}>
       <div className="flex items-center gap-2 mb-2">
@@ -225,10 +229,10 @@ function CharacterCard({
       </div>
       {char.shortDescription && <p className="text-xs text-accent mb-1">{char.shortDescription}</p>}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-text-muted">
-        {char.personality && <span>性格：{char.personality}</span>}
-        {char.motivation && <span>动机：{char.motivation}</span>}
-        {char.background && <span className="col-span-2">背景：{char.background}</span>}
-        {char.arc && <span className="col-span-2">弧光：{char.arc}</span>}
+        {char.personality && <span>{t('singleResult.personality')}: {char.personality}</span>}
+        {char.motivation && <span>{t('singleResult.motivation')}: {char.motivation}</span>}
+        {char.background && <span className="col-span-2">{t('singleResult.background')}: {char.background}</span>}
+        {char.arc && <span className="col-span-2">{t('singleResult.arc')}: {char.arc}</span>}
       </div>
     </div>
   )

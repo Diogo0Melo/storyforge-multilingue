@@ -1,6 +1,7 @@
 import { nanoid } from 'nanoid'
+import { getT } from '../../i18n'
 import { AUTHORING_NODE_BY_ID, defaultConfigForTemplate } from './catalog'
-import { buildAuthoringCreationChainGraph } from './creation-chain'
+import { buildAuthoringCreationChainGraph, resolveAuthoringNodeTitle } from './creation-chain'
 import type { AuthoringEdge, AuthoringNodeGraph, AuthoringNodeInstance } from './contracts'
 import { autoLayoutAuthoringGraph } from './productivity'
 
@@ -15,10 +16,46 @@ export const AUTHORING_OFFICIAL_TEMPLATE_IDS = [
 
 export type AuthoringOfficialTemplateId = typeof AUTHORING_OFFICIAL_TEMPLATE_IDS[number]
 
+/**
+ * 官方模板显示名/描述的 i18n key（node-authoring ns）。
+ * 字面量键供类型化 t() 校验；渲染/调用时解析，保证语言切换后跟随更新。
+ */
+export const AUTHORING_OFFICIAL_TEMPLATE_I18N_KEYS = {
+  'world-foundation': {
+    nameKey: 'node-authoring:templates.worldFoundation.name',
+    descriptionKey: 'node-authoring:templates.worldFoundation.description',
+  },
+  'long-novel': {
+    nameKey: 'node-authoring:templates.longNovel.name',
+    descriptionKey: 'node-authoring:templates.longNovel.description',
+  },
+  'short-novel': {
+    nameKey: 'node-authoring:templates.shortNovel.name',
+    descriptionKey: 'node-authoring:templates.shortNovel.description',
+  },
+  'character-driven': {
+    nameKey: 'node-authoring:templates.characterDriven.name',
+    descriptionKey: 'node-authoring:templates.characterDriven.description',
+  },
+  'multi-line-narrative': {
+    nameKey: 'node-authoring:templates.multiLineNarrative.name',
+    descriptionKey: 'node-authoring:templates.multiLineNarrative.description',
+  },
+  'chapter-continuation-review': {
+    nameKey: 'node-authoring:templates.chapterContinuationReview.name',
+    descriptionKey: 'node-authoring:templates.chapterContinuationReview.description',
+  },
+} as const satisfies Record<AuthoringOfficialTemplateId, { nameKey: string; descriptionKey: string }>
+
+type AuthoringOfficialTemplateI18nKeySet =
+  (typeof AUTHORING_OFFICIAL_TEMPLATE_I18N_KEYS)[AuthoringOfficialTemplateId]
+
 export interface AuthoringOfficialTemplate {
   id: AuthoringOfficialTemplateId
-  name: string
-  description: string
+  /** i18n key (node-authoring ns)；渲染/调用时经 t() 解析，使显示名跟随语言切换。 */
+  nameKey: AuthoringOfficialTemplateI18nKeySet['nameKey']
+  /** i18n key (node-authoring ns)；渲染/调用时经 t() 解析。 */
+  descriptionKey: AuthoringOfficialTemplateI18nKeySet['descriptionKey']
   build(): AuthoringNodeGraph
 }
 
@@ -28,12 +65,13 @@ function node(
   config: Record<string, unknown> = {},
 ): AuthoringNodeInstance {
   const template = AUTHORING_NODE_BY_ID.get(templateId)
-  if (!template) throw new Error(`官方模板缺少节点：${templateId}`)
+  if (!template) throw new Error(getT()('node-authoring:templates.missingOfficialNode', { templateId }))
   return {
     id,
     templateId,
     templateVersion: template.version,
-    title: template.label,
+    // I18N-F5 · 创建期持久化默认节点名经 labelKey 解析（A4 translate-at-creation）。
+    title: resolveAuthoringNodeTitle(template),
     x: 0,
     y: 0,
     config: { ...defaultConfigForTemplate(template), ...config },
@@ -87,9 +125,9 @@ function worldFoundationGraph(): AuthoringNodeGraph {
     [context, ...worldNodes],
     worldNodes.map(item => edge(context, item)),
     [
-      { id: 'world-natural', title: '自然环境', color: '#2d8777' },
-      { id: 'world-humanity', title: '人文环境', color: '#42759a' },
-      { id: 'world-rules', title: '规则与器物', color: '#b77731' },
+      { id: 'world-natural', title: getT()('node-authoring:templates.worldNaturalGroupTitle'), color: '#2d8777' },
+      { id: 'world-humanity', title: getT()('node-authoring:templates.worldHumanityGroupTitle'), color: '#42759a' },
+      { id: 'world-rules', title: getT()('node-authoring:templates.worldRulesGroupTitle'), color: '#b77731' },
     ],
   )
 }
@@ -145,9 +183,16 @@ function multiLineNarrativeGraph(): AuthoringNodeGraph {
   const context = projectContext('multiline-context', ['worldview', 'storyCore', 'characters', 'storyArcs', 'existingVolumeOutlines'])
   const concept = node('story.concept', 'multiline-concept')
   const conflict = node('story.conflict', 'multiline-conflict')
-  const arcs = ['主线', '角色支线', '世界支线'].map((title, index) => ({
-    ...node('story.arc', `multiline-arc-${index}`, { request: `设计${title}的阶段、交汇点和收束条件。` }),
-    title,
+  const arcTitles = [
+    { key: 'node-authoring:templates.multiLineNarrative.arcMainLine', zh: '主线' },
+    { key: 'node-authoring:templates.multiLineNarrative.arcCharacterSubplot', zh: '角色支线' },
+    { key: 'node-authoring:templates.multiLineNarrative.arcWorldSubplot', zh: '世界支线' },
+  ] as const
+  const arcs = arcTitles.map(({ key, zh }, index) => ({
+    ...node('story.arc', `multiline-arc-${index}`, { request: `设计${zh}的阶段、交汇点和收束条件。` }),
+    // I18N-F5 · 创建期持久化节点名经 i18n 解析（A4 translate-at-creation）；
+    // zh 仅保留为 AI prompt payload，与 resolveAuthoringNodeTitle 的 defaultValue 兜底一致。
+    title: getT()(key, { defaultValue: zh }),
   }))
   const volume = node('outline.volume', 'multiline-volume', { request: '按故事线交汇与阶段推进规划卷纲。' })
   const volumeCount = node('control.volume-count', 'multiline-volume-count', { value: 5 })
@@ -160,7 +205,7 @@ function multiLineNarrativeGraph(): AuthoringNodeGraph {
       edge(context, volume),
       edge(volumeCount, volume, 'volume-count'),
     ],
-    [{ id: 'multiline-arcs', title: '多线叙事', color: '#7c3aed' }],
+    [{ id: 'multiline-arcs', title: getT()('node-authoring:templates.multiLineNarrative.name'), color: '#7c3aed' }],
   )
 }
 
@@ -183,47 +228,43 @@ function chapterContinuationReviewGraph(): AuthoringNodeGraph {
       edge(prose, organize, 'chapter'),
     ],
     [
-      { id: 'continuation-evidence', title: '连续性证据', color: '#42759a' },
-      { id: 'continuation-output', title: '续写与审校', color: '#2d8777' },
+      { id: 'continuation-evidence', title: getT()('node-authoring:templates.continuityEvidenceGroupTitle'), color: '#42759a' },
+      { id: 'continuation-output', title: getT()('node-authoring:templates.continuationReviewGroupTitle'), color: '#2d8777' },
     ],
   )
 }
 
+// 只存 i18n key、不存解析结果：模块级 getT() + Object.freeze 会把名称/描述固定在
+// 首次导入时的语言，切换语言后不会更新。由调用方在渲染/创建时经 t() 解析（Gate 5 · S2）。
 export const AUTHORING_OFFICIAL_TEMPLATES: readonly AuthoringOfficialTemplate[] = Object.freeze([
   {
     id: 'world-foundation',
-    name: '基础世界构建',
-    description: '从自然、人文、规则和器物建立可复用世界基座。',
+    ...AUTHORING_OFFICIAL_TEMPLATE_I18N_KEYS['world-foundation'],
     build: worldFoundationGraph,
   },
   {
     id: 'long-novel',
-    name: '长篇小说',
-    description: '世界、故事、角色、卷章、细纲和正文的完整长篇链路。',
+    ...AUTHORING_OFFICIAL_TEMPLATE_I18N_KEYS['long-novel'],
     build: () => configureCreationChain({ chapterCount: 20, volumeCount: 5, wordCount: 3000, namePrefix: 'long' }),
   },
   {
     id: 'short-novel',
-    name: '短篇小说',
-    description: '一卷三章的紧凑创作链，保留同一套确认写回边界。',
+    ...AUTHORING_OFFICIAL_TEMPLATE_I18N_KEYS['short-novel'],
     build: () => configureCreationChain({ chapterCount: 3, volumeCount: 1, wordCount: 1800, namePrefix: 'short' }),
   },
   {
     id: 'character-driven',
-    name: '角色驱动',
-    description: '让角色、关系和角色故事线先于卷章结构进入规划。',
+    ...AUTHORING_OFFICIAL_TEMPLATE_I18N_KEYS['character-driven'],
     build: characterDrivenGraph,
   },
   {
     id: 'multi-line-narrative',
-    name: '多线叙事',
-    description: '并列规划主线、角色支线和世界支线，再汇入卷纲。',
+    ...AUTHORING_OFFICIAL_TEMPLATE_I18N_KEYS['multi-line-narrative'],
     build: multiLineNarrativeGraph,
   },
   {
     id: 'chapter-continuation-review',
-    name: '章节续写与审校',
-    description: '显式汇集前章、handoff、摘要、相关前文和一致性报告。',
+    ...AUTHORING_OFFICIAL_TEMPLATE_I18N_KEYS['chapter-continuation-review'],
     build: chapterContinuationReviewGraph,
   },
 ])
@@ -234,6 +275,6 @@ export const AUTHORING_OFFICIAL_TEMPLATE_BY_ID = new Map(
 
 export function buildOfficialAuthoringTemplate(id: AuthoringOfficialTemplateId): AuthoringNodeGraph {
   const template = AUTHORING_OFFICIAL_TEMPLATE_BY_ID.get(id)
-  if (!template) throw new Error(`未知官方节点模板：${id}`)
+  if (!template) throw new Error(getT()('node-authoring:templates.unknownOfficialTemplate', { id }))
   return template.build()
 }

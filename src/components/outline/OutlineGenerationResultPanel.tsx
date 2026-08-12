@@ -1,4 +1,5 @@
 import { Loader2 } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import type { ParsedChapter, ParsedVolume } from '../../lib/ai/parse-outline-output'
 import type { TokenUsage } from '../../lib/ai/logger'
 import AIStreamOutput from '../shared/AIStreamOutput'
@@ -41,6 +42,7 @@ export default function OutlineGenerationResultPanel({
   onConfirmChapters,
   onCancelPreview,
 }: Props) {
+  const { t } = useDomainT('outline')
   return (
     <>
       {(output || isStreaming || error) && (
@@ -58,13 +60,13 @@ export default function OutlineGenerationResultPanel({
 
       {restructuring && (
         <div className="flex items-center gap-2 text-xs text-accent">
-          <Loader2 className="w-3.5 h-3.5 animate-spin" /> 正在用 AI 整理大纲结构…
+          <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('generation.result.restructuring')}
         </div>
       )}
 
       {previewVolumes && (
         <OutlinePreviewPanel
-          label={previewTargetId != null ? '将补全当前卷的卷纲' : `将创建 ${previewVolumes.length} 个卷`}
+          label={previewTargetId != null ? t('preview.willPatchVolumeSummary') : t('preview.willCreateVolumes', { count: previewVolumes.length })}
           items={previewVolumes}
           onConfirm={onConfirmVolumes}
           onCancel={onCancelPreview}
@@ -74,8 +76,8 @@ export default function OutlineGenerationResultPanel({
       {previewChapters && (
         <OutlinePreviewPanel
           label={previewTargetId != null
-            ? '将补全当前章节的章纲'
-            : `将在「${selectedVolumeTitle}」下创建 ${previewChapters.length} 个章节`}
+            ? t('preview.willPatchChapterSummary')
+            : t('preview.willCreateChapters', { volumeTitle: selectedVolumeTitle, count: previewChapters.length })}
           items={previewChapters}
           onConfirm={onConfirmChapters}
           onCancel={onCancelPreview}

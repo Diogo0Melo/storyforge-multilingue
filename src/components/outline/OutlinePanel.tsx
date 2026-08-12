@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useDomainT } from '../../i18n'
 import { useOutlineStore } from '../../stores/outline'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIStream } from '../../hooks/useAIStream'
@@ -35,6 +36,9 @@ interface Props {
 }
 
 export default function OutlinePanel({ project, onOpenChapter }: Props) {
+  const { t, lang } = useDomainT('outline')
+  // 语言感知的列表连接（跳过原因等）
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const dialog = useDialog()
   const toast = useToast()
   const { nodes, loadAll, addNode, updateNode, deleteNode, reorderNodes, insertNodeAt, moveNodeToParent } = useOutlineStore()
@@ -85,7 +89,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
   const handleAddVolume = async () => {
     const id = await addNode({
       projectId: project.id!, parentId: null, type: 'volume',
-      title: `第${volumes.length + 1}卷`, summary: '', order: volumes.length,
+      title: t('volume.defaultTitle', { index: volumes.length + 1 }), summary: '', order: volumes.length,
     })
     setSelectedVolId(id)
   }
@@ -96,7 +100,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     const siblings = nodes.filter(n => n.parentId === pid && n.type === 'chapter')
     await addNode({
       projectId: project.id!, parentId: pid, type: 'chapter',
-      title: `第${siblings.length + 1}章`, summary: '', order: siblings.length,
+      title: t('chapter.defaultTitle', { index: siblings.length + 1 }), summary: '', order: siblings.length,
     })
   }
 
@@ -108,7 +112,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
       .map(n => n.id!)
     const index = siblingIds.indexOf(afterChapterId) + 1
     await insertNodeAt(
-      { projectId: project.id!, parentId, type: 'chapter', title: '新章节', summary: '', order: 0 },
+      { projectId: project.id!, parentId, type: 'chapter', title: t('chapter.newTitle'), summary: '', order: 0 },
       siblingIds,
       index,
     )
@@ -135,14 +139,14 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
 
   const handleMoveChapter = async (chapterId: number, targetParentId: number, index: number) => {
     if (!canMoveChapterToParent(chapterId, targetParentId)) {
-      toast.error('不能把章节拖到其它世界组的卷下。')
+      toast.error(t('chapter.moveCrossWorldError'))
       return
     }
     try {
       await moveNodeToParent(chapterId, targetParentId, index)
     } catch (error) {
       console.error('[OutlinePanel] Failed to move chapter', error)
-      toast.error('章节移动失败，请重试。')
+      toast.error(t('chapter.moveFailed'))
     }
   }
 
@@ -155,13 +159,14 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     if (structure === 'custom') {
       await addNode({
         projectId: project.id!, parentId: selectedVol.id!, type: 'storyBlock',
-        title: '自定义故事块', summary: '', order: currentBlocks.length,
+        title: t('storyBlock.customTitle'), summary: '', order: currentBlocks.length,
       })
     } else {
       for (let i = 0; i < def.blocks.length; i++) {
+        const blockTitle = def.blockKeys?.[i] ? t(def.blockKeys[i], { defaultValue: def.blocks[i] }) : def.blocks[i]
         await addNode({
           projectId: project.id!, parentId: selectedVol.id!, type: 'storyBlock',
-          title: def.blocks[i], summary: '', order: currentBlocks.length + i,
+          title: blockTitle, summary: '', order: currentBlocks.length + i,
         })
       }
     }
@@ -232,7 +237,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
       if (generation.moduleKey === 'outline.volume') {
         const parsed = await parseVolumeOutlineSmart(text, aiConfig)
         if (parsed.length === 0) {
-          toast.error('未能从 AI 输出中解析出卷级大纲，请检查输出内容或重试。')
+          toast.error(t('adopt.parseVolumesFailed'))
           return
         }
         const operation = decodeGenerationOperation(ai.operation)
@@ -246,7 +251,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
       } else {
         const parsed = await parseChapterOutlineSmart(text, aiConfig)
         if (parsed.length === 0) {
-          toast.error('未能从 AI 输出中解析出章节大纲，请检查输出内容或重试。')
+          toast.error(t('adopt.parseChaptersFailed'))
           return
         }
         const operation = decodeGenerationOperation(ai.operation)
@@ -270,13 +275,13 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     if (targetId != null) {
       const result = await adoptGeneratedOutlineSummary(project.id!, targetId, previewVolumes[0]?.summary ?? '')
       if (!result.written) {
-        toast.error(`未能写入本卷卷纲：${result.reason}`)
+        toast.error(t('adopt.volumeSummaryWriteFailed', { reason: result.reason }))
         return
       }
       await loadAll(project.id!)
       setPreviewVolumes(null)
       setPreviewTargetId(null)
-      toast.success('本卷卷纲已写入。')
+      toast.success(t('adopt.volumeSummaryWritten'))
       return
     }
     const existingCount = volumes.length
@@ -291,7 +296,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
       })
     } catch (err) {
       console.error('[Outline] 写入卷失败:', err)
-      toast.error(`写入卷时出错：${err instanceof Error ? err.message : '未知错误'}。请查看控制台获取详情。`)
+      toast.error(t('adopt.volumeWriteError', { error: err instanceof Error ? err.message : String(err) }))
       return
     }
     await loadAll(project.id!)
@@ -300,11 +305,11 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     if (result.firstId) setSelectedVolId(result.firstId)
     // FB-10:不再静默——全跳过/部分跳过都明确告知用户原因
     if (result.writtenCount === 0) {
-      toast.error(`未写入任何卷。原因:${result.skippedReasons.join('；') || '与已有卷标题重复(已跳过)'}。若想替换/更新同名卷,请先删除同名卷再采纳。`)
+      toast.error(t('adopt.volumesNoneWritten', { reasons: listFormat.format(result.skippedReasons) || t('adopt.defaultSkipReason') }))
     } else if (result.writtenCount < previewVolumes.length) {
-      toast.info(`已写入 ${result.writtenCount} 个卷,另有 ${previewVolumes.length - result.writtenCount} 个被跳过(${result.skippedReasons.join('；') || '标题重复'})。`)
+      toast.info(t('adopt.volumesPartial', { count: result.writtenCount, written: result.writtenCount, skipped: previewVolumes.length - result.writtenCount, reasons: listFormat.format(result.skippedReasons) || t('adopt.defaultSkipReason') }))
     } else {
-      toast.success(`已写入 ${result.writtenCount} 个卷。`)
+      toast.success(t('adopt.volumesSuccess', { count: result.writtenCount }))
     }
   }
 
@@ -316,13 +321,13 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     if (targetId != null) {
       const result = await adoptGeneratedOutlineSummary(project.id!, targetId, previewChapters[0]?.summary ?? '')
       if (!result.written) {
-        toast.error(`未能写入本章章纲：${result.reason}`)
+        toast.error(t('adopt.chapterSummaryWriteFailed', { reason: result.reason }))
         return
       }
       await loadAll(project.id!)
       setPreviewChapters(null)
       setPreviewTargetId(null)
-      toast.success('本章章纲已写入。')
+      toast.success(t('adopt.chapterSummaryWritten'))
       return
     }
     const destinationVolume = operation?.kind === 'chapters'
@@ -341,25 +346,25 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
       })
     } catch (err) {
       console.error('[Outline] 写入章节失败:', err)
-      toast.error(`写入章节时出错：${err instanceof Error ? err.message : '未知错误'}。请查看控制台获取详情。`)
+      toast.error(t('adopt.chapterWriteError', { error: err instanceof Error ? err.message : String(err) }))
       return
     }
     await loadAll(project.id!)
     setPreviewChapters(null)
     setPreviewTargetId(null)
     if (result.writtenCount === 0) {
-      toast.error(`未写入任何章节。原因:${result.skippedReasons.join('；') || '与本卷已有章节标题重复(已跳过)'}。`)
+      toast.error(t('adopt.chaptersNoneWritten', { reasons: listFormat.format(result.skippedReasons) || t('adopt.defaultSkipReason') }))
     } else if (result.writtenCount < previewChapters.length) {
-      toast.info(`已写入 ${result.writtenCount} 章,另有 ${previewChapters.length - result.writtenCount} 章被跳过(${result.skippedReasons.join('；') || '标题重复'})。`)
+      toast.info(t('adopt.chaptersPartial', { count: result.writtenCount, written: result.writtenCount, skipped: previewChapters.length - result.writtenCount, reasons: listFormat.format(result.skippedReasons) || t('adopt.defaultSkipReason') }))
     }
   }
 
   const handleDeleteSelectedVolume = async () => {
     if (!selectedVol?.id) return
     const ok = await dialog.confirm({
-      title: `删除「${selectedVol.title}」及其所有章节？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('deleteVolume.title', { title: selectedVol.title }),
+      message: t('deleteVolume.message'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -411,7 +416,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
   return (
     <PanelLayout
       sidebar={sidebarContent}
-      sidebarTitle="📖 大纲"
+      sidebarTitle={t('sidebarTitle')}
       defaultWidth={220}
       minWidth={160}
       maxWidth={360}
@@ -419,7 +424,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     >
       <div className="p-4 space-y-4">
         {/* 调参 + 提示 */}
-        <CInput value={hint} onChange={e => setHint(e.target.value)} placeholder="给 AI 的补充说明（可选）"
+        <CInput value={hint} onChange={e => setHint(e.target.value)} placeholder={t('hintPlaceholder')}
           className="w-full px-3 py-2 bg-bg-surface border border-border rounded-md text-text-primary text-sm focus:outline-none focus:border-accent" />
 
         <PromptRunPanel

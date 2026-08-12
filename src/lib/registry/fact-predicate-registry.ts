@@ -256,6 +256,38 @@ export function normalizeFactPredicate(raw: string): FactPredicateSpec | null {
 }
 
 /**
+ * NS-i18n · 谓词显示键登记（facts ns `predicateLabels.*`，三语言键已存在于 locale）。
+ * 事实库 UI 经本表把谓词 key 解析为 facts.json 键；spec.label 原文保留作
+ * AI 上下文与键缺失时的回退。模式对齐 state-card.ts 的 STATE_CATEGORY_LABEL_KEYS。
+ */
+export const FACT_PREDICATE_LABEL_KEYS = {
+  location: 'facts:predicateLabels.location',
+  aliveStatus: 'facts:predicateLabels.aliveStatus',
+  healthStatus: 'facts:predicateLabels.healthStatus',
+  powerStage: 'facts:predicateLabels.powerStage',
+  goal: 'facts:predicateLabels.goal',
+  owns: 'facts:predicateLabels.owns',
+  knows: 'facts:predicateLabels.knows',
+  relation: 'facts:predicateLabels.relation',
+  legacyState: 'facts:predicateLabels.legacyState',
+  magicSource: 'facts:predicateLabels.magicSource',
+  creationOrigin: 'facts:predicateLabels.creationOrigin',
+  deityAuthority: 'facts:predicateLabels.deityAuthority',
+  technologyLevel: 'facts:predicateLabels.technologyLevel',
+  powerCeiling: 'facts:predicateLabels.powerCeiling',
+  parentStatus: 'facts:predicateLabels.parentStatus',
+  characterOrigin: 'facts:predicateLabels.characterOrigin',
+  trueIdentity: 'facts:predicateLabels.trueIdentity',
+} as const satisfies Record<string, string>
+
+/** 按谓词 key 取 facts ns 显示键；未登记的谓词返回 undefined，调用方回退原文 label。 */
+export function getFactPredicateLabelKey(
+  key: string,
+): (typeof FACT_PREDICATE_LABEL_KEYS)[keyof typeof FACT_PREDICATE_LABEL_KEYS] | undefined {
+  return FACT_PREDICATE_LABEL_KEYS[key as keyof typeof FACT_PREDICATE_LABEL_KEYS]
+}
+
+/**
  * 将事实值收口到谓词声明。非枚举值只去首尾空白；枚举必须命中规范值或登记别名。
  * 返回 null 表示该值不能安全写入事实账本。
  */

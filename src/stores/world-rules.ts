@@ -3,6 +3,7 @@
  */
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT } from '../i18n'
 import type {
   WorldRulesProfile,
   WorldRuleEntry,
@@ -68,7 +69,7 @@ export const useWorldRulesStore = create<WorldRulesState>((set, get) => ({
         const project = await db.projects.get(projectId)
         const wasHistorical = project?.creativeMode === 'historical'
         const migrationNote = wasHistorical
-          ? '【自动迁移提示】本项目原先使用「历史考证」模式。现已升级为维度级「真实与幻想」规则体系，请在左侧各维度中分别设定哪些内容取自真实、哪些是架空改造。'
+          ? getT()('errors:worldRules.migrationNote')
           : ''
 
         const now = Date.now()

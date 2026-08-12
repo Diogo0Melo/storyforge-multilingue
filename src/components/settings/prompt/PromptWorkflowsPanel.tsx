@@ -13,6 +13,8 @@ import {
   parseImportedWorkflows,
   serializeWorkflows,
 } from '../../../lib/workflow/import-export'
+import { useDomainT } from '../../../i18n'
+import { resolveSystemSeedDisplay } from '../../../lib/ai/seed-i18n'
 
 interface Props {
   project?: Project
@@ -20,6 +22,7 @@ interface Props {
 
 /** 工作流面板：列表 + Runner / Editor（同一面板切换视图） */
 export default function PromptWorkflowsPanel({ project }: Props = {}) {
+  const { t } = useDomainT('settings')
   const dialog = useDialog()
   const toast = useToast()
   const workflows = useWorkflowStore(s => s.workflows)
@@ -60,9 +63,9 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
         count++
       }
       await reloadWorkflows()
-      toast.success(`成功导入 ${count} 个工作流`)
+      toast.success(t('workflow.importSuccess', { count }))
     } catch (err) {
-      toast.error(`导入失败：${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('workflow.importError', { error: err instanceof Error ? err.message : String(err) }))
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -72,7 +75,7 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
     const now = Date.now()
     const id = await saveWorkflow({
       scope: 'user',
-      name: '新建工作流',
+      name: t('workflow.newWorkflowName'),
       description: '',
       steps: [],
       isDefault: false,
@@ -84,9 +87,9 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
 
   const handleRemove = async (id: number, name: string) => {
     const ok = await dialog.confirm({
-      title: `删除工作流「${name}」？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('workflow.deleteTitle', { name }),
+      message: t('workflow.deleteMessage'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })
     if (ok) await removeWorkflow(id)
@@ -114,9 +117,9 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
     <div className="p-5 space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-semibold text-text-primary mb-1">节点模式</h2>
+          <h2 className="text-base font-semibold text-text-primary mb-1">{t('workflow.panelTitle')}</h2>
           <p className="text-sm text-text-muted">
-            ComfyUI 式创作模式：连接节点组成流程；每步仍可暂停、编辑和确认。
+            {t('workflow.panelDescription')}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-shrink-0">
@@ -124,19 +127,19 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
             onClick={handleNew}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-accent text-xs rounded hover:bg-accent/20"
           >
-            <Plus className="w-3.5 h-3.5" /> 新建
+            <Plus className="w-3.5 h-3.5" /> {t('workflow.newWorkflow')}
           </button>
           <button
             onClick={handleImportClick}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-hover text-text-primary text-xs rounded hover:bg-bg-elevated"
           >
-            <Upload className="w-3.5 h-3.5" /> 导入
+            <Upload className="w-3.5 h-3.5" /> {t('workflow.import')}
           </button>
           <button
             onClick={handleExportAll}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-bg-hover text-text-primary text-xs rounded hover:bg-bg-elevated"
           >
-            <Download className="w-3.5 h-3.5" /> 导出全部
+            <Download className="w-3.5 h-3.5" /> {t('workflow.exportAll')}
           </button>
           <input
             ref={fileInputRef}
@@ -149,58 +152,62 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
       </div>
 
       {workflows.length === 0 ? (
-        <div className="text-center py-12 text-text-muted text-sm">加载中...</div>
+        <div className="text-center py-12 text-text-muted text-sm">{t('workflow.loading')}</div>
       ) : (
         <div className="space-y-2">
-          {workflows.map(w => (
+          {workflows.map(w => {
+            // 系统工作流种子显示名/描述经 settings ns 解析;用户工作流保留原文(Gate 5 · B2)
+            const { name: displayName, description: displayDescription } =
+              resolveSystemSeedDisplay(t, 'workflow', w)
+            return (
             <div key={w.id} className="bg-bg-surface border border-border rounded-xl p-4">
               <div className="flex items-start justify-between gap-3 mb-2">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-text-primary truncate">{w.name}</h3>
+                    <h3 className="text-sm font-semibold text-text-primary truncate">{displayName}</h3>
                     {w.scope === 'system'
-                      ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">系统</span>
-                      : <span className="text-[10px] px-1.5 py-0.5 rounded bg-info/15 text-info">我的</span>}
+                      ? <span className="text-[10px] px-1.5 py-0.5 rounded bg-warning/15 text-warning">{t('workflow.systemBadge')}</span>
+                      : <span className="text-[10px] px-1.5 py-0.5 rounded bg-info/15 text-info">{t('workflow.userBadge')}</span>}
                     {w.isDefault && (
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/15 text-accent">★ 默认</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/15 text-accent">{t('workflow.defaultBadge')}</span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-xs text-text-secondary">{w.description}</p>
+                  <p className="mt-0.5 text-xs text-text-secondary">{displayDescription}</p>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     type="button"
-                    aria-label={`运行工作流 ${w.name}`}
+                    aria-label={t('workflow.runAria', { name: displayName })}
                     onClick={() => setRunningId(w.id!)}
                     className="flex items-center gap-1 px-3 py-1.5 bg-accent text-white text-xs rounded hover:bg-accent-hover"
                   >
-                    <Play className="w-3 h-3" /> 运行
+                    <Play className="w-3 h-3" /> {t('workflow.run')}
                   </button>
                   {w.scope === 'user' && (
                     <button
                       type="button"
-                      aria-label={`编辑工作流 ${w.name}`}
+                      aria-label={t('workflow.editAria', { name: displayName })}
                       onClick={() => setEditingId(w.id!)}
                       className="p-1.5 text-text-muted hover:text-text-primary"
-                      title="编辑"
+                      title={t('workflow.edit')}
                     >
                       <Edit3 className="w-3.5 h-3.5" />
                     </button>
                   )}
                   <button
                     type="button"
-                    aria-label={`克隆工作流 ${w.name}`}
+                    aria-label={t('workflow.cloneAria', { name: displayName })}
                     onClick={() => cloneWorkflow(w.id!)}
                     className="p-1.5 text-text-muted hover:text-text-primary"
-                    title="克隆"
+                    title={t('workflow.clone')}
                   >
                     <Copy className="w-3.5 h-3.5" />
                   </button>
                   {w.scope === 'user' && (
                     <button
                       type="button"
-                      aria-label={`删除工作流 ${w.name}`}
-                      onClick={() => { void handleRemove(w.id!, w.name) }}
+                      aria-label={t('workflow.deleteAria', { name: displayName })}
+                      onClick={() => { void handleRemove(w.id!, displayName) }}
                       className="p-1.5 text-text-muted hover:text-error"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -221,10 +228,14 @@ export default function PromptWorkflowsPanel({ project }: Props = {}) {
                 ))}
               </div>
               <p className="mt-2 text-xs text-text-muted">
-                共 {w.steps.length} 步 · {w.steps.filter(s => s.userConfirmRequired).length} 步需用户确认
+                {t('workflow.stepsSummary', {
+                  total: w.steps.length,
+                  confirmable: w.steps.filter(s => s.userConfirmRequired).length,
+                })}
               </p>
             </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

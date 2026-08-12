@@ -3,6 +3,7 @@ import { Square, Check, RotateCcw, Loader2, ThumbsUp, ThumbsDown, Braces, Chevro
 import { usePromptStore } from '../../stores/prompt'
 import type { PromptModuleKey, PromptExample } from '../../lib/types/prompt'
 import type { TokenUsage } from '../../lib/ai/logger'
+import { useDomainT } from '../../i18n'
 
 interface AIStreamOutputProps {
   /** 流式输出的文本 */
@@ -39,13 +40,14 @@ export default function AIStreamOutput({
   onAccept,
   onRetry,
   onDismiss,
-  placeholder = '点击生成按钮，让 AI 为你创作...',
+  placeholder,
   moduleKey,
   tokenUsage,
 }: AIStreamOutputProps) {
   const hasOutput = output.length > 0
   const [marked, setMarked] = useState<'good' | 'bad' | null>(null)
   const [showRaw, setShowRaw] = useState(false)
+  const { t } = useDomainT('shared')
 
   // 检测是否结构化输出（JSON）——这类内容是给程序解析的，不该让用户直接读原始 JSON
   const trimmed = output.trimStart()
@@ -84,19 +86,19 @@ export default function AIStreamOutput({
       <div className="min-h-[200px] max-h-[500px] overflow-y-auto p-4 bg-accent-soft">
         {error ? (
           <div className="text-error text-sm">
-            <p className="font-medium mb-1">⚠️ 生成失败</p>
+            <p className="font-medium mb-1">{t('aiStream.generateFailed')}</p>
             <p className="text-text-muted">{error}</p>
             {error.includes('Failed to fetch') && (
               <p className="mt-2 text-xs text-warning bg-warning/5 p-2 rounded">
-                💡 可能的解决方法：<br />
-                1. 检查网络连接是否正常<br />
-                2. 在「设置」中点击「切换到本地代理」按钮<br />
-                3. 确认 Base URL 是否正确
+                {t('aiStream.fetchFixLine1')}<br />
+                {t('aiStream.fetchFixCheckNetwork')}<br />
+                {t('aiStream.fetchFixSwitchProxy')}<br />
+                {t('aiStream.fetchFixCheckBaseUrl')}
               </p>
             )}
             {error.includes('API Key') && (
               <p className="mt-2 text-xs text-warning bg-warning/5 p-2 rounded">
-                💡 请在「设置」中检查 API Key 是否正确填写
+                {t('aiStream.apiKeyFix')}
               </p>
             )}
           </div>
@@ -109,14 +111,14 @@ export default function AIStreamOutput({
                 <span className="flex items-center gap-1.5">
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
                   {onAccept
-                    ? 'AI 正在生成结构化内容…（完成后点「采纳」自动整理为可编辑内容）'
-                    : 'AI 正在生成结构化内容…（完成后将在下方生成可审查计划）'}
+                    ? t('aiStream.structuredStreamingWithAccept')
+                    : t('aiStream.structuredStreamingReview')}
                 </span>
               ) : (
                 <span>
                   {onAccept
-                    ? '✓ 已生成结构化内容，点「采纳」自动整理填入对应栏目。'
-                    : '✓ 已生成结构化内容，系统已解析为下方可审查计划。'}
+                    ? t('aiStream.structuredDoneWithAccept')
+                    : t('aiStream.structuredDoneReview')}
                 </span>
               )}
             </div>
@@ -125,7 +127,7 @@ export default function AIStreamOutput({
               className="flex items-center gap-1 text-xs text-text-muted hover:text-text-secondary transition-colors"
             >
               {showRaw ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-              {showRaw ? '收起原始数据' : '查看原始数据'}
+              {showRaw ? t('aiStream.hideRaw') : t('aiStream.showRaw')}
             </button>
             {showRaw && (
               <pre className="text-xs text-text-muted bg-bg-base/50 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-60">{output}</pre>
@@ -141,24 +143,27 @@ export default function AIStreamOutput({
         ) : isStreaming ? (
           <div className="flex items-center gap-2 text-text-muted text-sm">
             <Loader2 className="w-4 h-4 animate-spin" />
-            <span>AI 思考中...</span>
+            <span>{t('aiStream.thinking')}</span>
           </div>
         ) : (
-          <p className="text-text-muted text-sm">{placeholder}</p>
+          <p className="text-text-muted text-sm">{placeholder ?? t('aiStream.placeholder')}</p>
         )}
       </div>
 
       {/* 操作栏 */}
       <div className="flex items-center justify-between px-4 py-2 bg-bg-elevated border-t border-border">
         <span className="text-text-muted text-xs flex items-center gap-2">
-          {hasOutput && <span>{output.length} 字</span>}
+          {hasOutput && <span>{t('aiStream.charCount', { count: output.length })}</span>}
           {tokenUsage ? (
-            <span title={`输入 ${tokenUsage.inputTokens} + 输出 ${tokenUsage.outputTokens}`}>
-              Token: ↑{tokenUsage.inputTokens.toLocaleString()} ↓{tokenUsage.outputTokens.toLocaleString()}
+            <span title={`Input ${tokenUsage.inputTokens} + Output ${tokenUsage.outputTokens}`}>
+              {t('aiStream.tokenStats', {
+                input: tokenUsage.inputTokens.toLocaleString(),
+                output: tokenUsage.outputTokens.toLocaleString(),
+              })}
             </span>
           ) : estimatedOutputTokens ? (
-            <span className="text-text-muted" title="基于字数估算，精确值在生成完成后显示">
-              ≈ 输出 ~{estimatedOutputTokens.toLocaleString()} tokens
+            <span className="text-text-muted" title={t('aiStream.estimatedOutputTokensTitle')}>
+              {t('aiStream.estimatedOutputTokens', { count: estimatedOutputTokens.toLocaleString() })}
             </span>
           ) : null}
         </span>
@@ -169,7 +174,7 @@ export default function AIStreamOutput({
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-error/10 text-error rounded-md hover:bg-error/20 transition-colors"
             >
               <Square className="w-3 h-3" />
-              停止
+              {t('aiStream.stop')}
             </button>
           ) : (
             <>
@@ -179,7 +184,7 @@ export default function AIStreamOutput({
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-bg-hover text-text-secondary rounded-md hover:text-text-primary transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
-                  重试
+                  {t('aiStream.retry')}
                 </button>
               )}
               {/* P15: 标记好/坏示例（仅在已有输出 + moduleKey 提供时） */}
@@ -188,7 +193,7 @@ export default function AIStreamOutput({
                   <button
                     onClick={() => handleMark('good')}
                     disabled={marked === 'good'}
-                    title="标为好示例 — 下次生成时 AI 会参考此风格"
+                    title={t('aiStream.markGoodTitle')}
                     className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors ${
                       marked === 'good'
                         ? 'bg-success/20 text-success'
@@ -196,12 +201,12 @@ export default function AIStreamOutput({
                     }`}
                   >
                     <ThumbsUp className="w-3 h-3" />
-                    {marked === 'good' ? '已标好' : '好示例'}
+                    {marked === 'good' ? t('aiStream.markGoodDone') : t('aiStream.markGood')}
                   </button>
                   <button
                     onClick={() => handleMark('bad')}
                     disabled={marked === 'bad'}
-                    title="标为坏示例 — 下次生成时 AI 会避开此风格"
+                    title={t('aiStream.markBadTitle')}
                     className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors ${
                       marked === 'bad'
                         ? 'bg-error/20 text-error'
@@ -209,7 +214,7 @@ export default function AIStreamOutput({
                     }`}
                   >
                     <ThumbsDown className="w-3 h-3" />
-                    {marked === 'bad' ? '已标坏' : '反例'}
+                    {marked === 'bad' ? t('aiStream.markBadDone') : t('aiStream.markBad')}
                   </button>
                 </>
               )}
@@ -219,18 +224,18 @@ export default function AIStreamOutput({
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-accent text-white rounded-md hover:bg-accent-hover transition-colors"
                 >
                   <Check className="w-3 h-3" />
-                  采纳
+                  {t('aiStream.accept')}
                 </button>
               )}
               {/* G2：关闭/弃用——不满意可直接关掉，保留原文不写回 */}
               {onDismiss && (hasOutput || error) && (
                 <button
                   onClick={onDismiss}
-                  title="关闭，保留原文不采纳"
+                  title={t('aiStream.dismissTitle')}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-bg-hover text-text-muted rounded-md hover:text-text-primary transition-colors"
                 >
                   <X className="w-3 h-3" />
-                  关闭
+                  {t('aiStream.dismiss')}
                 </button>
               )}
             </>

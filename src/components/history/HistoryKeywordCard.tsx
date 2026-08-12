@@ -9,6 +9,7 @@ import { HISTORICAL_ERA_LABELS, KEYWORD_CATEGORY_LABELS } from '../../lib/types/
 import { CInput, CTextarea } from '../shared/CompositionInput'
 import HistoryAgentWorkspace, { type HistoryAgentViewState } from './HistoryAgentWorkspace'
 import HistoryChapterPicker from './HistoryChapterPicker'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   keyword: HistoricalKeyword
@@ -49,8 +50,13 @@ export default function HistoryKeywordCard({
   onAcceptConsult,
   onAcceptStorm,
 }: Props) {
-  const eraLabel = HISTORICAL_ERA_LABELS[keyword.era as HistoricalEra] || keyword.era
-  const categoryLabel = KEYWORD_CATEGORY_LABELS[keyword.category] || keyword.category
+  const { t } = useDomainT('history')
+  // era 数据域是 `HistoricalEra | string`（开放集）；仅当命中受控纪元时才走
+  // eraLabels.* 键，收窄为 HistoricalEra 让模板键落在字面量联合内。
+  const eraLabel = HISTORICAL_ERA_LABELS[keyword.era as HistoricalEra]
+    ? t(`eraLabels.${keyword.era as HistoricalEra}`)
+    : keyword.era
+  const categoryLabel = KEYWORD_CATEGORY_LABELS[keyword.category] ? t(`keywordCategories.${keyword.category}`) : keyword.category
 
   return (
     <div className={`rounded-xl border bg-bg-surface transition-all ${
@@ -86,7 +92,7 @@ export default function HistoryKeywordCard({
         <div className="px-4 pb-4 border-t border-border/50 pt-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div>
-              <label className="block text-[11px] text-text-muted mb-1">关键词名称</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('keyword.nameLabel')}</label>
               <CInput
                 value={keyword.keyword}
                 onChange={event => onChange({ keyword: event.target.value })}
@@ -94,28 +100,28 @@ export default function HistoryKeywordCard({
               />
             </div>
             <div>
-              <label className="block text-[11px] text-text-muted mb-1">分类</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('keyword.categoryLabel')}</label>
               <select
-                aria-label="关键词分类"
+                aria-label={t('keyword.categoryAria')}
                 value={keyword.category}
                 onChange={event => onChange({ category: event.target.value as HistoricalKeywordCategory })}
                 className="w-full px-2 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
               >
-                {Object.entries(KEYWORD_CATEGORY_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                {(Object.keys(KEYWORD_CATEGORY_LABELS) as HistoricalKeywordCategory[]).map(key => (
+                  <option key={key} value={key}>{t(`keywordCategories.${key}`)}</option>
                 ))}
               </select>
             </div>
             <div>
-              <label className="block text-[11px] text-text-muted mb-1">适用历史时期</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('keyword.eraLabel')}</label>
               <select
-                aria-label="适用历史时期"
+                aria-label={t('keyword.eraAria')}
                 value={keyword.era}
                 onChange={event => onChange({ era: event.target.value as HistoricalEra })}
                 className="w-full px-2 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
               >
-                {Object.entries(HISTORICAL_ERA_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                {(Object.keys(HISTORICAL_ERA_LABELS) as HistoricalEra[]).map(key => (
+                  <option key={key} value={key}>{t(`eraLabels.${key}`)}</option>
                 ))}
               </select>
             </div>
@@ -123,20 +129,20 @@ export default function HistoryKeywordCard({
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[11px] text-text-muted mb-1">具体时间范围/区间 (可选)</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('keyword.timeRangeLabel')}</label>
               <CInput
                 value={keyword.customTimeRange || ''}
                 onChange={event => onChange({ customTimeRange: event.target.value })}
-                placeholder="如：公元712年-756年、18世纪中叶"
+                placeholder={t('keyword.timeRangePlaceholder')}
                 className="w-full px-2.5 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
               />
             </div>
             <div>
-              <label className="block text-[11px] text-text-muted mb-1">地理位置/范围 (可选)</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('keyword.locationLabel')}</label>
               <CInput
                 value={keyword.location || ''}
                 onChange={event => onChange({ location: event.target.value })}
-                placeholder="如：江南地区、君士坦丁堡、中原"
+                placeholder={t('keyword.locationPlaceholder')}
                 className="w-full px-2.5 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
               />
             </div>
@@ -144,18 +150,18 @@ export default function HistoryKeywordCard({
 
           <div>
             <label className="block text-[11px] text-text-muted mb-1">
-              📒 条目定稿（写作时会进入小说上下文；考据 / 风暴 agent 会读取作为核验或发散对象，但<span className="text-amber-500">不会直接覆盖</span>）
+              {t('entryFinal.label')}<span className="text-amber-500">{t('entryFinal.noOverwrite')}</span>{t('entryFinal.labelSuffix')}
             </label>
             <CTextarea
               value={keyword.description}
               onChange={event => onChange({ description: event.target.value })}
-              placeholder="作者打磨好的最终条目内容，将作为 AI 写作的历史细节注入。例如：『飞钱：唐宪宗时期出现的汇兑凭证，由邸店或商号代为兑付。』"
+              placeholder={t('entryFinal.keywordPlaceholder')}
               className="w-full h-24 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] text-text-muted mb-1">关联章节</label>
+            <label className="block text-[11px] text-text-muted mb-1">{t('relatedChapters.label')}</label>
             <HistoryChapterPicker
               chapters={chapters}
               relatedChapterIds={keyword.relatedChapterIds}
@@ -166,12 +172,12 @@ export default function HistoryKeywordCard({
 
           <div>
             <label className="block text-[11px] text-text-muted mb-1">
-              🧭 概念与创作思路（提交给 AI 之前的初步设定；得到 agent 反馈后可在此处修正）
+              {t('conceptNote.label')}
             </label>
             <CTextarea
               value={keyword.conceptNote || ''}
               onChange={event => onChange({ conceptNote: event.target.value })}
-              placeholder="描述你想为这个关键词达到的效果、能接受的艺术改造或架空范围。例如：『允许把飞钱的普及度写得比真实高一些；想要市井使用场景。』"
+              placeholder={t('conceptNote.keywordPlaceholder')}
               className="w-full h-24 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
             />
           </div>
@@ -179,23 +185,23 @@ export default function HistoryKeywordCard({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div>
               <label className="block text-[11px] text-text-muted mb-1">
-                📝 给「历史考据 agent」的补充说明
+                {t('agentPrompt.consultLabel')}
               </label>
               <CTextarea
                 value={keyword.consultPrompt || ''}
                 onChange={event => onChange({ consultPrompt: event.target.value })}
-                placeholder="例：本作允许把飞钱写得普及度更高；请重点检查兑付流程和涉事衙门称谓。"
+                placeholder={t('agentPrompt.consultKeywordPlaceholder')}
                 className="w-full h-20 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
               />
             </div>
             <div>
               <label className="block text-[11px] text-text-muted mb-1">
-                💡 给「头脑风暴 agent」的补充说明
+                {t('agentPrompt.stormLabel')}
               </label>
               <CTextarea
                 value={keyword.stormPrompt || ''}
                 onChange={event => onChange({ stormPrompt: event.target.value })}
-                placeholder="例：重点发散市井使用场景与可能的诈骗冲突。"
+                placeholder={t('agentPrompt.stormKeywordPlaceholder')}
                 className="w-full h-20 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
               />
             </div>
@@ -211,9 +217,9 @@ export default function HistoryKeywordCard({
             stormAI={stormAI}
             savedConsult={keyword.aiConsult}
             savedStorm={keyword.aiBrainstorm}
-            savedStormLabel="AI 时代细节库"
+            savedStormLabel={t('agentWorkspace.savedStormKeywordLabel')}
             savedStormMaxHeight="80"
-            deleteLabel="删除关键词"
+            deleteLabel={t('agentWorkspace.deleteKeyword')}
             onConsult={onConsult}
             onStorm={onStorm}
             onDelete={onDelete}

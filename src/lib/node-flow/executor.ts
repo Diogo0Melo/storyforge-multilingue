@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { chat } from '../ai/client'
 import { parseCharacterCandidateDraft } from '../agent/character-copilot'
@@ -142,7 +143,7 @@ async function executeNode(input: {
     const sourceKeys = selectionMode === 'registered' ? arrayConfig(node, 'sourceKeys') : []
     const ragEntryKeys = selectionMode === 'registered' ? [] : arrayConfig(node, 'ragEntryKeys')
     if (!sourceKeys.length && !ragEntryKeys.length) {
-      throw new Error('项目元素节点尚未选择任何资料字段或注册来源。')
+      throw new Error(getT()('node-flow:executor.projectSourceNotSelected'))
     }
     const ragTrace = createRagSelectionTrace()
     const assembled = await assembleContext({
@@ -194,7 +195,7 @@ async function executeNode(input: {
     const config = useAIConfigStore.getState().config
     const context = composeInputs(node, input.inputs)
     const instruction = stringConfig(node, 'instruction').trim()
-    if (!instruction) throw new Error('自由创作节点缺少创作指令。')
+    if (!instruction) throw new Error(getT()('node-flow:executor.freeGenerationMissingInstruction'))
     const system = stringConfig(
       node,
       'systemPrompt',
@@ -214,7 +215,7 @@ async function executeNode(input: {
   if (node.kind === 'validation.required') {
     const output = composeInputs(node, input.inputs).trim()
     const issues: string[] = []
-    if (!output) issues.push('输入内容为空。')
+    if (!output) issues.push(getT()('node-flow:executor.inputContentEmpty'))
     const required = stringConfig(node, 'requiredTerms')
       .split(/[\n,，]/).map(value => value.trim()).filter(Boolean)
     const forbidden = stringConfig(node, 'forbiddenTerms')
@@ -251,7 +252,7 @@ export async function runNodeFlow(input: {
   signal?: AbortSignal
   onUpdate?: (run: NodeRunRecord, snapshots: NodeInputSnapshotMap, results: NodeExecutionResultMap) => void
 }): Promise<{ run: NodeRunRecord; snapshots: NodeInputSnapshotMap; results: NodeExecutionResultMap }> {
-  if (input.flow.id == null) throw new Error('请先保存节点图。')
+  if (input.flow.id == null) throw new Error(getT()('node-flow:executor.saveGraphFirst'))
   const graph = parseNodeFlowGraph(input.flow.graphJson)
   const ordered = topologicalNodeOrder(graph, input.targetNodeId)
   const now = Date.now()
@@ -356,9 +357,9 @@ async function readStoredRun(runId: number): Promise<{
   results: NodeExecutionResultMap
 }> {
   const run = await db.nodeRuns.get(runId)
-  if (!run) throw new Error('节点运行记录不存在。')
+  if (!run) throw new Error(getT()('node-flow:executor.runRecordMissing'))
   const flow = await db.nodeFlows.get(run.flowId)
-  if (!flow || flow.projectId !== run.projectId) throw new Error('节点图不存在或不属于当前项目。')
+  if (!flow || flow.projectId !== run.projectId) throw new Error(getT()('node-flow:executor.flowMissingOrMismatch'))
   return {
     run,
     flow,
@@ -375,7 +376,7 @@ export async function updateNodeRunOutput(input: {
 }): Promise<NodeExecutionResultMap> {
   const stored = await readStoredRun(input.runId)
   const result = stored.results[input.nodeId]
-  if (!result) throw new Error('该节点尚无可编辑输出。')
+  if (!result) throw new Error(getT()('node-flow:executor.editableOutputMissing'))
   const results = {
     ...stored.results,
     [input.nodeId]: {
@@ -403,22 +404,22 @@ export async function adoptNodeRunOutput(input: {
 }): Promise<{ message: string; results: NodeExecutionResultMap }> {
   const stored = await readStoredRun(input.runId)
   const node = stored.graph.nodes.find(item => item.id === input.nodeId)
-  if (!node || node.kind !== 'output.preview') throw new Error('只有“内容输出”节点可以写入项目。')
+  if (!node || node.kind !== 'output.preview') throw new Error(getT()('node-flow:executor.onlyOutputNodesWrite'))
   const target = node.config.adoptTarget
   if (target !== 'world-origin' && target !== 'create-character') {
-    throw new Error('该输出节点尚未选择项目写入目标。')
+    throw new Error(getT()('node-flow:executor.adoptTargetNotSelected'))
   }
   const adoptionTarget: NonNullable<NodeExecutionResult['adoptionTarget']> = target
   const current = stored.results[input.nodeId]
-  if (!current || current.status !== 'completed') throw new Error('该输出节点尚未成功运行。')
+  if (!current || current.status !== 'completed') throw new Error(getT()('node-flow:executor.outputNodeNotCompleted'))
   if (current.gate?.status === 'blocked') throw new Error(current.gate.issues.join('；'))
   const output = (input.output ?? current.output).trim()
-  if (!output) throw new Error('不能采纳空输出。')
+  if (!output) throw new Error(getT()('node-flow:executor.cannotAdoptEmpty'))
 
   let message: string
   if (target === 'world-origin') {
     if (output.length < 4 || output.length > 12_000) {
-      throw new Error('世界来源内容须为 4 到 12000 个字符。')
+      throw new Error(getT()('node-flow:executor.worldOriginLengthInvalid'))
     }
     const adopted = await adopt({
       projectId: stored.flow.projectId,
@@ -434,9 +435,9 @@ export async function adoptNodeRunOutput(input: {
       || adopted.fkErrors.length
       || adopted.skipped.length
     ) {
-      throw new Error('世界来源未能完整写入，请检查项目数据登记。')
+      throw new Error(getT()('node-flow:executor.worldOriginWriteIncomplete'))
     }
-    message = '节点输出已写入世界观 · 世界来源。'
+    message = getT()('node-flow:executor.worldOriginAdopted')
   } else {
     const candidate = parseCharacterCandidateDraft(output)
     const normalizedName = candidate.name.normalize('NFKC').trim().toLocaleLowerCase('zh-CN')
@@ -445,7 +446,7 @@ export async function adoptNodeRunOutput(input: {
       (character.homeWorldGroupId ?? null) === (stored.flow.worldGroupId ?? null)
       && character.name.normalize('NFKC').trim().toLocaleLowerCase('zh-CN') === normalizedName
     ))
-    if (duplicate) throw new Error(`当前世界已存在角色“${candidate.name}”。`)
+    if (duplicate) throw new Error(getT()('node-flow:executor.characterAlreadyExists', { name: candidate.name }))
     const adopted = await adopt({
       projectId: stored.flow.projectId,
       worldGroupId: stored.flow.worldGroupId ?? null,
@@ -460,9 +461,9 @@ export async function adoptNodeRunOutput(input: {
       || adopted.fkErrors.length
       || adopted.skipped.length
     ) {
-      throw new Error('角色未能完整写入，请检查角色 JSON 与项目数据登记。')
+      throw new Error(getT()('node-flow:executor.characterWriteIncomplete'))
     }
-    message = `角色“${candidate.name}”已加入项目。`
+    message = getT()('node-flow:executor.characterAdopted', { name: candidate.name })
   }
 
   const adoptedAt = Date.now()

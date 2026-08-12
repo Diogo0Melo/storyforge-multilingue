@@ -1,5 +1,6 @@
 import { BookOpenCheck, ClipboardList, Loader2, ShieldCheck, StickyNote } from 'lucide-react'
 import { CInput } from '../shared/CompositionInput'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   isStreaming: boolean
@@ -54,51 +55,52 @@ export default function ChapterEditorToolbar({
   onToggleNotePanel,
   onCustomInstructionChange,
 }: Props) {
+  const { t } = useDomainT('editor')
   return (
     <div className="flex flex-wrap gap-2 border-t border-border/60 bg-bg-surface/35 px-6 py-3">
       <button onClick={onGenerate} disabled={isStreaming}
         className="rounded-md border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent/20 disabled:opacity-50 transition-colors">
-        ✨ 生成正文
+        {t('chapterEditorToolbar.btnGenerate')}
       </button>
       <button onClick={onContinue} disabled={isStreaming || !hasText}
         className="rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50 transition-colors">
-        📝 续写
+        {t('chapterEditorToolbar.btnContinue')}
       </button>
       <button onClick={onExpand} disabled={isStreaming}
         className="rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50 transition-colors">
-        📖 扩写
+        {t('chapterEditorToolbar.btnExpand')}
       </button>
       <button onClick={onPolish} disabled={isStreaming}
         className="rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50 transition-colors">
-        💎 润色
+        {t('chapterEditorToolbar.btnPolish')}
       </button>
       <button onClick={onDeAI} disabled={isStreaming}
         className="rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50 transition-colors">
-        🔥 去AI味
+        {t('chapterEditorToolbar.btnDeAI')}
       </button>
       <button onClick={onOrganizeChapter} disabled={isStreaming || !hasText}
-        title="一次分析本章，生成状态、事实、物品、年表、关系和伏笔候选；确认前不会写入项目"
+        title={t('chapterEditorToolbar.btnOrganizeTitle')}
         className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500/10 text-emerald-400 text-xs rounded-md hover:bg-emerald-500/20 disabled:opacity-50 transition-colors">
         {organizingChapter
           ? <Loader2 className="w-3 h-3 animate-spin" />
           : <ClipboardList className="w-3 h-3" />}
-        {organizingChapter ? '停止整理' : hasOrganizationCandidate ? '查看整理结果' : '整理本章'}
+        {organizingChapter ? t('chapterEditorToolbar.btnOrganizeStop') : hasOrganizationCandidate ? t('chapterEditorToolbar.btnOrganizeView') : t('chapterEditorToolbar.btnOrganizeRun')}
       </button>
       <button onClick={onAnalyzeImpact} disabled={analyzingImpact || !hasText}
-        title="NS-6：改了历史章后，检查源自本章的事实证据是否失效（失效则降级待复核），并列出需复核的后续章节。不会自动改正文。"
+        title={t('chapterEditorToolbar.btnImpactTitle')}
         className="flex items-center gap-1 px-3 py-1.5 bg-amber-500/10 text-amber-400 text-xs rounded-md hover:bg-amber-500/20 disabled:opacity-50 transition-colors">
         <ClipboardList className="w-3 h-3" />
-        {analyzingImpact ? '分析中...' : '影响分析'}
+        {analyzingImpact ? t('chapterEditorToolbar.btnImpactAnalyzing') : t('chapterEditorToolbar.btnImpactAnalyze')}
       </button>
       {impactInfo && (
         <span className="flex items-center gap-2 px-2 py-1 text-xs text-amber-300/90 bg-amber-500/5 rounded-md">
           {impactInfo}
-          <button onClick={onDismissImpact} aria-label="关闭影响分析结果" className="text-text-muted hover:text-text-primary">×</button>
+          <button onClick={onDismissImpact} aria-label={t('chapterEditorToolbar.ariaDismissImpact')} className="text-text-muted hover:text-text-primary">×</button>
         </span>
       )}
       {hasOutline && (
         <button onClick={onToggleOutlinePreview}
-          title="大纲预览"
+          title={t('chapterEditorToolbar.btnOutlinePreviewTitle')}
           aria-pressed={showOutlinePreview}
           className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
             showOutlinePreview
@@ -106,12 +108,12 @@ export default function ChapterEditorToolbar({
               : 'bg-bg-elevated text-text-secondary hover:text-text-primary'
           }`}>
           <BookOpenCheck className="w-3 h-3" />
-          大纲预览
+          {t('chapterEditorToolbar.btnOutlinePreview')}
         </button>
       )}
       <button onClick={onToggleReviewPanel}
         disabled={!hasText}
-        title="质量审校"
+        title={t('chapterEditorToolbar.btnReviewTitle')}
         aria-pressed={showReviewPanel}
         className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors disabled:opacity-50 ${
           showReviewPanel
@@ -119,7 +121,7 @@ export default function ChapterEditorToolbar({
             : 'bg-bg-elevated text-text-secondary hover:text-text-primary'
         }`}>
         <ShieldCheck className="w-3 h-3" />
-        质量审校
+        {t('chapterEditorToolbar.btnReview')}
         {consistencyAlertCount > 0 && (
           <span className="min-w-4 rounded-full bg-error/15 px-1 text-center text-[10px] text-error">
             {consistencyAlertCount}
@@ -127,7 +129,7 @@ export default function ChapterEditorToolbar({
         )}
       </button>
       <button onClick={onToggleNotePanel}
-        title="便签"
+        title={t('chapterEditorToolbar.btnNotesTitle')}
         aria-pressed={showNotePanel}
         className={`flex items-center gap-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
           showNotePanel
@@ -135,10 +137,10 @@ export default function ChapterEditorToolbar({
             : 'bg-bg-elevated text-text-secondary hover:text-text-primary'
         }`}>
         <StickyNote className="w-3 h-3" />
-        便签
+        {t('chapterEditorToolbar.btnNotes')}
       </button>
       <CInput value={customInstruction} onChange={event => onCustomInstructionChange(event.target.value)}
-        placeholder="自定义指令..."
+        placeholder={t('chapterEditorToolbar.customInstructionPlaceholder')}
         className="min-w-[220px] flex-1 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent" />
     </div>
   )

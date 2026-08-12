@@ -650,6 +650,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // SIM-1C: NPC 演进只读冻结快照与事件回放，不读取可变 Canon 表。
     key: 'simulationRuntime',
     label: '冻结运行时状态',
+    labelKey: 'outline:contextSources.simulationRuntime',
     scope: 'runtime',
     layer: 'L0',
     budgetTokens: 8000,
@@ -661,6 +662,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // AGENT-1: 对话副驾只读工具使用的紧凑项目摘要，不返回整表原始数据。
     key: 'projectStatus',
     label: '项目概况',
+    labelKey: 'outline:contextSources.projectStatus',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 1200,
@@ -670,6 +672,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // AGENT-1: 世界组与连接关系的有界目录。
     key: 'worldGroups',
     label: '世界组目录',
+    labelKey: 'outline:contextSources.worldGroups',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 1500,
@@ -679,6 +682,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // AGENT-1: 按当前执行世界过滤的有界大纲树。
     key: 'outlineTree',
     label: '大纲树',
+    labelKey: 'outline:contextSources.outlineTree',
     scope: 'world',
     layer: 'L2',
     budgetTokens: 6000,
@@ -689,6 +693,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // AGENT-1: 零网络、零 embedding 的本地包含匹配，仅返回短摘。
     key: 'searchResults',
     label: '项目内搜索结果',
+    labelKey: 'outline:contextSources.searchResults',
     scope: 'world',
     layer: 'L2',
     budgetTokens: 2200,
@@ -701,6 +706,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // 稳定选择键和实际纳入证据分别由源记录元数据与节点运行快照保存。
     key: 'ragSelection',
     label: '作者选择的资料字段',
+    labelKey: 'outline:contextSources.ragSelection',
     scope: 'manual',
     layer: 'L0',
     budgetTokens: 100_000,
@@ -716,6 +722,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'manualText',
     label: '用户指定内容',
+    labelKey: 'outline:contextSources.manualText',
     scope: 'manual',
     layer: 'L0',
     budgetTokens: 100_000,
@@ -724,6 +731,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'chapterContent',
     label: '章节正文',
+    labelKey: 'outline:contextSources.chapterContent',
     scope: 'chapter',
     layer: 'L0',
     budgetTokens: 100_000,
@@ -737,6 +745,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'contextMemo',
     label: '上下文快照',
+    labelKey: 'outline:contextSources.contextMemo',
     scope: 'project',
     layer: 'L3',
     budgetTokens: 1500,
@@ -745,6 +754,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'chapterOutline',
     label: '当前章节大纲',
+    labelKey: 'outline:contextSources.chapterOutline',
     scope: 'node',
     layer: 'L1',
     budgetTokens: 800,
@@ -755,6 +765,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'existingVolumeOutlines',
     label: '已有卷大纲',
+    labelKey: 'outline:contextSources.existingVolumeOutlines',
     scope: 'project',
     layer: 'L1',
     budgetTokens: 2400,
@@ -763,6 +774,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'writtenChapterProgress',
     label: '本卷已写正文进度',
+    labelKey: 'outline:contextSources.writtenChapterProgress',
     scope: 'node',
     layer: 'L1',
     budgetTokens: 3000,
@@ -773,6 +785,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'currentFacts',
     label: '当前有效事实(事实账本投影)',
+    labelKey: 'outline:contextSources.currentFacts',
     scope: 'chapter',
     layer: 'L1',
     budgetTokens: 2000,
@@ -782,6 +795,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'canonAssertions',
     label: '世界宪法(已确认设定断言)',
+    labelKey: 'outline:contextSources.canonAssertions',
     scope: 'world',
     layer: 'L1',
     budgetTokens: 1800,
@@ -794,6 +808,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'characterKnowledge',
     label: '角色认知边界(认知账本投影)',
+    labelKey: 'outline:contextSources.characterKnowledge',
     scope: 'chapter',
     layer: 'L1',
     budgetTokens: 1600,
@@ -811,6 +826,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'retrievedPassages',
     label: '相关前文召回(NS-5 混合检索)',
+    labelKey: 'outline:contextSources.retrievedPassages',
     scope: 'chapter',
     layer: 'L2',
     budgetTokens: 2500,
@@ -820,6 +836,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'consistencyReport',
     label: '一致性报告',
+    labelKey: 'outline:contextSources.consistencyReport',
     scope: 'chapter',
     layer: 'L1',
     budgetTokens: 1800,
@@ -831,6 +848,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'detailedOutline',
     label: '本章细纲(场景拆解)',
+    labelKey: 'outline:contextSources.detailedOutline',
     scope: 'node',
     layer: 'L1',
     budgetTokens: 1500,
@@ -840,6 +858,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'previousChapterEnding',
     label: '全局直接前驱原文尾部',
+    labelKey: 'outline:contextSources.previousChapterEnding',
     scope: 'manual',
     layer: 'L1',
     budgetTokens: 1800,
@@ -851,6 +870,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'chapterContinuityHandoff',
     label: '全局直接前驱连续性交接',
+    labelKey: 'outline:contextSources.chapterContinuityHandoff',
     scope: 'chapter',
     layer: 'L1',
     budgetTokens: 1600,
@@ -861,6 +881,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'previousPlanReconciliation',
     label: '前章计划正文对账',
+    labelKey: 'outline:contextSources.previousPlanReconciliation',
     scope: 'chapter',
     layer: 'L1',
     budgetTokens: 1400,
@@ -871,6 +892,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'recentChapterSummaries',
     label: '当前世界最近已验证摘要',
+    labelKey: 'outline:contextSources.recentChapterSummaries',
     scope: 'chapter',
     layer: 'L1',
     budgetTokens: 2200,
@@ -880,6 +902,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'worldview',
     label: '世界观',
+    labelKey: 'outline:contextSources.worldview',
     scope: 'world',
     layer: 'L2',
     budgetTokens: 8000, // 放宽:容下完整世界观设定,超大才软截断(并配合总窗口软裁)
@@ -889,6 +912,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'storyCore',
     label: '故事核心',
+    labelKey: 'outline:contextSources.storyCore',
     scope: 'project',
     layer: 'L1',
     budgetTokens: 4000, // 放宽:容下完整故事核心(主线/复线)
@@ -897,6 +921,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'characterDrivenPlan',
     label: '当前生效角色驱动方案',
+    labelKey: 'outline:contextSources.characterDrivenPlan',
     scope: 'project',
     layer: 'L1',
     budgetTokens: 5000,
@@ -906,6 +931,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'powerSystem',
     label: '力量体系',
+    labelKey: 'outline:contextSources.powerSystem',
     scope: 'world',
     layer: 'L2',
     budgetTokens: 4000, // 放宽:容下完整力量体系(描述/等级/规则)
@@ -922,6 +948,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'codex',
     label: '设定词条',
+    labelKey: 'outline:contextSources.codex',
     scope: 'world',
     layer: 'L2',
     budgetTokens: 6000, // 放宽:容下更多设定词条
@@ -931,6 +958,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'characters',
     label: '角色档案',
+    labelKey: 'outline:contextSources.characters',
     scope: 'world',
     layer: 'L2',
     budgetTokens: 8000, // 放宽:容下完整角色档案(核心角色不再被砍残)
@@ -940,6 +968,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'creativeRules',
     label: '创作规则',
+    labelKey: 'outline:contextSources.creativeRules',
     scope: 'project',
     layer: 'L1',
     budgetTokens: 1000,
@@ -948,6 +977,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'worldRules',
     label: '真实与幻想规则',
+    labelKey: 'outline:contextSources.worldRules',
     scope: 'world',
     layer: 'L1',
     budgetTokens: 1200,
@@ -957,6 +987,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'historical',
     label: '历史时间线',
+    labelKey: 'outline:contextSources.historical',
     scope: 'world',
     layer: 'L2',
     budgetTokens: 1800,
@@ -966,6 +997,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'locations',
     label: '重要地点',
+    labelKey: 'outline:contextSources.locations',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 1200,
@@ -974,6 +1006,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'foreshadows',
     label: '伏笔状态',
+    labelKey: 'outline:contextSources.foreshadows',
     scope: 'chapter',
     layer: 'L2',
     budgetTokens: 1200,
@@ -982,6 +1015,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'storyArcs',
     label: '故事线',
+    labelKey: 'outline:contextSources.storyArcs',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 1500,
@@ -990,6 +1024,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'storylineProgress',
     label: '作者确认的故事线进度与交汇',
+    labelKey: 'outline:contextSources.storylineProgress',
     scope: 'project',
     layer: 'L1',
     budgetTokens: 1400,
@@ -999,6 +1034,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'cultivationProgress',
     label: '作者确认的正文修炼进度',
+    labelKey: 'outline:contextSources.cultivationProgress',
     scope: 'world',
     layer: 'L1',
     budgetTokens: 1000,
@@ -1014,6 +1050,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'emotionBeats',
     label: '情感节拍',
+    labelKey: 'outline:contextSources.emotionBeats',
     scope: 'chapter',
     layer: 'L1',
     budgetTokens: 1000,
@@ -1023,6 +1060,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'stateCards',
     label: '状态卡',
+    labelKey: 'outline:contextSources.stateCards',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 1800,
@@ -1031,6 +1069,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'itemLedger',
     label: '物品流水',
+    labelKey: 'outline:contextSources.itemLedger',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 2400,
@@ -1039,6 +1078,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'heldItems',
     label: '当前已持有物品',
+    labelKey: 'outline:contextSources.heldItems',
     scope: 'chapter',
     layer: 'L1',
     budgetTokens: 1000,
@@ -1056,6 +1096,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'storyTimeline',
     label: '故事年表',
+    labelKey: 'outline:contextSources.storyTimeline',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 2600,
@@ -1064,6 +1105,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'characterRelations',
     label: '角色关系',
+    labelKey: 'outline:contextSources.characterRelations',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 2200,
@@ -1072,6 +1114,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
   {
     key: 'references',
     label: '引用手法',
+    labelKey: 'outline:contextSources.references',
     scope: 'project',
     layer: 'L3',
     budgetTokens: 2000,
@@ -1082,6 +1125,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // FB-5 自适应文风学习:作者文风画像(enabled=true 才注入)。
     key: 'userStyleProfile',
     label: '我的文风',
+    labelKey: 'outline:contextSources.userStyleProfile',
     scope: 'project',
     layer: 'L2',
     budgetTokens: 1800,
@@ -1091,6 +1135,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // CM-1:只读取作者本次明确勾选的短灵感和同模式最近确认版本。
     key: 'inspirationWorkspace',
     label: '增量灵感工作区',
+    labelKey: 'outline:contextSources.inspirationWorkspace',
     scope: 'project',
     layer: 'L0',
     budgetTokens: 11_000,
@@ -1105,6 +1150,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // C2 反向哺喂：某角色在剧情里已确认的事实（需 subjectCharacterName）。
     key: 'characterFacts',
     label: '该角色的剧情事实',
+    labelKey: 'outline:contextSources.characterFacts',
     scope: 'project',
     layer: 'L1',
     budgetTokens: 1500,
@@ -1115,6 +1161,7 @@ export const CONTEXT_SOURCES: ContextSource[] = [
     // C2 反向哺喂：某角色在正文里的真实表现（需 subjectCharacterName）。
     key: 'characterPassages',
     label: '该角色的正文表现',
+    labelKey: 'outline:contextSources.characterPassages',
     scope: 'project',
     layer: 'L1',
     budgetTokens: 2500,

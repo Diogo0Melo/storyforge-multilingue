@@ -11,7 +11,7 @@ import {
   ORDER_AXIS_LABELS,
   ROLE_WEIGHT_LABELS,
 } from '../character/character-axes'
-import { CHARACTER_DIMENSIONS } from '../character/character-dimensions'
+import { CHARACTER_DIMENSIONS, getDimensionLabel } from '../character/character-dimensions'
 
 /** 获取已缓存的上下文快照（如果有） */
 export function getContextMemo(projectId: number): string {
@@ -213,7 +213,7 @@ export function buildCharacterContext(characters: Character[]): string {
         `${c.name}（${axes(c)}）`,
         ...CHARACTER_DIMENSIONS.map(d => {
           const v = (c[d.key] as string | undefined)?.trim()
-          return v ? `${d.label}：${v}` : ''
+          return v ? `${getDimensionLabel(d.key)}：${v}` : ''
         }),
         c.relationships?.trim() ? `人物关系：${c.relationships.trim()}` : '',
       ].filter(Boolean).join('；')

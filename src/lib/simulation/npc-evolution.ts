@@ -1,4 +1,5 @@
 import JSON5 from 'json5'
+import { getT } from '../../i18n'
 import type {
   ChatMessage,
   SimulationNpcEvolutionCandidate,
@@ -19,9 +20,9 @@ export function buildNpcEvolutionPrompt(input: {
   runtimeContext: string
 }): ChatMessage[] {
   const request = input.authorRequest.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的 NPC 演进要求。')
+  if (request.length < 2) throw new Error(getT()('simulation:npcEvolution.requestTooShort'))
   if (request.length > MAX_NPC_EVOLUTION_REQUEST_CHARS) {
-    throw new Error(`NPC 演进要求不能超过 ${MAX_NPC_EVOLUTION_REQUEST_CHARS} 个字符。`)
+    throw new Error(getT()('simulation:npcEvolution.requestTooLong', { max: MAX_NPC_EVOLUTION_REQUEST_CHARS }))
   }
   return [
     {
@@ -61,25 +62,25 @@ export function buildNpcEvolutionPrompt(input: {
 
 function parseJsonObject(draft: string): Record<string, unknown> {
   const input = draft.trim()
-  if (!input) throw new Error('NPC 演进候选为空。')
+  if (!input) throw new Error(getT()('simulation:npcEvolution.candidateEmpty'))
   if (input.length > MAX_NPC_EVOLUTION_CANDIDATE_CHARS) {
-    throw new Error(`NPC 演进候选不能超过 ${MAX_NPC_EVOLUTION_CANDIDATE_CHARS} 个字符。`)
+    throw new Error(getT()('simulation:npcEvolution.candidateTooLong', { max: MAX_NPC_EVOLUTION_CANDIDATE_CHARS }))
   }
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(input)
   const candidate = fenced?.[1]?.trim() ?? input
   const start = candidate.indexOf('{')
   const end = candidate.lastIndexOf('}')
-  if (start < 0 || end < start) throw new Error('NPC 演进候选不是完整 JSON 对象。')
+  if (start < 0 || end < start) throw new Error(getT()('simulation:npcEvolution.candidateNotJsonObject'))
   const json = candidate.slice(start, end + 1)
   const trailing = candidate.slice(end + 1).trim()
-  if (trailing) throw new Error('NPC 演进候选 JSON 后包含额外文本。')
+  if (trailing) throw new Error(getT()('simulation:npcEvolution.candidateTrailingText'))
   try {
     return JSON.parse(json) as Record<string, unknown>
   } catch {
     try {
       return JSON5.parse(json) as Record<string, unknown>
     } catch {
-      throw new Error('NPC 演进候选不是有效 JSON。')
+      throw new Error(getT()('simulation:npcEvolution.candidateInvalidJson'))
     }
   }
 }
@@ -96,16 +97,16 @@ export function parseNpcEvolutionCandidate(input: {
     baseSequence: input.baseSequence,
   })
   if (candidate.entityKey !== input.targetEntityKey) {
-    throw new Error('NPC 演进候选不能改为其它实体。')
+    throw new Error(getT()('simulation:npcEvolution.candidateEntityChanged'))
   }
   const target = input.state.entities[input.targetEntityKey]
   if (!target || !isNpcRuntimeEntity(target)) {
-    throw new Error('目标实体不是当前会话中的 NPC。')
+    throw new Error(getT()('simulation:npcEvolution.targetNotSessionNpc'))
   }
   if (candidate.locationKey != null) {
     const location = input.state.entities[candidate.locationKey]
     if (!location || location.kind !== 'location') {
-      throw new Error(`NPC 演进候选引用了不存在的地点: ${candidate.locationKey}`)
+      throw new Error(getT()('simulation:npcEvolution.locationNotFound', { locationKey: candidate.locationKey }))
     }
   }
   return candidate

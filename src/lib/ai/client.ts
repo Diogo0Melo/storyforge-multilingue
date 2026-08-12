@@ -6,6 +6,7 @@ import { trimMessagesToFit } from './context-budget'
 import { buildOpenAIEndpoint } from './openai-endpoint'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { resolveAIConfigForTask, type AITaskKind } from './task-routing'
+import { getT } from '../../i18n'
 
 /** 调用元信息（用于消耗统计分类） */
 export interface AICallMeta {
@@ -145,14 +146,14 @@ export async function* streamChat(
   const trimmed = trimMessagesToFit(messages, config.provider, config.model, config.maxTokens, config.contextWindow)
   if (trimmed.trimmed && meta?.contextOverflowPolicy === 'reject') {
     throw new Error(
-      `当前模型上下文窗口不足以容纳完整请求（${trimmed.totalInputTokens}/${trimmed.inputBudget} tokens）；已拒绝静默裁剪。`,
+      getT()('errors-lib:ai.contextWindowInsufficient', { inputTokens: trimmed.totalInputTokens, budgetTokens: trimmed.inputBudget }),
     )
   }
   if (trimmed.trimmed) {
     console.warn(`[AI] request messages trimmed to fit context window: ${trimmed.totalInputTokens}/${trimmed.inputBudget} tokens`)
   }
   if (!trimmed.protectedEnvelopePreserved) {
-    throw new Error('当前模型上下文窗口无法容纳最低连续性保护块；请降低输出长度或改用更大上下文模型。')
+    throw new Error(getT()('errors-lib:ai.contextEnvelopeUnfit'))
   }
   const req = buildRequest(config, trimmed.messages, true)
 
@@ -270,14 +271,14 @@ export async function chat(
   const trimmed = trimMessagesToFit(messages, config.provider, config.model, config.maxTokens, config.contextWindow)
   if (trimmed.trimmed && meta?.contextOverflowPolicy === 'reject') {
     throw new Error(
-      `当前模型上下文窗口不足以容纳完整请求（${trimmed.totalInputTokens}/${trimmed.inputBudget} tokens）；已拒绝静默裁剪。`,
+      getT()('errors-lib:ai.contextWindowInsufficient', { inputTokens: trimmed.totalInputTokens, budgetTokens: trimmed.inputBudget }),
     )
   }
   if (trimmed.trimmed) {
     console.warn(`[AI] request messages trimmed to fit context window: ${trimmed.totalInputTokens}/${trimmed.inputBudget} tokens`)
   }
   if (!trimmed.protectedEnvelopePreserved) {
-    throw new Error('当前模型上下文窗口无法容纳最低连续性保护块；请降低输出长度或改用更大上下文模型。')
+    throw new Error(getT()('errors-lib:ai.contextEnvelopeUnfit'))
   }
   const req = buildRequest(config, trimmed.messages, false)
 

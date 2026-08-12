@@ -6,7 +6,7 @@
  * 写回仍走 adopt({ target:'characters', recordId })——字段级校验由 FIELD_REGISTRY 负责。
  */
 import type { ChatMessage, Character } from '../../types'
-import { CHARACTER_DIMENSIONS, type CharacterDimensionKey } from '../../character/character-dimensions'
+import { CHARACTER_DIMENSIONS, getDimensionLabel, type CharacterDimensionKey } from '../../character/character-dimensions'
 
 export interface SupplementArgs {
   character: Character
@@ -18,14 +18,14 @@ export interface SupplementArgs {
   evidenceContext?: string
 }
 
-const labelOf = (k: CharacterDimensionKey) => CHARACTER_DIMENSIONS.find(d => d.key === k)?.label ?? k
+const labelOf = (k: CharacterDimensionKey) => getDimensionLabel(k)
 
 export function buildCharacterSupplementPrompt(args: SupplementArgs): ChatMessage[] {
   const { character, dimensions, worldContext, evidenceContext } = args
   // 已有设定（非空维度），让 AI 据此保持一致
   const known = CHARACTER_DIMENSIONS
     .filter(d => (character[d.key] as string)?.trim())
-    .map(d => `- ${d.label}：${(character[d.key] as string).trim()}`)
+    .map(d => `- ${getDimensionLabel(d.key)}：${(character[d.key] as string).trim()}`)
     .join('\n') || '（暂无）'
   const wanted = dimensions.map(k => `"${k}"（${labelOf(k)}）`).join('、')
 

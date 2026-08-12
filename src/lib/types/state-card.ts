@@ -14,6 +14,15 @@ export const STATE_CATEGORY_LABELS: Record<StateCategory, string> = {
   event:     '事件',
 }
 
+/** i18n keys for UI display (resolved at render time; STATE_CATEGORY_LABELS remains for AI context builder) */
+export const STATE_CATEGORY_LABEL_KEYS = {
+  character: 'state:categoryLabels.character',
+  location:  'state:categoryLabels.location',
+  item:      'state:categoryLabels.item',
+  faction:   'state:categoryLabels.faction',
+  event:     'state:categoryLabels.event',
+} as const satisfies Record<StateCategory, string>
+
 /** 状态卡的单个字段 */
 export interface StateField {
   key: string    // 如"位置"、"状态"、"持有物"

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT } from '../i18n'
 import { exportProjectJSON, importProjectJSON } from '../lib/export/json-export'
 import type { Snapshot } from '../lib/types'
 
@@ -74,7 +75,7 @@ export const useBackupStore = create<BackupStore>((set, get) => ({
 
   restoreSnapshot: async (snapshotId: number) => {
     const snap = await db.snapshots.get(snapshotId)
-    if (!snap) throw new Error('快照不存在')
+    if (!snap) throw new Error(getT()('errors:backup.snapshotMissing'))
 
     const exportData = JSON.parse(snap.data)
     const newProjectId = await importProjectJSON(exportData)

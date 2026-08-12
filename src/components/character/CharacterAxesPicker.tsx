@@ -5,12 +5,13 @@ import type {
 } from '../../lib/types'
 import {
   MORAL_AXES,
-  MORAL_AXIS_LABELS,
+  getMoralAxisLabel,
   ORDER_AXES,
-  ORDER_AXIS_LABELS,
+  getOrderAxisLabel,
   ROLE_WEIGHTS,
-  ROLE_WEIGHT_LABELS,
+  getRoleWeightLabel,
 } from '../../lib/character/character-axes'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   roleWeight: CharacterRoleWeight | null
@@ -27,10 +28,11 @@ interface Props {
 export default function CharacterAxesPicker({
   roleWeight, moralAxis, orderAxis, onChange, compact = false,
 }: Props) {
+  const { t } = useDomainT('character')
   return (
     <div className={compact ? 'space-y-2' : 'space-y-3'}>
       <div>
-        <p className="text-[11px] text-text-muted mb-1">戏份（必选）</p>
+        <p className="text-[11px] text-text-muted mb-1">{t('axes.roleWeightLabel')}</p>
         <div className="grid grid-cols-4 gap-1">
           {ROLE_WEIGHTS.map(weight => (
             <button
@@ -43,25 +45,25 @@ export default function CharacterAxesPicker({
                   : 'bg-bg-base text-text-secondary border-border hover:border-accent/50'
               }`}
             >
-              {ROLE_WEIGHT_LABELS[weight]}
+              {getRoleWeightLabel(weight)}
             </button>
           ))}
         </div>
       </div>
 
       <div>
-        <p className="text-[11px] text-text-muted mb-1">阵营九宫格（必选）</p>
+        <p className="text-[11px] text-text-muted mb-1">{t('axes.alignmentGridLabel')}</p>
         <div className="grid grid-cols-[44px_repeat(3,minmax(0,1fr))] gap-1 items-stretch">
           <span />
           {MORAL_AXES.map(moral => (
             <span key={moral} className="text-[10px] text-center text-text-muted py-0.5">
-              {MORAL_AXIS_LABELS[moral]}
+              {getMoralAxisLabel(moral)}
             </span>
           ))}
           {ORDER_AXES.map(order => (
             <div key={order} className="contents">
               <span className="text-[10px] text-text-muted flex items-center">
-                {ORDER_AXIS_LABELS[order]}
+                {getOrderAxisLabel(order)}
               </span>
               {MORAL_AXES.map(moral => {
                 const selected = moralAxis === moral && orderAxis === order
@@ -77,8 +79,8 @@ export default function CharacterAxesPicker({
                     }`}
                   >
                     {order === 'neutral' && moral === 'neutral'
-                      ? '绝对中立'
-                      : `${ORDER_AXIS_LABELS[order]}${MORAL_AXIS_LABELS[moral]}`}
+                      ? t('axes.absoluteNeutral')
+                      : `${getOrderAxisLabel(order)}${getMoralAxisLabel(moral)}`}
                   </button>
                 )
               })}

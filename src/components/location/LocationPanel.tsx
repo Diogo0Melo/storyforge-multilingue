@@ -7,6 +7,7 @@ import {
   Plus, Trash2, ChevronDown, ChevronRight, MapPin,
   GitBranch, List, Sparkles, Loader2,
 } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useLocationStore } from '../../stores/location'
 import type { Project, ImportantLocation, LocationTag } from '../../lib/types'
 import { TAG_EMOJI } from '../../lib/types/location'
@@ -30,6 +31,7 @@ interface Props {
 }
 
 export default function LocationPanel({ project }: Props) {
+  const { t, lang } = useDomainT('location')
   const {
     locations, loading, loadAll,
     addLocation, updateLocation, deleteLocation,
@@ -56,7 +58,8 @@ export default function LocationPanel({ project }: Props) {
   const handleAdd = useCallback(async (parentId: number | null = null) => {
     const id = await addLocation({
       projectId: project.id!,
-      name: '新地点',
+      // Persisted default entity name — Wave E will migrate to common.defaults.*
+      name: t('defaults.newLocationName'),
       tags: '[]',
       description: '',
       significance: '',
@@ -64,7 +67,7 @@ export default function LocationPanel({ project }: Props) {
       sortOrder: locations.length,
     })
     setExpandedId(id)
-  }, [project.id, addLocation, locations.length])
+  }, [project.id, addLocation, locations.length, t])
 
   const handleDelete = useCallback(async (id: number) => {
     await deleteLocation(id)
@@ -88,7 +91,7 @@ export default function LocationPanel({ project }: Props) {
     }
     const written = chapters.filter(chapter => htmlToPlainText(chapter.content || '').trim().length > 50)
     if (written.length === 0) {
-      setExtractError('还没有已写正文的章节')
+      setExtractError(t('extraction.noWrittenChapters'))
       return
     }
     setExtracting(true)
@@ -119,7 +122,7 @@ export default function LocationPanel({ project }: Props) {
       setCandidates(unique)
       setSelectedCandidates(new Set(unique.map((_, index) => index)))
     } catch (error) {
-      setExtractError(error instanceof Error ? error.message : '地点提取失败')
+      setExtractError(error instanceof Error ? error.message : t('extraction.failed'))
     } finally {
       setExtracting(false)
     }
@@ -141,7 +144,7 @@ export default function LocationPanel({ project }: Props) {
       })),
     })
     if (!result.written.length && result.skipped.length) {
-      setExtractError(result.skipped.map(item => item.reason).join('；'))
+      setExtractError(new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }).format(result.skipped.map(item => item.reason)))
       return
     }
     await loadAll(project.id!)
@@ -191,7 +194,7 @@ export default function LocationPanel({ project }: Props) {
             </div>
             {children.length > 0 && (
               <span className="text-[10px] text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded shrink-0">
-                {children.length} 子地点
+                {t('list.childCount', { count: children.length })}
               </span>
             )}
           </button>
@@ -202,7 +205,7 @@ export default function LocationPanel({ project }: Props) {
               {/* 名称 + 父地点 */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">名称</label>
+                  <label className="block text-xs text-text-muted mb-1">{t('list.labelName')}</label>
                   <input
                     value={loc.name}
                     onChange={e => updateLocation(loc.id!, { name: e.target.value })}
@@ -210,13 +213,13 @@ export default function LocationPanel({ project }: Props) {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-text-muted mb-1">上级地点</label>
+                  <label className="block text-xs text-text-muted mb-1">{t('list.labelParent')}</label>
                   <select
                     value={loc.parentId ?? ''}
                     onChange={e => updateLocation(loc.id!, { parentId: e.target.value ? Number(e.target.value) : null })}
                     className="w-full px-2 py-1.5 bg-bg-base border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
                   >
-                    <option value="">（顶级）</option>
+                    <option value="">{t('list.parentTopLevel')}</option>
                     {locations
                       .filter(l => l.id !== loc.id)
                       .map(l => (
@@ -228,7 +231,7 @@ export default function LocationPanel({ project }: Props) {
 
               {/* 标签 */}
               <div>
-                <label className="block text-xs text-text-muted mb-1">地点标签（可多选组合）</label>
+                <label className="block text-xs text-text-muted mb-1">{t('list.labelTags')}</label>
                 <LocationTagPicker
                   selected={tags}
                   onChange={newTags => handleUpdateTags(loc.id!, newTags)}
@@ -237,22 +240,22 @@ export default function LocationPanel({ project }: Props) {
 
               {/* 描述 */}
               <div>
-                <label className="block text-xs text-text-muted mb-1">描述</label>
+                <label className="block text-xs text-text-muted mb-1">{t('list.labelDescription')}</label>
                 <textarea
                   value={loc.description}
                   onChange={e => updateLocation(loc.id!, { description: e.target.value })}
-                  placeholder="地点的详细描述、外观、氛围…"
+                  placeholder={t('list.placeholderDescription')}
                   className="w-full h-20 p-2 bg-bg-base border border-border rounded text-sm text-text-primary resize-y focus:outline-none focus:border-accent"
                 />
               </div>
 
               {/* 剧情重要性 */}
               <div>
-                <label className="block text-xs text-text-muted mb-1">剧情重要性</label>
+                <label className="block text-xs text-text-muted mb-1">{t('list.labelSignificance')}</label>
                 <textarea
                   value={loc.significance}
                   onChange={e => updateLocation(loc.id!, { significance: e.target.value })}
-                  placeholder="此地点在故事中的作用、关键事件、与角色的关联…"
+                  placeholder={t('list.placeholderSignificance')}
                   className="w-full h-16 p-2 bg-bg-base border border-border rounded text-sm text-text-primary resize-y focus:outline-none focus:border-accent"
                 />
               </div>
@@ -264,22 +267,22 @@ export default function LocationPanel({ project }: Props) {
                   className="flex items-center gap-1 px-3 py-1.5 text-accent hover:bg-accent/10 text-xs rounded transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5" />
-                  添加子地点
+                  {t('list.addChild')}
                 </button>
                 {isConfirmingDelete ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-red-400">确认删除？子地点也会一并删除</span>
+                    <span className="text-xs text-red-400">{t('list.confirmDeletePrompt')}</span>
                     <button
                       onClick={() => handleDelete(loc.id!)}
                       className="px-2 py-1 text-xs text-white bg-red-500 rounded hover:bg-red-600 transition-colors"
                     >
-                      确认
+                      {t('list.confirmDelete')}
                     </button>
                     <button
                       onClick={() => setConfirmDeleteId(null)}
                       className="px-2 py-1 text-xs text-text-muted hover:text-text-primary transition-colors"
                     >
-                      取消
+                      {t('list.cancelDelete')}
                     </button>
                   </div>
                 ) : (
@@ -288,7 +291,7 @@ export default function LocationPanel({ project }: Props) {
                     className="flex items-center gap-1 px-3 py-1.5 text-red-400 hover:bg-red-500/10 text-xs rounded transition-colors"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    删除地点
+                    {t('list.deleteLocation')}
                   </button>
                 )}
               </div>
@@ -316,15 +319,15 @@ export default function LocationPanel({ project }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-bold text-text-primary mb-1">📍 重要地点</h2>
+      <h2 className="text-xl font-bold text-text-primary mb-1">{t('panel.title')}</h2>
       <p className="text-sm text-text-muted mb-4">
-        管理故事中的重要场景地点，支持标签组合与树状层级
+        {t('panel.subtitle')}
       </p>
 
       {/* 工具栏 */}
       <div className="mb-4 flex items-center justify-between flex-wrap gap-2">
         <div className="text-sm text-text-secondary">
-          共 <span className="text-text-primary font-medium">{locations.length}</span> 个地点
+          {t('toolbar.count', { count: locations.length })}
         </div>
         <div className="flex items-center gap-2">
           {/* 视图切换 */}
@@ -335,7 +338,7 @@ export default function LocationPanel({ project }: Props) {
                 view === 'tree' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <GitBranch className="w-3.5 h-3.5" /> 树状图
+              <GitBranch className="w-3.5 h-3.5" /> {t('toolbar.viewTree')}
             </button>
             <button
               onClick={() => setView('list')}
@@ -343,7 +346,7 @@ export default function LocationPanel({ project }: Props) {
                 view === 'list' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              <List className="w-3.5 h-3.5" /> 列表
+              <List className="w-3.5 h-3.5" /> {t('toolbar.viewList')}
             </button>
           </div>
           <button
@@ -351,7 +354,7 @@ export default function LocationPanel({ project }: Props) {
             className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded-md hover:bg-accent-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
-            添加地点
+            {t('toolbar.addLocation')}
           </button>
           <button
             onClick={handleExtractLocations}
@@ -359,14 +362,14 @@ export default function LocationPanel({ project }: Props) {
             className="flex items-center gap-1.5 px-3 py-1.5 border border-accent/30 bg-accent/5 text-accent text-sm rounded-md hover:bg-accent/10 disabled:opacity-50 transition-colors"
           >
             {extracting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {extracting ? '正在分析正文…' : 'AI 从正文提取'}
+            {extracting ? t('toolbar.extracting') : t('toolbar.extractAi')}
           </button>
         </div>
       </div>
 
       {(extracting || extractError || candidates.length > 0) && (
         <ExtractionReviewPanel
-          title="地点候选"
+          title={t('extraction.candidatesTitle')}
           items={candidates}
           selected={selectedCandidates}
           loading={extracting}
@@ -402,7 +405,7 @@ export default function LocationPanel({ project }: Props) {
             }}
           />
           {locations.length > 0 && (
-            <p className="text-xs text-text-muted mt-2 text-center">点击节点可跳转到列表编辑</p>
+            <p className="text-xs text-text-muted mt-2 text-center">{t('list.treeJumpHint')}</p>
           )}
         </div>
       )}
@@ -413,13 +416,13 @@ export default function LocationPanel({ project }: Props) {
           {locations.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-text-muted">
               <MapPin className="w-12 h-12 mb-3 opacity-30" />
-              <p className="text-sm mb-3">暂无地点</p>
+              <p className="text-sm mb-3">{t('list.empty')}</p>
               <button
                 onClick={() => handleAdd(null)}
                 className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white text-sm rounded-md hover:bg-accent-hover transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                添加第一个地点
+                {t('list.addFirst')}
               </button>
             </div>
           ) : (

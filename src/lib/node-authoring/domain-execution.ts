@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import { chat } from '../ai/client'
 import {
   adoptCharacterCopilotCandidate,
@@ -246,7 +247,7 @@ function segmentText(assembled: Awaited<ReturnType<typeof assembleContext>>, key
 
 async function executeDetail(input: DomainExecutionInput): Promise<DomainExecutionResult> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(getT()('node-authoring:domainExecution.projectMissing'))
   const allNodes = await db.outlineNodes.where('projectId').equals(input.projectId).toArray()
   const title = targetTitle(input.node, input.inputs, 'chapterTitle', 'outline.chapter')
   const candidates = allNodes.filter(node => (
@@ -255,7 +256,7 @@ async function executeDetail(input: DomainExecutionInput): Promise<DomainExecuti
     && (!title || node.title === title || nonControlInput(input.inputs).includes(node.title))
   ))
   if (candidates.length !== 1 || candidates[0]?.id == null) {
-    throw new Error(title ? `找不到唯一的目标章节《${title}》。` : '章节细纲节点需要填写唯一的目标章节标题。')
+    throw new Error(title ? getT()('node-authoring:domainExecution.targetChapterNotFound', { title }) : getT()('node-authoring:domainExecution.detailNeedsUniqueChapter'))
   }
   const outline = candidates[0]!
   const outlineId = outline.id!
@@ -296,7 +297,7 @@ async function executeDetail(input: DomainExecutionInput): Promise<DomainExecuti
       contextOverflowPolicy: 'reject',
     }, input.signal)
     const parsed = parseEnhancedDetailResult(raw)
-    if (!parsed) throw new Error('细纲候选不是有效的 JSON 对象。')
+    if (!parsed) throw new Error(getT()('node-authoring:domainExecution.detailCandidateInvalid'))
     variants.push(JSON.stringify(parsed, null, 2))
   }
   return {
@@ -368,11 +369,11 @@ async function resolveOrganizationChapter(input: DomainExecutionInput) {
       && (!title || chapter.title === title || outline?.title === title)
   })
   if (candidates.length !== 1 || candidates[0]?.id == null) {
-    throw new Error(title ? `找不到唯一的目标章节《${title}》。` : '整理本章节点需要填写唯一的目标章节标题。')
+    throw new Error(title ? getT()('node-authoring:domainExecution.targetChapterNotFound', { title }) : getT()('node-authoring:domainExecution.organizeNeedsUniqueChapter'))
   }
   const chapter = candidates[0]!
   const outline = outlineById.get(chapter.outlineNodeId)
-  if (!outline?.id) throw new Error('目标章节缺少有效的大纲节点。')
+  if (!outline?.id) throw new Error(getT()('node-authoring:domainExecution.targetOutlineMissing'))
   return { chapter, outline }
 }
 
@@ -395,7 +396,7 @@ async function executeChapterOrganization(input: DomainExecutionInput): Promise<
     model: input.aiConfig.model,
   })
   const chapterText = normalizeChapterText(chapterSegment(assembled, 'chapterContent') || chapter.content || '')
-  if (!chapterText) throw new Error('目标章节没有可整理的正文。')
+  if (!chapterText) throw new Error(getT()('node-authoring:domainExecution.targetChapterNoContent'))
   const [allCharacters, relations, foreshadows, itemRows] = await Promise.all([
     db.characters.where('projectId').equals(input.projectId).toArray(),
     db.characterRelations.where('projectId').equals(input.projectId).toArray(),
@@ -453,7 +454,7 @@ async function executeChapterOrganization(input: DomainExecutionInput): Promise<
     foreshadows,
     budget: tracker.snapshot(),
   })
-  if (!parsed) throw new Error('整理本章返回的 JSON 无法解析；没有写入任何项目数据。')
+  if (!parsed) throw new Error(getT()('node-authoring:domainExecution.organizeParseFailed'))
   return {
     output: JSON.stringify(parsed, null, 2),
     semantic: 'continuity.report',
@@ -489,7 +490,7 @@ async function executeFactNode(input: DomainExecutionInput): Promise<DomainExecu
     model: input.aiConfig.model,
   })
   const chapterText = normalizeChapterText(chapterSegment(assembled, 'chapterContent') || chapter.content || '')
-  if (!chapterText) throw new Error('目标章节没有可抽取事实的正文。')
+  if (!chapterText) throw new Error(getT()('node-authoring:domainExecution.targetChapterNoFactContent'))
   const messages = buildFactExtractPrompt({ chapterTitle: chapter.title, chapterContent: chapterText })
   const raw = await chat(messages, input.aiConfig, {
     category: 'chapter.continuity',
@@ -562,7 +563,7 @@ export async function adoptDomainCandidate(input: {
   if (input.domain.kind === 'detail') {
     const current = await db.outlineNodes.get(input.domain.outlineNodeId)
     if (!current || current.projectId !== input.projectId || current.summary !== input.domain.chapterSummary) {
-      throw new Error('目标章纲已变化，请重新运行细纲节点后再采纳。')
+      throw new Error(getT()('node-authoring:domainExecution.detailOutlineChanged'))
     }
     const [characters, foreshadows] = await Promise.all([
       db.characters.where('projectId').equals(input.projectId).toArray(),
@@ -580,7 +581,7 @@ export async function adoptDomainCandidate(input: {
       // 伏笔是项目级共享表，可跨世界引用；埋设/呼应/回收章节仍由其软引用处理。
       validForeshadowIds: new Set(foreshadows.flatMap(row => row.id == null ? [] : [row.id])),
     })
-    if (!result.ok) throw new Error(result.reason ?? '细纲候选未能采纳。')
+    if (!result.ok) throw new Error(result.reason ?? getT()('node-authoring:domainExecution.detailAdoptFailed'))
     const saved = await db.detailedOutlines.where('outlineNodeId').equals(input.domain.outlineNodeId).toArray()
     const latest = saved.sort((left, right) => right.updatedAt - left.updatedAt)[0]
     return { ...emptyAdoptResult(), written: [{ id: latest?.id ?? 0, fields: ['scenes', 'openingHook', 'endingCliffhanger'] }] }
@@ -601,7 +602,7 @@ export async function adoptDomainCandidate(input: {
     try {
       candidate = JSON.parse(input.output) as ChapterOrganizationCandidate
     } catch {
-      throw new Error('整理本章候选必须是合法 JSON；请先修正候选后再采纳。')
+      throw new Error(getT()('node-authoring:domainExecution.organizeCandidateInvalidJson'))
     }
     if (
       candidate.type !== 'chapter-organization'
@@ -609,10 +610,10 @@ export async function adoptDomainCandidate(input: {
       || candidate.chapterId !== input.domain.chapterId
       || candidate.sourceTextHash !== input.domain.sourceTextHash
     ) {
-      throw new Error('整理本章候选的项目、章节或来源 hash 不匹配，请重新运行节点。')
+      throw new Error(getT()('node-authoring:domainExecution.organizeCandidateMismatch'))
     }
     if (!await isChapterOrganizationCurrent(candidate)) {
-      throw new Error('章节正文已变化，这批整理候选已过期；请重新运行“整理本章”。')
+      throw new Error(getT()('node-authoring:domainExecution.organizeExpired'))
     }
     const run = await persistChapterOrganizationCandidate(candidate)
     const adopted = await adoptChapterOrganizationSelection({
@@ -631,12 +632,12 @@ export async function adoptDomainCandidate(input: {
       const sourceChapter = await db.chapters.get(input.domain.chapterId)
       candidates = parseFactExtractResult({ raw: JSON.stringify(parsed), chapterContent: normalizeChapterText(sourceChapter?.content ?? '') })
     } catch {
-      throw new Error('事实候选必须是合法 JSON；请先修正候选后再采纳。')
+      throw new Error(getT()('node-authoring:domainExecution.factCandidateInvalidJson'))
     }
     const chapter = await db.chapters.get(input.domain.chapterId)
-    if (!chapter || chapter.projectId !== input.projectId) throw new Error('事实候选来源章节不存在。')
+    if (!chapter || chapter.projectId !== input.projectId) throw new Error(getT()('node-authoring:domainExecution.factSourceChapterMissing'))
     if (await hashChapterText(chapter.content || '') !== input.domain.sourceTextHash) {
-      throw new Error('章节正文已变化，这批事实候选已过期；请重新运行事实节点。')
+      throw new Error(getT()('node-authoring:domainExecution.factExpired'))
     }
     const result = await adoptFactCandidates({
       projectId: input.projectId,

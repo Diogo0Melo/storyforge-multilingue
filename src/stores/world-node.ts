@@ -8,6 +8,7 @@
  */
 
 import { create } from 'zustand'
+import { getT } from '../i18n'
 import { db } from '../lib/db/schema'
 import type { WorldNode, WorldPortal } from '../lib/types'
 import { parseWorldPortals, stringifyWorldPortals } from '../lib/utils/world-portals'
@@ -225,8 +226,8 @@ export const useWorldNodeStore = create<WorldNodeStore>((set, get) => ({
         const root: WorldNode = {
           projectId,
           parentId: null,
-          name: '主世界',
-          description: '故事发生的主要世界',
+          name: getT()('common:defaults.primaryWorldName'),
+          description: getT()('common:defaults.primaryWorldDescription'),
           sortOrder: 0,
           icon: '🌍',
           worldGroupId,

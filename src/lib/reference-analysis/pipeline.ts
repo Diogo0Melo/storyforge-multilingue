@@ -18,6 +18,7 @@ import { chunkDocument, quickHash, type ChunkPlan } from '../import/chunker'
 import { extractJSON } from '../ai/adapters/import-adapter'
 import type { AIConfig, ChatMessage, Reference, ReferenceChunkAnalysis, ReferenceAnalysisDepth } from '../types'
 import { adopt } from '../registry/adopt'
+import { getT } from '../../i18n'
 import {
   completeReferenceAnalysisRun,
   createReferenceAnalysisRun,
@@ -70,7 +71,7 @@ export function getActiveRefAnalysisRunId(): number | null {
 export function cancelRefAnalysisPipeline() {
   activePaused.value = true
   activeController?.abort()
-  listener.onActivity?.('warn', '✕ 用户取消分析')
+  listener.onActivity?.('warn', getT()('project:analysisPipeline.userCancelled'))
 }
 
 // ── 内存分块文本缓存 ─────────────────────────────────────────
@@ -110,7 +111,7 @@ export async function writeShallowAnalysisFromTechniques(
     expectedChunks: 1,
     sourceKind: 'unknown',
     usageScope: 'analysis-only',
-    rightsNote: '由项目导入解析生成；尚未在版本面板补充来源声明',
+    rightsNote: getT()('project:analysisPipeline.rightsNoteDefault'),
     rightsConfirmed: false,
   })
   const w = wt || {}
@@ -120,7 +121,7 @@ export async function writeShallowAnalysisFromTechniques(
       referenceId: refId,
       analysisRunId: run.id,
       chunkIndex: 0,
-      label: '全书',
+      label: getT()('project:analysisPipeline.fullBookLabel'),
       narrativeStyle: trim(w.narrativeStyle),
       openingTechnique: trim(w.openingTechnique),
       plotStructure: trim(w.plotStructure),
@@ -141,7 +142,7 @@ export async function writeShallowAnalysisFromTechniques(
   await completeReferenceAnalysisRun(
     run.id!,
     hasAny ? 1 : 0,
-    hasAny ? undefined : '解析未产出写作技法,无法生成浅层分析',
+    hasAny ? undefined : getT()('project:analysisPipeline.errorNoTechniques'),
   )
 }
 
@@ -153,13 +154,13 @@ export async function writeShallowAnalysisFromTechniques(
  */
 export async function runRefAnalysis(refId: number, requestedRunId?: number): Promise<void> {
   if (activeController) {
-    listener.onActivity?.('warn', '已有参考分析正在运行，请等待或先取消')
+    listener.onActivity?.('warn', getT()('project:analysisPipeline.alreadyRunning'))
     listener.onDone?.(refId, false, requestedRunId)
     return
   }
   const ref = await db.references.get(refId)
   if (!ref) {
-    listener.onActivity?.('error', `参考 #${refId} 不存在`)
+    listener.onActivity?.('error', getT()('project:analysisPipeline.refNotFound', { refId }))
     listener.onDone?.(refId, false, requestedRunId)
     return
   }
@@ -169,7 +170,7 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
       .filter(candidate => candidate.status === 'analyzing')
       .sort((a, b) => b.version - a.version)[0]
   if (!run?.id || run.referenceId !== refId) {
-    listener.onActivity?.('error', '找不到待分析版本')
+    listener.onActivity?.('error', getT()('project:analysisPipeline.noPendingRun'))
     listener.onDone?.(refId, false, requestedRunId)
     return
   }
@@ -180,9 +181,9 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
   if (!chunks || chunks.length === 0) {
     await patchReferenceAnalysisRun(run.id, {
       status: 'failed',
-      error: '找不到断点原文，请重新上传文件创建新版本',
+      error: getT()('project:analysisPipeline.errorNoBreakpointSource'),
     })
-    listener.onActivity?.('error', '找不到分块原文，需要重新上传')
+    listener.onActivity?.('error', getT()('project:analysisPipeline.noSourceChunks'))
     listener.onDone?.(refId, false, run.id)
     return
   }
@@ -198,7 +199,7 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
     progress: 0,
     error: null,
   })
-  listener.onActivity?.('info', `▶ 开始分析「${ref.title}」v${run.version}，共 ${chunks.length} 块（${depth}）`)
+  listener.onActivity?.('info', getT()('project:analysisPipeline.start', { title: ref.title, version: run.version, chunks: chunks.length, depth }))
 
   // 已有分析 → 断点续跑
   const existing = await db.referenceChunkAnalysis
@@ -213,8 +214,8 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
   try {
     for (const chunk of chunks) {
       if (activePaused.value) {
-        listener.onActivity?.('warn', '⏸ 分析已中止')
-        await patchReferenceAnalysisRun(run.id, { status: 'cancelled', error: '用户取消' })
+        listener.onActivity?.('warn', getT()('project:analysisPipeline.paused'))
+        await patchReferenceAnalysisRun(run.id, { status: 'cancelled', error: getT()('project:analysisPipeline.errorUserCancelled') })
         listener.onDone?.(refId, false, run.id)
         return
       }
@@ -225,7 +226,7 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
       for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
         if (activePaused.value) break
         listener.onActivity?.('info',
-          `▶ 块 ${chunk.index + 1}/${total} 分析中（第 ${attempt + 1} 次）`)
+          getT()('project:analysisPipeline.chunkAttempt', { index: chunk.index + 1, total, attempt: attempt + 1 }))
         try {
           const analysis = await analyzeChunkOnce({
             ref,
@@ -270,8 +271,8 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
           completed++
           const progress = Math.min(100, Math.round((completed / total) * 100))
           await patchReferenceAnalysisRun(run.id, { completedChunks: completed, progress })
-          listener.onProgress?.(progress, `块 ${chunk.index + 1} 完成`)
-          listener.onActivity?.('success', `✓ 块 ${chunk.index + 1} 完成`)
+          listener.onProgress?.(progress, getT()('project:analysisPipeline.chunkDoneProgress', { index: chunk.index + 1 }))
+          listener.onActivity?.('success', getT()('project:analysisPipeline.chunkDone', { index: chunk.index + 1 }))
           rollingContext = buildRollingContext(rollingContext, row)
           ok = true
           break
@@ -279,13 +280,13 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
           if ((err as Error).name === 'AbortError') throw err
           lastErr = err instanceof Error ? err.message : String(err)
           listener.onActivity?.('warn',
-            `块 ${chunk.index + 1} 第 ${attempt + 1} 次失败：${lastErr.slice(0, 80)}`)
+            getT()('project:analysisPipeline.chunkFailedAttempt', { index: chunk.index + 1, attempt: attempt + 1, error: lastErr.slice(0, 80) }))
           if (attempt < MAX_ATTEMPTS - 1) await sleep(RETRY_DELAY_MS)
         }
       }
       if (!ok) {
         listener.onActivity?.('error',
-          `✗ 块 ${chunk.index + 1} 重试 ${MAX_ATTEMPTS} 次仍失败：${lastErr.slice(0, 80)}`)
+          getT()('project:analysisPipeline.chunkFailedFinal', { index: chunk.index + 1, attempts: MAX_ATTEMPTS, error: lastErr.slice(0, 80) }))
       }
     }
 
@@ -294,20 +295,20 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
       .where('analysisRunId').equals(run.id).toArray()
     const successRatio = total > 0 ? finalAnalyses.length / total : 0
     const errMsg = successRatio < 1
-      ? `共 ${total} 块，成功 ${finalAnalyses.length}，失败 ${total - finalAnalyses.length}`
+      ? getT()('project:analysisPipeline.errorPartial', { total, done: finalAnalyses.length, failed: total - finalAnalyses.length })
       : undefined
     const finalStatus = await completeReferenceAnalysisRun(run.id, finalAnalyses.length, errMsg)
     listener.onActivity?.(finalStatus !== 'failed' ? 'success' : 'warn',
-      `分析结束：${finalAnalyses.length} / ${total} 块已入库`)
+      getT()('project:analysisPipeline.finished', { done: finalAnalyses.length, total }))
     listener.onDone?.(refId, finalStatus !== 'failed', run.id)
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     if ((err as Error).name === 'AbortError') {
-      listener.onActivity?.('warn', '已中止')
-      await patchReferenceAnalysisRun(run.id, { status: 'cancelled', error: '用户取消' })
+      listener.onActivity?.('warn', getT()('project:analysisPipeline.aborted'))
+      await patchReferenceAnalysisRun(run.id, { status: 'cancelled', error: getT()('project:analysisPipeline.errorUserCancelled') })
     } else {
       await patchReferenceAnalysisRun(run.id, { status: 'failed', error: msg })
-      listener.onActivity?.('error', `分析异常：${msg}`)
+      listener.onActivity?.('error', getT()('project:analysisPipeline.analysisError', { message: msg }))
     }
     listener.onDone?.(refId, false, run.id)
   } finally {

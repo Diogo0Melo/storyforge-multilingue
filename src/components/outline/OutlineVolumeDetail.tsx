@@ -1,4 +1,5 @@
 import { useMemo } from 'react'
+import { useDomainT } from '../../i18n'
 import { Plus, Sparkles, Trash2 } from 'lucide-react'
 import type { OutlineNode, StoryStructure, WorldGroup } from '../../lib/types'
 import AutoResizeTextarea from '../shared/AutoResizeTextarea'
@@ -55,6 +56,7 @@ export default function OutlineVolumeDetail({
   onReorderNodes,
   onMoveChapter,
 }: Props) {
+  const { t } = useDomainT('outline')
   const storyBlocks = useMemo(() => (
     volume
       ? nodes.filter(node => node.parentId === volume.id && node.type === 'storyBlock').sort((a, b) => a.order - b.order)
@@ -75,7 +77,7 @@ export default function OutlineVolumeDetail({
     return (
       <div className="flex flex-col items-center justify-center py-20 text-text-muted gap-3">
         <div className="text-4xl opacity-20">📖</div>
-        <p className="text-sm">选择左侧的卷开始编辑，或点击「批量生成卷级大纲」</p>
+        <p className="text-sm">{t('volume.selectPrompt')}</p>
       </div>
     )
   }
@@ -95,7 +97,7 @@ export default function OutlineVolumeDetail({
               disabled={aiStreaming}
               className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-bg-elevated text-accent rounded-md hover:bg-accent/10 border border-accent/30 disabled:opacity-50 transition-colors"
             >
-              <Sparkles className="w-3.5 h-3.5" /> AI 生成本卷卷纲
+              <Sparkles className="w-3.5 h-3.5" /> {t('volume.generateSummary')}
             </button>
           )}
           <button
@@ -103,15 +105,15 @@ export default function OutlineVolumeDetail({
             disabled={aiStreaming}
             className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-accent text-white rounded-md hover:bg-accent-hover disabled:opacity-50 transition-colors"
           >
-            <Sparkles className="w-3.5 h-3.5" /> 生成本卷所有章节
+            <Sparkles className="w-3.5 h-3.5" /> {t('volume.generateAllChapters')}
           </button>
           <button
             onClick={() => onAddChapter()}
             className="flex items-center gap-1 px-2.5 py-1.5 text-xs bg-bg-elevated text-text-secondary rounded-md hover:text-text-primary border border-border transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> 添加章节
+            <Plus className="w-3.5 h-3.5" /> {t('chapter.add')}
           </button>
-          <button onClick={onDeleteVolume} title="删除当前卷" className="p-1.5 text-text-muted hover:text-error rounded transition-colors">
+          <button onClick={onDeleteVolume} title={t('volume.deleteCurrent')} className="p-1.5 text-text-muted hover:text-error rounded transition-colors">
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
@@ -119,13 +121,13 @@ export default function OutlineVolumeDetail({
 
       {multiWorldEnabled && worldGroups.length > 1 && (
         <div className="flex items-center gap-2">
-          <label className="text-xs text-text-muted">本卷所属世界</label>
+          <label className="text-xs text-text-muted">{t('volume.worldLabel')}</label>
           <select
             value={volume.worldGroupId ?? ''}
             onChange={event => onUpdateNode(volume.id!, { worldGroupId: event.target.value ? Number(event.target.value) : null })}
             className="px-2 py-1 bg-bg-surface border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent cursor-pointer"
           >
-            <option value="">未指定</option>
+            <option value="">{t('volume.worldUnspecified')}</option>
             {worldGroups.map(group => (
               <option key={group.id} value={group.id}>{group.icon || '🌐'} {group.name}</option>
             ))}
@@ -134,11 +136,11 @@ export default function OutlineVolumeDetail({
       )}
 
       <div>
-        <label className="text-xs text-text-muted mb-1 block">卷情节摘要</label>
+        <label className="text-xs text-text-muted mb-1 block">{t('volume.summaryLabel')}</label>
         <AutoResizeTextarea
           value={volume.summary}
           onChange={event => onUpdateNode(volume.id!, { summary: event.target.value })}
-          placeholder="描述本卷的核心冲突、关键转折和主要情节..."
+          placeholder={t('volume.summaryPlaceholder')}
           minRows={3}
           maxRows={10}
           className="w-full px-3 py-2 bg-bg-surface border border-border rounded-md text-text-secondary text-sm focus:outline-none focus:border-accent"
@@ -148,8 +150,8 @@ export default function OutlineVolumeDetail({
       <div>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-sm font-medium text-text-primary">
-            {hasBlocks ? '故事结构' : '章节列表'}
-            <span className="text-text-muted font-normal ml-1">（{directChapters.length + blockChapterCount} 章）</span>
+            {hasBlocks ? t('volume.storyStructure') : t('volume.chapterList')}
+            <span className="text-text-muted font-normal ml-1">{t('metaWrapper', { text: t('volume.chapterCount', { count: directChapters.length + blockChapterCount }) })}</span>
           </h3>
           {!hasBlocks && <OutlineStructureMenu onSelect={onAddStructure} />}
         </div>
@@ -184,7 +186,7 @@ export default function OutlineVolumeDetail({
               onClick={() => onAddStructure('custom')}
               className="w-full py-2 text-xs text-text-muted border border-dashed border-border rounded-lg hover:text-accent hover:border-accent/50 transition-colors"
             >
-              + 添加故事块
+              + {t('storyBlock.add')}
             </button>
           </div>
         )}
@@ -192,7 +194,7 @@ export default function OutlineVolumeDetail({
         {!hasBlocks && (
           directChapters.length === 0 ? (
             <div className="text-center py-8 text-text-muted text-sm border border-dashed border-border rounded-lg">
-              还没有章节，点击「生成本卷所有章节」或「添加章节」
+              {t('chapter.emptyState')}
             </div>
           ) : (
             <div className="space-y-1">

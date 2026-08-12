@@ -13,11 +13,6 @@ import type { RagDocumentMetadata } from './rag-library'
 /** 物品流水动作 */
 export type ItemLedgerAction = 'gain' | 'consume'
 
-export const ITEM_LEDGER_ACTION_LABELS: Record<ItemLedgerAction, string> = {
-  gain: '获得',
-  consume: '消耗',
-}
-
 /** 一条物品流水记录 */
 export interface ItemLedgerEntry extends RagDocumentMetadata {
   id?: number

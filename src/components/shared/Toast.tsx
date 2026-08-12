@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, createContext, useContext } from 'react'
 import { CheckCircle, AlertCircle, Info, X } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 
 type ToastType = 'success' | 'error' | 'info'
 
@@ -76,6 +77,7 @@ const COLORS: Record<ToastType, string> = {
 function ToastMessage({ item, onClose }: { item: ToastItem; onClose: () => void }) {
   const [show, setShow] = useState(false)
   const Icon = ICONS[item.type]
+  const { t } = useDomainT('shared')
 
   useEffect(() => {
     requestAnimationFrame(() => setShow(true))
@@ -93,7 +95,11 @@ function ToastMessage({ item, onClose }: { item: ToastItem; onClose: () => void 
     >
       <Icon className="w-4 h-4 shrink-0" />
       <span className="flex-1">{item.message}</span>
-      <button onClick={onClose} className="shrink-0 opacity-60 hover:opacity-100 transition-opacity">
+      <button
+        onClick={onClose}
+        className="shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+        aria-label={t('toast.dismissAria')}
+      >
         <X className="w-3.5 h-3.5" />
       </button>
     </div>

@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useMemo } from 'react'
 import { Package, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, Plus, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useItemLedgerStore } from '../../stores/item-ledger'
 import { useChapterStore } from '../../stores/chapter'
 import { useCharacterStore } from '../../stores/character'
@@ -16,7 +17,7 @@ import { getAIConfigRequiredMessage, isAIConfigReady } from '../../lib/ai/config
 import {
   buildInventoryExtractPrompt, parseInventoryEvents, type ExtractedItemEvent,
 } from '../../lib/ai/adapters/inventory-extract-adapter'
-import { aggregateInventory, ITEM_LEDGER_ACTION_LABELS } from '../../lib/types/item-ledger'
+import { aggregateInventory } from '../../lib/types/item-ledger'
 import type { CharacterRoleWeight } from '../../lib/types/character'
 import type { Project, ItemLedgerAction } from '../../lib/types'
 import { splitExtractionText, uniqueBy } from '../../lib/ai/structured-extraction'
@@ -32,14 +33,15 @@ interface Props {
   project: Project
 }
 
-const ROLE_WEIGHT_GROUPS: { weight: CharacterRoleWeight; label: string }[] = [
-  { weight: 'main', label: '主要角色' },
-  { weight: 'secondary', label: '次要角色' },
-  { weight: 'npc', label: 'NPC' },
-  { weight: 'extra', label: '路人' },
+const ROLE_WEIGHT_GROUP_KEYS: { weight: CharacterRoleWeight; labelKey: 'roleWeight.main' | 'roleWeight.secondary' | 'roleWeight.npc' | 'roleWeight.extra' }[] = [
+  { weight: 'main', labelKey: 'roleWeight.main' },
+  { weight: 'secondary', labelKey: 'roleWeight.secondary' },
+  { weight: 'npc', labelKey: 'roleWeight.npc' },
+  { weight: 'extra', labelKey: 'roleWeight.extra' },
 ]
 
 export default function InventoryPanel({ project }: Props) {
+  const { t } = useDomainT('items')
   const { entries, loading, loadAll, addEntry, updateEntry, deleteEntry, deleteByChapter } = useItemLedgerStore()
   const { chapters, loadAll: loadChapters } = useChapterStore()
   const { characters, loadAll: loadCharacters } = useCharacterStore()
@@ -93,12 +95,12 @@ export default function InventoryPanel({ project }: Props) {
   // 角色列表按 roleWeight 分组
   const groupedCharacters = useMemo(() => {
     const result: { weight: CharacterRoleWeight; label: string; chars: typeof characters }[] = []
-    for (const group of ROLE_WEIGHT_GROUPS) {
+    for (const group of ROLE_WEIGHT_GROUP_KEYS) {
       const chars = characters.filter(c => c.roleWeight === group.weight)
-      if (chars.length > 0) result.push({ ...group, chars })
+      if (chars.length > 0) result.push({ weight: group.weight, label: t(group.labelKey), chars })
     }
     return result
-  }, [characters])
+  }, [characters, t])
 
   // 未归属条目（历史数据的 characterId === null && heldByName === '未知(历史数据)'）
   const unclaimedEntries = useMemo(
@@ -192,17 +194,17 @@ export default function InventoryPanel({ project }: Props) {
 
   const handleManualAdd = async () => {
     if (!selectedCharacter) {
-      setExtractError('请先选择一个角色，再手动添加其物品')
+      setExtractError(t('error.selectCharacterFirst'))
       return
     }
     await addEntry({
       projectId: project.id!,
-      itemName: '新物品',
+      itemName: t('common:defaults.newInventoryItemName'),
       heldByName: selectedCharacter.name,
       characterId: selectedCharacter.id ?? null,
       action: 'gain',
       quantity: 1,
-      note: '手动添加',
+      note: t('common:defaults.manualAddNote'),
     })
   }
 
@@ -235,20 +237,20 @@ export default function InventoryPanel({ project }: Props) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-              <Package className="w-5 h-5" /> 物品栏
+              <Package className="w-5 h-5" /> {t('panel.title')}
             </h2>
             <p className="text-xs text-text-muted mt-0.5">
-              AI 从已写正文中按角色提取物品获得/消耗，自动统计持有数量和历程。
+              {t('panel.subtitle')}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={handleManualAdd}
               disabled={!selectedCharacter}
-              title={selectedCharacter ? `给${selectedCharacter.name}添加物品` : '请先选择一个角色'}
+              title={selectedCharacter ? t('controls.manualAddTitleWithChar', { name: selectedCharacter.name }) : t('controls.manualAddTitleEmpty')}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-bg-elevated text-text-secondary border border-border hover:text-text-primary disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <Plus className="w-3.5 h-3.5" /> 手动添加
+              <Plus className="w-3.5 h-3.5" /> {t('controls.manualAdd')}
             </button>
             <button
               onClick={handleExtract}
@@ -256,7 +258,7 @@ export default function InventoryPanel({ project }: Props) {
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-accent text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
               {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-              {extracting ? `提取中 ${progress?.done}/${progress?.total}` : '从正文提取物品栏'}
+              {extracting ? t('controls.extractingProgress', { done: progress?.done ?? 0, total: progress?.total ?? 0 }) : t('controls.extractButton')}
             </button>
           </div>
         </div>
@@ -264,23 +266,23 @@ export default function InventoryPanel({ project }: Props) {
         {/* 角色切换器 */}
         {characters.length > 0 && (
           <div className="mt-3 flex items-center gap-2">
-            <span className="text-xs text-text-muted shrink-0">查看角色：</span>
+            <span className="text-xs text-text-muted shrink-0">{t('controls.viewCharacterLabel')}</span>
             <select
               value={selectedCharacterId ?? ''}
               onChange={ev => setSelectedCharacterId(ev.target.value ? Number(ev.target.value) : null)}
               className="flex-1 max-w-xs bg-bg-base border border-border rounded-lg text-xs px-2 py-1.5 text-text-secondary"
             >
-              <option value="">全部角色</option>
+              <option value="">{t('controls.allCharacters')}</option>
               {groupedCharacters.map(group => (
                 <optgroup key={group.weight} label={group.label}>
                   {group.chars.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}{c.roleWeight === 'main' ? ' · 主要' : ''}</option>
+                    <option key={c.id} value={c.id}>{c.name}{c.roleWeight === 'main' ? t('controls.mainTag') : ''}</option>
                   ))}
                 </optgroup>
               ))}
             </select>
             {selectedCharacter && (
-              <span className="text-xs text-accent">当前：{selectedCharacter.name} 的背包</span>
+              <span className="text-xs text-accent">{t('controls.currentBackpack', { name: selectedCharacter.name })}</span>
             )}
           </div>
         )}
@@ -288,14 +290,14 @@ export default function InventoryPanel({ project }: Props) {
         {/* 提取范围选择（QUICKWIN-3） */}
         {extractionChapters.length > 0 && (
           <div className="mt-2 flex items-center gap-2 text-xs">
-            <span className="text-text-muted">提取范围：</span>
+            <span className="text-text-muted">{t('controls.extractRangeLabel')}</span>
             <select
               value={extractMode}
               onChange={ev => setExtractMode(ev.target.value as InventoryExtractionMode)}
               className="bg-bg-base border border-border rounded px-1.5 py-0.5 text-text-secondary"
             >
-              <option value="all">全部已写章节</option>
-              <option value="range">自定义起止章</option>
+              <option value="all">{t('controls.extractRangeAll')}</option>
+              <option value="range">{t('controls.extractRangeCustom')}</option>
             </select>
             {extractMode === 'range' && (
               <>
@@ -306,11 +308,11 @@ export default function InventoryPanel({ project }: Props) {
                 >
                   {extractionChapters.map(item => (
                     <option key={item.chapter.id ?? item.ordinal} value={item.ordinal}>
-                      第{item.ordinal}章 · {item.chapter.title}{item.hasWrittenContent ? '' : '（无正文）'}
+                      {t('controls.chapterOption', { ordinal: item.ordinal, title: item.chapter.title })}{item.hasWrittenContent ? '' : t('controls.chapterOptionNoContent')}
                     </option>
                   ))}
                 </select>
-                <span className="text-text-muted">至</span>
+                <span className="text-text-muted">{t('controls.rangeTo')}</span>
                 <select
                   value={extractEnd}
                   onChange={ev => setExtractEnd(Number(ev.target.value))}
@@ -318,7 +320,7 @@ export default function InventoryPanel({ project }: Props) {
                 >
                   {extractionChapters.map(item => (
                     <option key={item.chapter.id ?? item.ordinal} value={item.ordinal}>
-                      第{item.ordinal}章 · {item.chapter.title}{item.hasWrittenContent ? '' : '（无正文）'}
+                      {t('controls.chapterOption', { ordinal: item.ordinal, title: item.chapter.title })}{item.hasWrittenContent ? '' : t('controls.chapterOptionNoContent')}
                     </option>
                   ))}
                 </select>
@@ -334,15 +336,15 @@ export default function InventoryPanel({ project }: Props) {
 
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-bg-surface p-3">
-          <p className="text-[10px] uppercase tracking-wide text-text-muted">当前种类</p>
+          <p className="text-[10px] uppercase tracking-wide text-text-muted">{t('stats.activeKinds')}</p>
           <p className="text-xl font-semibold text-text-primary mt-1">{inventoryStats.activeKinds}</p>
         </div>
         <div className="rounded-xl border border-border bg-bg-surface p-3">
-          <p className="text-[10px] uppercase tracking-wide text-text-muted">持有总量</p>
+          <p className="text-[10px] uppercase tracking-wide text-text-muted">{t('stats.totalHeld')}</p>
           <p className="text-xl font-semibold text-green-400 mt-1">{inventoryStats.totalHeld}</p>
         </div>
         <div className="rounded-xl border border-border bg-bg-surface p-3">
-          <p className="text-[10px] uppercase tracking-wide text-text-muted">流水记录</p>
+          <p className="text-[10px] uppercase tracking-wide text-text-muted">{t('stats.movements')}</p>
           <p className="text-xl font-semibold text-accent mt-1">{inventoryStats.movements}</p>
         </div>
       </div>
@@ -351,7 +353,7 @@ export default function InventoryPanel({ project }: Props) {
         <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">
           <div className="flex items-center gap-2 text-sm text-accent mb-1.5">
             <Loader2 className="w-4 h-4 animate-spin" />
-            正在逐章提取物品流水…（{progress.done}/{progress.total}）
+            {t('extracting.progress', { done: progress.done, total: progress.total })}
           </div>
           <div className="h-1.5 bg-bg-base rounded-full overflow-hidden">
             <div className="h-full bg-accent transition-all" style={{ width: `${(progress.done / progress.total) * 100}%` }} />
@@ -361,12 +363,12 @@ export default function InventoryPanel({ project }: Props) {
 
       {/* 物品栏 */}
       {loading ? (
-        <div className="text-text-muted text-sm py-8 text-center">加载中...</div>
+        <div className="text-text-muted text-sm py-8 text-center">{t('list.loading')}</div>
       ) : inventory.length === 0 ? (
         <div className="text-center py-12 text-text-muted">
           <Package className="w-10 h-10 mx-auto mb-3 opacity-30" />
-          <p className="text-sm">物品栏空空如也</p>
-          <p className="text-xs mt-1">写完一些章节后，点「从正文提取物品栏」让 AI 自动整理</p>
+          <p className="text-sm">{t('list.emptyTitle')}</p>
+          <p className="text-xs mt-1">{t('list.emptyHint')}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-2">
@@ -390,7 +392,7 @@ export default function InventoryPanel({ project }: Props) {
                     <span className="text-[10px] text-text-muted bg-bg-elevated px-1.5 py-0.5 rounded shrink-0">{item.heldByName}</span>
                   )}
                   <span className="text-[10px] text-text-muted flex-1">
-                    累计获得 {gained} · 消耗 {consumed}
+                    {t('list.cumulativeStats', { gained, consumed })}
                   </span>
                   <span className={`text-xs px-2 py-0.5 rounded-full font-mono ${
                     item.quantity > 0 ? 'bg-green-500/10 text-green-400'
@@ -402,14 +404,14 @@ export default function InventoryPanel({ project }: Props) {
                   <span className={`text-[10px] px-1.5 py-0.5 rounded shrink-0 ${
                     item.quantity > 0 ? 'bg-green-500/10 text-green-400' : 'bg-bg-elevated text-text-muted'
                   }`}>
-                    {item.quantity > 0 ? '持有中' : item.quantity === 0 ? '已耗尽' : '需核对'}
+                    {item.quantity > 0 ? t('list.statusHolding') : item.quantity === 0 ? t('list.statusExhausted') : t('list.statusCheckNeeded')}
                   </span>
                 </button>
 
                 {/* 流水历程 */}
                 {isOpen && (
                   <div className="border-t border-border/50 p-3">
-                    <p className="text-[10px] uppercase tracking-wide text-text-muted mb-2">获得 / 消耗时间线</p>
+                    <p className="text-[10px] uppercase tracking-wide text-text-muted mb-2">{t('list.timelineTitle')}</p>
                     <div className="relative ml-1 border-l border-border/70">
                     {item.entries.map(e => (
                       <div key={e.id} className="relative flex flex-wrap items-center gap-2 pl-4 py-2 text-xs group">
@@ -420,7 +422,7 @@ export default function InventoryPanel({ project }: Props) {
                           ? <ArrowUpCircle className="w-3.5 h-3.5 text-green-400 shrink-0" />
                           : <ArrowDownCircle className="w-3.5 h-3.5 text-red-400 shrink-0" />}
                         <span className={`shrink-0 ${e.action === 'gain' ? 'text-green-400' : 'text-red-400'}`}>
-                          {ITEM_LEDGER_ACTION_LABELS[e.action]} ×{e.quantity}
+                          {e.action === 'gain' ? t('list.actionGain') : t('list.actionConsume')} ×{e.quantity}
                         </span>
                         {e.chapterTitle && <span className="text-text-muted min-w-0 truncate">· {e.chapterTitle}</span>}
                         <div className="ml-auto flex flex-wrap items-center justify-end gap-1.5 shrink-0">
@@ -432,17 +434,17 @@ export default function InventoryPanel({ project }: Props) {
                             onKeyDown={ev => {
                               if (ev.key === 'Enter') ev.currentTarget.blur()
                             }}
-                            title="修改物品名"
-                            aria-label="修改物品名"
+                            title={t('list.editItemNameTitle')}
+                            aria-label={t('list.editItemNameAria')}
                             className="w-24 sm:w-28 bg-bg-base border border-border rounded text-[10px] px-1 py-0.5 text-text-secondary focus:outline-none focus:border-accent"
                           />
                           <input
                             defaultValue={e.heldByName ?? ''}
                             onBlur={ev => handleUpdateHeldByName(e.id!, ev.currentTarget.value)}
                             onKeyDown={ev => { if (ev.key === 'Enter') ev.currentTarget.blur() }}
-                            placeholder="持有人"
-                            title="修改持有人"
-                            aria-label="修改持有人"
+                            placeholder={t('list.holderPlaceholder')}
+                            title={t('list.editHolderTitle')}
+                            aria-label={t('list.editHolderAria')}
                             className="w-16 bg-bg-base border border-border rounded text-[10px] px-1 py-0.5 text-text-secondary focus:outline-none focus:border-accent"
                           />
                           <input
@@ -456,8 +458,8 @@ export default function InventoryPanel({ project }: Props) {
                             onKeyDown={ev => {
                               if (ev.key === 'Enter') ev.currentTarget.blur()
                             }}
-                            title="修改数量"
-                            aria-label="修改数量"
+                            title={t('list.editQuantityTitle')}
+                            aria-label={t('list.editQuantityAria')}
                             className="w-14 bg-bg-base border border-border rounded text-[10px] px-1 py-0.5 text-text-secondary focus:outline-none focus:border-accent"
                           />
                           <select
@@ -465,13 +467,13 @@ export default function InventoryPanel({ project }: Props) {
                             onChange={ev => updateEntry(e.id!, { action: ev.target.value as ItemLedgerAction })}
                             className="bg-bg-base border border-border rounded text-[10px] px-1 py-0.5 text-text-secondary"
                           >
-                            <option value="gain">获得</option>
-                            <option value="consume">消耗</option>
+                            <option value="gain">{t('list.actionGain')}</option>
+                            <option value="consume">{t('list.actionConsume')}</option>
                           </select>
                           <button
                             onClick={() => deleteEntry(e.id!)}
-                            title="删除流水"
-                            aria-label="删除流水"
+                            title={t('list.deleteEntryTitle')}
+                            aria-label={t('list.deleteEntryAria')}
                             className="p-0.5 text-text-muted hover:text-red-400"
                           >
                             <Trash2 className="w-3 h-3" />
@@ -482,9 +484,9 @@ export default function InventoryPanel({ project }: Props) {
                             onKeyDown={ev => {
                               if (ev.key === 'Enter') ev.currentTarget.blur()
                             }}
-                            placeholder="备注"
-                            title="修改备注"
-                            aria-label="修改备注"
+                            placeholder={t('list.notePlaceholder')}
+                            title={t('list.editNoteTitle')}
+                            aria-label={t('list.editNoteAria')}
                             className="w-24 sm:w-32 bg-bg-base border border-border rounded text-[10px] px-1 py-0.5 text-text-muted focus:outline-none focus:border-accent"
                           />
                         </div>
@@ -503,17 +505,17 @@ export default function InventoryPanel({ project }: Props) {
       {unclaimedEntries.length > 0 && selectedCharacterId == null && (
         <div className="border border-dashed border-border/60 rounded-xl p-4 bg-bg-elevated/30">
           <p className="text-xs text-text-muted mb-2">
-            未归属物品（历史数据）。可在这里选择角色认领，原始记录不会丢失。
+            {t('unclaimed.hint')}
           </p>
           <div className="text-[10px] text-text-muted space-y-1">
             {unclaimedEntries.map(e => (
               <div key={e.id} className="flex items-center gap-2">
                 <span>{e.itemName}</span>
-                <span className="text-text-muted/60">{e.action === 'gain' ? '获得' : '消耗'} ×{e.quantity}</span>
+                <span className="text-text-muted/60">{e.action === 'gain' ? t('list.actionGain') : t('list.actionConsume')} ×{e.quantity}</span>
                 {e.chapterTitle && <span className="text-text-muted/60">· {e.chapterTitle}</span>}
                 <select
                   value=""
-                  aria-label={`认领${e.itemName}`}
+                  aria-label={t('unclaimed.claimAria', { name: e.itemName })}
                   onChange={event => {
                     const characterId = Number(event.target.value)
                     const character = characters.find(candidate => candidate.id === characterId)
@@ -523,7 +525,7 @@ export default function InventoryPanel({ project }: Props) {
                   }}
                   className="ml-auto bg-bg-base border border-border rounded px-1.5 py-0.5 text-text-secondary"
                 >
-                  <option value="">选择角色认领…</option>
+                  <option value="">{t('unclaimed.selectCharacterToClaim')}</option>
                   {groupedCharacters.flatMap(group => group.chars).map(character => (
                     <option key={character.id} value={character.id}>{character.name}</option>
                   ))}

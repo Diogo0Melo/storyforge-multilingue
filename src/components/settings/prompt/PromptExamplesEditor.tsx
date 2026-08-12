@@ -7,6 +7,7 @@ import { resolveRequestConfig } from '../../../lib/ai/client'
 import type { PromptTemplate, PromptExample } from '../../../lib/types/prompt'
 import { useDialog } from '../../shared/Dialog'
 import { useToast } from '../../shared/Toast'
+import { useDomainT } from '../../../i18n'
 
 interface Props {
   template: PromptTemplate
@@ -14,16 +15,8 @@ interface Props {
   readOnly?: boolean
 }
 
-/**
- * 模板编辑器中的"示例 / 反例"区。
- * 用户可以：
- *  - 手动添加示例（粘贴优秀输出/避免输出）
- *  - 让 AI 自动生成几条示例（基于当前模板的 systemPrompt 反推）
- *  - 删除示例
- *
- * 示例会自动被 prompt-engine 拼到 user prompt 末尾作为 few-shot 参考。
- */
 export default function PromptExamplesEditor({ template, onChange, readOnly }: Props) {
+  const { t } = useDomainT('settings')
   const dialog = useDialog()
   const toast = useToast()
   const ai = useAIStream()
@@ -37,9 +30,9 @@ export default function PromptExamplesEditor({ template, onChange, readOnly }: P
   const addManual = async (kind: 'good' | 'bad') => {
     if (readOnly) return
     const text = await dialog.prompt({
-      title: kind === 'good' ? '添加好示例' : '添加反例',
-      message: '粘贴一条完整示例文本。',
-      placeholder: '粘贴示例内容',
+      title: kind === 'good' ? t('promptExamples.addGoodTitle') : t('promptExamples.addBadTitle'),
+      message: t('promptExamples.addMessage'),
+      placeholder: t('promptExamples.addPlaceholder'),
     })
     if (!text || !text.trim()) return
     const ex: PromptExample = {
@@ -63,7 +56,6 @@ export default function PromptExamplesEditor({ template, onChange, readOnly }: P
     })
   }
 
-  /** 让 AI 自动生成示例：用 meta-prompt 让 AI 基于模板生成 2 条示例 */
   const generateWithAI = async (kind: 'good' | 'bad') => {
     if (readOnly) return
     const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'prompt.examples' }).config
@@ -109,7 +101,6 @@ ${template.systemPrompt}
         { role: 'system', content: '你是一位提示词工程师助手，擅长为提示词模板生成示例数据。' },
         { role: 'user', content: metaPrompt },
       ], undefined, { category: 'prompt.examples' })
-      // 解析输出
       const parts = result.split(/===EXAMPLE===/i).map(s => s.trim()).filter(Boolean)
       const newExamples: PromptExample[] = parts.slice(0, 3).map(t => ({
         id: `ex-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -119,7 +110,7 @@ ${template.systemPrompt}
         createdAt: Date.now(),
       }))
       if (newExamples.length === 0) {
-        toast.error('AI 输出未识别到示例，请重试或手动添加')
+        toast.error(t('promptExamples.noExamplesError'))
       } else {
         onChange({
           ...examples,
@@ -127,7 +118,7 @@ ${template.systemPrompt}
         })
       }
     } catch (e) {
-      toast.error(`生成失败：${e instanceof Error ? e.message : String(e)}`)
+      toast.error(t('promptExamples.generateError', { error: e instanceof Error ? e.message : String(e) }))
     } finally {
       setGeneratingFor(null)
       ai.reset()
@@ -139,7 +130,7 @@ ${template.systemPrompt}
     const Icon = kind === 'good' ? ThumbsUp : ThumbsDown
     const colorClass = kind === 'good' ? 'text-success' : 'text-error'
     const bgClass = kind === 'good' ? 'bg-success/5 border-success/20' : 'bg-error/5 border-error/20'
-    const label = kind === 'good' ? '好示例' : '反例'
+    const label = kind === 'good' ? t('promptExamples.goodLabel') : t('promptExamples.badLabel')
     const isGenerating = generatingFor === kind
 
     return (
@@ -156,20 +147,20 @@ ${template.systemPrompt}
               <button
                 onClick={() => { void addManual(kind) }}
                 className="flex items-center gap-1 px-2 py-1 text-xs text-text-secondary hover:text-text-primary hover:bg-bg-hover rounded"
-                title="手动添加一条"
+                title={t('promptExamples.manualAddTitle')}
               >
-                <Plus className="w-3 h-3" /> 手动
+                <Plus className="w-3 h-3" /> {t('promptExamples.manualAdd')}
               </button>
               <button
                 onClick={() => generateWithAI(kind)}
                 disabled={isGenerating || ai.isStreaming}
                 className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded disabled:opacity-50"
-                title="让 AI 基于模板自动生成几条"
+                title={t('promptExamples.aiGenerateTitle')}
               >
                 {isGenerating
                   ? <Loader2 className="w-3 h-3 animate-spin" />
                   : <Sparkles className="w-3 h-3" />}
-                AI 生成
+                {t('promptExamples.aiGenerate')}
               </button>
             </div>
           )}
@@ -177,7 +168,7 @@ ${template.systemPrompt}
 
         {list.length === 0 ? (
           <p className={`text-xs text-text-muted py-2 px-3 border border-dashed border-border rounded ${bgClass}`}>
-            暂无{label}。{!readOnly ? '点击右上角「手动」或「AI 生成」添加。' : ''}
+            {t(kind === 'good' ? 'promptExamples.emptyGood' : 'promptExamples.emptyBad')} {!readOnly && t('promptExamples.emptyEditableSuffix')}
           </p>
         ) : (
           <div className="space-y-1.5">
@@ -213,10 +204,10 @@ ${template.systemPrompt}
     <div className="bg-bg-surface border border-border rounded-xl p-4">
       <div className="flex items-baseline justify-between mb-3">
         <label className="text-sm font-medium text-text-primary">
-          示例 / 反例 <span className="text-text-muted text-xs">（few-shot，自动拼到 user prompt 末尾）</span>
+          {t('promptExamples.title')} <span className="text-text-muted text-xs">{t('promptExamples.titleHint')}</span>
         </label>
         <span className="text-xs text-text-muted">
-          🤖 AI 生成 · 👤 用户标记 · ✍️ 手动添加
+          {t('promptExamples.sourceLegend')}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -229,7 +220,7 @@ ${template.systemPrompt}
         </div>
       )}
       <p className="mt-3 text-xs text-text-muted">
-        提示：好示例最多取前 3 条、反例最多前 2 条拼入 prompt（避免 token 浪费）。
+        {t('promptExamples.tip')}
       </p>
     </div>
   )

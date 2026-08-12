@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { getT } from '../i18n'
 import { useAIStream } from './useAIStream'
 import { createAISessionKey } from '../stores/ai-generation-session'
 import { useInspirationWorkspaceStore } from '../stores/inspiration-workspace'
@@ -28,6 +29,7 @@ export function useIncrementalInspiration(
   project: Project,
   onGenerationStarted: () => void,
 ) {
+  const t = getT()
   const isMultiWorld = !!project.enableMultiWorld
   const mode: InspirationResultMode = isMultiWorld ? 'multiworld' : 'single'
   const ai = useAIStream(createAISessionKey(project.id!, 'inspiration.reverse'))
@@ -135,7 +137,7 @@ export function useIncrementalInspiration(
       ? parseReverseMultiWorldOutput(output)
       : parseReverseOutput(output)
     if (!parsed) {
-      setFusionError('Agnes 返回内容无法解析，请检查原始输出后重试')
+      setFusionError(t('errors:inspiration.parseFailed'))
       return
     }
     setFusionError('')
@@ -154,7 +156,7 @@ export function useIncrementalInspiration(
 
   const addCurrentFragment = async () => {
     if (inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS) {
-      setFusionError(`单条灵感最多 ${MAX_INSPIRATION_FRAGMENT_CHARS} 字，请拆成多个碎片`)
+      setFusionError(t('errors:inspiration.fragmentTooLong', { limit: MAX_INSPIRATION_FRAGMENT_CHARS }))
       return null
     }
     try {
@@ -168,14 +170,14 @@ export function useIncrementalInspiration(
       setSelectedFragmentIds(current => new Set(current).add(fragment.id))
       return fragment
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : '灵感碎片保存失败')
+      setFusionError(error instanceof Error ? error.message : t('errors:inspiration.fragmentSaveFailed'))
       return null
     }
   }
 
   const generate = async () => {
     if (inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS) {
-      setFusionError(`单条灵感最多 ${MAX_INSPIRATION_FRAGMENT_CHARS} 字，请拆成多个碎片`)
+      setFusionError(t('errors:inspiration.fragmentTooLong', { limit: MAX_INSPIRATION_FRAGMENT_CHARS }))
       return
     }
     const selectedIds = new Set(selectedFragmentIds)
@@ -231,7 +233,7 @@ export function useIncrementalInspiration(
       setPendingFragmentIds([])
       setFusionError('')
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : '融合版本保存失败')
+      setFusionError(error instanceof Error ? error.message : t('errors:inspiration.fusionSaveFailed'))
     } finally {
       setConfirmingFusion(false)
     }
@@ -262,7 +264,7 @@ export function useIncrementalInspiration(
         return next
       })
     } catch (error) {
-      setFusionError(error instanceof Error ? error.message : '灵感碎片删除失败')
+      setFusionError(error instanceof Error ? error.message : t('errors:inspiration.fragmentDeleteFailed'))
     }
   }
 

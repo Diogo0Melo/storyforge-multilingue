@@ -1,4 +1,5 @@
 import { db } from '../db/schema'
+import { getT } from '../../i18n'
 import type {
   AgentConversation,
   AgentEvent,
@@ -22,7 +23,7 @@ export async function getOrCreateAgentConversation(input: {
   const row: AgentConversation = {
     projectId: input.projectId,
     worldGroupId: input.worldGroupId,
-    title: '创作对话',
+    title: getT()('agent:conversations.defaultTitle'),
     status: 'active',
     createdAt: now,
     updatedAt: now,
@@ -49,7 +50,7 @@ export async function appendAgentEvent(input: {
   return db.transaction('rw', db.agentConversations, db.agentEvents, async () => {
     const conversation = await db.agentConversations.get(input.conversationId)
     if (!conversation || conversation.projectId !== input.projectId) {
-      throw new Error('Agent 对话不存在或不属于当前项目。')
+      throw new Error(getT()('agent:conversations.notFound'))
     }
     const existing = await db.agentEvents
       .where('conversationId')
@@ -85,7 +86,7 @@ export async function updateAgentEventCandidate(
 ): Promise<void> {
   const event = await db.agentEvents.get(eventId)
   if (!event || event.projectId !== projectId || event.kind !== 'candidate') {
-    throw new Error('待更新的 Agent 候选不存在。')
+    throw new Error(getT()('agent:conversations.candidateNotFound'))
   }
   await db.agentEvents.update(eventId, { content })
 }

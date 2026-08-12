@@ -15,25 +15,9 @@ import ReferenceDeepAnalysisTab from './ReferenceDeepAnalysisTab'
 import {
   REFERENCE_GLYPH_COLORS,
   REFERENCE_TYPE_CONFIG,
+  getReferenceTypeLabel,
 } from './reference-view'
-
-const WORLDVIEW_LABELS: Record<string, string> = {
-  worldOrigin: '世界来源',
-  powerHierarchy: '力量体系',
-  worldStructure: '世界结构',
-  worldDimensions: '世界尺寸',
-  continentLayout: '大陆分布',
-  regionDimensions: '区域面积',
-  mountainsRivers: '山川河流',
-  climateByRegion: '分区域气候',
-  historyLine: '世界历史线',
-  worldEvents: '世界大事记',
-  races: '种族设定',
-  factionLayout: '势力分布',
-  politicsEconomyCulture: '政治/经济/文化',
-  internalConflicts: '矛盾冲突',
-  itemDesign: '道具设计',
-}
+import { useDomainT } from '../../i18n'
 
 type DetailTab = 'worldview' | 'characters' | 'outline' | 'deep-analysis' | 'info'
 
@@ -45,6 +29,7 @@ interface Props {
 }
 
 export default function ReferenceDetailCard({ reference, referenceIndex, onUpdate, onDelete }: Props) {
+  const { t } = useDomainT('project')
   const data = reference.importedData
   const glyphColor = REFERENCE_GLYPH_COLORS[referenceIndex % REFERENCE_GLYPH_COLORS.length]
   const config = REFERENCE_TYPE_CONFIG[reference.type]
@@ -54,16 +39,16 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
 
   const availableTabs = useMemo(() => {
     const tabs: { key: DetailTab; label: string; icon: React.ComponentType<{ className?: string }>; count?: number }[] = [
-      { key: 'deep-analysis', label: '作品分析', icon: Microscope },
+      { key: 'deep-analysis', label: t('referenceDetail.tabDeepAnalysis'), icon: Microscope },
     ]
     if (data) {
-      if (worldviewEntries.length > 0) tabs.push({ key: 'worldview', label: '世界观', icon: Globe, count: worldviewEntries.length })
-      if (characters.length > 0) tabs.push({ key: 'characters', label: '角色', icon: Users2, count: characters.length })
-      if (outline.length > 0) tabs.push({ key: 'outline', label: '大纲', icon: ListTree, count: outline.length })
+      if (worldviewEntries.length > 0) tabs.push({ key: 'worldview', label: t('referenceDetail.tabWorldview'), icon: Globe, count: worldviewEntries.length })
+      if (characters.length > 0) tabs.push({ key: 'characters', label: t('referenceDetail.tabCharacters'), icon: Users2, count: characters.length })
+      if (outline.length > 0) tabs.push({ key: 'outline', label: t('referenceDetail.tabOutline'), icon: ListTree, count: outline.length })
     }
-    tabs.push({ key: 'info', label: '基本信息', icon: BookMarked })
+    tabs.push({ key: 'info', label: t('referenceDetail.tabInfo'), icon: BookMarked })
     return tabs
-  }, [characters.length, data, outline.length, worldviewEntries.length])
+  }, [characters.length, data, outline.length, worldviewEntries.length, t])
   const [activeTab, setActiveTab] = useState<DetailTab>(availableTabs[0]?.key || 'info')
 
   useEffect(() => {
@@ -79,21 +64,21 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 text-xs mb-0.5">
-            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${config.color}`}>{config.label}</span>
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${config.color}`}>{getReferenceTypeLabel(reference.type)}</span>
             {data && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-400/30 text-blue-400 bg-blue-400/10">已导入</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded border border-blue-400/30 text-blue-400 bg-blue-400/10">{t('referencePanel.importedBadge')}</span>
             )}
           </div>
           <h3 className="text-xl font-bold font-serif text-text-primary">{reference.title}</h3>
           {reference.author && <p className="text-sm text-text-muted">{reference.author}</p>}
           {data?.sourceFilename && (
             <p className="text-[10px] text-text-muted mt-0.5">
-              来源文件：{data.sourceFilename}
-              {data.importedAt && ` · 导入于 ${new Date(data.importedAt).toLocaleString('zh-CN')}`}
+              {t('referenceDetail.sourceFile', { filename: data.sourceFilename })}
+              {data.importedAt && ` · ${t('referenceDetail.importedAt', { date: new Date(data.importedAt).toLocaleString() })}`}
             </p>
           )}
         </div>
-        <button onClick={onDelete} className="p-1.5 text-text-muted hover:text-error rounded transition-colors shrink-0" aria-label="删除项目参考">
+        <button onClick={onDelete} className="p-1.5 text-text-muted hover:text-error rounded transition-colors shrink-0" aria-label={t('referenceDetail.deleteAriaLabel')}>
           <Trash2 className="w-4 h-4" />
         </button>
       </div>
@@ -133,24 +118,25 @@ export default function ReferenceDetailCard({ reference, referenceIndex, onUpdat
 }
 
 function ReferenceInfoTab({ reference, onUpdate }: { reference: Reference; onUpdate: (data: Partial<Reference>) => void }) {
+  const { t } = useDomainT('project')
   return (
     <div className="space-y-0 divide-y divide-border/40">
-      <ReferenceInfoRow label="标题">
+      <ReferenceInfoRow label={t('referenceDetail.labelTitle')}>
         <InlineInput value={reference.title} onChange={value => onUpdate({ title: value })} className="text-sm font-medium text-text-primary" />
       </ReferenceInfoRow>
-      <ReferenceInfoRow label="作者">
-        <InlineInput value={reference.author} onChange={value => onUpdate({ author: value })} placeholder="点击填写作者…" className="text-sm text-text-primary" />
+      <ReferenceInfoRow label={t('referenceDetail.labelAuthor')}>
+        <InlineInput value={reference.author} onChange={value => onUpdate({ author: value })} placeholder={t('referenceDetail.authorPlaceholder')} className="text-sm text-text-primary" />
       </ReferenceInfoRow>
-      <ReferenceInfoRow label="类型">
+      <ReferenceInfoRow label={t('referenceDetail.labelType')}>
         <select value={reference.type} onChange={event => onUpdate({ type: event.target.value as ReferenceType })}
-          aria-label="参考类型" className="bg-bg-elevated border border-border rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent">
-          <option value="story">故事参考</option>
-          <option value="style">风格参考</option>
-          <option value="historical">历史资料</option>
+          aria-label={t('referenceDetail.typeAriaLabel')} className="bg-bg-elevated border border-border rounded px-2 py-1 text-xs text-text-primary focus:outline-none focus:border-accent">
+          <option value="story">{t('referenceDetail.optionStory')}</option>
+          <option value="style">{t('referenceDetail.optionStyle')}</option>
+          <option value="historical">{t('referenceDetail.optionHistorical')}</option>
         </select>
       </ReferenceInfoRow>
-      <ReferenceInfoRow label="参考要点">
-        <InlineTextarea value={reference.note} onChange={value => onUpdate({ note: value })} placeholder="记录你希望借鉴这部作品的哪些方面…" />
+      <ReferenceInfoRow label={t('referenceDetail.labelNote')}>
+        <InlineTextarea value={reference.note} onChange={value => onUpdate({ note: value })} placeholder={t('referenceDetail.notePlaceholder')} />
       </ReferenceInfoRow>
     </div>
   )
@@ -165,31 +151,84 @@ function ReferenceInfoRow({ label, children }: { label: string; children: React.
   )
 }
 
+type WorldviewLabelKey =
+  | 'worldviewLabels.worldOrigin' | 'worldviewLabels.powerHierarchy'
+  | 'worldviewLabels.worldStructure' | 'worldviewLabels.worldDimensions'
+  | 'worldviewLabels.continentLayout' | 'worldviewLabels.regionDimensions'
+  | 'worldviewLabels.mountainsRivers' | 'worldviewLabels.climateByRegion'
+  | 'worldviewLabels.historyLine' | 'worldviewLabels.worldEvents'
+  | 'worldviewLabels.races' | 'worldviewLabels.factionLayout'
+  | 'worldviewLabels.politicsEconomyCulture' | 'worldviewLabels.internalConflicts'
+  | 'worldviewLabels.itemDesign'
+
+const WORLDVIEW_LABEL_KEYS: Record<string, WorldviewLabelKey> = {
+  worldOrigin: 'worldviewLabels.worldOrigin',
+  powerHierarchy: 'worldviewLabels.powerHierarchy',
+  worldStructure: 'worldviewLabels.worldStructure',
+  worldDimensions: 'worldviewLabels.worldDimensions',
+  continentLayout: 'worldviewLabels.continentLayout',
+  regionDimensions: 'worldviewLabels.regionDimensions',
+  mountainsRivers: 'worldviewLabels.mountainsRivers',
+  climateByRegion: 'worldviewLabels.climateByRegion',
+  historyLine: 'worldviewLabels.historyLine',
+  worldEvents: 'worldviewLabels.worldEvents',
+  races: 'worldviewLabels.races',
+  factionLayout: 'worldviewLabels.factionLayout',
+  politicsEconomyCulture: 'worldviewLabels.politicsEconomyCulture',
+  internalConflicts: 'worldviewLabels.internalConflicts',
+  itemDesign: 'worldviewLabels.itemDesign',
+}
+
 function ReferenceWorldviewTab({ entries }: { entries: [string, string][] }) {
+  const { t } = useDomainT('project')
   return (
     <div className="space-y-0 divide-y divide-border/40">
-      {entries.map(([key, value]) => (
-        <div key={key} className="flex gap-4 py-3">
-          <span className="w-24 shrink-0 text-xs text-accent pt-0.5 text-right font-medium">{WORLDVIEW_LABELS[key] || key}</span>
-          <div className="flex-1 min-w-0 text-sm text-text-primary leading-relaxed whitespace-pre-wrap">{value}</div>
-        </div>
-      ))}
+      {entries.map(([key, value]) => {
+        const labelKey = WORLDVIEW_LABEL_KEYS[key]
+        const label = labelKey ? t(labelKey) : key
+        return (
+          <div key={key} className="flex gap-4 py-3">
+            <span className="w-24 shrink-0 text-xs text-accent pt-0.5 text-right font-medium">{label}</span>
+            <div className="flex-1 min-w-0 text-sm text-text-primary leading-relaxed whitespace-pre-wrap">{value}</div>
+          </div>
+        )
+      })}
     </div>
   )
 }
 
+type CharDetailKey =
+  | 'referenceDetail.charAppearance' | 'referenceDetail.charPersonality'
+  | 'referenceDetail.charBackground' | 'referenceDetail.charMotivation'
+  | 'referenceDetail.charAbilities' | 'referenceDetail.charRelationships'
+  | 'referenceDetail.charArc'
+
+const CHARACTER_DETAIL_KEYS: Array<[string, CharDetailKey]> = [
+  ['appearance', 'referenceDetail.charAppearance'],
+  ['personality', 'referenceDetail.charPersonality'],
+  ['background', 'referenceDetail.charBackground'],
+  ['motivation', 'referenceDetail.charMotivation'],
+  ['abilities', 'referenceDetail.charAbilities'],
+  ['relationships', 'referenceDetail.charRelationships'],
+  ['arc', 'referenceDetail.charArc'],
+]
+
 function ReferenceCharactersTab({ characters }: { characters: Array<Record<string, unknown>> }) {
+  const { t } = useDomainT('project')
   const [expanded, setExpanded] = useState<number | null>(null)
   return (
     <div className="space-y-0.5">
       {characters.map((character, index) => {
-        const name = String(character.name || '未命名')
+        const name = String(character.name || t('referenceDetail.unnamedCharacter'))
         const role = String(character.role || '')
         const description = character.shortDescription ? String(character.shortDescription) : ''
-        const details = [
-          ['外貌', character.appearance], ['性格', character.personality], ['背景', character.background],
-          ['动机', character.motivation], ['能力', character.abilities], ['关系', character.relationships], ['弧光', character.arc],
-        ].filter(([, value]) => value && String(value).trim()) as [string, unknown][]
+        const details = CHARACTER_DETAIL_KEYS
+          .map(([field, labelKey]) => {
+            const v = character[field]
+            if (!v || !String(v).trim()) return null
+            return { label: t(labelKey), value: String(v) }
+          })
+          .filter((item): item is { label: string; value: string } => item !== null)
         const isExpanded = expanded === index
         return (
           <div key={index}>
@@ -205,10 +244,10 @@ function ReferenceCharactersTab({ characters }: { characters: Array<Record<strin
             </button>
             {isExpanded && details.length > 0 && (
               <div className="ml-12 space-y-0 divide-y divide-border/30 mb-2">
-                {details.map(([label, value]) => (
+                {details.map(({ label, value }) => (
                   <div key={label} className="flex gap-4 py-2">
                     <span className="w-12 shrink-0 text-xs text-text-muted text-right">{label}</span>
-                    <div className="flex-1 text-sm text-text-primary leading-relaxed whitespace-pre-wrap">{String(value)}</div>
+                    <div className="flex-1 text-sm text-text-primary leading-relaxed whitespace-pre-wrap">{value}</div>
                   </div>
                 ))}
               </div>
@@ -225,7 +264,8 @@ function ReferenceOutlineTab({ outline }: { outline: Array<Record<string, unknow
 }
 
 function ReferenceOutlineNode({ node, depth }: { node: Record<string, unknown>; depth: number }) {
-  const title = String(node.title || '未命名')
+  const { t } = useDomainT('project')
+  const title = String(node.title || t('referenceDetail.unnamedNode'))
   const summary = node.summary ? String(node.summary) : ''
   const children = Array.isArray(node.children) ? node.children : []
   const [collapsed, setCollapsed] = useState(depth > 1)

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useDomainT } from '../../i18n'
 import { ChevronDown, ChevronRight, CornerDownRight, GripVertical, LayoutList, Plus, Sparkles, Trash2 } from 'lucide-react'
 import { CInput } from '../shared/CompositionInput'
 import { useDialog } from '../shared/Dialog'
@@ -44,6 +45,7 @@ export function OutlineChapterRow({
   onChapterDragStart,
   onChapterDragEnd,
 }: ChapterRowProps) {
+  const { t } = useDomainT('outline')
   const [summaryDraft, setSummaryDraft] = useState(ch.summary || '')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   useEffect(() => { setSummaryDraft(ch.summary || '') }, [ch.summary])
@@ -109,7 +111,7 @@ export function OutlineChapterRow({
             onChapterDragEnd()
           }}
           data-outline-chapter-id={ch.id}
-          title="拖动调整章节顺序"
+          title={t('chapter.dragReorder')}
           className="shrink-0 mt-1 cursor-grab active:cursor-grabbing text-text-muted/40 group-hover:text-text-muted"
         >
           <GripVertical className="w-3.5 h-3.5" />
@@ -130,7 +132,7 @@ export function OutlineChapterRow({
             if (ch.id != null && summaryDraft !== (ch.summary || '')) onUpdate(ch.id, { summary: summaryDraft })
           }}
           rows={1}
-          placeholder="章节摘要（可编辑，失焦自动保存）"
+          placeholder={t('chapter.summaryPlaceholder')}
           className="w-full bg-transparent text-text-muted text-xs outline-none mt-0.5 resize-none overflow-hidden leading-relaxed"
         />
       </div>
@@ -138,17 +140,17 @@ export function OutlineChapterRow({
         !ch.summary.trim() && onGenerate ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
       }`}>
         {!ch.summary.trim() && onGenerate && (
-          <button onClick={onGenerate} className="p-1 text-text-muted hover:text-accent rounded" title="AI 生成本章章纲">
+          <button onClick={onGenerate} className="p-1 text-text-muted hover:text-accent rounded" title={t('chapter.generateSummary')}>
             <Sparkles className="w-3.5 h-3.5" />
           </button>
         )}
         {onInsertAfter && (
-          <button onClick={onInsertAfter} className="p-1 text-text-muted hover:text-accent rounded" title="在此章下方插入一章">
+          <button onClick={onInsertAfter} className="p-1 text-text-muted hover:text-accent rounded" title={t('chapter.insertAfter')}>
             <CornerDownRight className="w-3.5 h-3.5" />
           </button>
         )}
         {onOpen && (
-          <button onClick={() => onOpen(ch.id!)} className="p-1 text-text-muted hover:text-accent rounded" title="编辑章节">
+          <button onClick={() => onOpen(ch.id!)} className="p-1 text-text-muted hover:text-accent rounded" title={t('chapter.edit')}>
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
         )}
@@ -191,15 +193,16 @@ export function OutlineStoryBlockSection({
   onChapterDragStart: (payload: ChapterDragPayload) => void
   onChapterDragEnd: () => void
 }) {
+  const { t } = useDomainT('outline')
   const dialog = useDialog()
   const [expanded, setExpanded] = useState(true)
   const blockChaptersDnD = useDragReorder(chapters.map(chapter => chapter.id), onReorder)
   const handleDeleteBlock = async () => {
     if (!block.id) return
     const ok = await dialog.confirm({
-      title: `删除故事块「${block.title}」？`,
-      message: '其下章节也会被删除，此操作不可恢复。',
-      confirmText: '删除',
+      title: t('storyBlock.deleteTitle', { title: block.title }),
+      message: t('storyBlock.deleteMessage'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })
     if (ok) onDeleteNode(block.id)
@@ -230,8 +233,8 @@ export function OutlineStoryBlockSection({
           onChange={event => onUpdateNode(block.id!, { title: event.target.value })}
           className="flex-1 bg-transparent text-text-primary text-sm font-medium outline-none"
         />
-        <span className="text-[10px] text-text-muted">{chapters.length} 章</span>
-        <button onClick={onAddChapter} className="p-1 text-text-muted hover:text-accent rounded" title="添加章节">
+        <span className="text-[10px] text-text-muted">{t('volume.chapterCount', { count: chapters.length })}</span>
+        <button onClick={onAddChapter} className="p-1 text-text-muted hover:text-accent rounded" title={t('chapter.add')}>
           <Plus className="w-3 h-3" />
         </button>
         <button onClick={() => { void handleDeleteBlock() }} className="p-1 text-text-muted hover:text-error rounded">
@@ -241,7 +244,7 @@ export function OutlineStoryBlockSection({
       <CInput
         value={block.summary}
         onChange={event => onUpdateNode(block.id!, { summary: event.target.value })}
-        placeholder="故事块描述..."
+        placeholder={t('storyBlock.descriptionPlaceholder')}
         className="w-full px-3 py-1.5 bg-bg-surface text-text-muted text-xs border-b border-border focus:outline-none"
       />
       {expanded && (
@@ -252,7 +255,7 @@ export function OutlineStoryBlockSection({
               onDrop={event => { if (dropToBlockEnd) void dropToBlockEnd.onDrop(event) }}
               className="text-center py-3 text-text-muted text-xs border border-dashed border-transparent hover:border-accent/40 rounded"
             >
-              点击 + 添加章节
+              {t('storyBlock.emptyState')}
             </div>
           ) : (
             chapters.map((chapter, index) => (

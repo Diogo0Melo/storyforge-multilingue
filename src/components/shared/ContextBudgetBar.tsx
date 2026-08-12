@@ -15,6 +15,22 @@ import {
   type ContextBudget,
   type ContextLayer,
 } from '../../lib/ai/context-budget'
+import { CONTEXT_SOURCES } from '../../lib/registry/context-sources'
+import { useDomainT, type DomainTFunction } from '../../i18n'
+
+/**
+ * 段落 label(注册表中文) → UI i18n labelKey 的反查表。
+ * 段本身只携带 label(与 AI payload 同源),不携带来源 key;
+ * 注册表 label 唯一,可安全反查。未命中的 label(如 System Prompt)原样显示。
+ */
+const CONTEXT_SOURCE_LABEL_KEYS: ReadonlyMap<string, string> = new Map(
+  CONTEXT_SOURCES.map(source => [source.label, source.labelKey] as const),
+)
+
+function translateSegmentLabel(t: DomainTFunction, label: string): string {
+  const labelKey = CONTEXT_SOURCE_LABEL_KEYS.get(label)
+  return labelKey ? t(labelKey, { defaultValue: label }) : label
+}
 
 interface Props {
   budget: ContextBudget
@@ -31,15 +47,16 @@ const LAYER_COLORS: Record<ContextLayer, string> = {
   L3: 'bg-purple-500',
 }
 
-const LAYER_LABELS: Record<ContextLayer, string> = {
-  L0: '基础指令',
-  L1: '核心上下文',
-  L2: '扩展上下文',
-  L3: '增强上下文',
-}
+const LAYER_KEYS = {
+  L0: 'contextBudget.layerL0',
+  L1: 'contextBudget.layerL1',
+  L2: 'contextBudget.layerL2',
+  L3: 'contextBudget.layerL3',
+} as const
 
 export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
   const [showDetail, setShowDetail] = useState(false)
+  const { t } = useDomainT('shared')
   // 展开查看某段「实际注入给 AI 的内容」（数据本就在 seg.content，这里只是显示出来）
   const [openSeg, setOpenSeg] = useState<number | null>(null)
   const pct = Math.min(budget.usageRatio * 100, 100)
@@ -68,7 +85,7 @@ export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
                 key={layer}
                 className={`h-full ${LAYER_COLORS[layer]} inline-block`}
                 style={{ width: `${Math.min(layerPct, 100)}%` }}
-                title={`${LAYER_LABELS[layer]}: ${formatTokenCount(layerTokens[layer])}`}
+                title={`${t(LAYER_KEYS[layer])}: ${formatTokenCount(layerTokens[layer])}`}
               />
             )
           })}
@@ -91,10 +108,12 @@ export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
         <div className="mt-1.5 flex items-start gap-1.5 text-error bg-error/10 rounded px-2 py-1">
           <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium">上下文超出窗口限制</p>
+            <p className="font-medium">{t('contextBudget.overBudgetTitle')}</p>
             <p className="text-text-muted mt-0.5">
-              超出 {formatTokenCount(budget.totalInputTokens - budget.inputBudget)} token。
-              {onTrim && '可自动裁剪低优先级内容（参考作品/示例等）。'}
+              {t('contextBudget.overBudgetBody', {
+                count: formatTokenCount(budget.totalInputTokens - budget.inputBudget),
+              })}
+              {onTrim && ` ${t('contextBudget.overBudgetTrimHint')}`}
             </p>
             {onTrim && (
               <button
@@ -104,7 +123,7 @@ export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
                 }}
                 className="mt-1 px-2 py-0.5 bg-error/20 text-error rounded hover:bg-error/30 text-[10px]"
               >
-                自动裁剪
+                {t('contextBudget.autoTrim')}
               </button>
             )}
           </div>
@@ -119,7 +138,7 @@ export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
             {(['L0', 'L1', 'L2', 'L3'] as ContextLayer[]).map(l => (
               <span key={l} className="flex items-center gap-1">
                 <span className={`w-2 h-2 rounded-sm ${LAYER_COLORS[l]}`} />
-                {LAYER_LABELS[l]}
+                {t(LAYER_KEYS[l])}
               </span>
             ))}
           </div>
@@ -140,10 +159,10 @@ export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
                   className={`w-full flex items-center gap-2 text-[10px] rounded px-0.5 py-0.5 ${
                     hasContent ? 'hover:bg-bg-hover cursor-pointer' : 'cursor-default opacity-70'
                   }`}
-                  title={hasContent ? '点击查看本段实际注入内容' : seg.label}
+                  title={hasContent ? t('contextBudget.segmentViewTitle') : translateSegmentLabel(t, seg.label)}
                 >
                   <span className={`w-2 h-2 rounded-sm flex-shrink-0 ${LAYER_COLORS[seg.layer]}`} />
-                  <span className="flex-1 text-left text-text-secondary truncate">{seg.label}</span>
+                  <span className="flex-1 text-left text-text-secondary truncate">{translateSegmentLabel(t, seg.label)}</span>
                   {hasContent && <Eye className={`w-3 h-3 flex-shrink-0 ${open ? 'text-accent' : 'text-text-muted'}`} />}
                   <span className="text-text-muted tabular-nums">{formatTokenCount(seg.tokens)}</span>
                   <span className="text-text-muted tabular-nums w-10 text-right">{segPct}%</span>
@@ -160,9 +179,13 @@ export default function ContextBudgetBar({ budget, onTrim, compact }: Props) {
           {/* 汇总 */}
           <div className="border-t border-border pt-1 mt-1 flex justify-between text-[10px]">
             <span className="text-text-muted">
-              模型窗口 {formatTokenCount(budget.maxContext)} | 预留输出 {formatTokenCount(budget.maxOutput)} | 安全边际 {formatTokenCount(budget.safetyMargin)}
+              {t('contextBudget.summary', {
+                maxContext: formatTokenCount(budget.maxContext),
+                maxOutput: formatTokenCount(budget.maxOutput),
+                safetyMargin: formatTokenCount(budget.safetyMargin),
+              })}
             </span>
-            <span className={colorClass}>{pct.toFixed(0)}% 已用</span>
+            <span className={colorClass}>{t('contextBudget.usagePercent', { percent: pct.toFixed(0) })}</span>
           </div>
         </div>
       )}

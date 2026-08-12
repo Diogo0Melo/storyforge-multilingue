@@ -1,20 +1,18 @@
 import type { FieldGenerationMode } from '../../lib/ai/field-generation-context'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   value: FieldGenerationMode
   onChange: (mode: FieldGenerationMode) => void
 }
 
-const MODES: [FieldGenerationMode, string][] = [
-  ['expand', '扩写'],
-  ['rewrite', '重写'],
-  ['polish', '润色'],
-]
+const MODES: FieldGenerationMode[] = ['expand', 'rewrite', 'polish']
 
 export default function AIFieldModeTabs({ value, onChange }: Props) {
+  const { t } = useDomainT('shared')
   return (
     <div className="flex shrink-0 items-center rounded-lg border border-border bg-bg-base p-0.5">
-      {MODES.map(([key, text]) => (
+      {MODES.map((key) => (
         <button
           key={key}
           type="button"
@@ -23,7 +21,7 @@ export default function AIFieldModeTabs({ value, onChange }: Props) {
             value === key ? 'bg-accent/15 text-accent' : 'text-text-muted hover:text-text-primary'
           }`}
         >
-          {text}
+          {t(`fieldModeTabs.${key}`)}
         </button>
       ))}
     </div>

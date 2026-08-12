@@ -27,6 +27,15 @@ const DIMENSION_LABELS: Record<string, string> = {
   pacing: '情节节奏',
 }
 
+/** i18n keys for UI display (resolved at render time; DIMENSION_LABELS remains for prompt building) */
+export const REVIEW_DIMENSION_LABEL_KEYS: Record<string, string> = {
+  logic: 'editor:dimensionLabels.logic',
+  character: 'editor:dimensionLabels.character',
+  worldview: 'editor:dimensionLabels.worldview',
+  foreshadow: 'editor:dimensionLabels.foreshadow',
+  pacing: 'editor:dimensionLabels.pacing',
+}
+
 export { DIMENSION_LABELS as REVIEW_DIMENSION_LABELS }
 
 export function buildReviewPrompt(

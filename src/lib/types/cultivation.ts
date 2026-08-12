@@ -1,3 +1,5 @@
+import { getT } from '../../i18n'
+
 export interface CultivationStage {
   id: string
   name: string
@@ -55,18 +57,19 @@ export function stringifyCultivationStages(stages: readonly CultivationStage[]):
 
 /** 拒绝重复 ID、悬空父节点、自环和任意有向环。 */
 export function validateCultivationStages(stages: readonly CultivationStage[]): CultivationStageValidation {
+  const t = getT()
   const errors: string[] = []
   const ids = new Set<string>()
   for (const stage of stages) {
-    if (!stage.id.trim()) errors.push('存在缺少 ID 的境界')
-    else if (ids.has(stage.id)) errors.push(`境界 ID 重复：${stage.id}`)
+    if (!stage.id.trim()) errors.push(t('cultivation:validation.missingId'))
+    else if (ids.has(stage.id)) errors.push(t('cultivation:validation.duplicateId', { id: stage.id }))
     ids.add(stage.id)
-    if (!stage.name.trim()) errors.push(`境界 ${stage.id || '（未命名）'} 缺少名称`)
+    if (!stage.name.trim()) errors.push(t('cultivation:validation.missingName', { id: stage.id || t('cultivation:validation.unnamed') }))
   }
   for (const stage of stages) {
     for (const parentId of stage.parentStageIds) {
-      if (parentId === stage.id) errors.push(`境界「${stage.name}」不能以自身为前置`)
-      else if (!ids.has(parentId)) errors.push(`境界「${stage.name}」引用了不存在的前置 ${parentId}`)
+      if (parentId === stage.id) errors.push(t('cultivation:validation.selfReference', { name: stage.name }))
+      else if (!ids.has(parentId)) errors.push(t('cultivation:validation.danglingParent', { name: stage.name, parentId }))
     }
   }
 
@@ -84,7 +87,7 @@ export function validateCultivationStages(stages: readonly CultivationStage[]): 
     visited.add(id)
     return false
   }
-  if (stages.some(stage => visit(stage.id))) errors.push('境界关系中存在有向环，修炼路径必须是 DAG')
+  if (stages.some(stage => visit(stage.id))) errors.push(t('cultivation:validation.hasCycle'))
   return { valid: errors.length === 0, errors: [...new Set(errors)] }
 }
 

@@ -403,9 +403,9 @@ pace 只能取 slow / medium / fast / climax 四个值之一；estimatedWords �
 请将本章拆分为{{#if usesSceneCount}} {{sceneCount}} {{/if}}{{#if notUsesSceneCount}} 3-6 {{/if}}个场景。`,
     variables: ['chapterTitle', 'chapterSummary', 'worldContext', 'characters', 'previousChapterEnding', 'userHint'],
     parameters: [
-      { key: 'sceneCount', label: '场景数', type: 'slider',
+      { key: 'sceneCount', label: '场景数', labelKey: 'promptParams.sceneCount.label', type: 'slider',
         min: 2, max: 10, step: 1, default: 4,
-        description: '每章拆分的场景数量', optional: true },
+        description: '每章拆分的场景数量', descriptionKey: 'promptParams.sceneCount.description', optional: true },
     ],
     isActive: true,
   },

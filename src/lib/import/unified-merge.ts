@@ -12,6 +12,7 @@ import {
   mergeCodexImportCandidates,
   normalizeCodexImportCandidates,
 } from './codex-classification'
+import { getT } from '../../i18n'
 
 const CHARACTER_LIKE_SYSTEM_WORDS = /精灵|器灵|人格|助手|伙伴|化身|宿主|管理员|管家/
 
@@ -40,7 +41,8 @@ function compactField(label: string, value: unknown): string {
 }
 
 function formatConceptCharacter(c: Record<string, unknown>): string {
-  const name = String(c.name || '').trim() || '金手指'
+  const t = getT()
+  const name = String(c.name || '').trim() || t('errors-lib:import.conceptFallbackName')
   const parts = [
     compactField('简介', c.shortDescription),
     compactField('能力', c.abilities),
@@ -49,7 +51,7 @@ function formatConceptCharacter(c: Record<string, unknown>): string {
     compactField('成长/代价', c.arc),
     compactField('关系', c.relationships),
   ].filter(Boolean)
-  return `【${name}】${parts.length ? parts.join('；') : '文档中提到的非人物设定'}`
+  return `【${name}】${parts.length ? parts.join('；') : t('errors-lib:import.conceptNonCharacter')}`
 }
 
 function appendText(existing: unknown, addition: string): string {
@@ -191,6 +193,7 @@ export function mergeUnified(
  * 帮 AI 避免把同一个角色在不同块识别成不同名字。
  */
 export function buildRollingContext(merged: UnifiedParseResult): string {
+  // AI-facing rolling context: headings stay in Chinese (prompt content, UI-language independent)
   const lines: string[] = []
   // 已识别角色
   if (Array.isArray(merged.characters) && merged.characters.length > 0) {
@@ -252,6 +255,7 @@ export function normalizeUnified(raw: unknown, codex?: {
 
 /** 生成给用户看的任务总结（ReportModal 里顶部那段文本）。 */
 export function buildFinalReport(session: ImportSession): string {
+  const t = getT()
   const done = session.chunks.filter(c => c.status === 'done').length
   const failed = session.chunks.filter(c => c.status === 'failed').length
   const totalWv = session.chunks
@@ -265,19 +269,26 @@ export function buildFinalReport(session: ImportSession): string {
     .reduce((a, b) => a + b, 0)
   const codexCandidates = session.merged?.codexCandidates?.length || 0
   const lines = [
-    `📊 任务汇报：${session.filename}`,
-    `· 文件总字数：${session.totalChars.toLocaleString()} 字`,
-    `· 分块：${session.totalChunks} 块（每块约 ${session.chunkSize.toLocaleString()} 字）`,
-    `· 成功：${done} 块；失败：${failed} 块`,
-    `· 累计入库：世界观字段 ${totalWv}、角色 ${totalChars}（合并前）、大纲节点 ${totalOl}、写作技法已分析`,
-    `· 待作者审查：Codex 词条候选 ${codexCandidates} 条（尚未自动入库）`,
+    t('errors-lib:import.reportHeader', { filename: session.filename }),
+    t('errors-lib:import.reportTotalChars', { chars: session.totalChars.toLocaleString() }),
+    t('errors-lib:import.reportChunks', {
+      total: session.totalChunks,
+      size: session.chunkSize.toLocaleString(),
+    }),
+    t('errors-lib:import.reportOutcome', { done, failed }),
+    t('errors-lib:import.reportCumulative', { wv: totalWv, ch: totalChars, ol: totalOl }),
+    t('errors-lib:import.reportCodexPending', { count: codexCandidates }),
   ]
   if (failed > 0) {
     lines.push('')
-    lines.push('❗ 失败块（可单独重试）：')
+    lines.push(t('errors-lib:import.reportFailedHeader'))
     for (const c of session.chunks) {
       if (c.status === 'failed') {
-        lines.push(`  - 第 ${c.index + 1} 块（${c.label || '未命名'}）：${c.errorMessage || '原因未知'}`)
+        lines.push(t('errors-lib:import.reportFailedItem', {
+          index: c.index + 1,
+          label: c.label || t('errors-lib:import.reportFailedUnnamed'),
+          message: c.errorMessage || t('errors-lib:import.reportUnknownReason'),
+        }))
       }
     }
   }

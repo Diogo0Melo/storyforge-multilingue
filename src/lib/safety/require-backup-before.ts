@@ -22,6 +22,7 @@
  */
 
 import { exportProjectJSON } from '../export/json-export'
+import { getT } from '../../i18n'
 
 export interface RequireBackupOptions {
   /** 操作名称(显示给用户) */
@@ -86,10 +87,11 @@ export async function requireBackupBefore(
         } catch (err) {
           console.error('[Safety] 备份下载失败,中止操作', err)
           // 备份失败时拒绝操作,保护用户数据
+          const t = getT()
           const proceedAnyway = await confirmFallback({
-            title: `备份下载失败，仍要继续「${options.operation}」？`,
-            message: `${(err as Error).message}\n\n强烈不建议在备份失败时继续高危操作。`,
-            confirmText: '仍要继续',
+            title: t('errors-lib:safety.backupDownloadFailedTitle', { operation: options.operation }),
+            message: t('errors-lib:safety.backupDownloadFailedMessage', { error: (err as Error).message }),
+            confirmText: t('errors-lib:safety.backupDownloadFailedConfirm'),
             tone: 'danger',
           })
           if (!proceedAnyway) return false
@@ -117,13 +119,14 @@ export async function requireBackupBefore(
  * 更友好的 UI 见 Phase 2/3 替换。
  */
 async function promptUserChoiceFallback(options: RequireBackupOptions): Promise<BackupChoice> {
-  const banner = `⚠️ 危险操作:${options.operation}`
+  const t = getT()
+  const banner = t('errors-lib:safety.dangerOperationBanner', { operation: options.operation })
   const detail = options.details ? `\n\n${options.details}` : ''
 
   const proceed = await confirmFallback({
     title: banner,
-    message: `${detail.trim() ? `${detail.trim()}\n\n` : ''}此操作不可恢复。是否继续？下一步会询问是否立即备份。`,
-    confirmText: '继续',
+    message: `${detail.trim() ? `${detail.trim()}\n\n` : ''}${t('errors-lib:safety.dangerOperationIrreversible')}`,
+    confirmText: t('errors-lib:safety.dangerOperationContinue'),
     tone: 'danger',
   })
   if (!proceed) return 'cancel'
@@ -134,9 +137,9 @@ async function promptUserChoiceFallback(options: RequireBackupOptions): Promise<
   }
 
   const wantBackup = await confirmFallback({
-    title: '是否立即下载备份(JSON 文件到本地)?',
-    message: '确认后会立即下载备份，然后继续；取消表示你已经备份过，直接继续。',
-    confirmText: '立即备份',
+    title: t('errors-lib:safety.backupPromptTitle'),
+    message: t('errors-lib:safety.backupPromptMessage'),
+    confirmText: t('errors-lib:safety.backupPromptConfirm'),
   })
 
   return wantBackup ? 'proceed-backup-now' : 'proceed-already-backed-up'
@@ -171,10 +174,11 @@ async function downloadProjectBackup(projectId: number, operation: string): Prom
  */
 export async function requireConfirmation(message: string): Promise<boolean> {
   if (isTestEnv()) return true
+  const t = getT()
   return confirmFallback({
-    title: '确认继续？',
+    title: t('errors-lib:safety.confirmContinueTitle'),
     message,
-    confirmText: '继续',
+    confirmText: t('errors-lib:safety.dangerOperationContinue'),
     tone: 'danger',
   })
 }

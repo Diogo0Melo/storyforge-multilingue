@@ -2,6 +2,7 @@ import { countWords, toHtml } from '../utils/html'
 import { buildBestChapterByOutlineMap } from '../chapters/selectors'
 import { walkOutlineChaptersInCanonicalOrder } from '../outline/canonical-outline-walk'
 import type { Chapter, OutlineNode } from '../types'
+import { getT } from '../../i18n'
 
 export interface FindReplaceOptions {
   query: string
@@ -60,7 +61,7 @@ export function buildChapterSearchTargets(
       return {
         id: chapter.id,
         outlineNodeId,
-        title: entry.outlineNode.title || chapter.title || `章节#${chapter.id}`,
+        title: entry.outlineNode.title || chapter.title || getT()('errors-lib:editor.untitledChapterFallback', { id: chapter.id }),
         content: chapter.content || '',
       }
     })

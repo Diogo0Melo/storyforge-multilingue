@@ -8,6 +8,7 @@ import { useMemo } from 'react'
 import { MapPin, Zap, Package, History, Swords } from 'lucide-react'
 import { useStateCardStore } from '../../stores/state-card'
 import { parseFields, type StateField } from '../../lib/types/state-card'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   projectId: number
@@ -25,6 +26,7 @@ function getFieldIcon(key: string) {
 }
 
 export default function CharacterStatusPanel({ projectId, characterName }: Props) {
+  const { t } = useDomainT('character')
   const { cards } = useStateCardStore()
 
   // 找到该角色的状态卡
@@ -44,7 +46,7 @@ export default function CharacterStatusPanel({ projectId, characterName }: Props
   return (
     <div className="mt-2 p-2 bg-bg-elevated/50 rounded-lg border border-border/50">
       <p className="text-[10px] text-text-muted font-medium mb-1.5 uppercase tracking-wide">
-        当前状态
+        {t('status.heading')}
       </p>
       <div className="space-y-1">
         {fields.map((f, i) => {
@@ -52,7 +54,7 @@ export default function CharacterStatusPanel({ projectId, characterName }: Props
           return (
             <div key={i} className="flex items-start gap-1.5 text-xs">
               <Icon className="w-3 h-3 text-text-muted flex-shrink-0 mt-0.5" />
-              <span className="text-text-muted flex-shrink-0">{f.key}：</span>
+              <span className="text-text-muted flex-shrink-0">{f.key}{t('common:colon')}</span>
               <span className="text-text-secondary">{f.value}</span>
             </div>
           )
@@ -60,7 +62,7 @@ export default function CharacterStatusPanel({ projectId, characterName }: Props
       </div>
       {stateCard.lastChapterId && (
         <p className="mt-1 text-[10px] text-text-muted">
-          最后更新于章节 #{stateCard.lastChapterId}
+          {t('status.lastUpdated', { id: stateCard.lastChapterId })}
         </p>
       )}
     </div>

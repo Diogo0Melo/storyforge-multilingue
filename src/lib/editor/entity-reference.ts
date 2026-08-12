@@ -6,6 +6,7 @@ import type {
 import type { CodexCategory, CodexEntry } from '../types/codex'
 import { codexEntryInWorld, parseEntryFields, parseFieldSchema } from '../types/codex'
 import { aggregateInventory } from '../types/item-ledger'
+import { getT } from '../../i18n'
 
 export type EditorEntityKind = 'character' | 'item' | 'location' | 'codex'
 
@@ -42,6 +43,7 @@ function clip(value: string | undefined, max = 160): string {
 export function buildEditorEntityReferences(
   input: BuildEditorEntityReferencesInput,
 ): EditorEntityReference[] {
+  const t = getT()
   const references: EditorEntityReference[] = []
   const worldGroupId = input.worldGroupId
 
@@ -54,12 +56,12 @@ export function buildEditorEntityReferences(
       id: `character:${character.id ?? character.name}`,
       name: character.name.trim(),
       kind: 'character',
-      kindLabel: '角色',
+      kindLabel: t('errors-lib:editor.referenceKindCharacter'),
       summary: clip(character.shortDescription || character.identity || character.personality),
       details: [
-        { label: '身份', value: clip(character.identity || character.shortDescription, 100) },
-        { label: '性格', value: clip(character.personality, 100) },
-        { label: '当前目标', value: clip(character.goals || character.motivation, 100) },
+        { label: t('errors-lib:editor.referenceIdentityLabel'), value: clip(character.identity || character.shortDescription, 100) },
+        { label: t('errors-lib:editor.referencePersonalityLabel'), value: clip(character.personality, 100) },
+        { label: t('errors-lib:editor.referenceGoalsLabel'), value: clip(character.goals || character.motivation, 100) },
       ].filter(item => item.value),
     })
   }
@@ -71,11 +73,13 @@ export function buildEditorEntityReferences(
       id: `item:${item.itemName.trim().toLocaleLowerCase()}`,
       name: item.itemName.trim(),
       kind: 'item',
-      kindLabel: '物品',
-      summary: item.quantity > 0 ? `当前持有 ${item.quantity}` : '当前未持有',
+      kindLabel: t('errors-lib:editor.referenceKindItem'),
+      summary: item.quantity > 0
+        ? t('errors-lib:editor.referenceItemHeld', { count: item.quantity })
+        : t('errors-lib:editor.referenceItemNotHeld'),
       details: [
-        { label: '数量', value: String(item.quantity) },
-        { label: '最近记录', value: clip(latest?.chapterTitle || latest?.note, 100) },
+        { label: t('errors-lib:editor.referenceQuantityLabel'), value: String(item.quantity) },
+        { label: t('errors-lib:editor.referenceLatestRecordLabel'), value: clip(latest?.chapterTitle || latest?.note, 100) },
       ].filter(row => row.value),
     })
   }
@@ -91,11 +95,11 @@ export function buildEditorEntityReferences(
       id: `location:${location.id ?? location.name}`,
       name: location.name.trim(),
       kind: 'location',
-      kindLabel: '地点',
+      kindLabel: t('errors-lib:editor.referenceKindLocation'),
       summary: clip(location.description || location.significance),
       details: [
-        { label: '类型', value: tags },
-        { label: '剧情作用', value: clip(location.significance, 100) },
+        { label: t('errors-lib:editor.referenceLocationTypeLabel'), value: tags },
+        { label: t('errors-lib:editor.referenceSignificanceLabel'), value: clip(location.significance, 100) },
       ].filter(row => row.value),
     })
   }

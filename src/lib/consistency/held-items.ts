@@ -1,6 +1,7 @@
 import type { Chapter, ItemLedgerEntry, OutlineNode } from '../types'
 import type { ConsistencyFinding } from '../ai/adapters/consistency-audit-adapter'
 import { db } from '../db/schema'
+import { getT } from '../../i18n'
 import { resolveProjectionBoundary } from './projection-boundary'
 
 export interface HeldItemProjection {
@@ -204,7 +205,7 @@ export function checkHeldItemAcquisition(
           const evidenceEntry = held.evidence[held.evidence.length - 1]
           const evidenceQuote = `${held.itemName} ×${held.quantity}`
           findings.push({
-            category: '物品持有连续性',
+            category: getT()('editor:consistencyFindings.heldItemCategory'),
             severity: 'risk',
             quote,
             evidence: [{
@@ -212,8 +213,8 @@ export function checkHeldItemAcquisition(
               sourceId: evidenceEntry?.id ?? 0,
               quote: evidenceQuote,
             }],
-            reason: `“${held.itemName}”在当前章之前已处于持有状态（持有人：${held.heldByName || '该角色'}），正文又把它写成获得/拿到/捡到，可能造成重复获得。`,
-            suggestion: '改为使用、确认、取出或提及该物品来源，避免再次写成首次获得。',
+            reason: getT()('editor:consistencyFindings.heldItemReason', { itemName: held.itemName, holder: held.heldByName || '' }),
+            suggestion: getT()('editor:consistencyFindings.heldItemSuggestion'),
           })
         }
       }

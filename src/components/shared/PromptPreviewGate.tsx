@@ -2,18 +2,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { Eye, RotateCcw, Send } from 'lucide-react'
 import { estimateTokens } from '../../lib/ai/context-budget'
 import type { ChatMessage } from '../../lib/types'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   messages: ChatMessage[]
   onBack: () => void
   onConfirm: (messages: ChatMessage[]) => void
   backLabel?: string
-}
-
-const ROLE_LABEL: Record<ChatMessage['role'], string> = {
-  system: 'System Prompt',
-  user: 'User Prompt',
-  assistant: 'Assistant 上文',
 }
 
 function cloneMessages(messages: ChatMessage[]): ChatMessage[] {
@@ -27,8 +22,20 @@ export default function PromptPreviewGate({
   messages,
   onBack,
   onConfirm,
-  backLabel = '返回生成依据',
+  backLabel,
 }: Props) {
+  const { t } = useDomainT('shared')
+  const resolvedBackLabel = backLabel ?? t('promptPreviewGate.back')
+
+  /** Role labels resolved — static map lookup, no computed keys */
+  const getRoleLabel = (role: ChatMessage['role']): string => {
+    switch (role) {
+      case 'system': return 'System Prompt'
+      case 'user': return 'User Prompt'
+      case 'assistant': return t('promptPreviewGate.assistantRoleLabel')
+    }
+  }
+
   const [draft, setDraft] = useState(() => cloneMessages(messages))
   useEffect(() => {
     setDraft(cloneMessages(messages))
@@ -55,15 +62,15 @@ export default function PromptPreviewGate({
         <div>
           <div className="flex items-center gap-2 text-xs font-medium text-text-primary">
             <Eye className="h-3.5 w-3.5 text-accent" />
-            最终发送内容
+            {t('promptPreviewGate.heading')}
           </div>
           <p className="mt-1 text-[10px] leading-4 text-text-muted">
-            这里是模板、参数和作品上下文拼接后的真实消息。修改只影响本次调用，不写回模板或作品资料。
+            {t('promptPreviewGate.description')}
           </p>
         </div>
         <span className="text-[10px] tabular-nums text-text-muted">
-          约 {draftTokens.toLocaleString()} tokens
-          {draftTokens !== originalTokens && `（原 ${originalTokens.toLocaleString()}）`}
+          {t('promptPreviewGate.tokens', { draft: draftTokens.toLocaleString() })}
+          {draftTokens !== originalTokens && t('promptPreviewGate.tokensDiff', { original: originalTokens.toLocaleString() })}
         </span>
       </div>
 
@@ -71,10 +78,10 @@ export default function PromptPreviewGate({
         {draft.map((message, index) => (
           <label key={`${message.role}-${index}`} className="block space-y-1">
             <span className="text-[10px] font-medium text-text-secondary">
-              {ROLE_LABEL[message.role]}
+              {getRoleLabel(message.role)}
             </span>
             <textarea
-              aria-label={`${ROLE_LABEL[message.role]} ${index + 1}`}
+              aria-label={`${getRoleLabel(message.role)} ${index + 1}`}
               value={message.content}
               onChange={event => updateContent(index, event.target.value)}
               rows={message.role === 'system' ? 8 : 14}
@@ -90,7 +97,7 @@ export default function PromptPreviewGate({
           onClick={() => setDraft(cloneMessages(messages))}
           className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary"
         >
-          <RotateCcw className="h-3 w-3" /> 还原拼接结果
+          <RotateCcw className="h-3 w-3" /> {t('promptPreviewGate.restore')}
         </button>
         <div className="flex gap-2">
           <button
@@ -98,7 +105,7 @@ export default function PromptPreviewGate({
             onClick={onBack}
             className="rounded border border-border px-2.5 py-1 text-xs text-text-muted hover:text-text-primary"
           >
-            {backLabel}
+            {resolvedBackLabel}
           </button>
           <button
             type="button"
@@ -106,7 +113,7 @@ export default function PromptPreviewGate({
             onClick={() => onConfirm(cloneMessages(draft))}
             className="flex items-center gap-1 rounded bg-accent px-2.5 py-1 text-xs text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-40"
           >
-            <Send className="h-3 w-3" /> 发送本次版本
+            <Send className="h-3 w-3" /> {t('promptPreviewGate.send')}
           </button>
         </div>
       </div>

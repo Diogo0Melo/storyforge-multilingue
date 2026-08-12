@@ -8,12 +8,7 @@
 
 /** 事件重要度 */
 export type StoryEventImportance = 1 | 2 | 3  // 1=次要 2=重要 3=关键
-
-export const STORY_IMPORTANCE_LABELS: Record<number, string> = {
-  1: '次要',
-  2: '重要',
-  3: '关键',
-}
+// UI 标签走 i18n `timeline:importance.{minor|important|critical}`（见 StoryTimelinePanel）
 
 /** 一条故事进程事件 */
 export interface StoryTimelineEvent {

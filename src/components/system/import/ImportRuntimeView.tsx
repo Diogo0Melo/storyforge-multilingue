@@ -3,6 +3,7 @@ import type { PipelinePhase } from '../../../stores/import-status'
 import ImportActivityLog from './ImportActivityLog'
 import ImportProgressPanel from './ImportProgressPanel'
 import ImportStatusBar from './ImportStatusBar'
+import { useDomainT } from '../../../i18n'
 
 export function ImportPipelineControls({
   phase,
@@ -17,6 +18,7 @@ export function ImportPipelineControls({
   onResume: () => void
   onCancel: () => void
 }) {
+  const { t } = useDomainT('system')
   const isRunning = phase === 'running' || phase === 'merging' || phase === 'preparing'
   const isPaused = phase === 'paused'
   if (phase === 'idle') return null
@@ -27,17 +29,17 @@ export function ImportPipelineControls({
       <div className="flex items-center gap-1">
         {isRunning && (
           <button onClick={onPause} className="flex items-center gap-1 px-2 py-1 text-xs text-warning hover:bg-warning/10 rounded">
-            <PauseCircle className="w-3.5 h-3.5" /> 暂停
+            <PauseCircle className="w-3.5 h-3.5" /> {t('runtime.pause')}
           </button>
         )}
         {isPaused && canResume && (
           <button onClick={onResume} className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded">
-            <PlayCircle className="w-3.5 h-3.5" /> 恢复
+            <PlayCircle className="w-3.5 h-3.5" /> {t('runtime.resume')}
           </button>
         )}
         {(isRunning || isPaused) && (
           <button onClick={onCancel} className="flex items-center gap-1 px-2 py-1 text-xs text-error hover:bg-error/10 rounded">
-            <StopCircle className="w-3.5 h-3.5" /> 取消
+            <StopCircle className="w-3.5 h-3.5" /> {t('runtime.cancel')}
           </button>
         )}
       </div>
@@ -60,6 +62,7 @@ export default function ImportRuntimeView({
   onShowReport: () => void
   onRestart: () => void
 }) {
+  const { t } = useDomainT('system')
   return (
     <div className="space-y-3">
       <ImportProgressPanel />
@@ -77,22 +80,22 @@ export default function ImportRuntimeView({
             <div className="bg-warning/10 border border-warning/30 rounded-lg p-3 flex items-center justify-between gap-3">
               <div className="text-sm text-warning flex items-center gap-1.5">
                 <AlertTriangle className="w-4 h-4 shrink-0" />
-                <span>{failedChunks} 个块解析失败，可重新尝试</span>
+                <span>{t('runtime.failedChunksHint', { count: failedChunks })}</span>
               </div>
               <button onClick={onRetryFailed}
                 className="flex items-center gap-1.5 px-4 py-2 bg-warning text-white text-sm rounded hover:bg-warning/90 shrink-0">
-                <RotateCcw className="w-4 h-4" /> 重试失败块
+                <RotateCcw className="w-4 h-4" /> {t('runtime.retryFailed')}
               </button>
             </div>
           )}
           <div className="flex items-center gap-2">
             <button onClick={onShowReport}
               className="flex items-center gap-1.5 px-3 py-2 text-xs text-text-secondary hover:text-accent hover:bg-accent/10 rounded border border-border">
-              <FileBarChart2 className="w-3.5 h-3.5" /> 查看解析报告
+              <FileBarChart2 className="w-3.5 h-3.5" /> {t('runtime.viewReport')}
             </button>
             <button onClick={onRestart}
               className="flex items-center gap-1.5 px-3 py-2 text-xs text-text-muted hover:text-text-secondary hover:bg-bg-hover rounded border border-border">
-              重新开始
+              {t('runtime.restart')}
             </button>
           </div>
         </div>

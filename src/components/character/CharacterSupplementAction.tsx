@@ -16,6 +16,7 @@ import {
 } from '../../lib/character/character-dimensions'
 import type { Character } from '../../lib/types'
 import CharacterDimensionPicker from './CharacterDimensionPicker'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   character: Character
@@ -33,6 +34,7 @@ interface Props {
  * 与「AI 设计角色」(从零造新角色)区别:此处不新建,只补全缺口。
  */
 export default function CharacterSupplementAction({ character, projectId, worldGroupId, onDone, compact }: Props) {
+  const { t } = useDomainT('character')
   const { config: aiConfig } = useAIConfigStore()
   const ai = useAIStream(createAISessionKey(projectId, 'character.supplement', String(character.id)))
   const [open, setOpen] = useState(false)
@@ -97,10 +99,10 @@ export default function CharacterSupplementAction({ character, projectId, worldG
         className={compact
           ? 'p-1 text-text-muted hover:text-accent flex-shrink-0'
           : 'flex items-center gap-1 px-2 py-1 text-xs text-text-secondary hover:text-accent border border-border rounded hover:border-accent/50 transition-colors'}
-        title={`AI 补全设定${empties ? `（缺 ${empties} 项）` : ''}`}
+        title={empties ? t('supplement.buttonTitleMissing', { count: empties }) : t('supplement.buttonTitle')}
       >
         <Wand2 className="w-4 h-4" />
-        {!compact && <span>AI 补全设定{empties > 0 && <span className="text-accent ml-0.5">·缺{empties}</span>}</span>}
+        {!compact && <span>{t('supplement.buttonLabel')}{empties > 0 && <span className="text-accent ml-0.5">{t('supplement.missingIndicator', { count: empties })}</span>}</span>}
       </button>
 
       {open && (
@@ -109,11 +111,11 @@ export default function CharacterSupplementAction({ character, projectId, worldG
           <div className="absolute top-full right-0 mt-1 z-50 bg-bg-surface border border-border rounded-lg shadow-lg p-3 w-[420px]">
             <div className="flex items-center justify-between mb-2">
               <div className="text-sm font-medium text-text-primary">
-                AI 补全设定 · <span className="text-text-secondary">{character.name || '未命名'}</span>
+                {t('supplement.dialogTitle', { name: character.name || t('supplement.unnamed') })}
               </div>
               <button onClick={() => setOpen(false)} className="p-0.5 text-text-muted hover:text-text-primary"><X className="w-4 h-4" /></button>
             </div>
-            <p className="text-[11px] text-text-muted mb-2">勾选要补全的维度（默认选中当前为空的）。AI 会参考该角色已有设定与世界观，只补这些字段、不覆盖其它。</p>
+            <p className="text-[11px] text-text-muted mb-2">{t('supplement.dialogDescription')}</p>
 
             <CharacterDimensionPicker selected={selected} onChange={setSelected} />
 
@@ -126,19 +128,19 @@ export default function CharacterSupplementAction({ character, projectId, worldG
                 className="mt-0.5 accent-accent"
               />
               <span className="text-[11px] text-text-secondary leading-snug">
-                结合剧情已写内容（反向哺喂）
-                <span className="block text-text-muted">把该角色在正文里已确认的事实 + 真实表现喂给 AI，补全更贴合实际剧情、不脱节。NPC 写着写着升成主角时尤其有用。</span>
+                {t('supplement.evidenceLabel')}
+                <span className="block text-text-muted">{t('supplement.evidenceDescription')}</span>
               </span>
             </label>
 
             {ai.error && <div className="mt-2 text-xs text-error">{ai.error}</div>}
             {ai.isStreaming && (
               <div className="mt-2 max-h-32 overflow-y-auto text-[11px] text-text-muted whitespace-pre-wrap bg-bg-base border border-border rounded p-2">
-                {ai.output || '正在生成…'}
+                {ai.output || t('supplement.streamingFallback')}
               </div>
             )}
             {done != null && !ai.isStreaming && (
-              <div className="mt-2 text-xs text-success">✅ 已补全 {done} 个维度，已写入该角色。</div>
+              <div className="mt-2 text-xs text-success">{t('supplement.doneMessage', { count: done })}</div>
             )}
 
             <button
@@ -146,7 +148,7 @@ export default function CharacterSupplementAction({ character, projectId, worldG
               disabled={ai.isStreaming || selected.size === 0}
               className="mt-3 w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-accent text-white text-sm rounded disabled:opacity-40 hover:bg-accent-hover"
             >
-              {ai.isStreaming ? <><Loader2 className="w-4 h-4 animate-spin" /> 补全中…</> : <><Wand2 className="w-4 h-4" /> 补全选中的 {selected.size} 个维度</>}
+              {ai.isStreaming ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('supplement.running')}</> : <><Wand2 className="w-4 h-4" /> {t('supplement.runButton', { count: selected.size })}</>}
             </button>
           </div>
         </>

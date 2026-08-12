@@ -30,6 +30,7 @@ import {
 } from '../../lib/types'
 import { characterAxesLabel } from '../../lib/character/character-axes'
 import { adoptCharacterDrivenVolumes } from '../../lib/story-planning/character-driven-adoption'
+import { useDomainT } from '../../i18n'
 import CharacterRevisionPanel from './CharacterRevisionPanel'
 
 interface Props {
@@ -48,6 +49,7 @@ export function applyCharacterArcAutoFill(
 }
 
 export default function CharacterDrivenPlotPanel({ project }: Props) {
+  const { t } = useDomainT('outline')
   const { characters, loadAll: loadChars } = useCharacterStore()
   const { loadAll: loadOutline } = useOutlineStore()
   const {
@@ -270,18 +272,18 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
   const handleRenamePlan = async () => {
     if (!currentPlan?.id) return
     const name = await dialog.prompt({
-      title: '重命名角色驱动方案',
+      title: t('characterDriven.renamePromptTitle'),
       defaultValue: currentPlan.name,
-      placeholder: '方案名称',
+      placeholder: t('characterDriven.renamePromptPlaceholder'),
     })
     if (name?.trim()) await renamePlan(currentPlan.id, name)
   }
 
   const handleDeletePlan = async () => {
     if (!currentPlan?.id || !await dialog.confirm({
-      title: `删除方案「${currentPlan.name}」？`,
-      message: '大纲与正文不会被删除；子版本会保留，但不再指向此方案。',
-      confirmText: '删除',
+      title: t('characterDriven.deletePlanTitle', { name: currentPlan.name }),
+      message: t('characterDriven.deletePlanMessage'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })) return
     ai.reset()
@@ -303,21 +305,21 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
       <div className="h-full flex flex-col overflow-hidden">
         <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-bg-surface">
           <Users className="w-5 h-5 text-accent" />
-          <h2 className="text-lg font-semibold text-text-primary">角色驱动剧情</h2>
-          <span className="text-xs text-text-muted ml-2">持久化角色弧光设计工作区</span>
+          <h2 className="text-lg font-semibold text-text-primary">{t('characterDriven.headerTitle')}</h2>
+          <span className="text-xs text-text-muted ml-2">{t('characterDriven.headerSubtitle')}</span>
           <div className="ml-auto flex rounded-lg border border-border bg-bg-base p-0.5">
-            <button className="px-3 py-1.5 text-xs bg-accent text-white rounded">开书规划</button>
+            <button className="px-3 py-1.5 text-xs bg-accent text-white rounded">{t('characterDriven.modePlanning')}</button>
             <button onClick={() => setMode('revision')} className="px-3 py-1.5 text-xs text-text-muted rounded">
-              中途重规划
+              {t('characterDriven.modeRevision')}
             </button>
           </div>
         </div>
         <div className="flex-1 grid place-items-center p-6">
           <div className="max-w-md text-center border border-dashed border-border rounded-xl p-8">
             <BookOpen className="w-10 h-10 mx-auto mb-3 text-accent opacity-70" />
-            <h3 className="text-base font-medium text-text-primary">创建第一份角色驱动方案</h3>
+            <h3 className="text-base font-medium text-text-primary">{t('characterDriven.createFirstTitle')}</h3>
             <p className="text-xs text-text-muted mt-2 mb-4">
-              角色弧光、作者要求和生成结果都会保存，可复制为新版本并显式设为后续 AI 参考。
+              {t('characterDriven.createFirstBody')}
             </p>
             <button
               onClick={handleCreatePlan}
@@ -325,7 +327,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-lg text-sm disabled:opacity-40"
             >
               {plansLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              新建方案
+              {t('characterDriven.newPlan')}
             </button>
           </div>
         </div>
@@ -338,12 +340,12 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
       {/* 顶部标题 */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-bg-surface">
         <Users className="w-5 h-5 text-accent" />
-        <h2 className="text-lg font-semibold text-text-primary">角色驱动剧情</h2>
-        <span className="text-xs text-text-muted ml-2">持久化角色弧光设计工作区</span>
+        <h2 className="text-lg font-semibold text-text-primary">{t('characterDriven.headerTitle')}</h2>
+        <span className="text-xs text-text-muted ml-2">{t('characterDriven.headerSubtitle')}</span>
         <div className="ml-auto flex rounded-lg border border-border bg-bg-base p-0.5">
-          <button className="px-3 py-1.5 text-xs bg-accent text-white rounded">开书规划</button>
+          <button className="px-3 py-1.5 text-xs bg-accent text-white rounded">{t('characterDriven.modePlanning')}</button>
           <button onClick={() => setMode('revision')} className="px-3 py-1.5 text-xs text-text-muted rounded">
-            中途重规划
+            {t('characterDriven.modeRevision')}
           </button>
         </div>
       </div>
@@ -357,7 +359,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
             selectPlan(Number(event.target.value))
           }}
           className="min-w-48 text-xs bg-bg-surface border border-border rounded px-2 py-1.5 text-text-primary"
-          aria-label="当前角色驱动方案"
+          aria-label={t('characterDriven.planSelectAria')}
         >
           {plans.map(plan => (
             <option key={plan.id} value={plan.id}>
@@ -366,16 +368,16 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
           ))}
         </select>
         <button onClick={handleCreatePlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-accent disabled:opacity-40">
-          <Plus className="w-3.5 h-3.5" />新建
+          <Plus className="w-3.5 h-3.5" />{t('characterDriven.newPlan')}
         </button>
         <button onClick={handleCopyPlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-accent disabled:opacity-40">
-          <Copy className="w-3.5 h-3.5" />复制为新版本
+          <Copy className="w-3.5 h-3.5" />{t('characterDriven.copyAsNewVersion')}
         </button>
         <button onClick={handleRenamePlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-text-muted disabled:opacity-40">
-          <Pencil className="w-3.5 h-3.5" />重命名
+          <Pencil className="w-3.5 h-3.5" />{t('characterDriven.rename')}
         </button>
         <button onClick={handleDeletePlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-red-500 disabled:opacity-40">
-          <Trash2 className="w-3.5 h-3.5" />删除
+          <Trash2 className="w-3.5 h-3.5" />{t('common:delete')}
         </button>
         <button
           onClick={() => setActivePlan(project.id!, activePlanId === currentPlan.id ? null : currentPlan.id!)}
@@ -384,10 +386,10 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
               ? 'bg-green-500/15 text-green-600'
               : 'bg-bg-surface text-text-muted border border-border'
           }`}
-          title="只有明确设为当前参考的方案才会注入后续大纲与正文 AI 上下文"
+          title={t('characterDriven.activeReferenceTooltip')}
         >
           <Power className="w-3.5 h-3.5" />
-          {activePlanId === currentPlan.id ? '后续 AI 正在参考' : '设为当前参考'}
+          {activePlanId === currentPlan.id ? t('characterDriven.activeReference') : t('characterDriven.setActive')}
         </button>
       </div>
 
@@ -395,7 +397,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
         {/* ── 角色弧光设定区 ─────────────────────────── */}
         <section>
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-medium text-text-primary">角色弧光设定</h3>
+            <h3 className="text-sm font-medium text-text-primary">{t('characterDriven.arcSectionTitle')}</h3>
             {availableChars.length > 0 && (
               <div className="flex items-center gap-2">
                 <select
@@ -406,10 +408,10 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                     if (id) handleAddArc(id)
                   }}
                 >
-                  <option value="">+ 添加角色</option>
+                  <option value="">{t('characterDriven.addCharacterPlaceholder')}</option>
                   {availableChars.map(c => (
                     <option key={c.id} value={c.id}>
-                      {c.name}（{characterAxesLabel(c)}）
+                      {t('characterDriven.optionFormat', { name: c.name, axes: characterAxesLabel(c) })}
                     </option>
                   ))}
                 </select>
@@ -420,8 +422,8 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
           {arcs.length === 0 ? (
             <div className="text-center py-8 text-text-muted text-sm border border-dashed border-border rounded-lg">
               <Users className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p>请从上方下拉框添加角色</p>
-              <p className="text-xs mt-1">设定角色的起始状态和目标状态，AI 将推演中间情节</p>
+              <p>{t('characterDriven.emptyArcsPrompt')}</p>
+              <p className="text-xs mt-1">{t('characterDriven.emptyArcsHint')}</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -437,10 +439,10 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                           <>
                             <span className="text-sm font-medium text-text-primary">{current?.name ?? arc.name}</span>
                             {current && current.name !== arc.name && (
-                              <span className="text-[11px] text-text-muted">方案快照：{arc.name}</span>
+                              <span className="text-[11px] text-text-muted">{t('characterDriven.snapshotLabel', { name: arc.name })}</span>
                             )}
                             {!current && (
-                              <span className="text-[11px] text-amber-600">原角色已删除 · 使用快照</span>
+                              <span className="text-[11px] text-amber-600">{t('characterDriven.deletedCharacterNotice')}</span>
                             )}
                           </>
                         )
@@ -451,9 +453,9 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                       <button
                         onClick={() => handleAutoFill(i)}
                         className="text-xs text-accent hover:underline"
-                        title="从角色卡已有信息自动填充"
+                        title={t('characterDriven.autoFillTitle')}
                       >
-                        自动填充
+                        {t('characterDriven.autoFill')}
                       </button>
                       <button
                         onClick={() => handleRemoveArc(i)}
@@ -467,26 +469,26 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs text-text-muted mb-1">
-                        🟢 起始状态
+                        {t('characterDriven.initialStateLabel')}
                       </label>
                       <AutoResizeTextarea
                         value={arc.initialState}
                         onChange={e => handleUpdateArc(i, 'initialState', e.target.value)}
                         onBlur={() => persistInputs(arcs)}
-                        placeholder="角色在故事开始时的状态、处境、性格特点..."
+                        placeholder={t('characterDriven.initialStatePlaceholder')}
                         className="w-full text-sm bg-bg-base border border-border rounded px-3 py-2 text-text-primary placeholder:text-text-muted resize-none"
                         minRows={2}
                       />
                     </div>
                     <div>
                       <label className="block text-xs text-text-muted mb-1">
-                        🔴 目标状态/结局
+                        {t('characterDriven.targetStateLabel')}
                       </label>
                       <AutoResizeTextarea
                         value={arc.targetState}
                         onChange={e => handleUpdateArc(i, 'targetState', e.target.value)}
                         onBlur={() => persistInputs(arcs)}
-                        placeholder="角色在故事结束时应达到的状态、成长结果..."
+                        placeholder={t('characterDriven.targetStatePlaceholder')}
                         className="w-full text-sm bg-bg-base border border-border rounded px-3 py-2 text-text-primary placeholder:text-text-muted resize-none"
                         minRows={2}
                       />
@@ -510,7 +512,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
         {/* ── 额外提示 ─────────────────────────────── */}
         {arcs.length > 0 && (
           <section>
-            <label className="block text-xs text-text-muted mb-1">额外要求（可选）</label>
+            <label className="block text-xs text-text-muted mb-1">{t('characterDriven.extraRequirementsLabel')}</label>
             <AutoResizeTextarea
               value={userHint}
               onChange={e => {
@@ -518,7 +520,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                 setUserHint(next)
               }}
               onBlur={() => persistInputs(arcs, userHint)}
-              placeholder="例如：控制在3卷以内、侧重战斗场景、需要感情线贯穿始终..."
+              placeholder={t('characterDriven.extraRequirementsPlaceholder')}
               className="w-full text-sm bg-bg-base border border-border rounded px-3 py-2 text-text-primary placeholder:text-text-muted resize-none"
               minRows={2}
             />
@@ -538,14 +540,14 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
               ) : (
                 <Sparkles className="w-4 h-4" />
               )}
-              {ai.isStreaming ? '生成中...' : '生成剧情大纲'}
+              {ai.isStreaming ? t('characterDriven.generating') : t('characterDriven.generatePlot')}
             </button>
             {ai.isStreaming && (
               <button
                 onClick={ai.stop}
                 className="text-xs text-text-muted hover:text-red-500 transition-colors"
               >
-                停止
+                {t('characterDriven.stop')}
               </button>
             )}
           </div>
@@ -570,7 +572,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                 }
               }}
               onRetry={handleGenerate}
-              placeholder="等待 AI 生成角色驱动剧情..."
+              placeholder={t('characterDriven.awaitingGeneration')}
               moduleKey="plot.character-driven"
             />
           </section>
@@ -583,8 +585,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
               <div className="flex items-center gap-2">
                 <BookOpen className="w-4 h-4 text-accent" />
                 <span className="text-sm font-medium text-text-primary">
-                  生成结果：{parsedVolumes.length} 卷，
-                  {parsedVolumes.reduce((s, v) => s + v.chapters.length, 0)} 章
+                  {t('characterDriven.resultSummary', { volumes: parsedVolumes.length, chapters: parsedVolumes.reduce((s, v) => s + v.chapters.length, 0) })}
                 </span>
               </div>
               <div className="flex items-center gap-2">
@@ -596,7 +597,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                   )}
                   className="text-xs text-accent hover:underline"
                 >
-                  {selectedVolumes.size === parsedVolumes.length ? '取消全选' : '全选'}
+                  {selectedVolumes.size === parsedVolumes.length ? t('characterDriven.deselectAll') : t('characterDriven.selectAll')}
                 </button>
               </div>
             </div>
@@ -622,7 +623,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                       <ChevronRight className="w-3.5 h-3.5 text-text-muted" />
                     )}
                     <span className="text-sm font-medium text-text-primary">{vol.volumeTitle}</span>
-                    <span className="text-xs text-text-muted">（{vol.chapters.length} 章）</span>
+                    <span className="text-xs text-text-muted">{t('metaWrapper', { text: t('characterDriven.chapterCount', { count: vol.chapters.length }) })}</span>
                   </div>
 
                   {/* 卷摘要 + 角色弧光 */}
@@ -632,7 +633,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                         <p className="text-xs text-text-muted mb-1 pl-8">{vol.volumeSummary}</p>
                       )}
                       {vol.characterArcs && (
-                        <p className="text-xs text-text-muted mb-2 pl-8 italic">弧光：{vol.characterArcs}</p>
+                        <p className="text-xs text-text-muted mb-2 pl-8 italic">{t('characterDriven.arcLabel', { arcs: vol.characterArcs })}</p>
                       )}
                       {/* 章节列表 */}
                       <div className="pl-8 space-y-1">
@@ -664,7 +665,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
               {importDone ? (
                 <div className="flex items-center gap-1.5 text-green-600 text-sm">
                   <Check className="w-4 h-4" />
-                  已成功导入到大纲
+                  {t('characterDriven.importedSuccess')}
                 </div>
               ) : (
                 <button
@@ -677,11 +678,11 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                   ) : (
                     <Check className="w-4 h-4" />
                   )}
-                  导入选中卷到大纲（{selectedVolumes.size} 卷）
+                  {t('characterDriven.importButton', { count: selectedVolumes.size })}
                 </button>
               )}
               <span className="text-xs text-text-muted">
-                导入后可在「大纲」面板查看和编辑
+                {t('characterDriven.importHint')}
               </span>
             </div>
           </section>

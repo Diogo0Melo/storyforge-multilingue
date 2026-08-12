@@ -21,6 +21,7 @@ import { renderPrompt } from '../ai/prompt-engine'
 import { usePromptStore } from '../../stores/prompt'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { getAIConfigRequiredMessage, isAIConfigReady } from '../ai/config-readiness'
+import { getT } from '../../i18n'
 import { useImportSessionStore } from '../../stores/import-session'
 import { useImportStatusStore } from '../../stores/import-status'
 import { extractJSON, IMPORT_MAX_TOKENS } from '../ai/adapters/import-adapter'
@@ -72,17 +73,19 @@ let activeController: AbortController | null = null
 let activePauseFlag = { paused: false }
 
 export function pausePipeline() {
+  const t = getT()
   activePauseFlag.paused = true
   activeController?.abort()
   useImportStatusStore.getState().setPhase('paused')
-  useImportStatusStore.getState().pushActivity('warn', '⏸ 用户暂停')
+  useImportStatusStore.getState().pushActivity('warn', t('errors-lib:import.pipelineUserPaused'))
 }
 
 export function cancelPipeline() {
+  const t = getT()
   activeController?.abort()
   activePauseFlag.paused = true
   useImportStatusStore.getState().setPhase('idle')
-  useImportStatusStore.getState().pushActivity('warn', '✕ 用户取消任务')
+  useImportStatusStore.getState().pushActivity('warn', t('errors-lib:import.pipelineUserCancelled'))
 }
 
 export function isPipelineRunning() {
@@ -95,12 +98,13 @@ export async function runSession(args: {
   projectId: number
 }): Promise<void> {
   const { sessionId, projectId } = args
+  const t = getT()
   const sessionStore = useImportSessionStore.getState()
   const statusStore = useImportStatusStore.getState()
 
   // 拉最新 session
   let session = await sessionStore.load(sessionId)
-  if (!session) throw new Error(`找不到导入会话 #${sessionId}`)
+  if (!session) throw new Error(t('errors-lib:import.sessionNotFound', { id: sessionId }))
 
   // 重置控制
   activeController = new AbortController()
@@ -115,11 +119,13 @@ export async function runSession(args: {
     phase: 'running',
   })
   statusStore.pushActivity('info',
-    `▶ 开始处理「${session.filename}」共 ${session.totalChunks} 块`)
+    t('errors-lib:import.pipelineStart', { filename: session.filename, total: session.totalChunks }))
   await sessionStore.patch(sessionId, { status: 'running' })
   await sessionStore.log(sessionId, -1, 'info',
-    `开始处理：共 ${session.totalChunks} 块，已完成 ${
-      session.chunks.filter(c => c.status === 'done').length} 块`)
+    t('errors-lib:import.pipelineStartLog', {
+      total: session.totalChunks,
+      done: session.chunks.filter(c => c.status === 'done').length,
+    }))
 
   try {
     let processedSinceMerge = 0
@@ -132,7 +138,7 @@ export async function runSession(args: {
       // 检查暂停 / 取消
       if (activePauseFlag.paused) {
         await sessionStore.patch(sessionId, { status: 'paused' })
-        statusStore.pushActivity('warn', '已暂停，可点恢复继续')
+        statusStore.pushActivity('warn', t('errors-lib:import.pipelinePaused'))
         return
       }
 
@@ -181,7 +187,7 @@ export async function runSession(args: {
         await applyReferenceFromSession(projectId, fresh, sessionId, statusStore)
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        statusStore.pushActivity('error', `保存项目参考失败：${msg}`)
+        statusStore.pushActivity('error', t('errors-lib:import.referenceSaveFailed', { message: msg }))
       }
     }
 
@@ -189,25 +195,25 @@ export async function runSession(args: {
       status: failedCount === 0 ? 'done' : 'failed',
       finalReport: report,
       fatalError: failedCount > 0
-        ? `${failedCount} 个块在重试 ${MAX_ATTEMPTS} 次后仍失败`
+        ? t('errors-lib:import.pipelineFatalChunk', { count: failedCount, attempts: MAX_ATTEMPTS })
         : undefined,
     })
     statusStore.setPhase(failedCount === 0 ? 'done' : 'failed')
     statusStore.pushActivity(failedCount === 0 ? 'success' : 'warn',
-      `任务结束：成功 ${doneCount} 块，失败 ${failedCount} 块`)
+      t('errors-lib:import.pipelineDone', { done: doneCount, failed: failedCount }))
     if (failedCount > 0) {
-      statusStore.setFatalError(`${failedCount} 个块多次重试仍失败，可在面板内单独重试这些块。`)
+      statusStore.setFatalError(t('errors-lib:import.pipelineFatalRetry', { count: failedCount }))
     }
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)
     if ((err as Error).name === 'AbortError') {
-      statusStore.pushActivity('warn', '已中止')
+      statusStore.pushActivity('warn', t('errors-lib:import.pipelineAborted'))
       return
     }
     await sessionStore.patch(sessionId, { status: 'failed', fatalError: msg })
     statusStore.setPhase('failed')
     statusStore.setFatalError(msg)
-    statusStore.pushActivity('error', `任务异常终止：${msg}`)
+    statusStore.pushActivity('error', t('errors-lib:import.pipelineTaskException', { message: msg }))
   } finally {
     activeController = null
   }
@@ -227,18 +233,19 @@ async function runChunk(
   // 重新切出本块原文（session 没保存原文，由调用方上传时已切；
   // 但因 session 不保存原文，我们让 ImportDocPanel 在 runSession 前把切好的文本
   // 缓存到 module 层的 IN_MEM_CHUNK_TEXT 里）
+  const t = getT()
   const text = getChunkText(session.id!, chunkIndex)
   if (!text) {
     await sessionStore.patchChunk(session.id!, chunkIndex, {
       status: 'failed',
-      errorMessage: '内存里找不到本块原文（页面刷新后续跑需重新上传同一文件）',
+      errorMessage: t('errors-lib:import.chunkTextMissing'),
       attempts: chunkState.attempts,
       finishedAt: Date.now(),
     })
     statusStore.markChunkFinished({ success: false })
     statusStore.pushActivity('error',
-      `块 ${chunkIndex + 1} 无原文，跳过（请重新上传文件以续跑）`, chunkIndex)
-    await sessionStore.log(session.id!, chunkIndex, 'error', '原文丢失，跳过')
+      t('errors-lib:import.chunkTextMissingActivity', { index: chunkIndex + 1 }), chunkIndex)
+    await sessionStore.log(session.id!, chunkIndex, 'error', t('errors-lib:import.chunkTextMissingLog'))
     return false
   }
 
@@ -254,17 +261,24 @@ async function runChunk(
 
     const attemptNo = attempt + 1
     statusStore.pushActivity('info',
-      `▶ 块 ${chunkIndex + 1}/${session.totalChunks} 解析中（第 ${attemptNo} 次）`,
+      t('errors-lib:import.chunkParsing', {
+        index: chunkIndex + 1,
+        total: session.totalChunks,
+        attempt: attemptNo,
+      }),
       chunkIndex)
     await sessionStore.log(session.id!, chunkIndex, 'info',
-      `第 ${attemptNo} 次尝试 · ${chunkState.charCount.toLocaleString()} 字`)
+      t('errors-lib:import.chunkAttemptLog', {
+        attempt: attemptNo,
+        chars: chunkState.charCount.toLocaleString(),
+      }))
 
     try {
       const result = await parseChunkOnce({
         projectId,
         chunkIndex,
         totalChunks: session.totalChunks,
-        knownContext: session.rollingContext || '（尚无已识别上下文）',
+        knownContext: session.rollingContext || t('errors-lib:import.chunkKnownContextFallback'),
         rawDocument: text,
         codexOptions,
         signal: activeController?.signal,
@@ -301,18 +315,33 @@ async function runChunk(
 
       statusStore.markChunkFinished({ success: true })
       statusStore.pushActivity('success',
-        `✓ 块 ${chunkIndex + 1} 完成 · 入库 世界观${counts.worldviewFields}/角色${counts.characters}/大纲${counts.outlineNodes} · 词条候选${counts.codexCandidates || 0}`,
+        t('errors-lib:import.chunkSuccessActivity', {
+          index: chunkIndex + 1,
+          wv: counts.worldviewFields,
+          ch: counts.characters,
+          ol: counts.outlineNodes,
+          codex: counts.codexCandidates || 0,
+        }),
         chunkIndex)
       await sessionStore.log(session.id!, chunkIndex, 'success',
-        `成功：世界观+${counts.worldviewFields} 角色+${counts.characters} 大纲+${counts.outlineNodes} 词条候选+${counts.codexCandidates || 0}`)
+        t('errors-lib:import.chunkSuccessLog', {
+          wv: counts.worldviewFields,
+          ch: counts.characters,
+          ol: counts.outlineNodes,
+          codex: counts.codexCandidates || 0,
+        }))
       return true
     } catch (err) {
       if ((err as Error).name === 'AbortError') return false
       const msg = err instanceof Error ? err.message : String(err)
       statusStore.pushActivity('warn',
-        `块 ${chunkIndex + 1} 第 ${attemptNo} 次失败：${msg.slice(0, 80)}`, chunkIndex)
+        t('errors-lib:import.chunkFailureActivity', {
+          index: chunkIndex + 1,
+          attempt: attemptNo,
+          message: msg.slice(0, 80),
+        }), chunkIndex)
       await sessionStore.log(session.id!, chunkIndex, 'warn',
-        `第 ${attemptNo} 次失败：${msg}`)
+        t('errors-lib:import.chunkFailureLog', { attempt: attemptNo, message: msg }))
       await sessionStore.patchChunk(session.id!, chunkIndex, {
         status: 'pending',
         errorMessage: msg,
@@ -327,10 +356,14 @@ async function runChunk(
         })
         statusStore.markChunkFinished({ success: false })
         statusStore.pushActivity('error',
-          `✗ 块 ${chunkIndex + 1} 重试 ${MAX_ATTEMPTS} 次仍失败：${msg.slice(0, 80)}`,
+          t('errors-lib:import.chunkFinalFailureActivity', {
+            index: chunkIndex + 1,
+            attempts: MAX_ATTEMPTS,
+            message: msg.slice(0, 80),
+          }),
           chunkIndex)
         await sessionStore.log(session.id!, chunkIndex, 'error',
-          `最终失败：${msg}`)
+          t('errors-lib:import.chunkFinalFailureLog', { message: msg }))
         return false
       }
     }
@@ -393,13 +426,17 @@ export async function applyReferenceFromSession(
   statusStore?: { pushActivity: (level: 'info' | 'success' | 'warn' | 'error', msg: string) => void },
   depthOverride?: import('../types').ReferenceAnalysisDepth,
 ): Promise<number> {
+  const t = getT()
   const depth = depthOverride ?? session.analysisDepth ?? 'quick'
   const refId = await useReferenceStore.getState().addReference({
     projectId,
     title: session.filename.replace(/\.[^.]+$/, ''),
     author: '',
     type: 'story',
-    note: `从「${session.filename}」导入 · ${session.totalChars.toLocaleString()} 字`,
+    note: t('errors-lib:import.referenceNote', {
+      filename: session.filename,
+      chars: session.totalChars.toLocaleString(),
+    }),
     url: '',
     fileHash: session.fileHash,
     importSessionId: sessionId,
@@ -414,7 +451,7 @@ export async function applyReferenceFromSession(
       importedAt: Date.now(),
     },
   })
-  statusStore?.pushActivity('success', '📚 已保存到「项目参考」')
+  statusStore?.pushActivity('success', t('errors-lib:import.referenceSaved'))
 
   if (depth === 'deep') {
     // 深层:复用 session 已切的块(文本在 chunk-text-registry)逐块深析
@@ -439,23 +476,23 @@ export async function applyReferenceFromSession(
         expectedChunks: chunkPlans.length,
         sourceKind: 'unknown',
         usageScope: 'analysis-only',
-        rightsNote: '由项目导入流程建立；尚未在版本面板补充来源声明',
+        rightsNote: t('errors-lib:import.referenceRightsNote'),
         rightsConfirmed: false,
         sourceText,
         sourceChunks: chunkPlans,
       })
       registerRefChunks(run.id!, chunkPlans)
-      statusStore?.pushActivity('info', `🔬 开始深层分析（${chunkPlans.length} 块）…`)
+      statusStore?.pushActivity('info', t('errors-lib:import.referenceDeepStart', { count: chunkPlans.length }))
       await runRefAnalysis(refId, run.id)
     } else {
       // 块文本丢了(刷新过) → 退回浅层,免得卡住
       await writeShallowAnalysisFromTechniques(refId, session.merged?.writingTechniques)
-      statusStore?.pushActivity('warn', '块文本不可用,已退回浅层分析')
+      statusStore?.pushActivity('warn', t('errors-lib:import.referenceChunkTextUnavailable'))
     }
   } else {
     // 浅层:免费,用解析已出的写作技法
     await writeShallowAnalysisFromTechniques(refId, session.merged?.writingTechniques)
-    statusStore?.pushActivity('success', '✓ 浅层作品分析已完成')
+    statusStore?.pushActivity('success', t('errors-lib:import.referenceShallowDone'))
   }
   return refId
 }
@@ -471,9 +508,14 @@ export async function applyProjectFromSession(
   worldGroupId: number | null = null,
   statusStore?: { pushActivity: (level: 'info' | 'success' | 'warn' | 'error', msg: string) => void },
 ): Promise<ApplyChunkCounts> {
+  const t = getT()
   const merged = (session.merged ?? {}) as UnifiedParseResult
   const counts = await applyChunkResult(projectId, merged, worldGroupId ?? session.targetWorldGroupId ?? null)
-  statusStore?.pushActivity('success', `📥 已灌入设定库：世界观 +${counts.worldviewFields} 字段 · 角色 +${counts.characters} · 大纲 +${counts.outlineNodes}`)
+  statusStore?.pushActivity('success', t('errors-lib:import.projectApplied', {
+    wv: counts.worldviewFields,
+    ch: counts.characters,
+    ol: counts.outlineNodes,
+  }))
   return counts
 }
 

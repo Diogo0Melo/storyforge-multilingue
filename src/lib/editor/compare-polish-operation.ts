@@ -1,6 +1,7 @@
 import type { HeldItemProjection } from '../consistency/held-items'
 import { checkHeldItemAcquisition } from '../consistency/held-items'
 import { countWords, htmlToPlainText } from '../utils/html'
+import { getT } from '../../i18n'
 
 export interface ComparePolishSaveArgs {
   projectId: number
@@ -33,7 +34,7 @@ export async function saveComparePolishDraft(
   const wordCount = countWords(plainText)
   const snapshotId = await args.createSnapshot(
     args.projectId,
-    `对照润色前 · ${args.chapterTitle}`,
+    getT()('errors-lib:editor.comparePolishSnapshotLabel', { title: args.chapterTitle }),
     'manual',
   )
   await args.updateChapter(args.chapterId, {

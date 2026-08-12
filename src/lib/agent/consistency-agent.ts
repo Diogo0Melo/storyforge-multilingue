@@ -1,4 +1,5 @@
 import { db } from '../db/schema'
+import { getT } from '../../i18n'
 import { assembleContext } from '../registry/assemble-context'
 import { normalizeChapterText, hashChapterText } from '../ai/chapter-memory/text-normalization'
 import {
@@ -237,7 +238,7 @@ export async function runConsistencyAgent(input: {
     lifecycleCatalog: formatLifecycleCatalog(lifecycle.catalog),
   })
   const reservation = input.budget.reserveCall({
-    label: input.mode === 'fast' ? '一致性 Fast Guard' : '一致性 Deep Audit',
+    label: input.mode === 'fast' ? getT()('agent:consistency.callLabelFast') : getT()('agent:consistency.callLabelDeep'),
     messages,
     maxOutputTokens: input.mode === 'fast' ? 4_000 : 6_000,
   })
@@ -256,7 +257,7 @@ export async function runConsistencyAgent(input: {
     evidenceContext: evidence.text,
   })
   if (!parsed) {
-    throw new Error('一致性 Agent 返回的 JSON 无法解析；没有保存不完整报告。')
+    throw new Error(getT()('agent:consistency.parseFailed'))
   }
   const cognitionFindings = checkCognitionBoundary(
     chapterText,
@@ -303,7 +304,7 @@ function isConsistencyAgentCandidate(value: unknown): value is ConsistencyAgentC
 export function summarizeConsistencyAgentCandidate(candidate: ConsistencyAgentCandidate): string {
   const hard = candidate.findings.filter(finding => finding.severity === 'hard').length
   const risk = candidate.findings.filter(finding => finding.severity === 'risk').length
-  return `${candidate.mode} · 硬冲突 ${hard} · 风险 ${risk} · 共 ${candidate.findings.length}`
+  return getT()('agent:consistency.summary', { mode: candidate.mode, hard, risk, total: candidate.findings.length })
 }
 
 /**
@@ -350,7 +351,7 @@ export async function persistConsistencyAgentCandidate(
   const conversation: AgentConversation = {
     projectId: candidate.projectId,
     worldGroupId: candidate.worldGroupId,
-    title: `一致性 Agent · ${candidate.chapterTitle}`,
+    title: getT()('agent:consistency.conversationTitle', { chapterTitle: candidate.chapterTitle }),
     status: 'archived',
     createdAt: now,
     updatedAt: now,

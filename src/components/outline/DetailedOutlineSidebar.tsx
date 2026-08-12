@@ -1,4 +1,5 @@
 import { ChevronRight, Square, Zap } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import type { BatchProgress } from '../../lib/ai/batch-detail-runner'
 import type { DetailedOutline, OutlineNode } from '../../lib/types'
 
@@ -21,13 +22,14 @@ export default function DetailedOutlineSidebar({
   onBatchStart,
   onBatchStop,
 }: Props) {
+  const { t } = useDomainT('outline')
   const detailedNodeIds = new Set(detailedOutlines.map(detail => detail.outlineNodeId))
 
   return (
     <div className="w-64 flex-shrink-0 border-r border-border overflow-y-auto p-3">
-      <h3 className="text-sm font-semibold text-text-primary mb-2 px-2">📖 选择章节</h3>
+      <h3 className="text-sm font-semibold text-text-primary mb-2 px-2">{t('detailed.sidebarTitle')}</h3>
       {chapters.length === 0 ? (
-        <div className="text-xs text-text-muted px-2 py-4">还没有章节节点。先去「大纲」里建几章。</div>
+        <div className="text-xs text-text-muted px-2 py-4">{t('detailed.noChapters')}</div>
       ) : (
         <div className="space-y-0.5">
           {chapters.map(chapter => (
@@ -44,7 +46,7 @@ export default function DetailedOutlineSidebar({
               <ChevronRight className="w-3 h-3 flex-shrink-0" />
               <span className="truncate flex-1">{chapter.title}</span>
               {chapter.id != null && detailedNodeIds.has(chapter.id) && (
-                <span className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0" title="有细纲" />
+                <span className="w-1.5 h-1.5 rounded-full bg-success flex-shrink-0" title={t('detailed.hasDetailTitle')} />
               )}
             </button>
           ))}
@@ -58,7 +60,7 @@ export default function DetailedOutlineSidebar({
               onClick={onBatchStart}
               className="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 bg-accent/10 text-accent text-xs rounded hover:bg-accent/20"
             >
-              <Zap className="w-3.5 h-3.5" /> 批量生成细纲
+              <Zap className="w-3.5 h-3.5" /> {t('detailed.batchGenerate')}
             </button>
           ) : (
             <div className="space-y-1">
@@ -72,7 +74,7 @@ export default function DetailedOutlineSidebar({
                 <span className="text-[10px] text-text-muted whitespace-nowrap">
                   {batchProgress.completed}/{batchProgress.total}
                 </span>
-                <button onClick={onBatchStop} className="p-0.5 text-error hover:text-error/80" title="停止">
+                <button onClick={onBatchStop} className="p-0.5 text-error hover:text-error/80" title={t('detailed.stopTitle')}>
                   <Square className="w-3 h-3" />
                 </button>
               </div>

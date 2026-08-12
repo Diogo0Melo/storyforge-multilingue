@@ -16,9 +16,11 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import {
   loadSimulationCanonCandidates,
   parseSimulationCanonSnapshot,
+  repairCanonSourceName,
   verifySimulationCanonSnapshot,
 } from '../../lib/simulation/canon-snapshot'
 import type {
@@ -46,19 +48,22 @@ import {
 } from '../../lib/simulation/ttrpg'
 import { isNpcRuntimeEntity } from '../../lib/simulation/runtime'
 
-const KIND_LABELS: Record<SimulationSessionKind, string> = {
-  sandbox: '沙盒',
-  'npc-evolution': 'NPC 演进',
-  ttrpg: '跑团',
-  chatgame: '角色聊天',
+type KindLabelKey = `kind.${'sandbox' | 'npcEvolution' | 'ttrpg' | 'chatgame'}`
+type SourceKindLabelKey = `sourceKind.${'world' | 'character' | 'location' | 'item' | 'rule'}`
+
+const KIND_LABEL_KEYS: Record<SimulationSessionKind, KindLabelKey> = {
+  sandbox: 'kind.sandbox',
+  'npc-evolution': 'kind.npcEvolution',
+  ttrpg: 'kind.ttrpg',
+  chatgame: 'kind.chatgame',
 }
 
-const SOURCE_KIND_LABELS: Record<SimulationCanonSourceKind, string> = {
-  world: '世界',
-  character: '角色',
-  location: '地点',
-  item: '物品',
-  rule: '规则',
+const SOURCE_KIND_LABEL_KEYS: Record<SimulationCanonSourceKind, SourceKindLabelKey> = {
+  world: 'sourceKind.world',
+  character: 'sourceKind.character',
+  location: 'sourceKind.location',
+  item: 'sourceKind.item',
+  rule: 'sourceKind.rule',
 }
 
 const SOURCE_KIND_ORDER: SimulationCanonSourceKind[] = [
@@ -69,39 +74,96 @@ const SOURCE_KIND_ORDER: SimulationCanonSourceKind[] = [
   'rule',
 ]
 
-function eventSummary(type: string, payloadJson: string): string {
+function formatEventSummary(
+  t: ReturnType<typeof useDomainT>['t'],
+  type: string,
+  payloadJson: string,
+): string {
   try {
     const payload = JSON.parse(payloadJson) as Record<string, unknown>
-    if (type === 'time.advanced') return `时间 +${payload.amount}`
+    if (type === 'time.advanced') return t('eventSummary.timeAdvanced', { amount: payload.amount })
     if (type === 'random.resolved') {
       const dice = Array.isArray(payload.dice) ? payload.dice.join(', ') : ''
-      return `${payload.expression}: [${dice}] = ${payload.total}`
+      return t('eventSummary.randomResolved', {
+        expression: payload.expression,
+        dice,
+        total: payload.total,
+      })
     }
     if (type === 'narrative.recorded') return String(payload.text ?? '')
-    if (type === 'ttrpg.scene.opened') return `场景开始：${(payload.scene as Record<string, unknown>)?.title ?? ''}`
-    if (type === 'ttrpg.action.recorded') return `动作：${payload.text ?? ''}`
+    if (type === 'ttrpg.scene.opened') {
+      return t('eventSummary.sceneOpened', {
+        title: (payload.scene as Record<string, unknown>)?.title ?? '',
+      })
+    }
+    if (type === 'ttrpg.action.recorded') return t('eventSummary.actionRecorded', { text: payload.text ?? '' })
     if (type === 'ttrpg.check.resolved') {
       const check = payload.check as Record<string, unknown> | undefined
-      return `检定：${check?.skill ?? ''} ${check?.total ?? ''}/${check?.dc ?? ''}`
+      return t('eventSummary.checkResolved', {
+        skill: check?.skill ?? '',
+        total: check?.total ?? '',
+        dc: check?.dc ?? '',
+      })
     }
-    if (type === 'ttrpg.gm.response.recorded') return `GM：${payload.text ?? ''}`
-    if (type === 'ttrpg.turn.advanced') return `回合推进至 ${payload.nextActorKey ?? ''}`
-    if (type === 'ttrpg.encounter.started') return `遭遇开始：${(payload.encounter as Record<string, unknown>)?.title ?? ''}`
-    if (type === 'ttrpg.encounter.resolved') return `遭遇结束：${payload.reason ?? ''}`
+    if (type === 'ttrpg.gm.response.recorded') return t('eventSummary.gmResponse', { text: payload.text ?? '' })
+    if (type === 'ttrpg.turn.advanced') return t('eventSummary.turnAdvanced', { actor: payload.nextActorKey ?? '' })
+    if (type === 'ttrpg.encounter.started') {
+      return t('eventSummary.encounterStarted', {
+        title: (payload.encounter as Record<string, unknown>)?.title ?? '',
+      })
+    }
+    if (type === 'ttrpg.encounter.resolved') return t('eventSummary.encounterResolved', { reason: payload.reason ?? '' })
     if (type === 'ttrpg.combat.attack.resolved') {
       const attack = payload.attack as Record<string, unknown> | undefined
-      return `攻击：${attack?.actorKey ?? ''} → ${attack?.targetKey ?? ''}｜${attack?.hit ? `命中 ${attack?.damageTotal ?? 0}` : '未命中'}`
+      return attack?.hit
+        ? t('eventSummary.attackHit', {
+            actor: attack.actorKey ?? '',
+            target: attack.targetKey ?? '',
+            damage: attack.damageTotal ?? 0,
+          })
+        : t('eventSummary.attackMiss', {
+            actor: attack?.actorKey ?? '',
+            target: attack?.targetKey ?? '',
+          })
     }
-    if (type === 'ttrpg.combat.resource.changed') return `资源：${payload.entityKey ?? ''} ${payload.resourceKey ?? ''} ${payload.delta ?? ''}`
-    if (type === 'ttrpg.combat.condition.applied') return `状态：${payload.entityKey ?? ''} 获得 ${(payload.condition as Record<string, unknown>)?.name ?? ''}`
-    if (type === 'ttrpg.combat.condition.removed') return `状态：${payload.entityKey ?? ''} 移除 ${payload.conditionId ?? ''}`
-    if (type === 'ttrpg.combat.turn.advanced') return `战斗回合推进至 ${payload.nextActorKey ?? ''}`
-    if (type === 'ttrpg.campaign.summary.updated') return '更新长期战役摘要'
-    if (type === 'ttrpg.campaign.quest.upserted') return `任务：${(payload.quest as Record<string, unknown>)?.title ?? ''}`
-    if (type === 'ttrpg.campaign.schedule.upserted') return `日程：${(payload.schedule as Record<string, unknown>)?.activity ?? ''}`
-    if (type === 'chat.session.configured') return `聊天场景：${(payload.scene as Record<string, unknown>)?.title ?? ''}`
-    if (type === 'chat.message.recorded') return `用户：${payload.text ?? ''}`
-    if (type === 'chat.reply.recorded') return `角色：${payload.text ?? ''}`
+    if (type === 'ttrpg.combat.resource.changed') {
+      return t('eventSummary.resourceChanged', {
+        entity: payload.entityKey ?? '',
+        resource: payload.resourceKey ?? '',
+        delta: payload.delta ?? '',
+      })
+    }
+    if (type === 'ttrpg.combat.condition.applied') {
+      return t('eventSummary.conditionApplied', {
+        entity: payload.entityKey ?? '',
+        condition: (payload.condition as Record<string, unknown>)?.name ?? '',
+      })
+    }
+    if (type === 'ttrpg.combat.condition.removed') {
+      return t('eventSummary.conditionRemoved', {
+        entity: payload.entityKey ?? '',
+        conditionId: payload.conditionId ?? '',
+      })
+    }
+    if (type === 'ttrpg.combat.turn.advanced') return t('eventSummary.combatTurnAdvanced', { actor: payload.nextActorKey ?? '' })
+    if (type === 'ttrpg.campaign.summary.updated') return t('eventSummary.campaignSummaryUpdated')
+    if (type === 'ttrpg.campaign.quest.upserted') {
+      return t('eventSummary.questUpserted', {
+        title: (payload.quest as Record<string, unknown>)?.title ?? '',
+      })
+    }
+    if (type === 'ttrpg.campaign.schedule.upserted') {
+      return t('eventSummary.scheduleUpserted', {
+        activity: (payload.schedule as Record<string, unknown>)?.activity ?? '',
+      })
+    }
+    if (type === 'chat.session.configured') {
+      return t('eventSummary.chatConfigured', {
+        title: (payload.scene as Record<string, unknown>)?.title ?? '',
+      })
+    }
+    if (type === 'chat.message.recorded') return t('eventSummary.chatMessage', { text: payload.text ?? '' })
+    if (type === 'chat.reply.recorded') return t('eventSummary.chatReply', { text: payload.text ?? '' })
     if (type.startsWith('entity.')) return String(payload.entityKey ?? type)
     return type
   } catch {
@@ -117,6 +179,17 @@ export default function SimulationRuntimePanel(props: {
 }) {
   const store = useSimulationRuntimeStore()
   const dialog = useDialog()
+  const { t, lang } = useDomainT('simulation')
+  // 语言感知的列表连接（NPC 标签、日程摘要等）
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
+  const kindLabel = (kind: SimulationSessionKind) => {
+    const key = KIND_LABEL_KEYS[kind]
+    return t(key)
+  }
+  const sourceKindLabel = (kind: SimulationCanonSourceKind) => {
+    const key = SOURCE_KIND_LABEL_KEYS[kind]
+    return t(key)
+  }
   const [newTitle, setNewTitle] = useState('')
   const [newKind, setNewKind] = useState<SimulationSessionKind>(props.sessionKind ?? 'sandbox')
   const [dice, setDice] = useState('1d20')
@@ -125,6 +198,7 @@ export default function SimulationRuntimePanel(props: {
   const [checkpointName, setCheckpointName] = useState('')
   const [branchTitle, setBranchTitle] = useState('')
   const [canonCandidates, setCanonCandidates] = useState<SimulationCanonCandidate[]>([])
+  const [canonWorldLabel, setCanonWorldLabel] = useState('')
   const [selectedSourceKeys, setSelectedSourceKeys] = useState<Set<string>>(new Set())
   const [canonLoading, setCanonLoading] = useState(false)
   const [snapshotVerified, setSnapshotVerified] = useState<boolean | null>(null)
@@ -188,7 +262,10 @@ export default function SimulationRuntimePanel(props: {
       projectId: props.project.id!,
       worldGroupId: props.worldGroupId,
     }).then(result => {
-      if (!cancelled) setCanonCandidates(result.candidates)
+      if (!cancelled) {
+        setCanonCandidates(result.candidates)
+        setCanonWorldLabel(result.worldLabel)
+      }
     }).catch(error => {
       if (!cancelled) setActionError(error instanceof Error ? error.message : String(error))
     }).finally(() => {
@@ -394,7 +471,7 @@ export default function SimulationRuntimePanel(props: {
 
   const generateTtrpgTurn = async () => {
     if (!selected || selected.kind !== 'ttrpg' || !selectedTtrpgActor) return
-    if (!store.runtimeState.ttrpg?.scene) throw new Error('请先开始一个跑团场景。')
+    if (!store.runtimeState.ttrpg?.scene) throw new Error(t('ttrpg.requireSceneError'))
     const runtimeContext = await assembleContext({
       projectId: props.project.id!,
       worldGroupId: selected.worldGroupId ?? null,
@@ -421,7 +498,7 @@ export default function SimulationRuntimePanel(props: {
 
   const generateTtrpgEncounter = async () => {
     if (!selected || selected.kind !== 'ttrpg') return
-    if (ttrpgParticipantKeys.length < 2) throw new Error('遭遇至少需要两个参与者。')
+    if (ttrpgParticipantKeys.length < 2) throw new Error(t('ttrpg.encounterMinParticipantsError'))
     const runtimeContext = await assembleContext({
       projectId: props.project.id!,
       worldGroupId: selected.worldGroupId ?? null,
@@ -449,12 +526,12 @@ export default function SimulationRuntimePanel(props: {
         <div className="mb-4">
           <div className="mb-1 flex items-center gap-2">
             <Box className="h-4 w-4 text-accent" />
-            <h2 className="font-semibold text-text-primary">互动运行时</h2>
+            <h2 className="font-semibold text-text-primary">{t('sidebar.title')}</h2>
           </div>
           <p className="text-xs leading-relaxed text-text-muted">
             {props.sessionKind
-              ? `${KIND_LABELS[props.sessionKind]}使用独立存档，事件不会反写小说 Canon。`
-              : 'NPC、跑团和角色聊天共用的独立存档。这里的事件不会反写小说 Canon。'}
+              ? t('sidebar.descriptionLocked', { kind: kindLabel(props.sessionKind) })
+              : t('sidebar.descriptionUnlocked')}
           </p>
         </div>
 
@@ -462,7 +539,7 @@ export default function SimulationRuntimePanel(props: {
           <input
             value={newTitle}
             onChange={event => setNewTitle(event.target.value)}
-            placeholder="新会话名称"
+            placeholder={t('sidebar.newSessionPlaceholder')}
             className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
           />
           {props.sessionKind ? (
@@ -471,30 +548,30 @@ export default function SimulationRuntimePanel(props: {
               className="flex w-full items-center gap-2 rounded border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
             >
               <Dices className="h-3.5 w-3.5 text-accent" />
-              {KIND_LABELS[props.sessionKind]}存档
+              {kindLabel(props.sessionKind)}{t('sidebar.kindLockSuffix')}
             </div>
           ) : (
             <select
               value={newKind}
               onChange={event => setNewKind(event.target.value as SimulationSessionKind)}
-              aria-label="运行时类型"
+              aria-label={t('sidebar.runtimeTypeAria')}
               className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
             >
-              {Object.entries(KIND_LABELS).map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
+              {(Object.keys(KIND_LABEL_KEYS) as SimulationSessionKind[]).map(value => (
+                <option key={value} value={value}>{kindLabel(value)}</option>
               ))}
             </select>
           )}
           <fieldset className="space-y-2 border-t border-border pt-2">
             <legend className="flex items-center gap-1.5 px-1 text-xs font-medium text-text-secondary">
               <Snowflake className="h-3.5 w-3.5" />
-              冻结来源
+              {t('sidebar.freezeSourcesLegend')}
             </legend>
             <div className="max-h-52 space-y-2 overflow-y-auto pr-1">
               {SOURCE_KIND_ORDER.map(kind => candidatesByKind[kind].length > 0 && (
                 <div key={kind}>
                   <div className="mb-1 text-[11px] font-medium text-text-muted">
-                    {SOURCE_KIND_LABELS[kind]}
+                    {sourceKindLabel(kind)}
                   </div>
                   <div className="space-y-1">
                     {candidatesByKind[kind].map(candidate => (
@@ -506,11 +583,11 @@ export default function SimulationRuntimePanel(props: {
                           type="checkbox"
                           checked={selectedSourceKeys.has(candidate.sourceKey)}
                           onChange={() => toggleSource(candidate.sourceKey)}
-                          aria-label={`冻结 ${SOURCE_KIND_LABELS[kind]} ${candidate.name}`}
+                          aria-label={t('sidebar.freezeSourceAria', { kind: sourceKindLabel(kind), name: candidate.name })}
                           className="mt-0.5 h-3.5 w-3.5"
                         />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-text-secondary">{candidate.name}</span>
+                          <span className="block truncate text-text-secondary">{repairCanonSourceName(candidate.name, canonWorldLabel)}</span>
                           {candidate.summary && (
                             <span className="block truncate text-[10px] text-text-muted">
                               {candidate.summary}
@@ -522,7 +599,7 @@ export default function SimulationRuntimePanel(props: {
                   </div>
                 </div>
               ))}
-              {canonLoading && <p className="py-2 text-center text-xs text-text-muted">读取中...</p>}
+              {canonLoading && <p className="py-2 text-center text-xs text-text-muted">{t('sidebar.loading')}</p>}
             </div>
           </fieldset>
           <button
@@ -541,7 +618,7 @@ export default function SimulationRuntimePanel(props: {
             className="flex w-full items-center justify-center gap-1.5 rounded bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-40"
           >
             <Plus className="h-3.5 w-3.5" />
-            创建并冻结
+            {t('sidebar.createAndFreeze')}
           </button>
         </div>
 
@@ -558,13 +635,13 @@ export default function SimulationRuntimePanel(props: {
             >
               <div className="truncate text-sm font-medium">{session.title}</div>
               <div className="mt-0.5 text-[11px] text-text-muted">
-                {KIND_LABELS[session.kind]} · {session.status}
+                {kindLabel(session.kind)} · {session.status}
               </div>
             </button>
           ))}
           {!store.loading && visibleSessions.length === 0 && (
             <p className="py-6 text-center text-xs text-text-muted">
-              {props.sessionKind ? `还没有${KIND_LABELS[props.sessionKind]}存档` : '还没有互动存档'}
+              {props.sessionKind ? t('sidebar.emptyLocked', { kind: kindLabel(props.sessionKind) }) : t('sidebar.emptyUnlocked')}
             </p>
           )}
         </div>
@@ -574,32 +651,37 @@ export default function SimulationRuntimePanel(props: {
         {!selected ? (
           <div className="flex h-full items-center justify-center text-sm text-text-muted">
             {props.sessionKind
-              ? `创建一个${KIND_LABELS[props.sessionKind]}会话，开始新的互动存档。`
-              : '创建一个沙盒会话，开始验证共享运行时。'}
+              ? t('detail.emptyLocked', { kind: kindLabel(props.sessionKind) })
+              : t('detail.emptyUnlocked')}
           </div>
         ) : (
           <div className="mx-auto max-w-5xl space-y-5">
             <header className="flex items-start justify-between gap-4">
               <div>
-                <div className="mb-1 text-xs text-text-muted">体验中心 · {KIND_LABELS[selected.kind]}</div>
+                <div className="mb-1 text-xs text-text-muted">{t('detail.experienceCenterPrefix')} · {kindLabel(selected.kind)}</div>
                 <h1 className="text-xl font-semibold text-text-primary">{selected.title}</h1>
                 <p className="mt-1 text-xs text-text-muted">
-                  规则 v{selected.rulesetVersion} · 来源 {selectedSnapshot?.sources.length ?? 0} · 事件 {store.runtimeState.lastSequence} · 检查点 {store.checkpoints.length}
+                  {t('detail.metaLine', {
+                    ruleset: selected.rulesetVersion,
+                    sources: selectedSnapshot?.sources.length ?? 0,
+                    events: store.runtimeState.lastSequence,
+                    checkpoints: store.checkpoints.length,
+                  })}
                 </p>
               </div>
               <button
                 onClick={() => void run(async () => {
                   const confirmed = await dialog.confirm({
-                    title: `删除互动会话“${selected.title}”？`,
-                    message: '该会话的全部事件和检查点将一并删除；子分支会保留并解除父会话关联。',
-                    confirmText: '删除',
+                    title: t('detail.deleteTitle', { title: selected.title }),
+                    message: t('detail.deleteMessage'),
+                    confirmText: t('detail.deleteConfirm'),
                     tone: 'danger',
                   })
                   if (confirmed) await store.remove(selected.id!)
                 })}
                 className="rounded p-2 text-danger hover:bg-danger/10"
-                title="删除会话"
-                aria-label={`删除会话 ${selected.title}`}
+                title={t('detail.deleteSessionTitle')}
+                aria-label={t('detail.deleteSessionAria', { title: selected.title })}
               >
                 <Trash2 className="h-4 w-4" />
               </button>
@@ -615,21 +697,21 @@ export default function SimulationRuntimePanel(props: {
               <div className="rounded-lg border border-border bg-bg-surface p-4">
                 <Clock3 className="mb-2 h-4 w-4 text-accent" />
                 <div className="text-2xl font-semibold text-text-primary">{store.runtimeState.clock}</div>
-                <div className="text-xs text-text-muted">逻辑时间</div>
+                <div className="text-xs text-text-muted">{t('detail.statLogicalTime')}</div>
               </div>
               <div className="rounded-lg border border-border bg-bg-surface p-4">
                 <Box className="mb-2 h-4 w-4 text-accent" />
                 <div className="text-2xl font-semibold text-text-primary">
                   {Object.keys(store.runtimeState.entities).length}
                 </div>
-                <div className="text-xs text-text-muted">运行时实体</div>
+                <div className="text-xs text-text-muted">{t('detail.statRuntimeEntities')}</div>
               </div>
               <div className="rounded-lg border border-border bg-bg-surface p-4">
                 <ScrollText className="mb-2 h-4 w-4 text-accent" />
                 <div className="text-2xl font-semibold text-text-primary">
                   {store.runtimeState.narratives.length}
                 </div>
-                <div className="text-xs text-text-muted">叙事记录</div>
+                <div className="text-xs text-text-muted">{t('detail.statNarratives')}</div>
               </div>
             </section>
 
@@ -637,12 +719,12 @@ export default function SimulationRuntimePanel(props: {
               <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
                 <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                   <Snowflake className="h-4 w-4 text-accent" />
-                  Canon 冻结审计
+                  {t('canonAudit.heading')}
                 </div>
                 {selectedSnapshot && (
                   <div className="flex items-center gap-2 text-[10px]">
                     <span className={snapshotVerified === false ? 'text-danger' : 'text-text-muted'}>
-                      {snapshotVerified == null ? '校验中' : snapshotVerified ? '完整' : '校验失败'}
+                      {snapshotVerified == null ? t('canonAudit.verifying') : snapshotVerified ? t('canonAudit.verified') : t('canonAudit.verifyFailed')}
                     </span>
                     <span className="font-mono text-text-muted" title={selectedSnapshot.snapshotHash}>
                       {selectedSnapshot.snapshotHash.slice(0, 12)}
@@ -655,10 +737,10 @@ export default function SimulationRuntimePanel(props: {
                   {selectedSnapshot.sources.map(source => (
                     <div key={source.sourceKey} className="grid gap-1 px-4 py-3 sm:grid-cols-[8rem_1fr_auto] sm:gap-3">
                       <div className="text-xs font-medium text-text-primary">
-                        {SOURCE_KIND_LABELS[source.kind]} · {source.name}
+                        {sourceKindLabel(source.kind)} · {repairCanonSourceName(source.name, selectedSnapshot.worldLabel)}
                       </div>
                       <div className="min-w-0 text-xs text-text-secondary">
-                        <div className="truncate">{source.summary || '未填写摘要'}</div>
+                        <div className="truncate">{source.summary || t('canonAudit.noSummary')}</div>
                         <div className="mt-0.5 truncate font-mono text-[10px] text-text-muted">
                           {source.sourceKey}
                         </div>
@@ -670,7 +752,7 @@ export default function SimulationRuntimePanel(props: {
                   ))}
                 </div>
               ) : (
-                <p className="px-4 py-5 text-sm text-text-muted">旧会话没有结构化冻结审计。</p>
+                <p className="px-4 py-5 text-sm text-text-muted">{t('canonAudit.legacyNotice')}</p>
               )}
             </section>
 
@@ -680,9 +762,9 @@ export default function SimulationRuntimePanel(props: {
                   <div>
                     <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                       <Sparkles className="h-4 w-4 text-accent" />
-                      NPC 演进候选
+                      {t('npcEvolution.heading')}
                     </div>
-                    <p className="mt-1 text-xs text-text-muted">AI 只生成候选；确认后才追加运行时事件，不会修改 Canon。</p>
+                    <p className="mt-1 text-xs text-text-muted">{t('npcEvolution.description')}</p>
                   </div>
                   {npcAI.tokenUsage && (
                     <span className="text-[10px] text-text-muted">
@@ -695,11 +777,11 @@ export default function SimulationRuntimePanel(props: {
                     <select
                       value={selectedNpc?.entityKey ?? ''}
                       onChange={event => setNpcTargetKey(event.target.value)}
-                      aria-label="选择 NPC"
+                      aria-label={t('npcEvolution.selectNpcAria')}
                       disabled={npcEntities.length === 0 || npcAI.isStreaming}
                       className="rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary disabled:opacity-50"
                     >
-                      {npcEntities.length === 0 && <option value="">暂无 NPC 实体</option>}
+                      {npcEntities.length === 0 && <option value="">{t('npcEvolution.noNpcOption')}</option>}
                       {npcEntities.map(entity => (
                         <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>
                       ))}
@@ -707,7 +789,7 @@ export default function SimulationRuntimePanel(props: {
                     <textarea
                       value={npcRequest}
                       onChange={event => setNpcRequest(event.target.value)}
-                      placeholder="描述这次 NPC 演进，例如：经历冲突后变得警惕，并转移到已冻结的地点。"
+                      placeholder={t('npcEvolution.requestPlaceholder')}
                       className="min-h-20 rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                     />
                   </div>
@@ -718,33 +800,33 @@ export default function SimulationRuntimePanel(props: {
                       className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-40"
                     >
                       {npcAI.isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                      {npcAI.isStreaming ? '生成中…' : '生成演进候选'}
+                      {npcAI.isStreaming ? t('npcEvolution.generating') : t('npcEvolution.generateButton')}
                     </button>
                     {npcAI.error && <span className="text-xs text-danger">{npcAI.error}</span>}
                   </div>
                   {npcAI.output && (
                     <details className="rounded border border-border bg-bg-base px-3 py-2 text-xs">
-                      <summary className="cursor-pointer text-text-secondary">本次 AI 原始输出</summary>
+                      <summary className="cursor-pointer text-text-secondary">{t('npcEvolution.rawOutputSummary')}</summary>
                       <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-text-muted">{npcAI.output}</pre>
                     </details>
                   )}
                   <div className="space-y-2">
-                    <div className="text-xs font-medium text-text-secondary">待作者确认（已持久化）</div>
+                    <div className="text-xs font-medium text-text-secondary">{t('npcEvolution.pendingHeading')}</div>
                     {store.pendingProposals.map(proposal => {
                       const stale = store.runtimeState.lastSequence > proposal.proposalSequence
                       return (
                         <div key={proposal.proposalSequence} className="rounded border border-border bg-bg-base p-3 text-sm">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-text-primary">{proposal.entityKey}</span>
-                            <span className={stale ? 'text-danger' : 'text-accent'}>{stale ? '已过期' : `提案 #${proposal.proposalSequence}`}</span>
+                            <span className={stale ? 'text-danger' : 'text-accent'}>{stale ? t('npcEvolution.staleLabel') : t('npcEvolution.proposalLabel', { sequence: proposal.proposalSequence })}</span>
                           </div>
                           <div className="mt-2 grid gap-1 text-xs text-text-secondary sm:grid-cols-2">
-                            <span>地点：{proposal.locationKey ?? '不变/无'}</span>
-                            <span>生命周期：{proposal.lifecycleStatus}</span>
-                            <span className="sm:col-span-2">属性：{Object.entries(proposal.attributes).map(([key, value]) => `${key}=${String(value)}`).join('、') || '无'}</span>
-                            {proposal.narrative && <span className="sm:col-span-2">经历：{proposal.narrative}</span>}
-                            {proposal.memory && <span className="sm:col-span-2">记忆：{proposal.memory.content}（{proposal.memory.status}）</span>}
-                            {proposal.rationale && <span className="sm:col-span-2">理由：{proposal.rationale}</span>}
+                            <span>{t('npcEvolution.locationField', { value: proposal.locationKey ?? t('npcEvolution.locationNone') })}</span>
+                            <span>{t('npcEvolution.lifecycleField', { value: proposal.lifecycleStatus })}</span>
+                            <span className="sm:col-span-2">{t('npcEvolution.attributesField', { value: listFormat.format(Object.entries(proposal.attributes).map(([key, value]) => `${key}=${String(value)}`)) || t('npcEvolution.attributesNone') })}</span>
+                            {proposal.narrative && <span className="sm:col-span-2">{t('npcEvolution.narrativeField', { value: proposal.narrative })}</span>}
+                            {proposal.memory && <span className="sm:col-span-2">{t('npcEvolution.memoryField', { content: proposal.memory.content, status: proposal.memory.status })}</span>}
+                            {proposal.rationale && <span className="sm:col-span-2">{t('npcEvolution.rationaleField', { value: proposal.rationale })}</span>}
                           </div>
                           <div className="mt-3 flex gap-2">
                             <button
@@ -752,21 +834,21 @@ export default function SimulationRuntimePanel(props: {
                               onClick={() => void run(() => store.acceptNpcEvolution(proposal.proposalSequence))}
                               className="rounded bg-accent px-3 py-1 text-xs text-white disabled:opacity-40"
                             >
-                              确认并应用
+                              {t('npcEvolution.acceptButton')}
                             </button>
                             <button
                               disabled={busy}
-                              onClick={() => void run(() => store.rejectNpcEvolution(proposal.proposalSequence, '作者拒绝该候选'))}
+                              onClick={() => void run(() => store.rejectNpcEvolution(proposal.proposalSequence, t('npcEvolution.rejectReason')))}
                               className="rounded border border-border px-3 py-1 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                             >
-                              拒绝
+                              {t('npcEvolution.rejectButton')}
                             </button>
                           </div>
                         </div>
                       )
                     })}
                     {store.pendingProposals.length === 0 && (
-                      <p className="text-xs text-text-muted">暂无待确认候选</p>
+                      <p className="text-xs text-text-muted">{t('npcEvolution.noPending')}</p>
                     )}
                   </div>
                 </div>
@@ -779,10 +861,10 @@ export default function SimulationRuntimePanel(props: {
                   <div>
                     <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                       <Dices className="h-4 w-4 text-accent" />
-                      单机战役主持
+                      {t('ttrpg.heading')}
                     </div>
                     <p className="mt-1 text-xs text-text-muted">
-                      玩家动作、确定性检定和 AI GM 叙事会作为一个可回放回合记录；AI 不直接修改运行时状态。
+                      {t('ttrpg.description')}
                     </p>
                   </div>
                   {ttrpgAI.tokenUsage && (
@@ -797,15 +879,15 @@ export default function SimulationRuntimePanel(props: {
                       <input
                         value={ttrpgSceneTitle}
                         onChange={event => setTtrpgSceneTitle(event.target.value)}
-                        placeholder="场景标题"
-                        aria-label="跑团场景标题"
+                        placeholder={t('ttrpg.sceneTitlePlaceholder')}
+                        aria-label={t('ttrpg.sceneTitleAria')}
                         className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                       />
                       <textarea
                         value={ttrpgSceneDescription}
                         onChange={event => setTtrpgSceneDescription(event.target.value)}
-                        placeholder="场景描述与当前目标"
-                        aria-label="跑团场景描述"
+                        placeholder={t('ttrpg.sceneDescriptionPlaceholder')}
+                        aria-label={t('ttrpg.sceneDescriptionAria')}
                         className="min-h-16 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                       />
                     </div>
@@ -813,10 +895,10 @@ export default function SimulationRuntimePanel(props: {
                       <select
                         value={ttrpgSceneLocationKey}
                         onChange={event => setTtrpgSceneLocationKey(event.target.value)}
-                        aria-label="跑团场景地点"
+                        aria-label={t('ttrpg.sceneLocationAria')}
                         className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                       >
-                        <option value="">不绑定地点</option>
+                        <option value="">{t('ttrpg.noLocationOption')}</option>
                         {Object.values(store.runtimeState.entities)
                           .filter(entity => entity.kind === 'location')
                           .map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
@@ -824,8 +906,8 @@ export default function SimulationRuntimePanel(props: {
                       <input
                         value={ttrpgTurnOrderText}
                         onChange={event => setTtrpgTurnOrderText(event.target.value)}
-                        placeholder="回合顺序：角色键，用逗号分隔"
-                        aria-label="跑团回合顺序"
+                        placeholder={t('ttrpg.turnOrderPlaceholder')}
+                        aria-label={t('ttrpg.turnOrderAria')}
                         className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                       />
                       <button
@@ -840,7 +922,7 @@ export default function SimulationRuntimePanel(props: {
                         })}
                         className="rounded bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-40"
                       >
-                        开始场景
+                        {t('ttrpg.startScene')}
                       </button>
                     </div>
                   </div>
@@ -849,12 +931,12 @@ export default function SimulationRuntimePanel(props: {
                     <div className="rounded border border-border bg-bg-base px-3 py-2 text-xs text-text-secondary">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="font-medium text-text-primary">{store.runtimeState.ttrpg.scene.title}</span>
-                        <span>第 {store.runtimeState.ttrpg.round} 回合</span>
-                        <span>当前：{store.runtimeState.entities[store.runtimeState.ttrpg.activeActorKey ?? '']?.name ?? store.runtimeState.ttrpg.activeActorKey ?? '无'}</span>
+                        <span>{t('ttrpg.roundLabel', { round: store.runtimeState.ttrpg.round })}</span>
+                        <span>{t('ttrpg.currentActorPrefix')}{store.runtimeState.entities[store.runtimeState.ttrpg.activeActorKey ?? '']?.name ?? store.runtimeState.ttrpg.activeActorKey ?? t('ttrpg.currentActorNone')}</span>
                       </div>
-                      <p className="mt-1 whitespace-pre-wrap">{store.runtimeState.ttrpg.scene.description || '未填写场景描述'}</p>
+                      <p className="mt-1 whitespace-pre-wrap">{store.runtimeState.ttrpg.scene.description || t('ttrpg.noSceneDescription')}</p>
                       <div className="mt-1 text-[10px] text-text-muted">
-                        顺序：{store.runtimeState.ttrpg.turnOrder.map(key => store.runtimeState.entities[key]?.name ?? key).join(' → ')}
+                        {t('ttrpg.turnOrderPrefix')}{store.runtimeState.ttrpg.turnOrder.map(key => store.runtimeState.entities[key]?.name ?? key).join(' → ')}
                       </div>
                     </div>
                   )}
@@ -864,9 +946,9 @@ export default function SimulationRuntimePanel(props: {
                       <div>
                         <div className="flex items-center gap-2 text-sm font-semibold text-text-primary">
                           <Dices className="h-4 w-4 text-accent" />
-                          战斗遭遇与规则
+                          {t('ttrpg.combatHeading')}
                         </div>
-                        <p className="mt-1 text-xs text-text-muted">先攻、攻击骰、资源和状态效果都由事件回放；AI 只提供遭遇描述候选。</p>
+                        <p className="mt-1 text-xs text-text-muted">{t('ttrpg.combatDescription')}</p>
                       </div>
                       {encounterAI.tokenUsage && (
                         <span className="text-[10px] text-text-muted">
@@ -881,20 +963,20 @@ export default function SimulationRuntimePanel(props: {
                           <input
                             value={ttrpgEncounterTitle}
                             onChange={event => setTtrpgEncounterTitle(event.target.value)}
-                            placeholder="遭遇标题，例如：雾港伏击"
-                            aria-label="跑团遭遇标题"
+                            placeholder={t('ttrpg.encounterTitlePlaceholder')}
+                            aria-label={t('ttrpg.encounterTitleAria')}
                             className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
                           />
                           <textarea
                             value={ttrpgEncounterDescription}
                             onChange={event => setTtrpgEncounterDescription(event.target.value)}
-                            placeholder="战斗环境、目标和胜负条件"
-                            aria-label="跑团遭遇描述"
+                            placeholder={t('ttrpg.encounterDescriptionPlaceholder')}
+                            aria-label={t('ttrpg.encounterDescriptionAria')}
                             className="min-h-16 rounded border border-border bg-bg-surface px-2 py-1.5 text-sm text-text-primary"
                           />
                         </div>
                         <div>
-                          <div className="mb-1 text-xs font-medium text-text-secondary">参与者（先攻由固定种子计算）</div>
+                          <div className="mb-1 text-xs font-medium text-text-secondary">{t('ttrpg.participantsHeading')}</div>
                           <div className="flex flex-wrap gap-2">
                             {ttrpgActors.map(entity => (
                               <label key={entity.entityKey} className="flex items-center gap-1.5 rounded border border-border px-2 py-1 text-xs text-text-secondary">
@@ -904,7 +986,7 @@ export default function SimulationRuntimePanel(props: {
                                   onChange={() => setTtrpgParticipantKeys(current => current.includes(entity.entityKey)
                                     ? current.filter(key => key !== entity.entityKey)
                                     : [...current, entity.entityKey])}
-                                  aria-label={`遭遇参与者 ${entity.name}`}
+                                  aria-label={t('ttrpg.participantAria', { name: entity.name })}
                                 />
                                 {entity.name}
                               </label>
@@ -922,7 +1004,7 @@ export default function SimulationRuntimePanel(props: {
                             }))}
                             className="rounded bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-40"
                           >
-                            直接开始遭遇
+                            {t('ttrpg.startEncounterDirect')}
                           </button>
                           <button
                             disabled={busy || encounterAI.isStreaming || !store.runtimeState.ttrpg?.scene || ttrpgParticipantKeys.length < 2 || !isAIConfigReady(resolveRequestConfig(config, { category: 'simulation.ttrpg-encounter' }).config)}
@@ -930,7 +1012,7 @@ export default function SimulationRuntimePanel(props: {
                             className="flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                           >
                             {encounterAI.isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                            {encounterAI.isStreaming ? '生成中…' : '生成 AI 遭遇候选'}
+                            {encounterAI.isStreaming ? t('ttrpg.encounterGenerating') : t('ttrpg.generateEncounterCandidate')}
                           </button>
                         </div>
                         {encounterAI.error && <span className="text-xs text-danger">{encounterAI.error}</span>}
@@ -938,7 +1020,7 @@ export default function SimulationRuntimePanel(props: {
                           <div className="rounded border border-accent/30 bg-bg-surface p-3 text-sm">
                             <div className="font-medium text-text-primary">{ttrpgEncounterCandidate.title}</div>
                             <p className="mt-1 whitespace-pre-wrap text-xs text-text-secondary">{ttrpgEncounterCandidate.description}</p>
-                            <div className="mt-1 text-[10px] text-text-muted">参与者：{ttrpgEncounterCandidate.participantKeys.join('、')} · 基线 #{ttrpgEncounterCandidate.baseSequence}</div>
+                            <div className="mt-1 text-[10px] text-text-muted">{t('ttrpg.participantsPrefix')}{listFormat.format(ttrpgEncounterCandidate.participantKeys)} · {t('ttrpg.baselinePrefix', { sequence: ttrpgEncounterCandidate.baseSequence })}</div>
                             <div className="mt-3 flex gap-2">
                               <button
                                 disabled={busy || store.runtimeState.lastSequence !== ttrpgEncounterCandidate.baseSequence}
@@ -948,9 +1030,9 @@ export default function SimulationRuntimePanel(props: {
                                 })}
                                 className="rounded bg-accent px-3 py-1 text-xs text-white disabled:opacity-40"
                               >
-                                确认并开始
+                                {t('ttrpg.confirmStartEncounter')}
                               </button>
-                              <button disabled={busy} onClick={() => setTtrpgEncounterCandidate(null)} className="rounded border border-border px-3 py-1 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40">丢弃候选</button>
+                              <button disabled={busy} onClick={() => setTtrpgEncounterCandidate(null)} className="rounded border border-border px-3 py-1 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40">{t('ttrpg.discardCandidate')}</button>
                             </div>
                           </div>
                         )}
@@ -960,16 +1042,16 @@ export default function SimulationRuntimePanel(props: {
                         <div className="rounded border border-border bg-bg-surface px-3 py-2 text-xs text-text-secondary">
                           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                             <span className="font-medium text-text-primary">{combatEncounter.title}</span>
-                            <span>战斗第 {combatEncounter.round} 回合</span>
-                            <span>当前：{store.runtimeState.entities[combatEncounter.activeActorKey ?? '']?.name ?? combatEncounter.activeActorKey ?? '无'}</span>
+                            <span>{t('ttrpg.combatRoundLabel', { round: combatEncounter.round })}</span>
+                            <span>{t('ttrpg.currentActorPrefix')}{store.runtimeState.entities[combatEncounter.activeActorKey ?? '']?.name ?? combatEncounter.activeActorKey ?? t('ttrpg.currentActorNone')}</span>
                           </div>
                           <p className="mt-1 whitespace-pre-wrap">{combatEncounter.description}</p>
                           <button
                             disabled={busy}
-                            onClick={() => void run(() => store.resolveTtrpgEncounter('作者结束遭遇'))}
+                            onClick={() => void run(() => store.resolveTtrpgEncounter(t('ttrpg.endEncounterReason')))}
                             className="mt-2 rounded border border-border px-2 py-1 text-[11px] text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                           >
-                            结束遭遇
+                            {t('ttrpg.endEncounter')}
                           </button>
                         </div>
                         <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
@@ -980,52 +1062,52 @@ export default function SimulationRuntimePanel(props: {
                             const hp = combatant.resources.hp
                             return (
                               <div key={entityKey} className={`rounded border px-3 py-2 text-xs ${combatEncounter.activeActorKey === entityKey ? 'border-accent bg-accent/5' : 'border-border bg-bg-surface'}`}>
-                                <div className="flex items-center justify-between gap-2"><span className="font-medium text-text-primary">{entity.name}</span><span className="text-text-muted">先攻 {combatant.initiative} · AC {combatant.armorClass}</span></div>
-                                <div className="mt-1">HP {hp.current}/{hp.maximum} · {Object.entries(combatant.resources).filter(([key]) => key !== 'hp').map(([key, resource]) => `${key} ${resource.current}/${resource.maximum}`).join(' · ') || '无额外资源'}</div>
-                                <div className="mt-1 text-text-muted">状态：{combatant.conditions.map(condition => `${condition.name}${condition.stacks > 1 ? `×${condition.stacks}` : ''}${condition.duration != null ? `(${condition.duration}回合)` : ''}`).join('、') || '无'}</div>
+                                <div className="flex items-center justify-between gap-2"><span className="font-medium text-text-primary">{entity.name}</span><span className="text-text-muted">{t('ttrpg.initiativeAc', { initiative: combatant.initiative, ac: combatant.armorClass })}</span></div>
+                                <div className="mt-1">{t('ttrpg.hpLine', { current: hp.current, maximum: hp.maximum })} · {Object.entries(combatant.resources).filter(([key]) => key !== 'hp').map(([key, resource]) => `${key} ${resource.current}/${resource.maximum}`).join(' · ') || t('ttrpg.noExtraResources')}</div>
+                                <div className="mt-1 text-text-muted">{t('ttrpg.conditionsPrefix')}{listFormat.format(combatant.conditions.map(condition => `${condition.name}${condition.stacks > 1 ? t('ttrpg.conditionStacks', { stacks: condition.stacks }) : ''}${condition.duration != null ? t('ttrpg.conditionDuration', { duration: condition.duration }) : ''}`)) || t('ttrpg.noConditions')}</div>
                               </div>
                             )
                           })}
                         </div>
                         <div className="grid gap-2 md:grid-cols-[8rem_8rem_7rem_1fr_auto]">
-                          <select value={ttrpgActorKey} onChange={event => setTtrpgActorKey(event.target.value)} aria-label="战斗攻击者" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
+                          <select value={ttrpgActorKey} onChange={event => setTtrpgActorKey(event.target.value)} aria-label={t('ttrpg.attackerAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
                             {combatTargetEntities.map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
                           </select>
-                          <select value={ttrpgAttackTargetKey} onChange={event => setTtrpgAttackTargetKey(event.target.value)} aria-label="战斗攻击目标" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
+                          <select value={ttrpgAttackTargetKey} onChange={event => setTtrpgAttackTargetKey(event.target.value)} aria-label={t('ttrpg.attackTargetAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
                             {combatTargetEntities.filter(entity => entity.entityKey !== ttrpgActorKey).map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
                           </select>
-                          <input value={ttrpgAttackExpression} onChange={event => setTtrpgAttackExpression(event.target.value)} aria-label="攻击骰式" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
-                          <input value={ttrpgDamageExpression} onChange={event => setTtrpgDamageExpression(event.target.value)} aria-label="伤害骰式" placeholder="伤害骰式，可空" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
-                          <button disabled={busy || combatEncounter.activeActorKey !== ttrpgActorKey || !ttrpgAttackTargetKey} onClick={() => void run(() => store.resolveTtrpgAttack({ actorKey: ttrpgActorKey, targetKey: ttrpgAttackTargetKey, attackExpression: ttrpgAttackExpression, damageExpression: ttrpgDamageExpression || null, resourceKey: ttrpgResourceKey, reason: ttrpgAttackReason }))} className="rounded bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-40">执行攻击</button>
+                          <input value={ttrpgAttackExpression} onChange={event => setTtrpgAttackExpression(event.target.value)} aria-label={t('ttrpg.attackExpressionAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
+                          <input value={ttrpgDamageExpression} onChange={event => setTtrpgDamageExpression(event.target.value)} aria-label={t('ttrpg.damageExpressionAria')} placeholder={t('ttrpg.damageExpressionPlaceholder')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
+                          <button disabled={busy || combatEncounter.activeActorKey !== ttrpgActorKey || !ttrpgAttackTargetKey} onClick={() => void run(() => store.resolveTtrpgAttack({ actorKey: ttrpgActorKey, targetKey: ttrpgAttackTargetKey, attackExpression: ttrpgAttackExpression, damageExpression: ttrpgDamageExpression || null, resourceKey: ttrpgResourceKey, reason: ttrpgAttackReason }))} className="rounded bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-40">{t('ttrpg.executeAttack')}</button>
                         </div>
-                        <input value={ttrpgAttackReason} onChange={event => setTtrpgAttackReason(event.target.value)} aria-label="攻击说明" placeholder="攻击说明（可选）" className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
+                        <input value={ttrpgAttackReason} onChange={event => setTtrpgAttackReason(event.target.value)} aria-label={t('ttrpg.attackReasonAria')} placeholder={t('ttrpg.attackReasonPlaceholder')} className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
                         <div className="grid gap-2 md:grid-cols-[8rem_7rem_6rem_1fr_auto]">
-                          <select value={ttrpgResourceEntityKey} onChange={event => setTtrpgResourceEntityKey(event.target.value)} aria-label="资源目标" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
+                          <select value={ttrpgResourceEntityKey} onChange={event => setTtrpgResourceEntityKey(event.target.value)} aria-label={t('ttrpg.resourceTargetAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
                             {combatTargetEntities.map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
                           </select>
-                          <input value={ttrpgResourceName} onChange={event => setTtrpgResourceName(event.target.value)} aria-label="资源名称" placeholder="资源名" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
-                          <input value={ttrpgResourceDelta} onChange={event => setTtrpgResourceDelta(event.target.value)} aria-label="资源变化" placeholder="变化量" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
-                          <span className="self-center text-[10px] text-text-muted">手动调整已登记资源（不会超过 0 / 上限）</span>
-                          <button disabled={busy || !ttrpgResourceEntityKey || !ttrpgResourceName.trim()} onClick={() => void run(() => store.changeTtrpgResource({ entityKey: ttrpgResourceEntityKey, resourceKey: ttrpgResourceName, delta: Number(ttrpgResourceDelta), reason: '作者手动调整' }))} className="rounded border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40">调整资源</button>
+                          <input value={ttrpgResourceName} onChange={event => setTtrpgResourceName(event.target.value)} aria-label={t('ttrpg.resourceNameAria')} placeholder={t('ttrpg.resourceNamePlaceholder')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
+                          <input value={ttrpgResourceDelta} onChange={event => setTtrpgResourceDelta(event.target.value)} aria-label={t('ttrpg.resourceDeltaAria')} placeholder={t('ttrpg.resourceDeltaPlaceholder')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
+                          <span className="self-center text-[10px] text-text-muted">{t('ttrpg.manualResourceHint')}</span>
+                          <button disabled={busy || !ttrpgResourceEntityKey || !ttrpgResourceName.trim()} onClick={() => void run(() => store.changeTtrpgResource({ entityKey: ttrpgResourceEntityKey, resourceKey: ttrpgResourceName, delta: Number(ttrpgResourceDelta), reason: t('ttrpg.manualResourceReason') }))} className="rounded border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40">{t('ttrpg.adjustResource')}</button>
                         </div>
                         <div className="grid gap-2 md:grid-cols-[8rem_7rem_6rem_1fr_auto]">
-                          <select value={ttrpgConditionEntityKey} onChange={event => setTtrpgConditionEntityKey(event.target.value)} aria-label="状态目标" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
+                          <select value={ttrpgConditionEntityKey} onChange={event => setTtrpgConditionEntityKey(event.target.value)} aria-label={t('ttrpg.conditionTargetAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
                             {combatTargetEntities.map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
                           </select>
-                          <input value={ttrpgConditionName} onChange={event => setTtrpgConditionName(event.target.value)} aria-label="状态名称" placeholder="状态名称" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
-                          <input value={ttrpgConditionDuration} onChange={event => setTtrpgConditionDuration(event.target.value)} aria-label="状态持续回合" placeholder="回合数" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
-                          <input value={ttrpgConditionDescription} onChange={event => setTtrpgConditionDescription(event.target.value)} aria-label="状态说明" placeholder="状态效果说明（可选）" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
-                          <button disabled={busy || !ttrpgConditionEntityKey || !ttrpgConditionName.trim()} onClick={() => void run(() => store.applyTtrpgCondition({ entityKey: ttrpgConditionEntityKey, condition: { conditionId: `manual:${Date.now()}`, name: ttrpgConditionName, description: ttrpgConditionDescription, duration: Number(ttrpgConditionDuration) > 0 ? Number(ttrpgConditionDuration) : null, stacks: 1 } }))} className="rounded border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40">施加状态</button>
+                          <input value={ttrpgConditionName} onChange={event => setTtrpgConditionName(event.target.value)} aria-label={t('ttrpg.conditionNameAria')} placeholder={t('ttrpg.conditionNamePlaceholder')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
+                          <input value={ttrpgConditionDuration} onChange={event => setTtrpgConditionDuration(event.target.value)} aria-label={t('ttrpg.conditionDurationAria')} placeholder={t('ttrpg.conditionDurationPlaceholder')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
+                          <input value={ttrpgConditionDescription} onChange={event => setTtrpgConditionDescription(event.target.value)} aria-label={t('ttrpg.conditionDescriptionAria')} placeholder={t('ttrpg.conditionDescriptionPlaceholder')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
+                          <button disabled={busy || !ttrpgConditionEntityKey || !ttrpgConditionName.trim()} onClick={() => void run(() => store.applyTtrpgCondition({ entityKey: ttrpgConditionEntityKey, condition: { conditionId: `manual:${Date.now()}`, name: ttrpgConditionName, description: ttrpgConditionDescription, duration: Number(ttrpgConditionDuration) > 0 ? Number(ttrpgConditionDuration) : null, stacks: 1 } }))} className="rounded border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40">{t('ttrpg.applyCondition')}</button>
                         </div>
                         <div className="grid gap-2 md:grid-cols-[8rem_1fr_auto]">
-                          <select value={ttrpgConditionEntityKey} onChange={event => setTtrpgConditionEntityKey(event.target.value)} aria-label="移除状态目标" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
+                          <select value={ttrpgConditionEntityKey} onChange={event => setTtrpgConditionEntityKey(event.target.value)} aria-label={t('ttrpg.removeConditionTargetAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
                             {combatTargetEntities.map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
                           </select>
-                          <select aria-label="移除状态" defaultValue="" onChange={event => { if (event.target.value) void run(() => store.removeTtrpgCondition({ entityKey: ttrpgConditionEntityKey, conditionId: event.target.value })) }} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
-                            <option value="">选择要移除的状态</option>
+                          <select aria-label={t('ttrpg.removeConditionAria')} defaultValue="" onChange={event => { if (event.target.value) void run(() => store.removeTtrpgCondition({ entityKey: ttrpgConditionEntityKey, conditionId: event.target.value })) }} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
+                            <option value="">{t('ttrpg.removeConditionPlaceholder')}</option>
                             {(combatEncounter.combatants[ttrpgConditionEntityKey]?.conditions ?? []).map(condition => <option key={condition.conditionId} value={condition.conditionId}>{condition.name}</option>)}
                           </select>
-                          <span className="self-center text-[10px] text-text-muted">状态持续回合在该行动者结束回合时递减</span>
+                          <span className="self-center text-[10px] text-text-muted">{t('ttrpg.conditionDurationHint')}</span>
                         </div>
                       </div>
                     )}
@@ -1035,18 +1117,18 @@ export default function SimulationRuntimePanel(props: {
                     <select
                       value={selectedTtrpgActor?.entityKey ?? ''}
                       onChange={event => setTtrpgActorKey(event.target.value)}
-                      aria-label="跑团行动者"
+                      aria-label={t('ttrpg.actorSelectAria')}
                       disabled={ttrpgActors.length === 0 || ttrpgAI.isStreaming}
                       className="rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary disabled:opacity-50"
                     >
-                      {ttrpgActors.length === 0 && <option value="">暂无角色实体</option>}
+                      {ttrpgActors.length === 0 && <option value="">{t('ttrpg.noActorOption')}</option>}
                       {ttrpgActors.map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
                     </select>
                     <textarea
                       value={ttrpgAction}
                       onChange={event => setTtrpgAction(event.target.value)}
-                      placeholder="描述当前行动，例如：我检查石门上的潮汐刻痕。"
-                      aria-label="跑团玩家动作"
+                      placeholder={t('ttrpg.actionPlaceholder')}
+                      aria-label={t('ttrpg.actionAria')}
                       className="min-h-16 rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                     />
                   </div>
@@ -1057,28 +1139,28 @@ export default function SimulationRuntimePanel(props: {
                       className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-40"
                     >
                       {ttrpgAI.isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
-                      {ttrpgAI.isStreaming ? 'GM 生成中…' : '请求 AI GM'}
+                      {ttrpgAI.isStreaming ? t('ttrpg.gmGenerating') : t('ttrpg.requestGm')}
                     </button>
                     {ttrpgAI.error && <span className="text-xs text-danger">{ttrpgAI.error}</span>}
                   </div>
                   {ttrpgAI.output && (
                     <details className="rounded border border-border bg-bg-base px-3 py-2 text-xs">
-                      <summary className="cursor-pointer text-text-secondary">本次 GM 原始输出</summary>
+                      <summary className="cursor-pointer text-text-secondary">{t('ttrpg.gmRawOutputSummary')}</summary>
                       <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-text-muted">{ttrpgAI.output}</pre>
                     </details>
                   )}
                   {ttrpgCandidate && (
                     <div className="rounded border border-accent/30 bg-bg-base p-3 text-sm">
                       <div className="flex items-center justify-between gap-2">
-                        <span className="font-medium text-text-primary">待记录回合</span>
-                        <span className="text-[10px] text-text-muted">基线事件 #{ttrpgCandidate.baseSequence}</span>
+                        <span className="font-medium text-text-primary">{t('ttrpg.pendingTurnHeading')}</span>
+                        <span className="text-[10px] text-text-muted">{t('ttrpg.baselineEventLabel', { sequence: ttrpgCandidate.baseSequence })}</span>
                       </div>
                       <p className="mt-2 whitespace-pre-wrap text-text-secondary">{ttrpgCandidate.narrative}</p>
                       {ttrpgCandidate.check && ttrpgCandidate.outcomes && (
                         <div className="mt-2 space-y-1 text-xs text-text-secondary">
-                          <div>检定：{ttrpgCandidate.check.skill} · {ttrpgCandidate.check.expression} · DC {ttrpgCandidate.check.dc}</div>
-                          <div>成功：{ttrpgCandidate.outcomes.success}</div>
-                          <div>失败：{ttrpgCandidate.outcomes.failure}</div>
+                          <div>{t('ttrpg.checkLine', { skill: ttrpgCandidate.check.skill, expression: ttrpgCandidate.check.expression, dc: ttrpgCandidate.check.dc })}</div>
+                          <div>{t('ttrpg.successLine', { text: ttrpgCandidate.outcomes.success })}</div>
+                          <div>{t('ttrpg.failureLine', { text: ttrpgCandidate.outcomes.failure })}</div>
                         </div>
                       )}
                       <div className="mt-3 flex gap-2">
@@ -1091,14 +1173,14 @@ export default function SimulationRuntimePanel(props: {
                           })}
                           className="rounded bg-accent px-3 py-1 text-xs text-white disabled:opacity-40"
                         >
-                          记录回合
+                          {t('ttrpg.recordTurn')}
                         </button>
                         <button
                           disabled={busy}
                           onClick={() => setTtrpgCandidate(null)}
                           className="rounded border border-border px-3 py-1 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                         >
-                          丢弃候选
+                          {t('ttrpg.discardCandidate')}
                         </button>
                       </div>
                     </div>
@@ -1108,20 +1190,20 @@ export default function SimulationRuntimePanel(props: {
                     <input
                       value={ttrpgSkill}
                       onChange={event => setTtrpgSkill(event.target.value)}
-                      placeholder="技能"
-                      aria-label="跑团检定技能"
+                      placeholder={t('ttrpg.skillPlaceholder')}
+                      aria-label={t('ttrpg.skillAria')}
                       className="rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                     />
                     <input
                       value={ttrpgExpression}
                       onChange={event => setTtrpgExpression(event.target.value)}
-                      aria-label="跑团技能表达式"
+                      aria-label={t('ttrpg.expressionAria')}
                       className="rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                     />
                     <input
                       value={ttrpgDc}
                       onChange={event => setTtrpgDc(event.target.value)}
-                      aria-label="跑团检定难度"
+                      aria-label={t('ttrpg.dcAria')}
                       className="rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                     />
                     <button
@@ -1134,7 +1216,7 @@ export default function SimulationRuntimePanel(props: {
                       }))}
                       className="rounded border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                     >
-                      技能检定
+                      {t('ttrpg.skillCheck')}
                     </button>
                   </div>
                 </div>
@@ -1146,19 +1228,19 @@ export default function SimulationRuntimePanel(props: {
                 <div className="flex items-center gap-2 border-b border-border px-4 py-3">
                   <CalendarClock className="h-4 w-4 text-accent" />
                   <div>
-                    <h3 className="text-sm font-semibold text-text-primary">长期战役</h3>
-                    <p className="mt-1 text-xs text-text-muted">战役摘要、任务和 NPC 日程跟随运行时事件流，可在分支会话中继续推进。</p>
+                    <h3 className="text-sm font-semibold text-text-primary">{t('campaign.heading')}</h3>
+                    <p className="mt-1 text-xs text-text-muted">{t('campaign.description')}</p>
                   </div>
                 </div>
                 <div className="space-y-4 p-4">
                   <div className="grid gap-3 lg:grid-cols-[1.4fr_1fr]">
                     <div className="space-y-2">
-                      <label className="text-xs font-medium text-text-secondary" htmlFor="ttrpg-campaign-summary">战役摘要</label>
+                      <label className="text-xs font-medium text-text-secondary" htmlFor="ttrpg-campaign-summary">{t('campaign.summaryLabel')}</label>
                       <textarea
                         id="ttrpg-campaign-summary"
                         value={campaignSummary}
                         onChange={event => setCampaignSummary(event.target.value)}
-                        placeholder="记录跨场景、跨会话需要保留的剧情进展、未决冲突和下一步节奏。"
+                        placeholder={t('campaign.summaryPlaceholder')}
                         className="min-h-28 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"
                       />
                       <button
@@ -1166,21 +1248,21 @@ export default function SimulationRuntimePanel(props: {
                         onClick={() => void run(() => store.updateTtrpgCampaignSummary(campaignSummary, store.runtimeState.lastSequence))}
                         className="rounded bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-40"
                       >
-                        保存摘要
+                        {t('campaign.saveSummary')}
                       </button>
                     </div>
                     <div className="rounded border border-border bg-bg-base p-3">
                       <div className="flex items-center justify-between gap-2 text-xs font-medium text-text-secondary">
-                        <span>世界时间</span>
+                        <span>{t('campaign.worldTime')}</span>
                         <span className="font-mono text-accent">T+{store.runtimeState.clock}</span>
                       </div>
-                      <p className="mt-2 text-xs leading-relaxed text-text-muted">推进时间后，任务期限和 NPC 日程会按同一个运行时时钟重新计算。</p>
-                      <div className="mt-3 text-xs text-text-secondary">当前活动日程：{activeCampaignSchedules.length} 条</div>
+                      <p className="mt-2 text-xs leading-relaxed text-text-muted">{t('campaign.clockNote')}</p>
+                      <div className="mt-3 text-xs text-text-secondary">{t('campaign.activeSchedulesCount', { count: activeCampaignSchedules.length })}</div>
                       {activeCampaignSchedules.length > 0 && (
                         <div className="mt-2 space-y-1">
                           {activeCampaignSchedules.map(schedule => (
                             <div key={schedule.scheduleId} className="rounded bg-bg-surface px-2 py-1 text-xs text-text-secondary">
-                              {store.runtimeState.entities[schedule.entityKey]?.name ?? schedule.entityKey}：{schedule.activity}
+                              {store.runtimeState.entities[schedule.entityKey]?.name ?? schedule.entityKey}{t('common:colon')}{schedule.activity}
                             </div>
                           ))}
                         </div>
@@ -1190,16 +1272,16 @@ export default function SimulationRuntimePanel(props: {
 
                   <div className="grid gap-4 lg:grid-cols-2">
                     <div className="space-y-2 rounded border border-border bg-bg-base p-3">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-text-primary"><ClipboardList className="h-4 w-4 text-accent" />任务管理</div>
-                      <input value={campaignQuestId} onChange={event => setCampaignQuestId(event.target.value)} placeholder="任务 ID（用于更新同一任务）" aria-label="战役任务 ID" className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
-                      <input value={campaignQuestTitle} onChange={event => setCampaignQuestTitle(event.target.value)} placeholder="任务标题" aria-label="战役任务标题" className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
-                      <textarea value={campaignQuestDescription} onChange={event => setCampaignQuestDescription(event.target.value)} placeholder="任务目标、阻碍和完成条件" aria-label="战役任务描述" className="min-h-16 w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                      <div className="flex items-center gap-2 text-sm font-semibold text-text-primary"><ClipboardList className="h-4 w-4 text-accent" />{t('campaign.questsHeading')}</div>
+                      <input value={campaignQuestId} onChange={event => setCampaignQuestId(event.target.value)} placeholder={t('campaign.questIdPlaceholder')} aria-label={t('campaign.questIdAria')} className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                      <input value={campaignQuestTitle} onChange={event => setCampaignQuestTitle(event.target.value)} placeholder={t('campaign.questTitlePlaceholder')} aria-label={t('campaign.questTitleAria')} className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                      <textarea value={campaignQuestDescription} onChange={event => setCampaignQuestDescription(event.target.value)} placeholder={t('campaign.questDescriptionPlaceholder')} aria-label={t('campaign.questDescriptionAria')} className="min-h-16 w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
                       <div className="grid gap-2 sm:grid-cols-3">
-                        <select value={campaignQuestStatus} onChange={event => setCampaignQuestStatus(event.target.value as typeof campaignQuestStatus)} aria-label="战役任务状态" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm">
-                          <option value="active">进行中</option><option value="paused">暂停</option><option value="completed">已完成</option><option value="failed">已失败</option>
+                        <select value={campaignQuestStatus} onChange={event => setCampaignQuestStatus(event.target.value as typeof campaignQuestStatus)} aria-label={t('campaign.questStatusAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm">
+                          <option value="active">{t('campaign.questStatusActive')}</option><option value="paused">{t('campaign.questStatusPaused')}</option><option value="completed">{t('campaign.questStatusCompleted')}</option><option value="failed">{t('campaign.questStatusFailed')}</option>
                         </select>
-                        <input type="number" min="0" max="5" value={campaignQuestPriority} onChange={event => setCampaignQuestPriority(event.target.value)} placeholder="优先级" aria-label="战役任务优先级" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
-                        <input type="number" min="0" value={campaignQuestDueClock} onChange={event => setCampaignQuestDueClock(event.target.value)} placeholder="期限 T+（可空）" aria-label="战役任务期限" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                        <input type="number" min="0" max="5" value={campaignQuestPriority} onChange={event => setCampaignQuestPriority(event.target.value)} placeholder={t('campaign.questPriorityPlaceholder')} aria-label={t('campaign.questPriorityAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                        <input type="number" min="0" value={campaignQuestDueClock} onChange={event => setCampaignQuestDueClock(event.target.value)} placeholder={t('campaign.questDuePlaceholder')} aria-label={t('campaign.questDueAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
                       </div>
                       <button
                         disabled={busy || !campaignQuestId.trim() || !campaignQuestTitle.trim()}
@@ -1216,7 +1298,7 @@ export default function SimulationRuntimePanel(props: {
                         })}
                         className="rounded border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                       >
-                        保存任务
+                        {t('campaign.saveQuest')}
                       </button>
                       <div className="max-h-40 space-y-1 overflow-y-auto">
                         {campaign.quests.map(quest => (
@@ -1224,29 +1306,29 @@ export default function SimulationRuntimePanel(props: {
                             <span className="flex-1 truncate text-text-secondary">{quest.title}</span><span className="text-text-muted">{quest.status}</span>{quest.dueClock != null && <span className="text-text-muted">T+{quest.dueClock}</span>}
                           </button>
                         ))}
-                        {campaign.quests.length === 0 && <p className="text-xs text-text-muted">还没有战役任务。</p>}
+                        {campaign.quests.length === 0 && <p className="text-xs text-text-muted">{t('campaign.noQuests')}</p>}
                       </div>
                     </div>
 
                     <div className="space-y-2 rounded border border-border bg-bg-base p-3">
-                      <div className="flex items-center gap-2 text-sm font-semibold text-text-primary"><CalendarClock className="h-4 w-4 text-accent" />NPC 日程</div>
-                      <input value={campaignScheduleId} onChange={event => setCampaignScheduleId(event.target.value)} placeholder="日程 ID（用于更新同一日程）" aria-label="NPC 日程 ID" className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                      <div className="flex items-center gap-2 text-sm font-semibold text-text-primary"><CalendarClock className="h-4 w-4 text-accent" />{t('campaign.schedulesHeading')}</div>
+                      <input value={campaignScheduleId} onChange={event => setCampaignScheduleId(event.target.value)} placeholder={t('campaign.scheduleIdPlaceholder')} aria-label={t('campaign.scheduleIdAria')} className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
                       <div className="grid gap-2 sm:grid-cols-2">
-                        <select value={campaignScheduleEntityKey} onChange={event => setCampaignScheduleEntityKey(event.target.value)} aria-label="NPC 日程角色" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm">
-                          <option value="">选择 NPC</option>{campaignNpcs.map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
+                        <select value={campaignScheduleEntityKey} onChange={event => setCampaignScheduleEntityKey(event.target.value)} aria-label={t('campaign.scheduleEntityAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm">
+                          <option value="">{t('campaign.scheduleSelectNpc')}</option>{campaignNpcs.map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
                         </select>
-                        <select value={campaignScheduleLocationKey} onChange={event => setCampaignScheduleLocationKey(event.target.value)} aria-label="NPC 日程地点" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm">
-                          <option value="">不绑定地点</option>{Object.values(store.runtimeState.entities).filter(entity => entity.kind === 'location').map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
+                        <select value={campaignScheduleLocationKey} onChange={event => setCampaignScheduleLocationKey(event.target.value)} aria-label={t('campaign.scheduleLocationAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm">
+                          <option value="">{t('ttrpg.noLocationOption')}</option>{Object.values(store.runtimeState.entities).filter(entity => entity.kind === 'location').map(entity => <option key={entity.entityKey} value={entity.entityKey}>{entity.name}</option>)}
                         </select>
                       </div>
                       <div className="grid gap-2 sm:grid-cols-3">
-                        <input type="number" min="0" value={campaignScheduleStartClock} onChange={event => setCampaignScheduleStartClock(event.target.value)} placeholder="开始 T+" aria-label="NPC 日程开始时间" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
-                        <input type="number" min="0" value={campaignScheduleEndClock} onChange={event => setCampaignScheduleEndClock(event.target.value)} placeholder="结束 T+（可空）" aria-label="NPC 日程结束时间" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
-                        <select value={campaignScheduleRecurrence} onChange={event => setCampaignScheduleRecurrence(event.target.value as typeof campaignScheduleRecurrence)} aria-label="NPC 日程重复方式" className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm">
-                          <option value="once">一次</option><option value="daily">每日</option><option value="weekly">每周</option>
+                        <input type="number" min="0" value={campaignScheduleStartClock} onChange={event => setCampaignScheduleStartClock(event.target.value)} placeholder={t('campaign.scheduleStartPlaceholder')} aria-label={t('campaign.scheduleStartAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                        <input type="number" min="0" value={campaignScheduleEndClock} onChange={event => setCampaignScheduleEndClock(event.target.value)} placeholder={t('campaign.scheduleEndPlaceholder')} aria-label={t('campaign.scheduleEndAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                        <select value={campaignScheduleRecurrence} onChange={event => setCampaignScheduleRecurrence(event.target.value as typeof campaignScheduleRecurrence)} aria-label={t('campaign.scheduleRecurrenceAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-sm">
+                          <option value="once">{t('campaign.recurrenceOnce')}</option><option value="daily">{t('campaign.recurrenceDaily')}</option><option value="weekly">{t('campaign.recurrenceWeekly')}</option>
                         </select>
                       </div>
-                      <input value={campaignScheduleActivity} onChange={event => setCampaignScheduleActivity(event.target.value)} placeholder="活动，例如：在码头巡逻" aria-label="NPC 日程活动" className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
+                      <input value={campaignScheduleActivity} onChange={event => setCampaignScheduleActivity(event.target.value)} placeholder={t('campaign.scheduleActivityPlaceholder')} aria-label={t('campaign.scheduleActivityAria')} className="w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-sm" />
                       <button
                         disabled={busy || !campaignScheduleId.trim() || !campaignScheduleEntityKey || !campaignScheduleActivity.trim()}
                         onClick={() => void run(async () => {
@@ -1263,15 +1345,15 @@ export default function SimulationRuntimePanel(props: {
                         })}
                         className="rounded border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                       >
-                        保存日程
+                        {t('campaign.saveSchedule')}
                       </button>
                       <div className="max-h-40 space-y-1 overflow-y-auto">
                         {campaign.npcSchedules.map(schedule => (
                           <button key={schedule.scheduleId} type="button" onClick={() => { setCampaignScheduleId(schedule.scheduleId); setCampaignScheduleEntityKey(schedule.entityKey); setCampaignScheduleStartClock(String(schedule.startClock)); setCampaignScheduleEndClock(schedule.endClock == null ? '' : String(schedule.endClock)); setCampaignScheduleLocationKey(schedule.locationKey ?? ''); setCampaignScheduleActivity(schedule.activity); setCampaignScheduleRecurrence(schedule.recurrence) }} className="flex w-full items-center gap-2 rounded bg-bg-surface px-2 py-1.5 text-left text-xs hover:bg-bg-hover">
-                            <span className="flex-1 truncate text-text-secondary">{store.runtimeState.entities[schedule.entityKey]?.name ?? schedule.entityKey}：{schedule.activity}</span><span className="text-text-muted">T+{schedule.startClock}</span>
+                            <span className="flex-1 truncate text-text-secondary">{store.runtimeState.entities[schedule.entityKey]?.name ?? schedule.entityKey}{t('common:colon')}{schedule.activity}</span><span className="text-text-muted">T+{schedule.startClock}</span>
                           </button>
                         ))}
-                        {campaign.npcSchedules.length === 0 && <p className="text-xs text-text-muted">还没有 NPC 日程。</p>}
+                        {campaign.npcSchedules.length === 0 && <p className="text-xs text-text-muted">{t('campaign.noSchedules')}</p>}
                       </div>
                     </div>
                   </div>
@@ -1281,12 +1363,12 @@ export default function SimulationRuntimePanel(props: {
 
             <section className="grid gap-3 lg:grid-cols-2">
               <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
-                <h3 className="text-sm font-semibold text-text-primary">确定性动作</h3>
+                <h3 className="text-sm font-semibold text-text-primary">{t('deterministic.heading')}</h3>
                 <div className="flex gap-2">
                   <input
                     value={timeAmount}
                     onChange={event => setTimeAmount(event.target.value)}
-                    aria-label="推进时间"
+                    aria-label={t('deterministic.advanceTimeAria')}
                     className="min-w-0 flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-sm"
                   />
                   <button
@@ -1294,14 +1376,14 @@ export default function SimulationRuntimePanel(props: {
                     onClick={() => void run(() => store.advanceTime(Number(timeAmount)))}
                     className="rounded border border-border px-3 py-1.5 text-sm hover:bg-bg-hover"
                   >
-                    推进时间
+                    {t('deterministic.advanceTime')}
                   </button>
                 </div>
                 <div className="flex gap-2">
                   <input
                     value={dice}
                     onChange={event => setDice(event.target.value)}
-                    aria-label="骰式"
+                    aria-label={t('deterministic.diceExpressionAria')}
                     className="min-w-0 flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-sm"
                   />
                   <button
@@ -1310,13 +1392,13 @@ export default function SimulationRuntimePanel(props: {
                     className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-sm hover:bg-bg-hover"
                   >
                     <Dices className="h-3.5 w-3.5" />
-                    判定
+                    {t('deterministic.rollDice')}
                   </button>
                 </div>
                 <textarea
                   value={narrative}
                   onChange={event => setNarrative(event.target.value)}
-                  placeholder="记录只属于该会话的叙事…"
+                  placeholder={t('deterministic.narrativePlaceholder')}
                   className="min-h-20 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm"
                 />
                 <button
@@ -1327,17 +1409,17 @@ export default function SimulationRuntimePanel(props: {
                   })}
                   className="rounded border border-border px-3 py-1.5 text-sm hover:bg-bg-hover disabled:opacity-40"
                 >
-                  追加叙事事件
+                  {t('deterministic.appendNarrative')}
                 </button>
               </div>
 
               <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
-                <h3 className="text-sm font-semibold text-text-primary">存档与分支</h3>
+                <h3 className="text-sm font-semibold text-text-primary">{t('saveBranch.heading')}</h3>
                 <div className="flex gap-2">
                   <input
                     value={checkpointName}
                     onChange={event => setCheckpointName(event.target.value)}
-                    placeholder="检查点名称"
+                    placeholder={t('saveBranch.checkpointPlaceholder')}
                     className="min-w-0 flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-sm"
                   />
                   <button
@@ -1349,14 +1431,14 @@ export default function SimulationRuntimePanel(props: {
                     className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-sm hover:bg-bg-hover"
                   >
                     <Save className="h-3.5 w-3.5" />
-                    保存
+                    {t('saveBranch.saveCheckpoint')}
                   </button>
                 </div>
                 <div className="flex gap-2">
                   <input
                     value={branchTitle}
                     onChange={event => setBranchTitle(event.target.value)}
-                    placeholder="新分支名称"
+                    placeholder={t('saveBranch.branchPlaceholder')}
                     className="min-w-0 flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-sm"
                   />
                   <button
@@ -1368,7 +1450,7 @@ export default function SimulationRuntimePanel(props: {
                     className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-sm hover:bg-bg-hover disabled:opacity-40"
                   >
                     <GitBranch className="h-3.5 w-3.5" />
-                    分支
+                    {t('saveBranch.branchAction')}
                   </button>
                 </div>
                 <div className="space-y-2">
@@ -1381,15 +1463,15 @@ export default function SimulationRuntimePanel(props: {
                         disabled={busy}
                         onClick={() => void run(() => store.restoreCheckpoint(checkpoint.id!))}
                         className="rounded p-1 text-text-muted hover:bg-bg-hover hover:text-accent disabled:opacity-40"
-                        title="从检查点建立恢复分支"
-                        aria-label={`恢复检查点 ${checkpoint.name}`}
+                        title={t('saveBranch.restoreTitle')}
+                        aria-label={t('saveBranch.restoreAria', { name: checkpoint.name })}
                       >
                         <RotateCcw className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
                   {store.checkpoints.length === 0 && (
-                    <p className="text-xs text-text-muted">暂无检查点</p>
+                    <p className="text-xs text-text-muted">{t('saveBranch.noCheckpoints')}</p>
                   )}
                 </div>
               </div>
@@ -1397,7 +1479,7 @@ export default function SimulationRuntimePanel(props: {
 
             <section className="rounded-lg border border-border bg-bg-surface">
               <div className="border-b border-border px-4 py-3 text-sm font-semibold text-text-primary">
-                运行时实体
+                {t('entities.heading')}
               </div>
               <div className="divide-y divide-border">
                 {Object.values(store.runtimeState.entities).map(entity => (
@@ -1417,16 +1499,16 @@ export default function SimulationRuntimePanel(props: {
                   </div>
                 ))}
                 {Object.keys(store.runtimeState.entities).length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-text-muted">暂无运行时实体</p>
+                  <p className="px-4 py-6 text-center text-sm text-text-muted">{t('entities.empty')}</p>
                 )}
               </div>
             </section>
 
             <section className="rounded-lg border border-border bg-bg-surface">
               <div className="border-b border-border px-4 py-3">
-                <div className="text-sm font-semibold text-text-primary">当前叙事状态</div>
+                <div className="text-sm font-semibold text-text-primary">{t('narrativeState.heading')}</div>
                 <p className="mt-0.5 text-xs text-text-muted">
-                  包含从父会话继承的叙事；下方事件日志只记录当前会话自身追加的事件。
+                  {t('narrativeState.description')}
                 </p>
               </div>
               <div className="divide-y divide-border">
@@ -1444,27 +1526,27 @@ export default function SimulationRuntimePanel(props: {
                   </div>
                 ))}
                 {store.runtimeState.narratives.length === 0 && (
-                  <p className="px-4 py-6 text-center text-sm text-text-muted">暂无叙事状态</p>
+                  <p className="px-4 py-6 text-center text-sm text-text-muted">{t('narrativeState.empty')}</p>
                 )}
               </div>
             </section>
 
             <section className="rounded-lg border border-border bg-bg-surface">
               <div className="border-b border-border px-4 py-3 text-sm font-semibold text-text-primary">
-                追加事件日志
+                {t('eventLog.heading')}
               </div>
               <div className="divide-y divide-border">
                 {[...store.events].reverse().map(event => (
                   <div key={event.id} className="flex gap-3 px-4 py-3 text-sm">
                     <span className="w-10 shrink-0 font-mono text-xs text-text-muted">#{event.sequence}</span>
-                    <span className="w-32 shrink-0 text-xs text-accent">{event.type}</span>
+                    <span className="w-32 shrink-0 text-xs text-accent">—</span>
                     <span className="min-w-0 flex-1 break-words text-text-secondary">
-                      {eventSummary(event.type, event.payloadJson)}
+                      {formatEventSummary(t, event.type, event.payloadJson)}
                     </span>
                   </div>
                 ))}
                 {store.events.length === 0 && (
-                  <p className="px-4 py-8 text-center text-sm text-text-muted">尚无事件</p>
+                  <p className="px-4 py-8 text-center text-sm text-text-muted">{t('eventLog.empty')}</p>
                 )}
               </div>
             </section>

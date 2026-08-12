@@ -24,6 +24,7 @@ import {
   evaluateWorkshopQuality,
   extractWorkshopSceneNarrative,
   formatWorkshopCanonCatalog,
+  OUTLINE_WORKSHOP_STAGE_I18N_KEYS,
   OUTLINE_WORKSHOP_STAGE_META,
   OUTLINE_WORKSHOP_STAGES,
   rewindWorkshopArtifacts,
@@ -52,6 +53,7 @@ import type {
   TemporalFact,
 } from '../../lib/types'
 import type { AssembleContextResult } from '../../lib/registry/types'
+import { useDomainT } from '../../i18n'
 import PromptPreviewGate from '../shared/PromptPreviewGate'
 
 interface Props {
@@ -80,6 +82,7 @@ export default function ChapterOutlineWorkshop({
   onAdopt,
   onClose,
 }: Props) {
+  const { t } = useDomainT('outline')
   const ai = useAIStream()
   const stopAIRef = useRef(ai.stop)
   stopAIRef.current = ai.stop
@@ -148,11 +151,11 @@ export default function ChapterOutlineWorkshop({
       setEvidence({ assembled, heldItems, cognition, canonFacts })
     } catch (reason) {
       if (requestRef.current !== requestId) return
-      setError(reason instanceof Error ? reason.message : '未知错误')
+      setError(reason instanceof Error ? reason.message : t('common:unknownError'))
     } finally {
       if (requestRef.current === requestId) setInitializing(false)
     }
-  }, [aiConfig.model, aiConfig.provider, chapter.id, project.id, worldGroupId])
+  }, [aiConfig.model, aiConfig.provider, chapter.id, project.id, worldGroupId, t])
 
   useEffect(() => {
     void initialize()
@@ -169,6 +172,7 @@ export default function ChapterOutlineWorkshop({
       .join('\n\n')
   ), [artifacts])
 
+
   const evaluate = useCallback((
     raw: string,
     draftText = generatedDraft,
@@ -176,7 +180,7 @@ export default function ChapterOutlineWorkshop({
     if (!evidence) return {
       gate: {
         status: 'blocked',
-        issues: [{ code: 'evidence-missing', message: '校验证据尚未准备完成。' }],
+        issues: [{ code: 'evidence-missing', message: t('workshop.evidenceMissingIssue') }],
       },
       advisories: [],
     }
@@ -188,10 +192,10 @@ export default function ChapterOutlineWorkshop({
       cognition: evidence.cognition,
       canonFacts: evidence.canonFacts,
     })
-  }, [characters, evidence, generatedDraft])
+  }, [characters, evidence, generatedDraft, t])
 
   const buildNode = useCallback((stage: OutlineWorkshopStage) => {
-    if (project.id == null || chapter.id == null) throw new Error('章节身份缺失。')
+    if (project.id == null || chapter.id == null) throw new Error(t('workshop.identityMissing'))
     return createOutlineWorkshopNode({
       stage,
       projectId: project.id,
@@ -201,7 +205,7 @@ export default function ChapterOutlineWorkshop({
         ? output => evaluate(output).gate
         : undefined,
     })
-  }, [ai, chapter.id, evaluate, project.id])
+  }, [ai, chapter.id, evaluate, project.id, t])
 
   const runPrepared = useCallback(async (
     prepared: PreparedGenerationNode,
@@ -235,11 +239,11 @@ export default function ChapterOutlineWorkshop({
       if (runningStage === 'quality') setQuality(evaluate(result.output))
     } catch (reason) {
       if (runRef.current !== runId) return
-      setError(reason instanceof Error ? reason.message : '节点执行失败')
+      setError(reason instanceof Error ? reason.message : t('workshop.nodeExecutionFailed'))
     } finally {
       if (runRef.current === runId) setRunning(false)
     }
-  }, [activeStage, ai, buildNode, evaluate])
+  }, [activeStage, ai, buildNode, evaluate, t])
 
   const generateCurrent = () => {
     if (!evidence || chapter.id == null) return
@@ -263,7 +267,7 @@ export default function ChapterOutlineWorkshop({
       }
       void runPrepared(prepared)
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '无法准备当前节点')
+      setError(reason instanceof Error ? reason.message : t('workshop.prepareNodeFailed'))
     }
   }
 
@@ -284,7 +288,7 @@ export default function ChapterOutlineWorkshop({
         ai.reset()
       }
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '无法确认当前节点')
+      setError(reason instanceof Error ? reason.message : t('workshop.confirmNodeFailed'))
     }
   }
 
@@ -310,7 +314,7 @@ export default function ChapterOutlineWorkshop({
       const ok = await onAdopt(draft)
       if (ok) onClose()
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : '采纳场景卡失败')
+      setError(reason instanceof Error ? reason.message : t('workshop.adoptFailed'))
     } finally {
       setAdopting(false)
     }
@@ -326,18 +330,18 @@ export default function ChapterOutlineWorkshop({
         <div>
           <h3 className="flex items-center gap-2 text-sm font-semibold text-text-primary">
             <Sparkles className="h-4 w-4 text-accent" />
-            五阶段章纲工坊 · {chapter.title}
+            {t('workshop.title', { chapterTitle: chapter.title })}
           </h3>
           <p className="mt-1 text-[11px] text-text-muted">
-            深度模式预计调用 5 次模型；所有中间产物仅保留在本次会话，最终场景卡仍需作者确认采纳。
+            {t('workshop.subtitle')}
           </p>
         </div>
-        <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary" aria-label="关闭章纲工坊">
+        <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary" aria-label={t('workshop.closeAria')}>
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-1" aria-label="工坊步骤">
+      <div className="mt-3 flex flex-wrap items-center gap-1" aria-label={t('workshop.stepsAria')}>
         {OUTLINE_WORKSHOP_STAGES.map((stage, index) => {
           const confirmed = Boolean(artifacts[stage])
           const active = stage === activeStage
@@ -354,10 +358,10 @@ export default function ChapterOutlineWorkshop({
                       ? 'bg-success/10 text-success hover:bg-success/20'
                       : 'bg-bg-elevated text-text-muted'
                 } disabled:cursor-not-allowed disabled:opacity-50`}
-                title={index < activeIndex ? '从此步重做，清空其后会话产物' : undefined}
+                title={index < activeIndex ? t('workshop.rewindTitle') : undefined}
               >
                 {confirmed && <Check className="mr-1 inline h-3 w-3" />}
-                {index + 1}. {OUTLINE_WORKSHOP_STAGE_META[stage].title}
+                {index + 1}. {t(OUTLINE_WORKSHOP_STAGE_I18N_KEYS[stage].titleKey, { defaultValue: OUTLINE_WORKSHOP_STAGE_META[stage].title })}
               </button>
               {index < OUTLINE_WORKSHOP_STAGES.length - 1 && (
                 <ChevronRight className="h-3 w-3 text-text-muted" />
@@ -369,23 +373,23 @@ export default function ChapterOutlineWorkshop({
 
       {initializing ? (
         <div className="mt-4 flex items-center gap-2 text-xs text-text-muted">
-          <Loader2 className="h-4 w-4 animate-spin" /> 正在按注册表装配本章证据...
+          <Loader2 className="h-4 w-4 animate-spin" /> {t('workshop.initializing')}
         </div>
       ) : error && !evidence ? (
         <div className="mt-4 flex items-start justify-between gap-3 rounded border border-error/30 bg-error/10 p-3 text-xs text-error">
           <span>{error}</span>
-          <button onClick={() => { void initialize() }} className="shrink-0 underline">重试</button>
+          <button onClick={() => { void initialize() }} className="shrink-0 underline">{t('workshop.retry')}</button>
         </div>
       ) : evidence ? (
         <div className="mt-4 space-y-3">
           <div className="flex flex-wrap items-center justify-between gap-2 rounded bg-bg-elevated px-3 py-2 text-[11px]">
             <span className="text-text-secondary">
-              当前：<strong>{OUTLINE_WORKSHOP_STAGE_META[activeStage].title}</strong>
-              <span className="ml-2 text-text-muted">{OUTLINE_WORKSHOP_STAGE_META[activeStage].description}</span>
+              {t('workshop.currentStage')}<strong>{t(OUTLINE_WORKSHOP_STAGE_I18N_KEYS[activeStage].titleKey, { defaultValue: OUTLINE_WORKSHOP_STAGE_META[activeStage].title })}</strong>
+              <span className="ml-2 text-text-muted">{t(OUTLINE_WORKSHOP_STAGE_I18N_KEYS[activeStage].descriptionKey, { defaultValue: OUTLINE_WORKSHOP_STAGE_META[activeStage].description })}</span>
             </span>
             <span className="text-text-muted">
-              登记上下文约 {evidence.assembled.totalInputTokens.toLocaleString()} tokens
-              {lastInputTokens > 0 && ` · 本节点约 ${lastInputTokens.toLocaleString()}`}
+              {t('workshop.contextTokens', { tokens: evidence.assembled.totalInputTokens.toLocaleString() })}
+              {lastInputTokens > 0 && ` · ${t('workshop.nodeTokens', { tokens: lastInputTokens.toLocaleString() })}`}
             </span>
           </div>
 
@@ -399,13 +403,13 @@ export default function ChapterOutlineWorkshop({
               }}
               className="mt-0.5 accent-accent"
             />
-            每个节点发送前预览/编辑最终消息（一次性，不保存）
+            {t('workshop.transparentToggle')}
           </label>
 
           {promptPreview ? (
             <PromptPreviewGate
               messages={promptPreview.messages}
-              backLabel="返回当前步骤"
+              backLabel={t('workshop.backToStep')}
               onBack={() => setPromptPreview(null)}
               onConfirm={messages => { void runPrepared(promptPreview, messages) }}
             />
@@ -414,7 +418,7 @@ export default function ChapterOutlineWorkshop({
               {(displayedOutput || running) ? (
                 <div className="space-y-2">
                   <textarea
-                    aria-label={`${OUTLINE_WORKSHOP_STAGE_META[activeStage].title}产物`}
+                    aria-label={`${t(OUTLINE_WORKSHOP_STAGE_I18N_KEYS[activeStage].titleKey, { defaultValue: OUTLINE_WORKSHOP_STAGE_META[activeStage].title })} ${t('workshop.productAria')}`}
                     value={displayedOutput}
                     disabled={running}
                     onChange={event => {
@@ -436,13 +440,13 @@ export default function ChapterOutlineWorkshop({
                       }}
                       className="flex items-center gap-1 text-xs text-error"
                     >
-                      <Square className="h-3 w-3" /> 停止本步
+                      <Square className="h-3 w-3" /> {t('workshop.stopStep')}
                     </button>
                   )}
                 </div>
               ) : (
                 <p className="rounded border border-dashed border-border p-4 text-center text-xs text-text-muted">
-                  本步尚未生成。系统只会注入该节点需要的登记上下文和已确认前序产物。
+                  {t('workshop.emptyStep')}
                 </p>
               )}
 
@@ -450,7 +454,7 @@ export default function ChapterOutlineWorkshop({
                 <div className="space-y-2">
                   {quality.gate.issues.length > 0 && (
                     <div className="rounded border border-error/30 bg-error/10 p-3 text-xs text-error">
-                      <p className="font-medium">确定性闸门阻断，不能进入场景卡：</p>
+                      <p className="font-medium">{t('workshop.gateBlockedHeading')}</p>
                       <ul className="mt-1 list-disc space-y-1 pl-4">
                         {quality.gate.issues.map(issue => <li key={issue.code}>{issue.message}</li>)}
                       </ul>
@@ -458,11 +462,11 @@ export default function ChapterOutlineWorkshop({
                   )}
                   {quality.advisories.length > 0 && (
                     <div className="rounded border border-warning/30 bg-warning/10 p-3 text-xs text-warning">
-                      <p className="font-medium">软性质量建议（由作者判断）：</p>
+                      <p className="font-medium">{t('workshop.advisoriesHeading')}</p>
                       <ul className="mt-1 list-disc space-y-1 pl-4">
                         {quality.advisories.map((item, index) => (
                           <li key={`${item.category}-${index}`}>
-                            {item.category}：{item.reason}{item.suggestion ? `；建议：${item.suggestion}` : ''}
+                            {item.category}：{item.reason}{item.suggestion ? `; ${item.suggestion}` : ''}
                           </li>
                         ))}
                       </ul>
@@ -475,7 +479,7 @@ export default function ChapterOutlineWorkshop({
                 <details className="rounded border border-border bg-bg-base p-2">
                   <summary className="cursor-pointer text-[11px] text-text-secondary">
                     <GitCompareArrows className="mr-1 inline h-3 w-3" />
-                    比较本步历史版本（{stageAttempts.length}）
+                    {t('workshop.compareHistory')} ({stageAttempts.length})
                   </summary>
                   <div className="mt-2 grid gap-2 lg:grid-cols-2">
                     {stageAttempts.slice(-2).map((attempt, index) => (
@@ -488,7 +492,7 @@ export default function ChapterOutlineWorkshop({
                           onClick={() => setDraft(attempt)}
                           className="mt-1 text-[10px] text-accent hover:underline"
                         >
-                          采用此版本继续编辑
+                          {t('workshop.useVersion')}
                         </button>
                       </div>
                     ))}
@@ -510,7 +514,7 @@ export default function ChapterOutlineWorkshop({
                   className="flex items-center gap-1 rounded border border-accent/30 px-2.5 py-1 text-xs text-accent hover:bg-accent/10 disabled:opacity-40"
                 >
                   {draft ? <RotateCcw className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
-                  {draft ? '重新生成本步' : '生成本步'}
+                  {draft ? t('workshop.regenerate') : t('workshop.generateStep')}
                 </button>
                 {activeStage === 'scenes' ? (
                   <button
@@ -519,7 +523,7 @@ export default function ChapterOutlineWorkshop({
                     onClick={() => { void adoptScenes() }}
                     className="rounded bg-success px-3 py-1 text-xs text-white hover:opacity-90 disabled:opacity-40"
                   >
-                    {adopting ? '正在采纳...' : '确认采纳场景卡'}
+                    {adopting ? t('workshop.adopting') : t('workshop.confirmAdoptScenes')}
                   </button>
                 ) : (
                   <button
@@ -528,7 +532,7 @@ export default function ChapterOutlineWorkshop({
                     onClick={confirmCurrent}
                     className="rounded bg-accent px-3 py-1 text-xs text-white hover:bg-accent-hover disabled:opacity-40"
                   >
-                    确认本步并进入下一步
+                    {t('workshop.confirmNextStep')}
                   </button>
                 )}
               </div>

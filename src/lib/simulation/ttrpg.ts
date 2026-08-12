@@ -1,4 +1,5 @@
 import JSON5 from 'json5'
+import { getT } from '../../i18n'
 import type {
   ChatMessage,
   SimulationRuntimeState,
@@ -14,7 +15,7 @@ export function buildTtrpgEncounterPrompt(input: {
   runtimeContext: string
   participantKeys: string[]
 }): ChatMessage[] {
-  if (input.participantKeys.length < 2) throw new Error('遭遇至少需要两个参与者。')
+  if (input.participantKeys.length < 2) throw new Error(getT()('simulation:ttrpg.encounterMinParticipantsError'))
   return [
     {
       role: 'system',
@@ -45,8 +46,8 @@ export function buildTtrpgGmPrompt(input: {
   runtimeContext: string
 }): ChatMessage[] {
   const action = input.action.trim()
-  if (!input.actorKey.trim()) throw new Error('跑团行动者不能为空。')
-  if (!action || action.length > MAX_TTRPG_ACTION_CHARS) throw new Error('跑团动作文本无效。')
+  if (!input.actorKey.trim()) throw new Error(getT()('simulation:ttrpg.actorEmptyError'))
+  if (!action || action.length > MAX_TTRPG_ACTION_CHARS) throw new Error(getT()('simulation:runtime.ttrpg.actionTextInvalid'))
   return [
     {
       role: 'system',
@@ -82,16 +83,16 @@ export function buildTtrpgGmPrompt(input: {
 
 function parseJsonObject(draft: string): Record<string, unknown> {
   const input = draft.trim()
-  if (!input) throw new Error('AI GM 回合候选为空。')
+  if (!input) throw new Error(getT()('simulation:ttrpg.gmCandidateEmpty'))
   if (input.length > MAX_TTRPG_CANDIDATE_CHARS) {
-    throw new Error(`AI GM 回合候选不能超过 ${MAX_TTRPG_CANDIDATE_CHARS} 个字符。`)
+    throw new Error(getT()('simulation:ttrpg.gmCandidateTooLong', { max: MAX_TTRPG_CANDIDATE_CHARS }))
   }
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(input)
   const candidate = fenced?.[1]?.trim() ?? input
   const start = candidate.indexOf('{')
   const end = candidate.lastIndexOf('}')
-  if (start < 0 || end < start) throw new Error('AI GM 回合候选不是完整 JSON 对象。')
-  if (candidate.slice(end + 1).trim()) throw new Error('AI GM 回合候选 JSON 后包含额外文本。')
+  if (start < 0 || end < start) throw new Error(getT()('simulation:ttrpg.gmCandidateNotJsonObject'))
+  if (candidate.slice(end + 1).trim()) throw new Error(getT()('simulation:ttrpg.gmCandidateTrailingText'))
   const json = candidate.slice(start, end + 1)
   try {
     return JSON.parse(json) as Record<string, unknown>
@@ -99,7 +100,7 @@ function parseJsonObject(draft: string): Record<string, unknown> {
     try {
       return JSON5.parse(json) as Record<string, unknown>
     } catch {
-      throw new Error('AI GM 回合候选不是有效 JSON。')
+      throw new Error(getT()('simulation:ttrpg.gmCandidateInvalidJson'))
     }
   }
 }
@@ -115,10 +116,10 @@ export function parseTtrpgTurnCandidate(input: {
   const actorKey = input.actorKey.trim()
   const target = input.state.entities[actorKey]
   if (!target || !['player', 'character', 'npc'].includes(target.kind)) {
-    throw new Error('跑团行动者不是当前会话中的有效角色。')
+    throw new Error(getT()('simulation:ttrpg.actorNotValidCharacter'))
   }
   if (raw.actorKey != null && String(raw.actorKey).trim() !== actorKey) {
-    throw new Error('AI GM 候选不能改写本次行动者。')
+    throw new Error(getT()('simulation:ttrpg.candidateActorOverride'))
   }
   const candidate = parseSimulationTtrpgTurnCandidate({
     ...raw,
@@ -127,7 +128,7 @@ export function parseTtrpgTurnCandidate(input: {
     action: input.action,
   })
   if (candidate.nextActorKey != null && !input.state.ttrpg?.turnOrder.includes(candidate.nextActorKey)) {
-    throw new Error('AI GM 候选引用了不在当前回合顺序中的行动者。')
+    throw new Error(getT()('simulation:ttrpg.candidateNextActorNotInTurnOrder'))
   }
   return candidate
 }
@@ -145,12 +146,12 @@ export function parseTtrpgEncounterCandidate(input: {
   })
   const expected = new Set(input.participantKeys.map(key => key.trim()).filter(Boolean))
   if (candidate.participantKeys.some(key => !expected.has(key))) {
-    throw new Error('AI 遭遇候选引用了作者未指定的参与者。')
+    throw new Error(getT()('simulation:ttrpg.encounterCandidateUnknownParticipant'))
   }
-  if (candidate.participantKeys.length !== expected.size) throw new Error('AI 遭遇候选必须保留全部指定参与者。')
+  if (candidate.participantKeys.length !== expected.size) throw new Error(getT()('simulation:ttrpg.encounterCandidateMissingParticipant'))
   for (const key of candidate.participantKeys) {
     const entity = input.state.entities[key]
-    if (!entity || !['player', 'character', 'npc'].includes(entity.kind)) throw new Error(`AI 遭遇候选引用了无效参与者: ${key}`)
+    if (!entity || !['player', 'character', 'npc'].includes(entity.kind)) throw new Error(getT()('simulation:ttrpg.encounterCandidateInvalidParticipant', { key }))
   }
   return candidate
 }

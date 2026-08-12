@@ -1,5 +1,7 @@
 import { History, HardDrive, PlayCircle } from 'lucide-react'
+import { Trans } from 'react-i18next'
 import type { ImportSession } from '../../../lib/types/import-session'
+import { useDomainT } from '../../../i18n'
 
 interface Props {
   unfinished: ImportSession
@@ -28,28 +30,38 @@ export default function ImportUnfinishedBanner({
   onDiscard,
 }: Props) {
   const remaining = unfinished.chunks.filter(c => c.status !== 'done').length
+  const { t } = useDomainT('system')
 
   return (
     <div className="bg-warning/5 border border-warning/30 rounded-xl p-4 flex items-start gap-3">
       <History className="w-5 h-5 text-warning mt-0.5 flex-shrink-0" />
       <div className="flex-1">
         <div className="text-sm font-semibold text-warning mb-1">
-          发现未完成的解析任务
+          {t('unfinishedBanner.heading')}
         </div>
         <div className="text-xs text-text-secondary leading-relaxed">
-          文件「<strong>{unfinished.filename}</strong>」还剩 {remaining} 块未解析
-          （共 {unfinished.totalChunks} 块 · 状态：{unfinished.status}）。
+          <Trans
+            i18nKey="unfinishedBanner.summary"
+            ns="system"
+            values={{
+              filename: unfinished.filename,
+              remaining,
+              total: unfinished.totalChunks,
+              status: unfinished.status,
+            }}
+            components={{ 1: <strong /> }}
+          />
         </div>
         {restoringBlob && (
           <div className="mt-1.5 text-[11px] text-text-muted flex items-center gap-1">
             <HardDrive className="w-3 h-3 animate-pulse" />
-            正在从本地存档恢复原文...
+            {t('unfinishedBanner.restoringBlob')}
           </div>
         )}
         {!restoringBlob && blobRestored && (
           <div className="mt-1.5 text-[11px] text-accent flex items-center gap-1">
             <HardDrive className="w-3 h-3" />
-            已从本地存档恢复原文，可直接续跑
+            {t('unfinishedBanner.blobRestored')}
           </div>
         )}
         <div className="flex items-center gap-2 mt-2">
@@ -58,31 +70,31 @@ export default function ImportUnfinishedBanner({
               onClick={onResume}
               className="flex items-center gap-1 px-3 py-1.5 bg-warning text-white text-xs rounded hover:bg-warning/90"
             >
-              <PlayCircle className="w-3.5 h-3.5" /> 立即续跑
+              <PlayCircle className="w-3.5 h-3.5" /> {t('unfinishedBanner.resumeNow')}
             </button>
           ) : hasRawText ? (
             <button
               onClick={onResumeWithUploaded}
               className="flex items-center gap-1 px-3 py-1.5 bg-warning text-white text-xs rounded hover:bg-warning/90"
             >
-              <PlayCircle className="w-3.5 h-3.5" /> 用当前文件续跑
+              <PlayCircle className="w-3.5 h-3.5" /> {t('unfinishedBanner.resumeWithUploaded')}
             </button>
           ) : !restoringBlob ? (
             <span className="text-xs text-text-muted">
-              ⚠ 本地存档丢失（可能已清理浏览器数据），请在下方重新上传同一文件
+              {t('unfinishedBanner.blobLostWarning')}
             </span>
           ) : null}
           <button
             onClick={onShowDetail}
             className="px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover rounded"
           >
-            查看详情
+            {t('unfinishedBanner.viewDetails')}
           </button>
           <button
             onClick={() => onDiscard()}
             className="px-3 py-1.5 text-xs text-text-muted hover:text-error rounded"
           >
-            放弃
+            {t('unfinishedBanner.discard')}
           </button>
         </div>
       </div>

@@ -27,6 +27,15 @@ export const ANTI_AI_DIMENSION_LABELS: Record<string, string> = {
   dialogue: '对话自然度',
 }
 
+/** i18n keys for UI display (resolved at render time; ANTI_AI_DIMENSION_LABELS remains for prompt building) */
+export const ANTI_AI_DIMENSION_LABEL_KEYS: Record<string, string> = {
+  vocabulary: 'editor:dimensionLabels.vocabulary',
+  syntax: 'editor:dimensionLabels.syntax',
+  narrative: 'editor:dimensionLabels.narrative',
+  emotion: 'editor:dimensionLabels.emotion',
+  dialogue: 'editor:dimensionLabels.dialogue',
+}
+
 export function buildAntiAIPrompt(
   chapterContent: string,
   highFreqWords?: string[],

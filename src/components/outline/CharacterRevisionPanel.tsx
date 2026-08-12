@@ -27,6 +27,7 @@ import {
 import AutoResizeTextarea from '../shared/AutoResizeTextarea'
 import AIStreamOutput from '../shared/AIStreamOutput'
 import { useDialog } from '../shared/Dialog'
+import { useDomainT, type DomainTFunction } from '../../i18n'
 import CharacterRevisionResult from './CharacterRevisionResult'
 
 interface Props {
@@ -35,17 +36,21 @@ interface Props {
   onSwitchToPlanning: () => void
 }
 
-const CHANGE_LABELS: Record<CharacterRevisionChangeType, string> = {
-  'add-character': '新增角色',
-  'revise-arc': '修改角色弧光',
-  'revise-ending': '调整目标/结局',
-  'remove-or-demote': '删除或降低戏份',
+function getChangeLabels(t: DomainTFunction): Record<CharacterRevisionChangeType, string> {
+  return {
+    'add-character': t('revision.changeLabels.add-character'),
+    'revise-arc': t('revision.changeLabels.revise-arc'),
+    'revise-ending': t('revision.changeLabels.revise-ending'),
+    'remove-or-demote': t('revision.changeLabels.remove-or-demote'),
+  }
 }
 
-const STRATEGY_LABELS: Record<CharacterRevisionStrategy, string> = {
-  light: '只小修',
-  balanced: '保留关键节点重排',
-  deep: '深度重构未写区',
+function getStrategyLabels(t: DomainTFunction): Record<CharacterRevisionStrategy, string> {
+  return {
+    light: t('revision.strategyLabels.light'),
+    balanced: t('revision.strategyLabels.balanced'),
+    deep: t('revision.strategyLabels.deep'),
+  }
 }
 
 export default function CharacterRevisionPanel({
@@ -53,6 +58,7 @@ export default function CharacterRevisionPanel({
   plan,
   onSwitchToPlanning,
 }: Props) {
+  const { t } = useDomainT('outline')
   const characters = useCharacterStore(state => state.characters)
   const loadOutline = useOutlineStore(state => state.loadAll)
   const dialog = useDialog()
@@ -68,6 +74,8 @@ export default function CharacterRevisionPanel({
   const [loadingSnapshot, setLoadingSnapshot] = useState(true)
   const [changeType, setChangeType] = useState<CharacterRevisionChangeType>('revise-arc')
   const [characterId, setCharacterId] = useState<number | null>(null)
+  const changeLabels = useMemo(() => getChangeLabels(t), [t])
+  const strategyLabels = useMemo(() => getStrategyLabels(t), [t])
   const [changeDescription, setChangeDescription] = useState('')
   const [protectedThrough, setProtectedThrough] = useState(0)
   const [transitionCount, setTransitionCount] = useState(10)
@@ -119,7 +127,7 @@ export default function CharacterRevisionPanel({
     if (ai.isStreaming || !ai.output || !analysisSnapshot.current || !analysisScope.current) return
     const parsed = parseCharacterRevisionOutput(ai.output, analysisSnapshot.current, analysisScope.current)
     if (!parsed) {
-      setLocalError('AI 返回的修订计划不是有效 JSON，请重试或在提示词库中恢复内置模板。')
+      setLocalError(t('revision.invalidJsonError'))
       return
     }
     setAnalysis(parsed)
@@ -128,7 +136,7 @@ export default function CharacterRevisionPanel({
     ) ?? parsed.options[0]
     setSelectedOptionId(preferred?.id ?? null)
     setSelectedPatchIds(new Set(preferred?.patches.map(patch => patch.outlineNodeId) ?? []))
-  }, [ai.isStreaming, ai.output])
+  }, [ai.isStreaming, ai.output, t])
 
   useEffect(() => {
     if (!selectedOption) return
@@ -171,7 +179,7 @@ export default function CharacterRevisionPanel({
         projectId: project.id!,
       })
     } catch (error) {
-      setLocalError(error instanceof Error ? error.message : '影响分析准备失败')
+      setLocalError(error instanceof Error ? error.message : t('revision.prepareFailed'))
     }
   }
 
@@ -180,9 +188,9 @@ export default function CharacterRevisionPanel({
     const patches = selectedOption.patches.filter(patch => selectedPatchIds.has(patch.outlineNodeId))
     if (!patches.length) return
     const confirmed = await dialog.confirm({
-      title: `应用 ${patches.length} 个未写大纲 patch？`,
-      message: '系统会再次检查正文保护区、锚点和分析后的手工改动。不会修改任何章节正文或故事主线。',
-      confirmText: '应用到大纲',
+      title: t('revision.applyConfirmTitle', { count: patches.length }),
+      message: t('revision.applyConfirmMessage'),
+      confirmText: t('revision.applyConfirmButton'),
     })
     if (!confirmed) return
     setApplying(true)
@@ -206,8 +214,8 @@ export default function CharacterRevisionPanel({
       await loadOutline(project.id!)
       await refreshSnapshot()
       setResultMessage(
-        `已应用 ${result.appliedOutlineNodeIds.length} 项`
-        + (result.skipped.length ? `；${result.skipped.length} 项因保护边界或版本变化跳过` : ''),
+        t('revision.applyResult', { count: result.appliedOutlineNodeIds.length, applied: result.appliedOutlineNodeIds.length })
+        + (result.skipped.length ? t('revision.applySkippedSuffix', { count: result.skipped.length }) : ''),
       )
       if (result.appliedOutlineNodeIds.length) {
         setSelectedPatchIds(current => {
@@ -225,9 +233,9 @@ export default function CharacterRevisionPanel({
     if (!analysis) return
     try {
       await navigator.clipboard.writeText(JSON.stringify(analysis, null, 2))
-      setResultMessage('修订计划已复制到剪贴板')
+      setResultMessage(t('revision.copySuccess'))
     } catch {
-      setResultMessage('浏览器未授予剪贴板权限，请从 AI 输出区手动复制')
+      setResultMessage(t('revision.copyPermissionError'))
     }
   }
 
@@ -254,15 +262,15 @@ export default function CharacterRevisionPanel({
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-border bg-bg-surface">
         <FileSearch className="w-5 h-5 text-accent" />
         <div>
-          <h2 className="text-lg font-semibold text-text-primary">角色变更影响分析</h2>
-          <p className="text-[11px] text-text-muted">先保护已写正文，再审查并应用未写大纲 patch</p>
+          <h2 className="text-lg font-semibold text-text-primary">{t('revision.headerTitle')}</h2>
+          <p className="text-[11px] text-text-muted">{t('revision.headerSubtitle')}</p>
         </div>
         <div className="ml-auto flex rounded-lg border border-border bg-bg-base p-0.5">
           <button onClick={onSwitchToPlanning} className="px-3 py-1.5 text-xs text-text-muted rounded">
-            开书规划
+            {t('characterDriven.modePlanning')}
           </button>
           <button className="px-3 py-1.5 text-xs bg-accent text-white rounded">
-            中途重规划
+            {t('characterDriven.modeRevision')}
           </button>
         </div>
       </div>
@@ -270,30 +278,30 @@ export default function CharacterRevisionPanel({
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         <section className="grid gap-4 lg:grid-cols-2">
           <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
-            <h3 className="text-sm font-medium text-text-primary">1. 说明角色发生了什么变化</h3>
+            <h3 className="text-sm font-medium text-text-primary">{t('revision.stepDescribe')}</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <label className="text-xs text-text-muted">
-                变更类型
+                {t('revision.changeTypeLabel')}
                 <select
                   value={changeType}
                   onChange={event => setChangeType(event.target.value as CharacterRevisionChangeType)}
                   className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-2 text-sm text-text-primary"
-                  aria-label="角色变更类型"
+                  aria-label={t('revision.changeTypeAria')}
                 >
-                  {Object.entries(CHANGE_LABELS).map(([value, label]) => (
+                  {Object.entries(changeLabels).map(([value, label]) => (
                     <option key={value} value={value}>{label}</option>
                   ))}
                 </select>
               </label>
               <label className="text-xs text-text-muted">
-                目标角色
+                {t('revision.targetCharacterLabel')}
                 <select
                   value={characterId ?? ''}
                   onChange={event => setCharacterId(event.target.value ? Number(event.target.value) : null)}
                   className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-2 text-sm text-text-primary"
-                  aria-label="重规划目标角色"
+                  aria-label={t('revision.targetCharacterAria')}
                 >
-                  <option value="">未指定角色</option>
+                  <option value="">{t('revision.unspecifiedCharacter')}</option>
                   {characters.map(character => (
                     <option key={character.id} value={character.id}>{character.name}</option>
                   ))}
@@ -303,46 +311,46 @@ export default function CharacterRevisionPanel({
             <AutoResizeTextarea
               value={changeDescription}
               onChange={event => setChangeDescription(event.target.value)}
-              placeholder="写清新旧弧光差异、关键转折和与主线的关系..."
+              placeholder={t('revision.changeDescriptionPlaceholder')}
               className="w-full rounded border border-border bg-bg-base px-3 py-2 text-sm text-text-primary"
               minRows={4}
             />
             <AutoResizeTextarea
               value={extraRequirements}
               onChange={event => setExtraRequirements(event.target.value)}
-              placeholder="额外要求：切入方式、戏份、阵营关系、禁止改动..."
+              placeholder={t('revision.extraRequirementsPlaceholder')}
               className="w-full rounded border border-border bg-bg-base px-3 py-2 text-sm text-text-primary"
               minRows={2}
             />
             {plan && (
               <p className="text-xs text-text-muted">
-                本次对照方案：<span className="text-text-primary">{plan.name} · v{plan.version}</span>
+                {t('revision.referencePlan')}<span className="text-text-primary">{plan.name} · v{plan.version}</span>
               </p>
             )}
           </div>
 
           <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
-            <h3 className="text-sm font-medium text-text-primary">2. 划定保护和重规划范围</h3>
+            <h3 className="text-sm font-medium text-text-primary">{t('revision.stepScope')}</h3>
             {loadingSnapshot ? (
               <div className="flex items-center gap-2 text-sm text-text-muted">
-                <Loader2 className="w-4 h-4 animate-spin" />读取真实章序...
+                <Loader2 className="w-4 h-4 animate-spin" />{t('revision.readingOrdinals')}
               </div>
             ) : snapshot ? (
               <>
                 <div className="grid grid-cols-3 gap-2 text-center text-xs">
                   <div className="rounded bg-green-500/10 p-2 text-green-700">
-                    <strong className="block text-base">{snapshot.writtenChapterCount}</strong>有正文
+                    <strong className="block text-base">{snapshot.writtenChapterCount}</strong>{t('revision.statWritten')}
                   </div>
                   <div className="rounded bg-accent/10 p-2 text-accent">
-                    <strong className="block text-base">{snapshot.plannedChapterCount}</strong>有大纲
+                    <strong className="block text-base">{snapshot.plannedChapterCount}</strong>{t('revision.statPlanned')}
                   </div>
                   <div className="rounded bg-amber-500/10 p-2 text-amber-700">
-                    <strong className="block text-base">{snapshot.lastWrittenOrdinal}</strong>写到章序
+                    <strong className="block text-base">{snapshot.lastWrittenOrdinal}</strong>{t('revision.statLastOrdinal')}
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <label className="text-xs text-text-muted">
-                    保护到第几章
+                    {t('revision.protectThroughLabel')}
                     <input
                       type="number"
                       min={snapshot.lastWrittenOrdinal}
@@ -350,11 +358,11 @@ export default function CharacterRevisionPanel({
                       value={effectiveBoundary}
                       onChange={event => setProtectedThrough(Number(event.target.value))}
                       className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-2 text-sm text-text-primary"
-                      aria-label="正文保护截止章序"
+                      aria-label={t('revision.protectThroughAria')}
                     />
                   </label>
                   <label className="text-xs text-text-muted">
-                    近期过渡章数
+                    {t('revision.transitionCountLabel')}
                     <input
                       type="number"
                       min={0}
@@ -362,31 +370,31 @@ export default function CharacterRevisionPanel({
                       value={transitionCount}
                       onChange={event => setTransitionCount(Math.max(0, Number(event.target.value)))}
                       className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-2 text-sm text-text-primary"
-                      aria-label="近期过渡章数"
+                      aria-label={t('revision.transitionCountAria')}
                     />
                   </label>
                 </div>
                 <label className="block text-xs text-text-muted">
-                  后续大纲策略
+                  {t('revision.strategyLabel')}
                   <select
                     value={strategy}
                     onChange={event => setStrategy(event.target.value as CharacterRevisionStrategy)}
                     className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-2 text-sm text-text-primary"
-                    aria-label="后续大纲策略"
+                    aria-label={t('revision.strategyAria')}
                   >
-                    {Object.entries(STRATEGY_LABELS).map(([value, label]) => (
+                    {Object.entries(strategyLabels).map(([value, label]) => (
                       <option key={value} value={value}>{label}</option>
                     ))}
                   </select>
                 </label>
                 {!snapshot.writtenChapterCount && (
                   <div className="rounded border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-700">
-                    当前没有正文，只能做大纲级重规划，无法做正文影响分析。
+                    {t('revision.noWrittenWarning')}
                   </div>
                 )}
                 {!snapshot.hasChapterMemory && snapshot.writtenChapterCount > 0 && (
                   <div className="rounded border border-amber-500/30 bg-amber-500/10 p-2 text-xs text-amber-700">
-                    已有正文但缺少章节记忆；系统会使用有限证据，结论需重点人工复核。
+                    {t('revision.missingMemoryWarning')}
                   </div>
                 )}
               </>
@@ -398,8 +406,8 @@ export default function CharacterRevisionPanel({
           <section className="rounded-lg border border-border bg-bg-surface p-4">
             <div className="mb-3 flex items-center gap-2">
               <Anchor className="w-4 h-4 text-accent" />
-              <h3 className="text-sm font-medium text-text-primary">3. 标记必须保留的后续锚点</h3>
-              <span className="text-xs text-text-muted">锚点不可改名或反转，只能调整参与者和铺垫</span>
+              <h3 className="text-sm font-medium text-text-primary">{t('revision.anchorsSection')}</h3>
+              <span className="text-xs text-text-muted">{t('revision.anchorsHint')}</span>
             </div>
             <div className="grid max-h-48 gap-2 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
               {anchorCandidates.map(chapter => (
@@ -411,8 +419,8 @@ export default function CharacterRevisionPanel({
                     className="mt-0.5 accent-accent"
                   />
                   <span>
-                    <strong className="text-text-primary">第{chapter.ordinal}章 · {chapter.title}</strong>
-                    <span className="mt-0.5 block line-clamp-2 text-text-muted">{chapter.summary || '无摘要'}</span>
+                    <strong className="text-text-primary">{`${chapter.title}`}</strong>
+                    <span className="mt-0.5 block line-clamp-2 text-text-muted">{chapter.summary || t('revision.anchorNoSummary')}</span>
                   </span>
                 </label>
               ))}
@@ -429,11 +437,11 @@ export default function CharacterRevisionPanel({
             {ai.isStreaming
               ? <Loader2 className="w-4 h-4 animate-spin" />
               : <Sparkles className="w-4 h-4" />}
-            {ai.isStreaming ? '正在分析影响...' : '分析影响并生成三档方案'}
+            {ai.isStreaming ? t('revision.analyzing') : t('revision.analyzeButton')}
           </button>
           <div className="inline-flex items-center gap-1.5 text-xs text-text-muted">
             <ShieldCheck className="w-4 h-4 text-green-600" />
-            分析不会写入正文、大纲或主线
+            {t('revision.analysisSafeNote')}
           </div>
         </div>
 
@@ -445,7 +453,7 @@ export default function CharacterRevisionPanel({
             tokenUsage={ai.tokenUsage}
             onStop={ai.stop}
             onRetry={handleAnalyze}
-            placeholder="等待角色变更影响分析..."
+            placeholder={t('revision.awaitingAnalysis')}
             moduleKey="plot.character-revision"
           />
         )}

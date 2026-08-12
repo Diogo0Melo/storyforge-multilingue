@@ -2,6 +2,7 @@ import type { Chapter, Character, OutlineNode } from '../types'
 import type { ConsistencyFinding } from '../ai/adapters/consistency-audit-adapter'
 import { resolveCanonicalChapterSequence } from '../ai/chapter-memory/canonical-chapter-sequence'
 import { db } from '../db/schema'
+import { getT } from '../../i18n'
 import { getFactPredicate, normalizeFactValue } from '../registry/fact-predicate-registry'
 import type { TemporalFact } from '../types/temporal-fact'
 
@@ -216,17 +217,17 @@ export function checkCharacterLifecycleBoundary(
     if (seen.has(dedupe)) continue
     seen.add(dedupe)
     findings.push({
-      category: '角色存亡时序',
+      category: getT()('editor:consistencyFindings.lifecycleCategory'),
       severity: 'hard',
       quote,
       evidence: [{
         sourceType: 'canon',
         sourceId: state.fact.id ?? 0,
         quote: state.fact.sourceQuote?.trim()
-          || `${state.characterName}｜存亡状态：dead`,
+          || getT()('editor:consistencyFindings.lifecycleEvidenceQuote', { characterName: state.characterName }),
       }],
-      reason: `“${state.characterName}”在本章开始前已由 Canon 标记为死亡，正文却让其作为存活角色正常行动。`,
-      suggestion: '改为尸体、回忆、梦境或转述语境；若角色确已复活，请先提取并确认新的 aliveStatus=alive 事实。',
+      reason: getT()('editor:consistencyFindings.lifecycleReason', { characterName: state.characterName }),
+      suggestion: getT()('editor:consistencyFindings.lifecycleSuggestion'),
     })
   }
   return findings

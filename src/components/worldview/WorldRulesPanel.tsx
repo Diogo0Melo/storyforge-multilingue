@@ -6,6 +6,7 @@
  */
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Eye, EyeOff } from 'lucide-react'
+import { useDomainT, type DomainTFunction } from '../../i18n'
 import { useWorldRulesStore } from '../../stores/world-rules'
 import { useWorldGroupStore } from '../../stores/world-group'
 import {
@@ -42,12 +43,17 @@ function getL2Nodes(
   l1Id: string,
   predefined: WorldRuleNodeDef | undefined,
   customNodes: CustomWorldRuleNode[],
+  translateFn: DomainTFunction,
 ): { id: string; label: string; icon: string; hints?: string[]; isCustom: boolean }[] {
   const result: WorldRuleNavigationNode[] = []
   // 预定义 L2
   if (predefined?.children) {
     for (const l2 of predefined.children) {
-      result.push({ id: l2.id, label: l2.label, icon: l2.icon, hints: l2.hints, isCustom: false })
+      const label = l2.labelKey ? translateFn(l2.labelKey, { defaultValue: l2.label }) : l2.label
+      const hints = l2.hintKeys && l2.hints
+        ? l2.hintKeys.map((key, i) => translateFn(key, { defaultValue: l2.hints?.[i] ?? '' }))
+        : l2.hints
+      result.push({ id: l2.id, label, icon: l2.icon, hints, isCustom: false })
     }
   }
   // 自定义 L2（parentId = l1Id）
@@ -62,6 +68,7 @@ function getL2Nodes(
 // ── 主面板 ─────────────────────────────────────────────────────────
 
 export default function WorldRulesPanel({ project }: Props) {
+  const { t } = useDomainT('worldview')
   const dialog = useDialog()
   const {
     profile, loading, loadProfile,
@@ -142,7 +149,11 @@ export default function WorldRulesPanel({ project }: Props) {
   const l1Nodes = useMemo(() => {
     const nodes: WorldRuleNavigationNode[] = []
     for (const l1 of WORLD_RULE_TREE) {
-      nodes.push({ id: l1.id, label: l1.label, icon: l1.icon, isCustom: false, hints: l1.hints })
+      const label = l1.labelKey ? t(l1.labelKey, { defaultValue: l1.label }) : l1.label
+      const hints = l1.hintKeys && l1.hints
+        ? l1.hintKeys.map((key, i) => t(key, { defaultValue: l1.hints?.[i] ?? '' }))
+        : l1.hints
+      nodes.push({ id: l1.id, label, icon: l1.icon, isCustom: false, hints })
     }
     // 自定义 L1（parentId = null）
     if (profile) {
@@ -153,13 +164,13 @@ export default function WorldRulesPanel({ project }: Props) {
       }
     }
     return nodes
-  }, [profile])
+  }, [profile, t])
 
   // 当前 L1 下的 L2 列表
   const l2Nodes = useMemo(() => {
     const predefined = WORLD_RULE_TREE.find(l1 => l1.id === selectedL1)
-    return getL2Nodes(selectedL1, predefined, profile?.customNodes || [])
-  }, [selectedL1, profile])
+    return getL2Nodes(selectedL1, predefined, profile?.customNodes || [], t)
+  }, [selectedL1, profile, t])
 
   // 当前选中节点的 entry
   const currentEntry = useMemo<WorldRuleEntry>(() => {
@@ -172,34 +183,46 @@ export default function WorldRulesPanel({ project }: Props) {
     if (!selectedNode) return []
     // L1 级别
     const l1 = WORLD_RULE_TREE.find(n => n.id === selectedNode)
-    if (l1?.hints) return l1.hints
+    if (l1) {
+      if (l1.hintKeys && l1.hints) return l1.hintKeys.map((key, i) => t(key, { defaultValue: l1.hints?.[i] ?? '' }))
+      if (l1.hints) return l1.hints
+    }
     // L2 预定义
     for (const l1Node of WORLD_RULE_TREE) {
       const l2 = l1Node.children?.find(n => n.id === selectedNode)
-      if (l2?.hints) return l2.hints
+      if (l2) {
+        if (l2.hintKeys && l2.hints) return l2.hintKeys.map((key, i) => t(key, { defaultValue: l2.hints?.[i] ?? '' }))
+        if (l2.hints) return l2.hints
+      }
     }
     // 自定义
     const custom = profile?.customNodes.find(n => n.id === selectedNode)
     if (custom?.hints) return custom.hints
     return []
-  }, [selectedNode, profile])
+  }, [selectedNode, profile, t])
 
   // 当前选中节点的标签
   const currentLabel = useMemo<string>(() => {
     if (!selectedNode) return ''
     // L1
     const l1 = WORLD_RULE_TREE.find(n => n.id === selectedNode)
-    if (l1) return `${l1.icon} ${l1.label}`
+    if (l1) {
+      const label = l1.labelKey ? t(l1.labelKey, { defaultValue: l1.label }) : l1.label
+      return `${l1.icon} ${label}`
+    }
     // L2 预定义
     for (const l1Node of WORLD_RULE_TREE) {
       const l2 = l1Node.children?.find(n => n.id === selectedNode)
-      if (l2) return `${l2.icon} ${l2.label}`
+      if (l2) {
+        const label = l2.labelKey ? t(l2.labelKey, { defaultValue: l2.label }) : l2.label
+        return `${l2.icon} ${label}`
+      }
     }
     // 自定义
     const custom = profile?.customNodes.find(n => n.id === selectedNode)
     if (custom) return `${custom.icon || '🔖'} ${custom.label}`
     return selectedNode
-  }, [selectedNode, profile])
+  }, [selectedNode, profile, t])
 
   // 统计某个 L1 下已填节点数
   const countL1Filled = useCallback((l1Id: string): number => {
@@ -232,25 +255,25 @@ export default function WorldRulesPanel({ project }: Props) {
 
   const handleDeleteCustomNode = useCallback(async (nodeId: string, label: string) => {
     const ok = await dialog.confirm({
-      title: `删除「${label}」及其设定？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('worldRules.deleteNodeConfirmTitle', { label }),
+      message: t('worldRules.deleteNodeConfirmMessage'),
+      confirmText: t('worldRules.deleteNodeConfirmText'),
       tone: 'danger',
     })
     if (!ok) return
     deleteCustomNode(nodeId)
     if (selectedNode === nodeId) setSelectedNode(null)
-  }, [deleteCustomNode, dialog, selectedNode])
+  }, [deleteCustomNode, dialog, selectedNode, t])
 
   const handleClearEntry = useCallback(async (nodeId: string) => {
     const ok = await dialog.confirm({
-      title: '清空此节点的所有设定？',
-      message: '此操作不可恢复。',
-      confirmText: '清空',
+      title: t('worldRules.clearEntryConfirmTitle'),
+      message: t('worldRules.clearEntryConfirmMessage'),
+      confirmText: t('worldRules.clearEntryConfirmText'),
       tone: 'danger',
     })
     if (ok) deleteEntry(nodeId)
-  }, [deleteEntry, dialog])
+  }, [deleteEntry, dialog, t])
 
   // 预览清单
   const handleTogglePreview = useCallback(async () => {
@@ -292,7 +315,7 @@ export default function WorldRulesPanel({ project }: Props) {
   if (loading || !profile) {
     return (
       <div className="flex items-center justify-center h-64">
-        <span className="text-text-muted">加载中...</span>
+        <span className="text-text-muted">{t('worldRules.loading')}</span>
       </div>
     )
   }
@@ -305,11 +328,11 @@ export default function WorldRulesPanel({ project }: Props) {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <span>⚖️</span> 真实与幻想
+            {t('worldRules.title')}
           </h2>
           <p className="text-sm text-text-muted mt-1">
-            按维度声明哪些设定取自真实历史、哪些是架空改造，AI 生成时会严格遵守这些约束。
-            <span className="ml-2 text-accent">{filled} 个维度已设定</span>
+            {t('worldRules.subtitle')}
+            <span className="ml-2 text-accent">{t('worldRules.filledCount', { count: filled })}</span>
           </p>
         </div>
         <button
@@ -317,7 +340,7 @@ export default function WorldRulesPanel({ project }: Props) {
           className="flex items-center gap-1.5 px-3 py-1.5 text-sm rounded-lg bg-bg-elevated hover:bg-bg-hover text-text-secondary transition-colors"
         >
           {showPreview ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-          {showPreview ? '关闭预览' : 'AI 清单预览'}
+          {showPreview ? t('worldRules.closePreview') : t('worldRules.openPreview')}
         </button>
       </div>
 
@@ -370,12 +393,12 @@ export default function WorldRulesPanel({ project }: Props) {
       {/* 全局补充说明 */}
       <div className="border border-border rounded-xl p-4 bg-bg-base">
         <label className="block text-sm font-medium text-text-secondary mb-1.5">
-          📝 全局补充说明（对 AI 的额外约束，适用于所有维度）
+          {t('worldRules.globalNoteLabel')}
         </label>
         <textarea
           value={profile.globalNote || ''}
           onChange={e => updateGlobalNote(e.target.value)}
-          placeholder="例如：本作以唐代为蓝本但加入仙侠元素，凡是涉及朝堂制度的一律遵循史实，力量体系完全虚构。"
+          placeholder={t('worldRules.globalNotePlaceholder')}
           rows={3}
           className="w-full px-3 py-2 text-sm rounded-lg border border-border bg-bg-base text-text-primary placeholder:text-text-muted/50 focus:ring-1 focus:ring-accent focus:border-accent resize-y"
         />
@@ -386,10 +409,10 @@ export default function WorldRulesPanel({ project }: Props) {
         <div className="border border-border rounded-xl p-4 bg-bg-elevated">
           <div className="flex items-center justify-between mb-2">
             <h3 className="text-sm font-semibold text-text-secondary">
-              AI 清单预览
+              {t('worldRules.previewTitle')}
             </h3>
             <span className="text-xs text-text-muted">
-              约 {previewTokens.toLocaleString()} tokens（{previewText.length.toLocaleString()} 字符）
+              {t('worldRules.previewStats', { tokens: previewTokens.toLocaleString(), chars: previewText.length.toLocaleString() })}
             </span>
           </div>
           {previewText ? (
@@ -397,7 +420,7 @@ export default function WorldRulesPanel({ project }: Props) {
               {previewText}
             </pre>
           ) : (
-            <p className="text-sm text-text-muted italic">暂无设定内容。填写上方维度后，这里会显示注入 AI 的结构化清单。</p>
+            <p className="text-sm text-text-muted italic">{t('worldRules.previewEmpty')}</p>
           )}
         </div>
       )}

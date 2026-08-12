@@ -1,6 +1,7 @@
 import { CInput, CTextarea } from '../shared/CompositionInput'
 import { useState, useEffect, useMemo } from 'react'
 import { Plus, Trash2, ArrowRight, Sparkles, Loader2, LayoutList, LayoutGrid, Info } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useForeshadowStore } from '../../stores/foreshadow'
 import { useChapterStore } from '../../stores/chapter'
 import { useOutlineStore } from '../../stores/outline'
@@ -19,17 +20,11 @@ import PromptRunPanel from '../shared/PromptRunPanel'
 import ForeshadowKanban from './ForeshadowKanban'
 import type { Project, Foreshadow, ForeshadowStatus, ForeshadowType } from '../../lib/types'
 
-const STATUS_LABELS: Record<ForeshadowStatus, { label: string; color: string }> = {
-  planned: { label: '📋 计划中', color: 'text-text-muted' },
-  planted: { label: '🌱 已埋设', color: 'text-warning' },
-  echoed: { label: '🔔 已呼应', color: 'text-info' },
-  resolved: { label: '✅ 已回收', color: 'text-success' },
-}
-
-const TYPE_LABELS: Record<ForeshadowType, string> = {
-  chekhov: '🔫 契诃夫之枪', prophecy: '🔮 预言暗示', symbol: '🎭 象征伏笔',
-  character: '👤 角色伏笔', dialogue: '💬 对话伏笔', environment: '🌿 环境伏笔',
-  timeline: '⏰ 时间线', 'red-herring': '🐟 红鲱鱼', parallel: '🔄 平行伏笔', callback: '↩️ 回调伏笔',
+const STATUS_COLORS: Record<ForeshadowStatus, string> = {
+  planned: 'text-text-muted',
+  planted: 'text-warning',
+  echoed: 'text-info',
+  resolved: 'text-success',
 }
 
 const STATUS_FLOW: ForeshadowStatus[] = ['planned', 'planted', 'echoed', 'resolved']
@@ -37,6 +32,7 @@ const STATUS_FLOW: ForeshadowStatus[] = ['planned', 'planted', 'echoed', 'resolv
 interface Props { project: Project }
 
 export default function ForeshadowPanel({ project }: Props) {
+  const { t } = useDomainT('foreshadow')
   const { foreshadows, loadAll: loadForeshadows, addForeshadow, updateForeshadow, deleteForeshadow, updateStatus } = useForeshadowStore()
   const { chapters, loadAll: loadChapters } = useChapterStore()
   const { nodes: outlineNodes, loadAll: loadOutline } = useOutlineStore()
@@ -51,6 +47,26 @@ export default function ForeshadowPanel({ project }: Props) {
   const [userOverride, setUserOverride] = useState<string | null>(null)
   const [adopting, setAdopting] = useState(false)
   const [adoptMsg, setAdoptMsg] = useState<string | null>(null)
+
+  const STATUS_LABEL_KEYS = {
+    planned: 'status.planned' as const,
+    planted: 'status.planted' as const,
+    echoed: 'status.echoed' as const,
+    resolved: 'status.resolved' as const,
+  } satisfies Record<ForeshadowStatus, string>
+
+  const TYPE_LABEL_KEYS = {
+    chekhov: 'type.chekhov' as const,
+    prophecy: 'type.prophecy' as const,
+    symbol: 'type.symbol' as const,
+    character: 'type.character' as const,
+    dialogue: 'type.dialogue' as const,
+    environment: 'type.environment' as const,
+    timeline: 'type.timeline' as const,
+    'red-herring': 'type.red-herring' as const,
+    parallel: 'type.parallel' as const,
+    callback: 'type.callback' as const,
+  } satisfies Record<ForeshadowType, string>
 
   useEffect(() => {
     loadForeshadows(project.id!)
@@ -67,7 +83,7 @@ export default function ForeshadowPanel({ project }: Props) {
       const raw = await chat(buildForeshadowStructurePrompt(text), config, { category: 'foreshadow.structure', projectId: project.id! })
       const items = parseForeshadowStructured(raw)
       if (items.length === 0) {
-        setAdoptMsg('未能解析出伏笔条目，请重试或手动添加')
+        setAdoptMsg(t('messages.parseFailed'))
         return
       }
       const result = await adopt({
@@ -86,10 +102,13 @@ export default function ForeshadowPanel({ project }: Props) {
         })),
       })
       await loadForeshadows(project.id!)
-      setAdoptMsg(`已写入 ${result.written.length} 条伏笔${result.skipped.length ? `，跳过 ${result.skipped.length} 条` : ''}`)
+      const skippedSuffix = result.skipped.length
+        ? t('messages.adoptSuccessSkippedSuffix', { count: result.skipped.length })
+        : ''
+      setAdoptMsg(`${t('messages.adoptSuccess', { count: result.written.length })}${skippedSuffix}`)
       setShowAI(false)
     } catch (err) {
-      setAdoptMsg(`采纳失败：${err instanceof Error ? err.message : '未知错误'}`)
+      setAdoptMsg(t('messages.adoptFailed', { message: err instanceof Error ? err.message : t('messages.unknownError') }))
     } finally {
       setAdopting(false)
     }
@@ -112,16 +131,16 @@ export default function ForeshadowPanel({ project }: Props) {
     return sequence
       .filter(entry => entry.chapter.id != null)
       .map((entry, index) => {
-        const title = (entry.chapter.title || entry.outlineNode?.title || `章节#${entry.chapter.id}`).trim()
+        const title = (entry.chapter.title || entry.outlineNode?.title || t('messages.chapterRefFallback', { id: entry.chapter.id })).trim()
         const outlineTitle = entry.outlineNode?.title?.trim()
-        const suffix = outlineTitle && outlineTitle !== title ? `（大纲：${outlineTitle}）` : ''
+        const suffix = outlineTitle && outlineTitle !== title ? t('messages.chapterOutlineSuffix', { outlineTitle }) : ''
         return {
           id: entry.chapter.id!,
           label: `${index + 1}. ${title}${suffix}`,
           title,
         }
       })
-  }, [projectChapters, projectOutlineNodes])
+  }, [projectChapters, projectOutlineNodes, t])
   const chapterOptionById = useMemo(
     () => new Map(chapterOptions.map(option => [option.id, option] as const)),
     [chapterOptions],
@@ -136,7 +155,7 @@ export default function ForeshadowPanel({ project }: Props) {
 
   const handleAdd = async () => {
     const id = await addForeshadow({
-      projectId: project.id!, name: '新伏笔', type: 'chekhov', status: 'planned',
+      projectId: project.id!, name: t('messages.defaultNewName'), type: 'chekhov', status: 'planned',
       description: '', plantChapterId: null, echoChapterIds: '[]', resolveChapterId: null, notes: '',
     })
     setSelected(id)
@@ -158,9 +177,9 @@ export default function ForeshadowPanel({ project }: Props) {
     const option = chapterOptionById.get(chapterId)
     if (option) return option.label
     const ch = projectChapters.find(c => c.id === chapterId)
-    if (!ch) return `章节#${chapterId}（引用可能已失效）`
+    if (!ch) return t('messages.staleChapterRef', { id: chapterId })
     const node = projectOutlineNodes.find(n => n.id === ch.outlineNodeId)
-    return `${ch.title || node?.title || `章节#${chapterId}`}（非规范/重复章节记录）`
+    return t('messages.nonCanonicalChapterRef', { title: ch.title || node?.title || t('messages.chapterRefFallback', { id: chapterId }) })
   }
 
   // 解析 echoChapterIds
@@ -170,7 +189,7 @@ export default function ForeshadowPanel({ project }: Props) {
 
   const renderChapterOptions = (currentId?: number | null) => (
     <>
-      <option value="">未指定</option>
+      <option value="">{t('messages.unspecifiedOption')}</option>
       {chapterOptions.map(ch => (
         <option key={ch.id} value={ch.id}>{ch.label}</option>
       ))}
@@ -204,7 +223,11 @@ export default function ForeshadowPanel({ project }: Props) {
     const charIdx = assembled.included.indexOf('characters')
     const worldCtx = assembled.text
     const charCtx = charIdx >= 0 ? assembled.segments[charIdx]?.content ?? '' : ''
-    const existingForeshadows = projectForeshadows.map(f => `${f.name}（${TYPE_LABELS[f.type]}，${STATUS_LABELS[f.status].label}）：${f.description.slice(0, 100)}`).join('\n')
+    const existingForeshadows = projectForeshadows.map(f => {
+      const typeKey = TYPE_LABEL_KEYS[f.type]
+      const statusKey = STATUS_LABEL_KEYS[f.status]
+      return `${f.name}（${t(typeKey)}，${t(statusKey)}）：${f.description.slice(0, 100)}`
+    }).join('\n')
     const opts = {
       parameterValues: Object.keys(parameterValues).length > 0 ? parameterValues : undefined,
       overrides: (systemOverride != null || userOverride != null) ? {
@@ -222,26 +245,28 @@ export default function ForeshadowPanel({ project }: Props) {
       {/* 顶部工具栏 */}
       <div className="flex items-start justify-between gap-6">
         <div>
-          <p className="text-[11px] uppercase tracking-[0.22em] text-text-muted">创作区</p>
-          <h1 className="mt-3 font-serif text-4xl font-semibold tracking-wide text-text-primary">伏笔追踪</h1>
+          <p className="text-[11px] uppercase tracking-[0.22em] text-text-muted">{t('panel.sectionLabel')}</p>
+          <h1 className="mt-3 font-serif text-4xl font-semibold tracking-wide text-text-primary">{t('panel.pageTitle')}</h1>
           <p className="mt-3 text-sm text-text-secondary">
-            {projectForeshadows.length} 个伏笔 ·{' '}
-            <span className="text-error">{statusCounts.planted} 已埋设</span> ·{' '}
-            <span className="text-warning">{statusCounts.echoed} 已呼应</span> ·{' '}
-            <span className="text-success">{statusCounts.resolved} 已回收</span>
+            {t('panel.summaryLine', {
+              count: projectForeshadows.length,
+              plantedCount: statusCounts.planted,
+              echoedCount: statusCounts.echoed,
+              resolvedCount: statusCounts.resolved,
+            })}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <button onClick={handleAISuggest}
             disabled={ai.isStreaming || !isAIConfigReady(resolveRequestConfig(config, { category: 'foreshadow.suggest' }).config)}
             className="flex items-center gap-1.5 rounded-md border border-border bg-bg-elevated px-3 py-2 text-sm text-text-secondary transition-colors hover:text-accent disabled:opacity-40"
-            title="AI 建议伏笔">
+            title={t('panel.aiSuggestButtonTitle')}>
             {ai.isStreaming ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            AI 建议
+            {t('panel.aiSuggestButtonLabel')}
           </button>
           <button onClick={handleAdd}
             className="flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover">
-            <Plus className="w-4 h-4" /> 新建伏笔
+            <Plus className="w-4 h-4" /> {t('panel.addButtonLabel')}
           </button>
         </div>
       </div>
@@ -250,8 +275,8 @@ export default function ForeshadowPanel({ project }: Props) {
       <div className="flex items-start gap-2 rounded-lg border border-accent/20 bg-accent/5 px-4 py-3 text-xs text-text-secondary">
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
         <div className="space-y-0.5">
-          <p>伏笔<strong>不会自动改写你已经写好的正文</strong>。给伏笔指定埋设 / 呼应 / 回收章节后，<strong>生成或续写那一章时</strong>，AI 会把它作为写作任务提醒注入上下文。</p>
-          <p>目前没有"一键把伏笔插入已写正文"的按钮；要在已写好的正文里补线索，请手动修改，或用审校 / 改稿功能。</p>
+          <p dangerouslySetInnerHTML={{ __html: t('panel.scopeNoticeBody1', { when: t('panel.scopeNoticeWhen') }) }} />
+          <p>{t('panel.scopeNoticeBody2')}</p>
         </div>
       </div>
 
@@ -260,11 +285,11 @@ export default function ForeshadowPanel({ project }: Props) {
           <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-accent" />
           <div className="space-y-1">
             <p>
-              <strong className="text-text-primary">伏笔不会自动改写正文。</strong>
-              这里管理的是埋设、呼应、回收任务，避免直接改动已经写好的手稿。
+              <strong className="text-text-primary">{t('panel.guideStrong')}</strong>
+              {t('panel.guideBody1')}
             </p>
-            <p>指定「埋设章节 / 呼应章节 / 回收章节」后，对应任务会进入章节生成、续写与质量审校的上下文。</p>
-            <p>如果该章已经写完，请回到正文页按任务手动补写、续写或重生成，再把伏笔状态推进到「已埋设 / 已呼应 / 已回收」。</p>
+            <p>{t('panel.guideBody2')}</p>
+            <p>{t('panel.guideBody3')}</p>
           </div>
         </div>
       </div>
@@ -277,18 +302,18 @@ export default function ForeshadowPanel({ project }: Props) {
             className={`flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md transition ${
               viewMode === 'list' ? 'bg-bg-surface text-accent shadow-sm' : 'text-text-muted hover:text-text-primary'
             }`}
-            title="列表视图"
+            title={t('panel.viewListTitle')}
           >
-            <LayoutList className="w-3.5 h-3.5" /> 列表
+            <LayoutList className="w-3.5 h-3.5" /> {t('panel.viewListLabel')}
           </button>
           <button
             onClick={() => setViewMode('kanban')}
             className={`flex items-center gap-1 px-2.5 py-1.5 text-xs rounded-md transition ${
               viewMode === 'kanban' ? 'bg-bg-surface text-accent shadow-sm' : 'text-text-muted hover:text-text-primary'
             }`}
-            title="看板视图"
+            title={t('panel.viewKanbanTitle')}
           >
-            <LayoutGrid className="w-3.5 h-3.5" /> 看板
+            <LayoutGrid className="w-3.5 h-3.5" /> {t('panel.viewKanbanLabel')}
           </button>
         </div>
       </div>
@@ -305,14 +330,17 @@ export default function ForeshadowPanel({ project }: Props) {
         <div className="flex flex-wrap gap-1">
           <button onClick={() => setFilterStatus('all')}
             className={`px-2 py-1 text-xs rounded ${filterStatus === 'all' ? 'bg-accent text-white' : 'bg-bg-elevated text-text-muted'}`}>
-            全部
+            {t('panel.filterAll')}
           </button>
-          {STATUS_FLOW.map(s => (
-            <button key={s} onClick={() => setFilterStatus(s)}
-              className={`px-2 py-1 text-xs rounded ${filterStatus === s ? 'bg-accent text-white' : 'bg-bg-elevated text-text-muted'}`}>
-              {STATUS_LABELS[s].label}
-            </button>
-          ))}
+          {STATUS_FLOW.map(s => {
+            const statusKey = STATUS_LABEL_KEYS[s]
+            return (
+              <button key={s} onClick={() => setFilterStatus(s)}
+                className={`px-2 py-1 text-xs rounded ${filterStatus === s ? 'bg-accent text-white' : 'bg-bg-elevated text-text-muted'}`}>
+                {t(statusKey)}
+              </button>
+            )
+          })}
         </div>
 
         {filtered.map(f => (
@@ -322,8 +350,16 @@ export default function ForeshadowPanel({ project }: Props) {
             }`}>
             <div className="font-medium truncate">{f.name}</div>
             <div className="flex items-center gap-2 text-xs text-text-muted">
-              <span>{TYPE_LABELS[f.type]?.split(' ')[0]}</span>
-              <span className={STATUS_LABELS[f.status].color}>{STATUS_LABELS[f.status].label}</span>
+              {(() => {
+                const typeKey = TYPE_LABEL_KEYS[f.type]
+                const statusKey = STATUS_LABEL_KEYS[f.status]
+                return (
+                  <>
+                    <span>{String(t(typeKey)).split(' ')[0]}</span>
+                    <span className={STATUS_COLORS[f.status]}>{t(statusKey)}</span>
+                  </>
+                )
+              })()}
             </div>
           </button>
         ))}
@@ -335,7 +371,7 @@ export default function ForeshadowPanel({ project }: Props) {
         {showAI && (
           <div className="bg-bg-surface border border-accent/20 rounded-lg p-4 space-y-3">
             <h3 className="text-sm font-semibold text-accent mb-2 flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4" /> AI 伏笔建议
+              <Sparkles className="w-4 h-4" /> {t('panel.aiSectionTitle')}
             </h3>
             <PromptRunPanel
               moduleKey="foreshadow.generate"
@@ -348,7 +384,7 @@ export default function ForeshadowPanel({ project }: Props) {
             />
             {adopting && (
               <div className="flex items-center gap-2 text-xs text-accent">
-                <Loader2 className="w-3.5 h-3.5 animate-spin" /> AI 正在把建议整理为伏笔条目并写入…
+                <Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('panel.adoptStreamingHint')}
               </div>
             )}
             {adoptMsg && <div className="text-xs text-text-muted">{adoptMsg}</div>}
@@ -373,7 +409,7 @@ export default function ForeshadowPanel({ project }: Props) {
                 <button onClick={() => handleNextStatus(selectedF)}
                   disabled={selectedF.status === 'resolved'}
                   className="flex items-center gap-1 px-2 py-1 text-xs bg-bg-elevated text-text-secondary rounded hover:text-accent disabled:opacity-30">
-                  <ArrowRight className="w-3 h-3" /> 推进状态
+                  <ArrowRight className="w-3 h-3" /> {t('panel.advanceStatusButton')}
                 </button>
                 <button onClick={() => { deleteForeshadow(selectedF.id!); setSelected(null) }}
                   className="text-text-muted hover:text-error"><Trash2 className="w-4 h-4" /></button>
@@ -382,33 +418,39 @@ export default function ForeshadowPanel({ project }: Props) {
 
             <div className="flex gap-3">
               <div>
-                <label className="block text-xs text-text-muted mb-1">类型</label>
+                <label className="block text-xs text-text-muted mb-1">{t('panel.typeLabel')}</label>
                 <select value={selectedF.type} onChange={e => handleUpdate('type', e.target.value)}
                   className="px-2 py-1.5 bg-bg-elevated text-text-secondary text-xs rounded border border-border">
-                  {Object.entries(TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+                  {(Object.keys(TYPE_LABEL_KEYS) as ForeshadowType[]).map(k => {
+                    const typeKey = TYPE_LABEL_KEYS[k]
+                    return <option key={k} value={k}>{t(typeKey)}</option>
+                  })}
                 </select>
               </div>
               <div>
-                <label className="block text-xs text-text-muted mb-1">状态</label>
-                <span className={`text-sm ${STATUS_LABELS[selectedF.status].color}`}>
-                  {STATUS_LABELS[selectedF.status].label}
+                <label className="block text-xs text-text-muted mb-1">{t('panel.statusLabel')}</label>
+                <span className={`text-sm ${STATUS_COLORS[selectedF.status]}`}>
+                  {(() => {
+                    const statusKey = STATUS_LABEL_KEYS[selectedF.status]
+                    return t(statusKey)
+                  })()}
                 </span>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs text-text-muted mb-1">伏笔描述</label>
+              <label className="block text-xs text-text-muted mb-1">{t('panel.descriptionLabel')}</label>
               <CTextarea value={selectedF.description} onChange={e => handleUpdate('description', e.target.value)}
                 rows={4} className="w-full p-2 bg-bg-base border border-border rounded text-sm text-text-primary resize-y focus:outline-none focus:border-accent" />
             </div>
 
             {/* 章节关联区域 */}
             <div className="border-t border-border pt-3 space-y-3">
-              <h4 className="text-sm font-semibold text-text-primary">📌 章节关联</h4>
+              <h4 className="text-sm font-semibold text-text-primary">{t('panel.chapterRelationHeading')}</h4>
 
               {/* 埋设章节 */}
               <div>
-                <label className="block text-xs text-text-muted mb-1">埋设章节（在哪一章埋下伏笔）</label>
+                <label className="block text-xs text-text-muted mb-1">{t('panel.plantChapterLabel')}</label>
                 <select
                   value={selectedF.plantChapterId ?? ''}
                   onChange={e => handleUpdate('plantChapterId', e.target.value ? Number(e.target.value) : null)}
@@ -419,7 +461,7 @@ export default function ForeshadowPanel({ project }: Props) {
 
               {/* 呼应章节（多选） */}
               <div>
-                <label className="block text-xs text-text-muted mb-1">呼应章节（在哪些章节呼应伏笔，可多选）</label>
+                <label className="block text-xs text-text-muted mb-1">{t('panel.echoChaptersLabel')}</label>
                 {chapterOptions.length > 0 ? (
                   <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto p-2 bg-bg-base border border-border rounded">
                     {chapterOptions.map(ch => {
@@ -435,7 +477,7 @@ export default function ForeshadowPanel({ project }: Props) {
                     })}
                   </div>
                 ) : (
-                  <p className="text-xs text-text-muted">暂无章节，请先在大纲中创建章节</p>
+                  <p className="text-xs text-text-muted">{t('panel.noChaptersHint')}</p>
                 )}
                 {getEchoIds(selectedF).some(id => !chapterOptionById.has(id)) && (
                   <div className="mt-1.5 flex flex-wrap gap-1.5 text-xs text-warning">
@@ -444,7 +486,7 @@ export default function ForeshadowPanel({ project }: Props) {
                         key={id}
                         onClick={() => toggleEchoChapter(id)}
                         className="rounded border border-warning/40 bg-warning/10 px-2 py-0.5 hover:bg-warning/20"
-                        title="点击移除这个失效/非规范章节引用"
+                        title={t('panel.removeStaleEchoTitle')}
                       >
                         ⚠ {getChapterLabel(id)}
                       </button>
@@ -455,7 +497,7 @@ export default function ForeshadowPanel({ project }: Props) {
 
               {/* 回收章节 */}
               <div>
-                <label className="block text-xs text-text-muted mb-1">回收章节（在哪一章回收伏笔）</label>
+                <label className="block text-xs text-text-muted mb-1">{t('panel.resolveChapterLabel')}</label>
                 <select
                   value={selectedF.resolveChapterId ?? ''}
                   onChange={e => handleUpdate('resolveChapterId', e.target.value ? Number(e.target.value) : null)}
@@ -466,14 +508,14 @@ export default function ForeshadowPanel({ project }: Props) {
             </div>
 
             <div>
-              <label className="block text-xs text-text-muted mb-1">备注</label>
+              <label className="block text-xs text-text-muted mb-1">{t('panel.notesLabel')}</label>
               <CTextarea value={selectedF.notes} onChange={e => handleUpdate('notes', e.target.value)}
                 rows={2} className="w-full p-2 bg-bg-base border border-border rounded text-xs text-text-muted resize-y focus:outline-none focus:border-accent" />
             </div>
           </div>
         ) : !showAI ? (
           <div className="flex items-center justify-center h-64 text-text-muted text-sm">
-            ← 选择或添加一个伏笔
+            {t('panel.emptySelection')}
           </div>
         ) : null}
       </div>

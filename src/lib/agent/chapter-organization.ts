@@ -1,4 +1,5 @@
 import { db } from '../db/schema'
+import { getT } from '../../i18n'
 import { normalizeChapterText, hashChapterText } from '../ai/chapter-memory/text-normalization'
 import { parseStateDiffs } from '../ai/adapters/state-extract-adapter'
 import {
@@ -395,7 +396,7 @@ export async function runChapterOrganization(input: {
   const sourceTextHash = await hashChapterText(input.chapterContent)
   const messages = buildChapterOrganizationPrompt({ ...input, chapterText })
   const reservation = input.budget.reserveCall({
-    label: '整理本章',
+    label: getT()('agent:chapterOrganization.callLabel'),
     messages,
     maxOutputTokens: 8_000,
   })
@@ -414,7 +415,7 @@ export async function runChapterOrganization(input: {
     sourceTextHash,
     budget: input.budget.snapshot(),
   })
-  if (!candidate) throw new Error('整理本章返回的 JSON 无法解析；没有写入任何项目数据。')
+  if (!candidate) throw new Error(getT()('agent:chapterOrganization.parseFailed'))
   return candidate
 }
 
@@ -435,7 +436,7 @@ export async function persistChapterOrganizationCandidate(
   const conversation: AgentConversation = {
     projectId: candidate.projectId,
     worldGroupId: candidate.worldGroupId,
-    title: `整理本章 · ${candidate.chapterTitle}`,
+    title: getT()('agent:chapterOrganization.conversationTitle', { chapterTitle: candidate.chapterTitle }),
     status: 'archived',
     createdAt: now,
     updatedAt: now,
@@ -491,7 +492,7 @@ export async function updateChapterOrganizationRun(input: {
     || input.candidate.projectId !== input.run.event.projectId
     || input.candidate.chapterId !== input.run.candidate.chapterId
   ) {
-    throw new Error('整理本章运行记录不存在或范围不匹配。')
+    throw new Error(getT()('agent:chapterOrganization.runNotFound'))
   }
   const now = Date.now()
   return db.transaction('rw', db.agentConversations, db.agentEvents, async () => {
@@ -509,7 +510,7 @@ export async function updateChapterOrganizationRun(input: {
         conversationId: input.run.conversation.id!,
         sequence: rows.reduce((max, event) => Math.max(max, event.sequence), 0) + 1,
         kind: 'confirmation',
-        content: '作者已审核整理本章候选。',
+        content: getT()('agent:chapterOrganization.confirmationContent'),
         payload: JSON.stringify(input.confirmation),
         createdAt: now,
       }
@@ -555,12 +556,12 @@ export function selectAllChapterOrganizationCandidates(
 
 export function summarizeChapterOrganizationCandidate(candidate: ChapterOrganizationCandidate): string {
   return [
-    `状态 ${candidate.stateDiffs.length}`,
-    `事实 ${candidate.facts.length}`,
-    `物品 ${candidate.inventoryEvents.length}`,
-    `年表 ${candidate.storyEvents.length}`,
-    `关系 ${candidate.relations.length}`,
-    `伏笔 ${candidate.foreshadowUpdates.length}`,
+    getT()('agent:chapterOrganization.summaryState', { count: candidate.stateDiffs.length }),
+    getT()('agent:chapterOrganization.summaryFacts', { count: candidate.facts.length }),
+    getT()('agent:chapterOrganization.summaryInventory', { count: candidate.inventoryEvents.length }),
+    getT()('agent:chapterOrganization.summaryTimeline', { count: candidate.storyEvents.length }),
+    getT()('agent:chapterOrganization.summaryRelations', { count: candidate.relations.length }),
+    getT()('agent:chapterOrganization.summaryForeshadows', { count: candidate.foreshadowUpdates.length }),
   ].join(' · ')
 }
 
@@ -592,7 +593,7 @@ export async function adoptChapterOrganizationSelection(input: {
   selection: ChapterOrganizationSelection
 }): Promise<ChapterOrganizationAdoptionResult> {
   if (!await isChapterOrganizationCurrent(input.run.candidate)) {
-    throw new Error('章节正文已变化，这批整理候选已过期；请重新运行“整理本章”。')
+    throw new Error(getT()('agent:chapterOrganization.chapterTextChanged'))
   }
   const candidate: ChapterOrganizationCandidate = {
     ...input.run.candidate,
@@ -624,7 +625,7 @@ export async function adoptChapterOrganizationSelection(input: {
       delete candidate.domainErrors[domain]
     } catch (error) {
       candidate.domainStatus[domain] = 'failed'
-      candidate.domainErrors[domain] = error instanceof Error ? error.message : '未知写入错误'
+      candidate.domainErrors[domain] = error instanceof Error ? error.message : getT()('agent:chapterOrganization.unknownWriteError')
     }
   }
 
@@ -745,7 +746,7 @@ export async function adoptChapterOrganizationSelection(input: {
         || current.status !== update.fromStatus
         || !FORESHADOW_TRANSITIONS[current.status].includes(update.toStatus)
       ) {
-        throw new Error(`伏笔“${update.name}”状态已变化，未覆盖当前数据。`)
+        throw new Error(getT()('agent:chapterOrganization.foreshadowStatusChanged', { name: update.name }))
       }
     })
     let count = 0

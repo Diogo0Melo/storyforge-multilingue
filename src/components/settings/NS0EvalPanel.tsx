@@ -16,6 +16,7 @@ import {
 } from '../../lib/evals/long-consistency/semantic-judge'
 import { isAIConfigReady } from '../../lib/ai/config-readiness'
 import { useAIConfigStore } from '../../stores/ai-config'
+import { useDomainT, getT } from '../../i18n'
 
 function readStoredRecord(): EvalRunRecord | null {
   try {
@@ -82,11 +83,15 @@ async function judgeEvalOutput(
     'eval.ns1.judge',
   )
   const verdict = parseSemanticJudgeVerdict(fixture, response.output)
-  if (!verdict) throw new Error(`语义裁判返回无法解析：${fixture.id}`)
+  if (!verdict) {
+    const t = getT() as (key: string, opts?: Record<string, unknown>) => string
+    throw new Error(t('settings:ns0Eval.judgeParseError', { id: fixture.id }))
+  }
   return scoreWithSemanticVerdict(fixture, output, verdict)
 }
 
 export default function NS0EvalPanel() {
+  const { t } = useDomainT('settings')
   const config = useAIConfigStore(state => state.config)
   const [record, setRecord] = useState<EvalRunRecord | null>(() => readStoredRecord())
   const [pairedRecords, setPairedRecords] = useState<EvalRunRecord[]>(() => readPairedRecords())
@@ -120,7 +125,7 @@ export default function NS0EvalPanel() {
   const runPaired = async () => {
     setRunning(true)
     setError('')
-    setProgress('0/4 组')
+      setProgress(t('ns0Eval.progressPaired', { completed: 0, total: 4 }))
     try {
       const fixtures = getFixtures('held-out')
       const records = await runPairedEvalInBrowser({
@@ -130,9 +135,9 @@ export default function NS0EvalPanel() {
         config,
         call: (messages, runConfig) => evalChatWithRetry(messages, runConfig, 'eval.ns1'),
         judge: judgeEvalOutput,
-        onRunComplete: (_completedRecord, completed, total) => setProgress(`${completed}/${total} 组`),
+        onRunComplete: (_completedRecord, completed, total) => setProgress(t('ns0Eval.progressPaired', { completed, total })),
         onCaseProgress: (completedRuns, totalRuns, completedCases, totalCases) => {
-          setProgress(`${completedRuns + 1}/${totalRuns} 组 · ${completedCases}/${totalCases} 例`)
+          setProgress(t('ns0Eval.progressCase', { completedRuns: completedRuns + 1, totalRuns, completedCases, totalCases }))
         },
       })
       setPairedRecords(records)
@@ -157,9 +162,9 @@ export default function NS0EvalPanel() {
 
   return (
     <div data-testid="ns0-eval-panel" className="max-w-2xl mt-6 p-4 bg-bg-surface border border-border rounded-xl">
-      <h3 className="text-sm font-semibold text-text-primary">NS-0 长期一致性基线（仅开发环境）</h3>
+      <h3 className="text-sm font-semibold text-text-primary">{t('ns0Eval.title')}</h3>
       <p className="mt-1 text-xs text-text-muted">
-        普通按钮运行 development 样例；NS-1 最终按钮运行冻结 held-out，并用独立语义裁判评分。最终盲测只展示 aggregate，不展开逐例输出。
+        {t('ns0Eval.description')}
       </p>
       <div className="mt-3 flex items-center gap-3">
         <button
@@ -167,26 +172,26 @@ export default function NS0EvalPanel() {
           disabled={running || !isAIConfigReady(config)}
           className="px-3 py-1.5 text-sm rounded-lg bg-accent/10 text-accent hover:bg-accent/20 disabled:opacity-40"
         >
-          {running ? `运行中 ${progress}` : '运行 development 集'}
+          {running ? t('ns0Eval.running', { progress }) : t('ns0Eval.runDevelopment')}
         </button>
         <button
           onClick={() => { void runPaired() }}
           disabled={running || !isAIConfigReady(config) || finalHeldOutAlreadyRun}
           className="px-3 py-1.5 text-sm rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40"
         >
-          {finalHeldOutAlreadyRun ? 'NS-1 最终盲测已锁定' : 'NS-1 最终配对 A/B'}
+          {finalHeldOutAlreadyRun ? t('ns0Eval.ns1FinalLocked') : t('ns0Eval.ns1PairedAB')}
         </button>
         {record && <span className="text-xs text-text-muted">{record.model} · {record.createdAt}</span>}
       </div>
       {error && <p className="mt-2 text-xs text-red-400">{error}</p>}
       {aggregate && (
         <div data-testid="ns0-eval-result" className="mt-3 grid grid-cols-2 gap-2 text-xs text-text-secondary">
-          <span>事实召回：{(aggregate.requiredFactRecall * 100).toFixed(1)}%</span>
-          <span>约束召回：{(aggregate.constraintRecall * 100).toFixed(1)}%</span>
-          <span>未来泄漏：{(aggregate.futureLeakageRate * 100).toFixed(1)}%</span>
-          <span>错世界泄漏：{(aggregate.wrongWorldLeakageRate * 100).toFixed(1)}%</span>
-          <span>估算输入：{aggregate.estimatedInputTokens} tokens</span>
-          <span>估算输出：{aggregate.estimatedOutputTokens} tokens</span>
+          <span>{t('ns0Eval.factRecall', { value: (aggregate.requiredFactRecall * 100).toFixed(1) })}</span>
+          <span>{t('ns0Eval.constraintRecall', { value: (aggregate.constraintRecall * 100).toFixed(1) })}</span>
+          <span>{t('ns0Eval.futureLeakage', { value: (aggregate.futureLeakageRate * 100).toFixed(1) })}</span>
+          <span>{t('ns0Eval.wrongWorldLeakage', { value: (aggregate.wrongWorldLeakageRate * 100).toFixed(1) })}</span>
+          <span>{t('ns0Eval.estimatedInput', { value: aggregate.estimatedInputTokens })}</span>
+          <span>{t('ns0Eval.estimatedOutput', { value: aggregate.estimatedOutputTokens })}</span>
         </div>
       )}
       {pairedRecords.length > 0 && (
@@ -194,7 +199,7 @@ export default function NS0EvalPanel() {
           <table className="w-full text-[11px] text-text-secondary">
             <thead>
               <tr className="text-left text-text-muted">
-                <th>预算</th><th>变体</th><th>事实</th><th>约束</th><th>未来</th><th>错世界</th><th>输入/输出</th>
+                <th>{t('ns0Eval.tableBudget')}</th><th>{t('ns0Eval.tableVariant')}</th><th>{t('ns0Eval.tableFact')}</th><th>{t('ns0Eval.tableConstraint')}</th><th>{t('ns0Eval.tableFuture')}</th><th>{t('ns0Eval.tableWrongWorld')}</th><th>{t('ns0Eval.tableInOut')}</th>
               </tr>
             </thead>
             <tbody>
@@ -215,12 +220,12 @@ export default function NS0EvalPanel() {
             <div className="mt-2 space-y-1 text-[11px]">
               {fixedGate && (
                 <p className={fixedGate.passed ? 'text-success' : 'text-error'}>
-                  fixed 硬门：{fixedGate.passed ? 'PASS' : `FAIL · ${fixedGate.failures.join(', ')}`}
+                  {t('ns0Eval.fixedGate', { result: fixedGate.passed ? 'PASS' : `FAIL · ${fixedGate.failures.join(', ')}` })}
                 </p>
               )}
               {naturalGate && (
                 <p className={naturalGate.passed ? 'text-success' : 'text-error'}>
-                  natural 硬门：{naturalGate.passed ? 'PASS' : `FAIL · ${naturalGate.failures.join(', ')}`}
+                  {t('ns0Eval.naturalGate', { result: naturalGate.passed ? 'PASS' : `FAIL · ${naturalGate.failures.join(', ')}` })}
                 </p>
               )}
             </div>
@@ -228,14 +233,17 @@ export default function NS0EvalPanel() {
           <div className="mt-2 space-y-1">
             {pairedRecords.filter(item => item.split === 'development').map(item => (
               <details key={`details:${item.budgetMode}:${item.variant}`} className="text-[11px] text-text-muted">
-                <summary>{item.budgetMode} · {item.variant} 逐例结果</summary>
+                <summary>{t('ns0Eval.perCaseSummary', { budgetMode: item.budgetMode, variant: item.variant })}</summary>
                 {item.results.map(result => (
                   <div key={result.fixtureId} className="mt-1 border-l border-border pl-2">
                     <p>
-                      {result.fixtureId} · 事实 {(result.score.requiredFactRecall * 100).toFixed(0)}%
-                      {' '}· 约束 {(result.score.constraintRecall * 100).toFixed(0)}%
+                      {t('ns0Eval.caseScore', {
+                        fixtureId: result.fixtureId,
+                        fact: (result.score.requiredFactRecall * 100).toFixed(0),
+                        constraint: (result.score.constraintRecall * 100).toFixed(0),
+                      })}
                     </p>
-                    <p>命中约束：{result.score.matchedConstraints.join(', ') || '无'}</p>
+                    <p>{t('ns0Eval.matchedConstraints', { list: result.score.matchedConstraints.join(', ') || t('ns0Eval.matchedConstraintsEmpty') })}</p>
                     <p className="whitespace-pre-wrap text-text-secondary">{result.output.slice(0, 500)}</p>
                   </div>
                 ))}

@@ -1,4 +1,5 @@
 import JSON5 from 'json5'
+import { getT } from '../../i18n'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { buildCharacterPrompt } from '../ai/adapters/character-adapter'
 import { chat, resolveRequestConfig } from '../ai/client'
@@ -9,6 +10,7 @@ import {
 } from '../character/character-axes'
 import {
   CHARACTER_DIMENSIONS,
+  getDimensionLabel,
   type CharacterDimensionKey,
 } from '../character/character-dimensions'
 import { db } from '../db/schema'
@@ -88,14 +90,14 @@ interface CharacterCopilotDependencies {
 
 export class CharacterCopilotStaleError extends Error {
   constructor() {
-    super('角色主档已在候选生成后发生变化。为避免基于旧阵容写入，请重新生成候选。')
+    super(getT()('agent:copilot.character.staleError'))
     this.name = 'CharacterCopilotStaleError'
   }
 }
 
 export class CharacterCopilotDuplicateError extends Error {
   constructor(name: string) {
-    super(`当前世界已经存在名为“${name}”的可见角色，请修改候选姓名或拒绝后重新生成。`)
+    super(getT()('agent:copilot.character.duplicateError', { name }))
     this.name = 'CharacterCopilotDuplicateError'
   }
 }
@@ -145,25 +147,25 @@ export async function readCharacterRosterSnapshot(
 
 function assertAuthorRequest(value: string): string {
   const request = value.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的角色要求。')
-  if (request.length > 1000) throw new Error('单次角色要求不能超过 1000 个字符。')
+  if (request.length < 2) throw new Error(getT()('agent:copilot.character.requestTooShort'))
+  if (request.length > 1000) throw new Error(getT()('agent:copilot.character.requestTooLong'))
   return request
 }
 
 function parseJsonObject(draft: string): Record<string, unknown> {
   const input = draft.trim()
-  if (!input) throw new Error('角色候选为空。')
+  if (!input) throw new Error(getT()('agent:copilot.character.candidateEmpty'))
   if (input.length > MAX_CHARACTER_CANDIDATE_CHARS) {
-    throw new Error(`角色候选超过 ${MAX_CHARACTER_CANDIDATE_CHARS} 字符。`)
+    throw new Error(getT()('agent:copilot.character.candidateTooLong', { max: MAX_CHARACTER_CANDIDATE_CHARS }))
   }
   const fullFence = /```(?:json)?\s*([\s\S]*?)```/i.exec(input)
   const candidate = fullFence?.[1]?.trim() ?? input
   const start = candidate.indexOf('{')
   const end = candidate.lastIndexOf('}')
-  if (start < 0 || end < start) throw new Error('角色候选不是完整的 JSON 对象。')
+  if (start < 0 || end < start) throw new Error(getT()('agent:copilot.character.candidateNotJsonObject'))
   const json = candidate.slice(start, end + 1)
   const trailing = candidate.slice(end + 1).trim()
-  if (trailing) throw new Error('角色候选 JSON 后包含额外文本。')
+  if (trailing) throw new Error(getT()('agent:copilot.character.candidateTrailingText'))
   let parsed: unknown
   try {
     parsed = JSON.parse(json)
@@ -171,11 +173,11 @@ function parseJsonObject(draft: string): Record<string, unknown> {
     try {
       parsed = JSON5.parse(json)
     } catch {
-      throw new Error('角色候选不是有效的 JSON 对象。')
+      throw new Error(getT()('agent:copilot.character.candidateInvalidJson'))
     }
   }
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('角色候选必须是单个 JSON 对象。')
+    throw new Error(getT()('agent:copilot.character.candidateMustBeObject'))
   }
   return parsed as Record<string, unknown>
 }
@@ -187,11 +189,11 @@ function stringField(
 ): string {
   const raw = source[field]
   if (raw == null && !options.required) return ''
-  if (typeof raw !== 'string') throw new Error(`角色候选字段 ${field} 必须是字符串。`)
+  if (typeof raw !== 'string') throw new Error(getT()('agent:copilot.character.fieldMustBeString', { field }))
   const value = raw.trim()
-  if (options.required && !value) throw new Error(`角色候选缺少 ${field}。`)
+  if (options.required && !value) throw new Error(getT()('agent:copilot.character.fieldMissing', { field }))
   if (value.length > (options.max ?? MAX_CHARACTER_FIELD_CHARS)) {
-    throw new Error(`角色候选字段 ${field} 超过长度上限。`)
+    throw new Error(getT()('agent:copilot.character.fieldTooLong', { field }))
   }
   return value
 }
@@ -199,19 +201,19 @@ function stringField(
 export function parseCharacterCandidateDraft(draft: string): CharacterCopilotCandidate {
   const source = parseJsonObject(draft)
   const unknown = Object.keys(source).filter(field => !CANDIDATE_FIELD_SET.has(field))
-  if (unknown.length) throw new Error(`角色候选包含不允许的字段：${unknown.join('、')}。`)
+  if (unknown.length) throw new Error(getT()('agent:copilot.character.unknownFields', { fields: unknown.join('、') }))
 
   const roleWeight = source.roleWeight
   const moralAxis = source.moralAxis
   const orderAxis = source.orderAxis
   if (!ROLE_WEIGHTS.includes(roleWeight as CharacterRoleWeight)) {
-    throw new Error('roleWeight 只能是 main / secondary / npc / extra。')
+    throw new Error(getT()('agent:copilot.character.invalidRoleWeight'))
   }
   if (!MORAL_AXES.includes(moralAxis as CharacterMoralAxis)) {
-    throw new Error('moralAxis 只能是 good / neutral / evil。')
+    throw new Error(getT()('agent:copilot.character.invalidMoralAxis'))
   }
   if (!ORDER_AXES.includes(orderAxis as CharacterOrderAxis)) {
-    throw new Error('orderAxis 只能是 lawful / neutral / chaotic。')
+    throw new Error(getT()('agent:copilot.character.invalidOrderAxis'))
   }
 
   const dimensions = Object.fromEntries(
@@ -234,14 +236,14 @@ export function parseCharacterCandidateDraft(draft: string): CharacterCopilotCan
     ...dimensions,
   }
   if (JSON.stringify(result).length > MAX_CHARACTER_CANDIDATE_CHARS) {
-    throw new Error(`角色候选超过 ${MAX_CHARACTER_CANDIDATE_CHARS} 字符。`)
+    throw new Error(getT()('agent:copilot.character.candidateTooLong', { max: MAX_CHARACTER_CANDIDATE_CHARS }))
   }
   return result
 }
 
 function structuredOutputContract(): string {
   const dimensionLines = CHARACTER_DIMENSIONS
-    .map(dimension => `  "${dimension.key}": "${dimension.label}，没有内容时为空字符串"`)
+    .map(dimension => `  "${dimension.key}": "${getDimensionLabel(dimension.key)}，没有内容时为空字符串"`)
     .join(',\n')
   return `本次必须只输出一个完整 JSON 对象，不要输出 Markdown、解释或额外字段：
 {
@@ -287,13 +289,13 @@ function candidateIssues(
   } catch (error) {
     issues.push({
       code: 'character-invalid-structure',
-      message: error instanceof Error ? error.message : '角色候选结构无效。',
+      message: error instanceof Error ? error.message : getT()('agent:copilot.character.invalidStructure'),
     })
   }
   if (parsed && snapshot.visibleNames.includes(normalizeName(parsed.name))) {
     issues.push({
       code: 'character-duplicate-name',
-      message: `当前世界已经存在名为“${parsed.name}”的可见角色。`,
+      message: getT()('agent:copilot.character.duplicateNameInScope', { name: parsed.name }),
     })
   }
   return issues
@@ -313,9 +315,9 @@ export async function prepareCharacterCopilot(input: {
   signal?: AbortSignal
 }): Promise<PreparedCharacterCopilot> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(getT()('agent:copilot.character.projectNotFound'))
   if (project.enableMultiWorld && input.worldGroupId == null) {
-    throw new Error('多世界项目必须先选择一个世界，才能生成角色。')
+    throw new Error(getT()('agent:copilot.character.multiWorldRequired'))
   }
   const worldGroupId = project.enableMultiWorld ? input.worldGroupId : null
   const beforeRead = await readCharacterRosterSnapshot(input.projectId, worldGroupId)
@@ -337,8 +339,8 @@ export async function prepareCharacterCopilot(input: {
     executeAgentTool('read_worldview', { ...executionContext, contextPolicy: worldPolicy }, {}),
     executeAgentTool('read_characters', { ...executionContext, contextPolicy: characterPolicy }, {}),
   ])
-  if (!worldview.ok) throw new Error(worldview.error || '无法读取当前世界观。')
-  if (!characters.ok) throw new Error(characters.error || '无法读取当前角色。')
+  if (!worldview.ok) throw new Error(worldview.error || getT()('agent:copilot.character.cannotReadWorldview'))
+  if (!characters.ok) throw new Error(characters.error || getT()('agent:copilot.character.cannotReadCharacters'))
   const afterRead = await readCharacterRosterSnapshot(input.projectId, worldGroupId)
   if (beforeRead.serialized !== afterRead.serialized) throw new CharacterCopilotStaleError()
 
@@ -445,7 +447,7 @@ export function createCharacterCopilotNode(
         || result.fkErrors.length > 0
         || result.skipped.length > 0
       ) {
-        throw new Error('角色候选未能经正式注册表新增一条完整主档。')
+        throw new Error(getT()('agent:copilot.character.adoptIncomplete'))
       }
       return result
     },

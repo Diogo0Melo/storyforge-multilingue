@@ -1,4 +1,5 @@
 import { useAIConfigStore } from '../../stores/ai-config'
+import { getT } from '../../i18n'
 import { buildWorldviewPrompt } from '../ai/adapters/worldview-adapter'
 import { chat, resolveRequestConfig } from '../ai/client'
 import { db } from '../db/schema'
@@ -60,7 +61,7 @@ interface WorldOriginCopilotDependencies {
 
 export class WorldOriginCopilotStaleError extends Error {
   constructor() {
-    super('世界来源已在候选生成后发生变化。为避免覆盖新内容，请重新生成候选。')
+    super(getT()('agent:copilot.worldOrigin.staleError'))
     this.name = 'WorldOriginCopilotStaleError'
   }
 }
@@ -91,8 +92,8 @@ function sameSnapshot(left: WorldOriginSnapshot, right: WorldOriginSnapshot): bo
 
 function assertAuthorRequest(value: string): string {
   const request = value.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的创作要求。')
-  if (request.length > 1000) throw new Error('单次创作要求不能超过 1000 个字符。')
+  if (request.length < 2) throw new Error(getT()('agent:copilot.worldOrigin.requestTooShort'))
+  if (request.length > 1000) throw new Error(getT()('agent:copilot.worldOrigin.requestTooLong'))
   return request
 }
 
@@ -109,9 +110,9 @@ export async function prepareWorldOriginCopilot(
   },
 ): Promise<PreparedWorldOriginCopilot> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(getT()('agent:copilot.worldOrigin.projectNotFound'))
   if (project.enableMultiWorld && input.worldGroupId == null) {
-    throw new Error('多世界项目必须先选择世界。')
+    throw new Error(getT()('agent:copilot.worldOrigin.multiWorldRequired'))
   }
   const routingCategory = input.routingCategory ?? 'worldview.dimension'
   const config = resolveRequestConfig(
@@ -133,7 +134,7 @@ export async function prepareWorldOriginCopilot(
     readScopedWorldview(input.projectId, input.worldGroupId),
   ])
   for (const result of [status, worldview]) {
-    if (!result.ok) throw new Error(result.error || `${result.meta.toolName} 读取失败`)
+    if (!result.ok) throw new Error(result.error || getT()('agent:copilot.worldOrigin.readFailed', { tool: result.meta.toolName }))
   }
 
   const snapshot = snapshotOf(row)
@@ -209,17 +210,17 @@ export function createWorldOriginCopilotNode(
       const candidate = output.trim()
       const issues: GenerationGateIssue[] = []
       if (!candidate) {
-        issues.push({ code: 'empty-world-origin', message: '候选世界来源为空。' })
+        issues.push({ code: 'empty-world-origin', message: getT()('agent:copilot.worldOrigin.candidateEmpty') })
       } else if (candidate.length < 4) {
-        issues.push({ code: 'world-origin-too-short', message: '候选世界来源少于 4 个字符。' })
+        issues.push({ code: 'world-origin-too-short', message: getT()('agent:copilot.worldOrigin.candidateTooShort') })
       } else if (candidate.length > WORLD_ORIGIN_MAX_CHARS) {
         issues.push({
           code: 'world-origin-too-long',
-          message: `候选世界来源超过 ${WORLD_ORIGIN_MAX_CHARS} 个字符。`,
+          message: getT()('agent:copilot.worldOrigin.candidateTooLong', { max: WORLD_ORIGIN_MAX_CHARS }),
         })
       }
       if (candidate && candidate === input.snapshot.worldOrigin.trim()) {
-        issues.push({ code: 'world-origin-unchanged', message: '候选与当前世界来源完全相同。' })
+        issues.push({ code: 'world-origin-unchanged', message: getT()('agent:copilot.worldOrigin.candidateUnchanged') })
       }
       return {
         status: issues.length ? 'blocked' : 'pass',
@@ -238,7 +239,7 @@ export function createWorldOriginCopilotNode(
         || result.fkErrors.length
         || result.skipped.length
       ) {
-        throw new Error('世界来源写回未完整通过字段注册表校验。')
+        throw new Error(getT()('agent:copilot.worldOrigin.adoptValidationFailed'))
       }
       return result
     },

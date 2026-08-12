@@ -1,8 +1,9 @@
 /**
  * 故事线面板 — Phase B2
- * 展示/编辑全局故事线（主线+支线），支持 AI 生成
+ * 展示/编辑全局故事线（主线+支线），支持 {t('common:generate')}
  */
 import { useState, useEffect } from 'react'
+import { useDomainT, type DomainTFunction } from '../../i18n'
 import { Plus, Sparkles, Loader2, Trash2, GripVertical, X, ChevronDown, ChevronRight } from 'lucide-react'
 import { useStoryArcStore } from '../../stores/story-arc'
 import { useWorldviewStore } from '../../stores/worldview'
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export default function StoryArcPanel({ project }: Props) {
+  const { t } = useDomainT('outline')
   const dialog = useDialog()
   const { arcs, activeArcId, loadAll, setActiveArc, addArc, updateArc, deleteArc, updateStages } = useStoryArcStore()
   const { storyCore, loadAll: loadWorldview } = useWorldviewStore()
@@ -43,7 +45,7 @@ export default function StoryArcPanel({ project }: Props) {
 
   // 新建空故事线
   const handleAddArc = async (type: StoryArcType) => {
-    const name = type === 'main' ? '主线' : `支线${arcs.filter(a => a.type === 'sub').length + 1}`
+    const name = type === 'main' ? t('storyArc.defaultMainName') : t('storyArc.defaultSubName', { index: arcs.filter(a => a.type === 'sub').length + 1 })
     const id = await addArc({
       projectId: project.id!,
       name,
@@ -115,9 +117,9 @@ export default function StoryArcPanel({ project }: Props) {
     const arc = arcs.find(a => a.id === id)
     if (!arc) return
     const ok = await dialog.confirm({
-      title: `删除故事线「${arc.name}」？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('storyArc.deleteTitle', { name: arc.name }),
+      message: t('storyArc.deleteMessage'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -126,7 +128,7 @@ export default function StoryArcPanel({ project }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-bold text-text-primary mb-4">🧵 全局故事线</h2>
+      <h2 className="text-xl font-bold text-text-primary mb-4">{t('storyArc.heading')}</h2>
 
       {/* 故事线 Tab 切换 */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
@@ -150,16 +152,16 @@ export default function StoryArcPanel({ project }: Props) {
           <button
             onClick={() => handleAddArc('main')}
             className="flex items-center gap-1 px-2 py-1.5 text-xs text-text-muted hover:text-accent transition-colors"
-            title="新增主线"
+            title={t('storyArc.addMainTitle')}
           >
-            <Plus className="w-3.5 h-3.5" /> 主线
+            <Plus className="w-3.5 h-3.5" /> {t('storyArc.addMain')}
           </button>
           <button
             onClick={() => handleAddArc('sub')}
             className="flex items-center gap-1 px-2 py-1.5 text-xs text-text-muted hover:text-accent transition-colors"
-            title="新增支线"
+            title={t('storyArc.addSubTitle')}
           >
-            <Plus className="w-3.5 h-3.5" /> 支线
+            <Plus className="w-3.5 h-3.5" /> {t('storyArc.addSub')}
           </button>
           <div className="w-px h-4 bg-border mx-1" />
           <select
@@ -167,8 +169,8 @@ export default function StoryArcPanel({ project }: Props) {
             onChange={e => setGenType(e.target.value as StoryArcType)}
             className="px-1 py-1 bg-bg-elevated border border-border rounded text-xs text-text-secondary"
           >
-            <option value="main">生成主线</option>
-            <option value="sub">生成支线</option>
+            <option value="main">{t('storyArc.generateMainOption')}</option>
+            <option value="sub">{t('storyArc.generateSubOption')}</option>
           </select>
           <button
             onClick={handleGenerate}
@@ -176,7 +178,7 @@ export default function StoryArcPanel({ project }: Props) {
             className="flex items-center gap-1 px-3 py-1.5 text-xs bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 transition-colors"
           >
             {ai.isStreaming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
-            AI 生成
+            {t('common:generate')}
           </button>
         </div>
       </div>
@@ -200,6 +202,7 @@ export default function StoryArcPanel({ project }: Props) {
       {activeArc ? (
         <>
           <StoryArcEditor
+            t={t}
             arc={activeArc}
             stages={activeStages}
             onUpdateArc={(data) => updateArc(activeArc.id!, data)}
@@ -214,8 +217,8 @@ export default function StoryArcPanel({ project }: Props) {
         </>
       ) : (
         <div className="text-center py-16 text-text-muted">
-          <p className="text-sm mb-3">还没有故事线。</p>
-          <p className="text-xs">点击上方「AI 生成」或「+ 主线/支线」创建。</p>
+          <p className="text-sm mb-3">{t('storyArc.emptyStateLine1')}</p>
+          <p className="text-xs">{t('storyArc.emptyStateLine2')}</p>
         </div>
       )}
     </div>
@@ -224,12 +227,13 @@ export default function StoryArcPanel({ project }: Props) {
 
 // ── 故事线编辑器 ──
 
-function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete }: {
+function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete, t }: {
   arc: NonNullable<ReturnType<typeof useStoryArcStore.getState>['arcs'][0]>
   stages: StoryStage[]
   onUpdateArc: (data: Partial<Pick<StoryArc, 'name' | 'description' | 'type'>>) => void
   onUpdateStages: (stages: StoryStage[]) => void
   onDelete: () => void
+  t: DomainTFunction
 }) {
   const [editName, setEditName] = useState(arc.name)
   const [editDesc, setEditDesc] = useState(arc.description || '')
@@ -243,7 +247,7 @@ function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete }: 
   const handleAddStage = () => {
     const newStage: StoryStage = {
       id: nanoid(8),
-      title: `阶段 ${stages.length + 1}`,
+      title: t('storyArc.defaultStageTitle', { index: stages.length + 1 }),
       description: '',
       keyEvents: [],
     }
@@ -272,7 +276,7 @@ function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete }: 
             className="flex-1 text-lg font-bold bg-transparent text-text-primary border-none focus:outline-none"
           />
           <span className="text-xs px-2 py-0.5 bg-bg-elevated text-text-muted rounded">
-            {arc.type === 'main' ? '主线' : '支线'}
+            {arc.type === 'main' ? t('storyArc.mainLabel') : t('storyArc.subLabel')}
           </span>
           <button onClick={onDelete} className="p-1 text-text-muted hover:text-error transition-colors">
             <Trash2 className="w-4 h-4" />
@@ -282,7 +286,7 @@ function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete }: 
           value={editDesc}
           onChange={e => setEditDesc(e.target.value)}
           onBlur={() => onUpdateArc({ description: editDesc })}
-          placeholder="故事线整体描述..."
+          placeholder={t('storyArc.descriptionPlaceholder')}
           className="w-full h-16 p-2 bg-bg-base border border-border rounded text-sm text-text-secondary resize-y focus:outline-none focus:border-accent"
         />
       </div>
@@ -290,12 +294,12 @@ function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete }: 
       {/* 时间线可视化 + 阶段列表 */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium text-text-secondary">阶段列表（{stages.length}）</h3>
+          <h3 className="text-sm font-medium text-text-secondary">{t('storyArc.stagesHeading', { count: stages.length })}</h3>
           <button
             onClick={handleAddStage}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> 添加阶段
+            <Plus className="w-3.5 h-3.5" /> {t('storyArc.addStage')}
           </button>
         </div>
 
@@ -318,6 +322,7 @@ function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete }: 
         {/* 阶段编辑卡片 */}
         {stages.map((stage, idx) => (
           <StageCard
+            t={t}
             key={stage.id}
             stage={stage}
             index={idx}
@@ -329,7 +334,7 @@ function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete }: 
 
         {stages.length === 0 && (
           <div className="text-center py-8 text-text-muted text-sm border border-dashed border-border rounded-lg">
-            暂无阶段，点击「添加阶段」或用 AI 生成
+            {t('storyArc.noStages')}
           </div>
         )}
       </div>
@@ -339,12 +344,13 @@ function StoryArcEditor({ arc, stages, onUpdateArc, onUpdateStages, onDelete }: 
 
 // ── 单个阶段卡片 ──
 
-function StageCard({ stage, index, total, onUpdate, onDelete }: {
+function StageCard({ stage, index, total, onUpdate, onDelete, t }: {
   stage: StoryStage
   index: number
   total: number
   onUpdate: (data: Partial<StoryStage>) => void
   onDelete: () => void
+  t: DomainTFunction
 }) {
   const [expanded, setExpanded] = useState(false)
   const [newEvent, setNewEvent] = useState('')
@@ -383,10 +389,10 @@ function StageCard({ stage, index, total, onUpdate, onDelete }: {
         </div>
         <div className="flex items-center gap-2 shrink-0">
           {stage.turningPoint && (
-            <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded">转折</span>
+            <span className="text-[10px] px-1.5 py-0.5 bg-amber-500/15 text-amber-400 rounded">{t('storyArc.turningPointBadge')}</span>
           )}
           {stage.keyEvents.length > 0 && (
-            <span className="text-[10px] text-text-muted">{stage.keyEvents.length} 事件</span>
+            <span className="text-[10px] text-text-muted">{t('storyArc.eventCount', { count: stage.keyEvents.length })}</span>
           )}
           {expanded ? <ChevronDown className="w-4 h-4 text-text-muted" /> : <ChevronRight className="w-4 h-4 text-text-muted" />}
         </div>
@@ -399,7 +405,7 @@ function StageCard({ stage, index, total, onUpdate, onDelete }: {
           <CInput
             value={stage.title}
             onChange={e => onUpdate({ title: e.target.value })}
-            placeholder="阶段标题"
+            placeholder={t('storyArc.stageTitlePlaceholder')}
             className="w-full px-2 py-1.5 bg-bg-base border border-border rounded text-sm font-medium text-text-primary focus:outline-none focus:border-accent"
           />
 
@@ -407,24 +413,24 @@ function StageCard({ stage, index, total, onUpdate, onDelete }: {
           <CTextarea
             value={stage.description}
             onChange={e => onUpdate({ description: e.target.value })}
-            placeholder="这个阶段发生什么..."
+            placeholder={t('storyArc.stageDescriptionPlaceholder')}
             className="w-full h-20 p-2 bg-bg-base border border-border rounded text-sm text-text-secondary resize-y focus:outline-none focus:border-accent"
           />
 
           {/* 转折点 */}
           <div>
-            <label className="text-xs text-text-muted mb-1 block">转折点（可选）</label>
+            <label className="text-xs text-text-muted mb-1 block">{t('storyArc.turningPointLabel')}</label>
             <CInput
               value={stage.turningPoint || ''}
               onChange={e => onUpdate({ turningPoint: e.target.value || undefined })}
-              placeholder="这个阶段的关键转折..."
+              placeholder={t('storyArc.turningPointPlaceholder')}
               className="w-full px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-secondary focus:outline-none focus:border-accent"
             />
           </div>
 
           {/* 关键事件 */}
           <div>
-            <label className="text-xs text-text-muted mb-1 block">关键事件（{stage.keyEvents.length}）</label>
+            <label className="text-xs text-text-muted mb-1 block">{t('storyArc.keyEventsLabel', { count: stage.keyEvents.length })}</label>
             <div className="space-y-1">
               {stage.keyEvents.map((ev, i) => (
                 <div key={i} className="flex items-center gap-1.5">
@@ -439,12 +445,12 @@ function StageCard({ stage, index, total, onUpdate, onDelete }: {
                   value={newEvent}
                   onChange={e => setNewEvent(e.target.value)}
                   onKeyDown={e => e.key === 'Enter' && addEvent()}
-                  placeholder="添加关键事件..."
+                  placeholder={t('storyArc.addEventPlaceholder')}
                   className="flex-1 px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
                 <button onClick={addEvent} disabled={!newEvent.trim()}
                   className="px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded disabled:opacity-40">
-                  添加
+                  {t('storyArc.addEvent')}
                 </button>
               </div>
             </div>
@@ -453,7 +459,7 @@ function StageCard({ stage, index, total, onUpdate, onDelete }: {
           {/* 删除按钮 */}
           <div className="flex justify-end pt-1">
             <button onClick={onDelete} className="flex items-center gap-1 px-2 py-1 text-xs text-error/60 hover:text-error transition-colors">
-              <Trash2 className="w-3 h-3" /> 删除此阶段
+              <Trash2 className="w-3 h-3" /> {t('storyArc.deleteStage')}
             </button>
           </div>
         </div>

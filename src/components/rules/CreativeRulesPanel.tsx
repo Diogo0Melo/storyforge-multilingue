@@ -9,20 +9,22 @@ import { createAISessionKey } from '../../stores/ai-generation-session'
 import { buildRulesGeneratePrompt } from '../../lib/ai/adapters/rules-adapter'
 import { adopt } from '../../lib/registry/adopt'
 import AIStreamOutput from '../shared/AIStreamOutput'
+import { useDomainT } from '../../i18n'
 import type { Project, NarrativePOV } from '../../lib/types'
 
-const POV_OPTIONS: { value: NarrativePOV; label: string; desc: string }[] = [
-  { value: 'first-person', label: '第一人称', desc: '以"我"的视角叙述' },
-  { value: 'third-limited', label: '第三人称有限', desc: '跟随某个角色的视角' },
-  { value: 'third-omniscient', label: '第三人称全知', desc: '上帝视角，可看到所有角色内心' },
-  { value: 'multi-pov', label: '多视角', desc: '在多个角色视角间切换' },
-]
+const POV_KEYS = {
+  'first-person':      { label: 'pov.firstPerson',      desc: 'pov.firstPersonDesc' },
+  'third-limited':     { label: 'pov.thirdLimited',     desc: 'pov.thirdLimitedDesc' },
+  'third-omniscient':  { label: 'pov.thirdOmniscient',  desc: 'pov.thirdOmniscientDesc' },
+  'multi-pov':         { label: 'pov.multiPov',         desc: 'pov.multiPovDesc' },
+} as const satisfies Record<NarrativePOV, { label: string; desc: string }>
 
 interface Props {
   project: Project
 }
 
 export default function CreativeRulesPanel({ project }: Props) {
+  const { t } = useDomainT('rules')
   const { creativeRules, loadAll, save } = useCreativeRulesStore()
   const { worldview, storyCore, loadAll: loadWorldview } = useWorldviewStore()
   const { references, loadAll: loadRefs } = useReferenceStore()
@@ -63,6 +65,7 @@ export default function CreativeRulesPanel({ project }: Props) {
 
   /** AI 生成某字段：调 rules.generate 模板 */
   const generateField = (target: 'writingStyle' | 'toneAndMood' | 'specialRequirements') => {
+    // dimensionMap values are fed to AI prompt — keep Chinese verbatim for prompt context
     const dimensionMap = {
       writingStyle: '写作风格',
       toneAndMood: '基调和氛围',
@@ -140,25 +143,25 @@ export default function CreativeRulesPanel({ project }: Props) {
 
   /* ---- 列表渲染 ---- */
   const renderList = (
-    title: string,
-    placeholder: string,
+    titleKey: string,
+    placeholderKey: string,
     list: string[],
     setList: React.Dispatch<React.SetStateAction<string[]>>,
     field: string,
   ) => (
     <div className="mb-6">
       <div className="flex items-center justify-between mb-2">
-        <label className="text-sm font-medium text-text-secondary">{title} ({list.length})</label>
+        <label className="text-sm font-medium text-text-secondary">{t(titleKey as never)} ({list.length})</label>
         <button
           onClick={() => handleAddToList(list, setList, field)}
           className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
-          添加
+          {t('listActions.add')}
         </button>
       </div>
       {list.length === 0 ? (
-        <p className="text-text-muted text-xs py-3 text-center border border-dashed border-border rounded-lg">暂无内容</p>
+        <p className="text-text-muted text-xs py-3 text-center border border-dashed border-border rounded-lg">{t('listActions.empty')}</p>
       ) : (
         <div className="space-y-1.5">
           {list.map((item, idx) => (
@@ -167,7 +170,7 @@ export default function CreativeRulesPanel({ project }: Props) {
                 value={item}
                 onChange={e => handleUpdateListItem(list, setList, field, idx, e.target.value)}
                 onBlur={() => handleBlurListItem(list, field)}
-                placeholder={placeholder}
+                placeholder={t(placeholderKey as never)}
                 className="flex-1 px-2 py-1.5 bg-bg-surface border border-border rounded text-sm text-text-primary focus:outline-none focus:border-accent"
               />
               <button
@@ -185,25 +188,25 @@ export default function CreativeRulesPanel({ project }: Props) {
 
   return (
     <div className="max-w-4xl">
-      <h2 className="text-xl font-bold text-text-primary mb-4">📐 创作规则</h2>
+      <h2 className="text-xl font-bold text-text-primary mb-4">{t('panel.title')}</h2>
 
       {/* 写作风格 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">
-          <label className="text-sm font-medium text-text-secondary">写作风格</label>
+          <label className="text-sm font-medium text-text-secondary">{t('writingStyle.label')}</label>
           <button
             onClick={() => generateField('writingStyle')}
             disabled={ai.isStreaming}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
-            <Sparkles className="w-3 h-3" /> AI 建议
+            <Sparkles className="w-3 h-3" /> {t('writingStyle.aiSuggest')}
           </button>
         </div>
         <CTextarea
           value={writingStyle}
           onChange={e => setWritingStyle(e.target.value)}
           onBlur={() => saveField({ writingStyle })}
-          placeholder="描述期望的写作风格，如：简洁凌厉、文笔华丽、幽默诙谐、冷峻写实..."
+          placeholder={t('writingStyle.placeholder')}
           className="w-full h-24 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
         {currentAITarget === 'writingStyle' && (ai.output || ai.isStreaming || ai.error) && (
@@ -219,45 +222,48 @@ export default function CreativeRulesPanel({ project }: Props) {
 
       {/* 叙事视角 */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-text-secondary mb-2">叙事视角</label>
+        <label className="block text-sm font-medium text-text-secondary mb-2">{t('pov.label')}</label>
         <div className="grid grid-cols-2 gap-2">
-          {POV_OPTIONS.map(opt => (
-            <button
-              key={opt.value}
-              onClick={() => {
-                setNarrativePOV(opt.value)
-                saveField({ narrativePOV: opt.value })
-              }}
-              className={`p-3 rounded-lg border text-left transition-all ${
-                narrativePOV === opt.value
-                  ? 'border-accent bg-accent/10'
-                  : 'border-border bg-bg-surface hover:border-text-muted'
-              }`}
-            >
-              <div className="text-sm font-medium text-text-primary">{opt.label}</div>
-              <div className="text-xs text-text-muted mt-0.5">{opt.desc}</div>
-            </button>
-          ))}
+          {(Object.keys(POV_KEYS) as NarrativePOV[]).map(povValue => {
+            const keys = POV_KEYS[povValue]
+            return (
+              <button
+                key={povValue}
+                onClick={() => {
+                  setNarrativePOV(povValue)
+                  saveField({ narrativePOV: povValue })
+                }}
+                className={`p-3 rounded-lg border text-left transition-all ${
+                  narrativePOV === povValue
+                    ? 'border-accent bg-accent/10'
+                    : 'border-border bg-bg-surface hover:border-text-muted'
+                }`}
+              >
+                <div className="text-sm font-medium text-text-primary">{t(keys.label as never)}</div>
+                <div className="text-xs text-text-muted mt-0.5">{t(keys.desc as never)}</div>
+              </button>
+            )
+          })}
         </div>
       </div>
 
       {/* 基调和氛围 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">
-          <label className="text-sm font-medium text-text-secondary">基调和氛围</label>
+          <label className="text-sm font-medium text-text-secondary">{t('toneAndMood.label')}</label>
           <button
             onClick={() => generateField('toneAndMood')}
             disabled={ai.isStreaming}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
-            <Sparkles className="w-3 h-3" /> AI 建议
+            <Sparkles className="w-3 h-3" /> {t('toneAndMood.aiSuggest')}
           </button>
         </div>
         <CTextarea
           value={toneAndMood}
           onChange={e => setToneAndMood(e.target.value)}
           onBlur={() => saveField({ toneAndMood })}
-          placeholder="描述作品的整体基调和氛围，如：黑暗压抑、热血激昂、温馨治愈..."
+          placeholder={t('toneAndMood.placeholder')}
           className="w-full h-20 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
         {currentAITarget === 'toneAndMood' && (ai.output || ai.isStreaming || ai.error) && (
@@ -272,23 +278,23 @@ export default function CreativeRulesPanel({ project }: Props) {
       </div>
 
       {/* 禁止事项 */}
-      {renderList('禁止事项', '如：不能出现现代用语', prohibitions, setProhibitions, 'prohibitions')}
+      {renderList('prohibitions.title', 'prohibitions.placeholder', prohibitions, setProhibitions, 'prohibitions')}
 
       {/* 一致性规则 */}
-      {renderList('一致性规则', '如：修炼体系必须遵循金木水火土五行', consistencyRules, setConsistencyRules, 'consistencyRules')}
+      {renderList('consistencyRules.title', 'consistencyRules.placeholder', consistencyRules, setConsistencyRules, 'consistencyRules')}
 
       {/* 参考作品 */}
-      {renderList('参考作品', '如：《凡人修仙传》', referenceWorks, setReferenceWorks, 'referenceWorks')}
+      {renderList('referenceWorks.title', 'referenceWorks.placeholder', referenceWorks, setReferenceWorks, 'referenceWorks')}
 
       {/* 引用手法 —— Phase 20 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-medium text-text-secondary flex items-center gap-1.5">
             <Microscope className="w-3.5 h-3.5 text-accent" />
-            引用手法
+            {t('citedTechniques.title')}
           </label>
           <span className="text-[10px] text-text-muted">
-            勾选后，AI 写作时会参考这些作品的分析方法论
+            {t('citedTechniques.desc')}
           </span>
         </div>
         {(() => {
@@ -296,7 +302,7 @@ export default function CreativeRulesPanel({ project }: Props) {
           if (analyzedRefs.length === 0) {
             return (
               <p className="text-text-muted text-xs py-3 text-center border border-dashed border-border rounded-lg">
-                暂无已分析的参考作品。请先在「项目参考 → 深度分析」上传文件并完成分析。
+                {t('citedTechniques.noAnalyzedRefs')}
               </p>
             )
           }
@@ -331,7 +337,7 @@ export default function CreativeRulesPanel({ project }: Props) {
                     </div>
                     {ref.totalChars && (
                       <span className="text-[10px] text-text-muted shrink-0">
-                        {(ref.totalChars / 10000).toFixed(1)}万字
+                        {t('citedTechniques.wordCount', { count: (ref.totalChars / 10000).toFixed(1) })}
                       </span>
                     )}
                   </button>
@@ -345,20 +351,20 @@ export default function CreativeRulesPanel({ project }: Props) {
       {/* 特殊创作要求 */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-1">
-          <label className="text-sm font-medium text-text-secondary">特殊创作要求</label>
+          <label className="text-sm font-medium text-text-secondary">{t('specialRequirements.label')}</label>
           <button
             onClick={() => generateField('specialRequirements')}
             disabled={ai.isStreaming}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
-            <Sparkles className="w-3 h-3" /> AI 建议
+            <Sparkles className="w-3 h-3" /> {t('specialRequirements.aiSuggest')}
           </button>
         </div>
         <CTextarea
           value={specialRequirements}
           onChange={e => setSpecialRequirements(e.target.value)}
           onBlur={() => saveField({ specialRequirements })}
-          placeholder="其他需要 AI 遵守的特殊创作要求..."
+          placeholder={t('specialRequirements.placeholder')}
           className="w-full h-24 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
         {currentAITarget === 'specialRequirements' && (ai.output || ai.isStreaming || ai.error) && (

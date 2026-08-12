@@ -30,9 +30,10 @@ export const UNSUPPORTED_EXTS = ['doc'] as const
 /** 浏览器 <input accept> 字符串 */
 export const ACCEPT_ATTR = '.txt,.md,.csv,.pdf,.docx'
 
-/** 人类可读的大小说明（给 UI 用） */
-export const FILE_LIMIT_HINTS: Array<{ ext: string; label: string; mb: number }> = [
-  { ext: 'txt',  label: '纯文本',   mb: FILE_SIZE_LIMITS.txt  / 1024 / 1024 },
+/** 人类可读的大小说明（给 UI 用）。纯数据，不含文案——
+ * txt 的格式名需要本地化，由 UI 侧按 ext 解析（system:importIntro.formatTxt）。 */
+export const FILE_LIMIT_HINTS: Array<{ ext: string; label?: string; mb: number }> = [
+  { ext: 'txt',                        mb: FILE_SIZE_LIMITS.txt  / 1024 / 1024 },
   { ext: 'md',   label: 'Markdown', mb: FILE_SIZE_LIMITS.md   / 1024 / 1024 },
   { ext: 'csv',  label: 'CSV',      mb: FILE_SIZE_LIMITS.csv  / 1024 / 1024 },
   { ext: 'pdf',  label: 'PDF',      mb: FILE_SIZE_LIMITS.pdf  / 1024 / 1024 },

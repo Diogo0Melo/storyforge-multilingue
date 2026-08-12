@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Check, Plus, Trash2, X } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { isEntryEmpty } from '../../lib/types/world-rules'
 import type { WorldRuleEntry } from '../../lib/types/world-rules'
 
@@ -38,6 +39,7 @@ export default function WorldRulesNavigation({
   onAddL2,
   onDeleteCustomNode,
 }: Props) {
+  const { t } = useDomainT('worldview')
   const [addingL1, setAddingL1] = useState(false)
   const [addingL2, setAddingL2] = useState(false)
   const [newNodeLabel, setNewNodeLabel] = useState('')
@@ -74,14 +76,14 @@ export default function WorldRulesNavigation({
       <button
         onClick={() => { void submit(level) }}
         className="text-green-500 hover:text-green-400"
-        aria-label={`确认添加${level === 'l1' ? '大类' : '子类'}`}
+        aria-label={level === 'l1' ? t('worldRules.navigation.confirmAddL1AriaLabel') : t('worldRules.navigation.confirmAddL2AriaLabel')}
       >
         <Check className="w-3.5 h-3.5" />
       </button>
       <button
         onClick={() => cancel(level)}
         className="text-text-muted hover:text-text-primary"
-        aria-label={`取消添加${level === 'l1' ? '大类' : '子类'}`}
+        aria-label={level === 'l1' ? t('worldRules.navigation.cancelAddL1AriaLabel') : t('worldRules.navigation.cancelAddL2AriaLabel')}
       >
         <X className="w-3.5 h-3.5" />
       </button>
@@ -92,7 +94,7 @@ export default function WorldRulesNavigation({
     <>
       <div className="w-48 shrink-0 bg-bg-elevated border-r border-border overflow-y-auto">
         <div className="p-2 text-[10px] font-semibold text-text-muted uppercase tracking-wider px-3 pt-3">
-          大类
+          {t('worldRules.navigation.l1Header')}
         </div>
         {l1Nodes.map(node => {
           const count = countL1Filled(node.id)
@@ -115,18 +117,18 @@ export default function WorldRulesNavigation({
             </button>
           )
         })}
-        {addingL1 ? addRow('l1', '新大类名称') : (
+        {addingL1 ? addRow('l1', t('worldRules.navigation.newL1Placeholder')) : (
           <button
             onClick={() => { setAddingL1(true); setNewNodeLabel('') }}
             className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-accent flex items-center gap-1.5 transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> 添加大类
+            <Plus className="w-3.5 h-3.5" /> {t('worldRules.navigation.addL1')}
           </button>
         )}
       </div>
 
       <div className="w-52 shrink-0 border-r border-border overflow-y-auto">
-        <div className="p-2 text-[10px] font-semibold text-text-muted uppercase tracking-wider px-3 pt-3">子类</div>
+        <div className="p-2 text-[10px] font-semibold text-text-muted uppercase tracking-wider px-3 pt-3">{t('worldRules.navigation.l2Header')}</div>
         <button
           onClick={() => onSelectNode(selectedL1)}
           className={`w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors ${
@@ -136,7 +138,7 @@ export default function WorldRulesNavigation({
           }`}
         >
           <span className="text-base">📋</span>
-          <span className="flex-1 truncate">总览</span>
+          <span className="flex-1 truncate">{t('worldRules.navigation.overview')}</span>
           {!isEntryEmpty(entries[selectedL1]) && <span className="w-1.5 h-1.5 rounded-full bg-accent" />}
         </button>
         {l2Nodes.map(node => (
@@ -157,19 +159,19 @@ export default function WorldRulesNavigation({
               <button
                 onClick={() => onDeleteCustomNode(node.id, node.label)}
                 className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 transition-opacity"
-                aria-label={`删除子类${node.label}`}
+                aria-label={t('worldRules.navigation.deleteL2AriaLabel', { label: node.label })}
               >
                 <Trash2 className="w-3 h-3" />
               </button>
             )}
           </div>
         ))}
-        {addingL2 ? addRow('l2', '新子类名称') : (
+        {addingL2 ? addRow('l2', t('worldRules.navigation.newL2Placeholder')) : (
           <button
             onClick={() => { setAddingL2(true); setNewNodeLabel('') }}
             className="w-full text-left px-3 py-2 text-xs text-text-muted hover:text-accent flex items-center gap-1.5 transition-colors"
           >
-            <Plus className="w-3.5 h-3.5" /> 添加子类
+            <Plus className="w-3.5 h-3.5" /> {t('worldRules.navigation.addL2')}
           </button>
         )}
       </div>

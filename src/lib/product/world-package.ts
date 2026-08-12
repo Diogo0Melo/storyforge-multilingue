@@ -3,6 +3,7 @@ import { inspectProjectBackup } from '../export/backup-trust'
 import { PROJECT_TABLES } from '../registry/project-tables'
 import type { CommunityWorldLicense, Project } from '../types'
 import { generateWorldCode } from './world-identity'
+import { getT } from '../../i18n'
 
 export const WORLD_PACKAGE_FORMAT = 'storyforge.world-package'
 export const WORLD_PACKAGE_VERSION = 1
@@ -70,7 +71,7 @@ function canonicalStringify(value: unknown): string {
 
 async function sha256(value: string): Promise<string> {
   const subtle = globalThis.crypto?.subtle
-  if (!subtle) throw new Error('当前环境不支持分享包完整性校验。')
+  if (!subtle) throw new Error(getT()('product:wp.noCryptoSupport'))
   const digest = await subtle.digest('SHA-256', new TextEncoder().encode(value))
   return Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
 }
@@ -113,10 +114,10 @@ export async function createWorldPackage(
 ): Promise<WorldPackage> {
   const backup = await exportProjectJSON(projectId)
   const project = backup.project as Project
-  if (!project.worldCode || !project.worldVersion) throw new Error('该项目还没有可发布的世界编号，请先回到世界引擎页面。')
-  if (!options.authorName.trim()) throw new Error('请填写作者署名。')
-  if (!LICENSES.has(options.license)) throw new Error('许可选项无效。')
-  if (!Object.values(options.allowedUses).some(Boolean)) throw new Error('至少选择一种允许的使用方式。')
+  if (!project.worldCode || !project.worldVersion) throw new Error(getT()('product:wp.noWorldCode'))
+  if (!options.authorName.trim()) throw new Error(getT()('product:wp.authorRequired'))
+  if (!LICENSES.has(options.license)) throw new Error(getT()('product:wp.invalidLicense'))
+  if (!Object.values(options.allowedUses).some(Boolean)) throw new Error(getT()('product:wp.noAllowedUses'))
 
   const manifest: WorldPackageManifest = {
     packageId: `${project.worldCode}@v${project.worldVersion}`,
@@ -147,47 +148,47 @@ export async function createWorldPackage(
 export async function inspectWorldPackage(input: unknown): Promise<WorldPackageTrustReport> {
   const errors: string[] = []
   const warnings: string[] = []
-  if (!isRecord(input)) return { valid: false, manifest: null, backupReport: null, errors: ['分享包必须是 JSON 对象。'], warnings }
-  if (input.format !== WORLD_PACKAGE_FORMAT) errors.push('这不是 StoryForge 世界分享包。')
-  if (input.packageVersion !== WORLD_PACKAGE_VERSION) errors.push(`不支持的世界分享包版本：${String(input.packageVersion)}。`)
+  if (!isRecord(input)) return { valid: false, manifest: null, backupReport: null, errors: [getT()('product:wp.notJsonObject')], warnings }
+  if (input.format !== WORLD_PACKAGE_FORMAT) errors.push(getT()('product:wp.notStoryForgePackage'))
+  if (input.packageVersion !== WORLD_PACKAGE_VERSION) errors.push(getT()('product:wp.unsupportedVersion', { version: String(input.packageVersion) }))
 
   const rawManifest = input.manifest
   let manifest: WorldPackageManifest | null = null
   if (!isRecord(rawManifest)) {
-    errors.push('分享包缺少发布信息。')
+    errors.push(getT()('product:wp.missingManifest'))
   } else {
     const allowedUses = rawManifest.allowedUses
     const validUses = isRecord(allowedUses)
       && ['writing', 'ttrpg', 'characterChat', 'textGame'].every(key => typeof allowedUses[key] === 'boolean')
       && Object.values(allowedUses).some(value => value === true)
-    if (typeof rawManifest.packageId !== 'string' || typeof rawManifest.sourceWorldCode !== 'string' || typeof rawManifest.name !== 'string') errors.push('发布信息缺少世界编号或名称。')
-    if (typeof rawManifest.sourceWorldVersion !== 'number' || !Number.isInteger(rawManifest.sourceWorldVersion)) errors.push('世界版本无效。')
-    if (typeof rawManifest.authorName !== 'string' || !rawManifest.authorName.trim()) errors.push('分享包缺少作者署名。')
-    if (!LICENSES.has(rawManifest.license as CommunityWorldLicense)) errors.push('分享包许可无效。')
-    if (!validUses) errors.push('分享包没有有效的二创用途声明。')
-    if (!Array.isArray(rawManifest.contentWarnings) || rawManifest.contentWarnings.some(value => typeof value !== 'string')) errors.push('内容警告格式无效。')
+    if (typeof rawManifest.packageId !== 'string' || typeof rawManifest.sourceWorldCode !== 'string' || typeof rawManifest.name !== 'string') errors.push(getT()('product:wp.manifestMissingIdOrName'))
+    if (typeof rawManifest.sourceWorldVersion !== 'number' || !Number.isInteger(rawManifest.sourceWorldVersion)) errors.push(getT()('product:wp.invalidWorldVersion'))
+    if (typeof rawManifest.authorName !== 'string' || !rawManifest.authorName.trim()) errors.push(getT()('product:wp.manifestMissingAuthor'))
+    if (!LICENSES.has(rawManifest.license as CommunityWorldLicense)) errors.push(getT()('product:wp.manifestInvalidLicense'))
+    if (!validUses) errors.push(getT()('product:wp.manifestNoValidUses'))
+    if (!Array.isArray(rawManifest.contentWarnings) || rawManifest.contentWarnings.some(value => typeof value !== 'string')) errors.push(getT()('product:wp.invalidContentWarnings'))
     if (errors.length === 0) manifest = rawManifest as unknown as WorldPackageManifest
   }
 
   const backupReport = isRecord(input.portableProject) ? inspectProjectBackup(input.portableProject) : null
-  if (!backupReport) errors.push('分享包缺少可导入的世界数据。')
+  if (!backupReport) errors.push(getT()('product:wp.missingPortableProject'))
   else if (!backupReport.valid) errors.push(...backupReport.errors)
 
   const portable = input.portableProject
   if (isRecord(portable)) {
     for (const tableName of SHAREABLE_TABLES) {
-      if (!Array.isArray(portable[tableName])) errors.push(`分享包缺少世界表「${tableName}」。`)
+      if (!Array.isArray(portable[tableName])) errors.push(getT()('product:wp.missingWorldTable', { table: tableName }))
     }
     for (const tableName of PRIVATE_TABLES) {
       if (Array.isArray(portable[tableName]) && portable[tableName].length > 0) {
-        errors.push(`分享包包含未授权的私有表「${tableName}」，已拒绝导入。`)
+        errors.push(getT()('product:wp.unauthorizedPrivateTable', { table: tableName }))
       }
     }
   }
 
   const integrity = input.integrity
   if (!isRecord(integrity) || integrity.algorithm !== 'SHA-256' || typeof integrity.digest !== 'string') {
-    errors.push('分享包缺少完整性校验。')
+    errors.push(getT()('product:wp.missingIntegrity'))
   } else if (manifest && isRecord(input.portableProject)) {
     const payload = {
       format: WORLD_PACKAGE_FORMAT as typeof WORLD_PACKAGE_FORMAT,
@@ -195,7 +196,7 @@ export async function inspectWorldPackage(input: unknown): Promise<WorldPackageT
       manifest,
       portableProject: input.portableProject as unknown as ProjectExportData,
     }
-    if (await sha256(canonicalStringify(payloadForIntegrity(payload))) !== integrity.digest) errors.push('分享包完整性校验失败，文件可能已被修改。')
+    if (await sha256(canonicalStringify(payloadForIntegrity(payload))) !== integrity.digest) errors.push(getT()('product:wp.integrityCheckFailed'))
   }
 
   if (backupReport?.warnings.length) warnings.push(...backupReport.warnings)
@@ -204,7 +205,7 @@ export async function inspectWorldPackage(input: unknown): Promise<WorldPackageT
 
 export async function importWorldPackage(input: unknown): Promise<number> {
   const report = await inspectWorldPackage(input)
-  if (!report.valid || !report.manifest || !isRecord(input)) throw new Error(`世界分享包预检失败：${report.errors.join('；')}`)
+  if (!report.valid || !report.manifest || !isRecord(input)) throw new Error(getT()('product:wp.precheckFailed', { errors: report.errors.join('；') }))
   const packageData = input.portableProject as ProjectExportData
   const project = { ...(packageData.project as Record<string, unknown>) }
   project.worldCode = generateWorldCode()

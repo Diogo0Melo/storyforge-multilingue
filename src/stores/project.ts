@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT } from '../i18n'
 import type { Project, CreateProjectInput } from '../lib/types'
 import { migrateGenre } from '../lib/types'
 import { requireBackupBefore } from '../lib/safety/require-backup-before'
@@ -90,10 +91,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   deleteProject: async (id: number) => {
     // 数据红线:删项目前强制提示备份(Pre-Phase 0 安全网)
+    const t = getT()
     const proceed = await requireBackupBefore({
-      operation: '删除项目',
+      operation: t('errors:project.deleteOperation'),
       projectId: id,
-      details: '此操作将清除该项目的全部数据(章节、世界观、角色、词条、状态卡等),不可恢复。',
+      details: t('errors:project.deleteDetails'),
     })
     if (!proceed) return  // 用户取消
 

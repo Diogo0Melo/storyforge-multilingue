@@ -13,6 +13,7 @@ import type { StyleCalibrationVerdict, UserStyleProfile } from '../../lib/types/
 import { useAIConfigStore } from '../../stores/ai-config'
 import { useUserStyleStore } from '../../stores/user-style'
 import { useToast } from '../shared/Toast'
+import { useDomainT } from '../../i18n'
 
 const MAX_CALIBRATION_SOURCE_CHARS = 1600
 
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export default function StyleCalibrationPanel({ projectId, profile }: Props) {
+  const { t } = useDomainT('style')
   const aiConfig = useAIConfigStore(state => state.config)
   const captureRevisionPair = useUserStyleStore(state => state.captureRevisionPair)
   const addCalibrationFeedback = useUserStyleStore(state => state.addCalibrationFeedback)
@@ -65,13 +67,13 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
         projectId,
       })
       if (!output.trim()) {
-        setError('AI 未返回校准稿，请重试。')
+        setError(t('calibration.errorEmptyResult'))
         return
       }
       setResultText(output.trim())
     } catch (generateError) {
       console.error('[StyleCalibration] 生成失败:', generateError)
-      setError(generateError instanceof Error ? generateError.message : '生成失败，请重试。')
+      setError(generateError instanceof Error ? generateError.message : t('calibration.errorGenerateFailed'))
     } finally {
       setRunning(false)
     }
@@ -87,9 +89,11 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
         sourceText,
         resultText,
       })
-      toast.success(verdict === 'closer' ? '已记录：更接近你的风格' : '已记录：仍需调整')
+      toast.success(verdict === 'closer' ? t('calibration.toastRecordedCloser') : t('calibration.toastRecordedAdjust'))
     } catch (feedbackError) {
-      setError(`反馈保存失败：${feedbackError instanceof Error ? feedbackError.message : String(feedbackError)}`)
+      setError(t('calibration.errorFeedbackSaveFailed', {
+        message: feedbackError instanceof Error ? feedbackError.message : String(feedbackError),
+      }))
     }
   }
 
@@ -98,15 +102,17 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
     setError(null)
     try {
       const pair = await captureRevisionPair(projectId, {
-        chapterTitle: '互动校准样本',
+        chapterTitle: t('calibration.pairChapterTitle'),
         beforeText: sourceText,
         afterText: resultText,
         authorNote: feedbackNote,
       })
       if (!pair) return
-      toast.success('已保存改前/改后样本；下次重新学习画像时会优先参考')
+      toast.success(t('calibration.toastPairSaved'))
     } catch (pairError) {
-      setError(`样本保存失败：${pairError instanceof Error ? pairError.message : String(pairError)}`)
+      setError(t('calibration.errorPairSaveFailed', {
+        message: pairError instanceof Error ? pairError.message : String(pairError),
+      }))
     }
   }
 
@@ -114,10 +120,10 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
     <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
       <div>
         <h3 className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
-          <Wrench className="h-4 w-4 text-accent" /> 互动校准
+          <Wrench className="h-4 w-4 text-accent" /> {t('calibration.title')}
         </h3>
         <p className="mt-1 text-[11px] leading-5 text-text-muted">
-          用一段短文测试当前画像。AI 只改写这段文字；你确认、编辑后再保存，未确认的输出不会污染文风样本。
+          {t('calibration.subtitle')}
         </p>
       </div>
 
@@ -125,12 +131,12 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
         value={sourceText}
         onChange={event => setSourceText(event.target.value.slice(0, MAX_CALIBRATION_SOURCE_CHARS))}
         rows={6}
-        placeholder="粘贴一段待校准短文（最多 1600 字符）"
+        placeholder={t('calibration.sourcePlaceholder', { max: MAX_CALIBRATION_SOURCE_CHARS })}
         className="w-full resize-y rounded border border-border bg-bg-base px-3 py-2 text-sm leading-relaxed text-text-secondary focus:border-accent focus:outline-none"
       />
       <div className="flex items-center justify-between gap-3">
         <span className="text-[10px] text-text-muted">
-          {sourceText.length.toLocaleString()} / {MAX_CALIBRATION_SOURCE_CHARS.toLocaleString()} 字符
+          {t('calibration.charCount', { used: sourceText.length.toLocaleString(), max: MAX_CALIBRATION_SOURCE_CHARS.toLocaleString() })}
         </span>
         <button
           type="button"
@@ -139,8 +145,8 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
           className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
         >
           {running
-            ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> 生成中…</>
-            : <><Sparkles className="h-3.5 w-3.5" /> 生成校准稿</>}
+            ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> {t('calibration.generateRunning')}</>
+            : <><Sparkles className="h-3.5 w-3.5" /> {t('calibration.generateButton')}</>}
         </button>
       </div>
 
@@ -149,7 +155,7 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
       {resultText && (
         <div className="space-y-2 border-t border-border pt-3">
           <label className="text-xs font-medium text-text-secondary" htmlFor="style-calibration-result">
-            校准稿（可继续手改）
+            {t('calibration.resultLabel')}
           </label>
           <textarea
             id="style-calibration-result"
@@ -159,12 +165,12 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
             className="w-full resize-y rounded border border-accent/30 bg-accent/5 px-3 py-2 text-sm leading-relaxed text-text-secondary focus:border-accent focus:outline-none"
           />
           <div className="flex items-center gap-1.5 text-xs font-medium text-text-secondary">
-            <MessageSquareText className="h-3.5 w-3.5" /> 你的判断
+            <MessageSquareText className="h-3.5 w-3.5" /> {t('calibration.judgmentLabel')}
           </div>
           <input
             value={feedbackNote}
             onChange={event => setFeedbackNote(event.target.value.slice(0, 240))}
-            placeholder="可选：具体哪里像 / 哪里还不对"
+            placeholder={t('calibration.feedbackPlaceholder')}
             className="w-full rounded border border-border bg-bg-base px-2.5 py-1.5 text-xs text-text-secondary focus:border-accent focus:outline-none"
           />
           <div className="flex flex-wrap gap-2">
@@ -173,14 +179,14 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
               onClick={() => { void recordFeedback('closer') }}
               className="inline-flex items-center gap-1 rounded bg-success/15 px-2.5 py-1.5 text-xs font-medium text-success hover:bg-success/25"
             >
-              <Check className="h-3.5 w-3.5" /> 接近我的风格
+              <Check className="h-3.5 w-3.5" /> {t('calibration.verdictCloser')}
             </button>
             <button
               type="button"
               onClick={() => { void recordFeedback('needs-adjustment') }}
               className="inline-flex items-center gap-1 rounded bg-warning/15 px-2.5 py-1.5 text-xs font-medium text-warning hover:bg-warning/25"
             >
-              <Wrench className="h-3.5 w-3.5" /> 仍需调整
+              <Wrench className="h-3.5 w-3.5" /> {t('calibration.verdictAdjust')}
             </button>
             <button
               type="button"
@@ -188,7 +194,7 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
               disabled={!hasChangedResult}
               className="inline-flex items-center gap-1 rounded border border-border px-2.5 py-1.5 text-xs font-medium text-text-secondary hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
             >
-              <Save className="h-3.5 w-3.5" /> 保存为改稿样本
+              <Save className="h-3.5 w-3.5" /> {t('calibration.savePairButton')}
             </button>
           </div>
         </div>

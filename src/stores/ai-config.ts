@@ -2,6 +2,7 @@ import { create } from 'zustand'
 import type { AIConfig, AIProvider, AIConfigPreset, EmbeddingConfig } from '../lib/types'
 import { PROVIDER_PRESETS } from '../lib/types'
 import { createLog, updateLog } from '../lib/ai/logger'
+import { getT } from '../i18n'
 import { nanoid } from '../lib/utils/id'
 import { buildOpenAIEndpoint, normalizeOpenAIBaseUrl } from '../lib/ai/openai-endpoint'
 import {
@@ -114,51 +115,68 @@ function saveAgentTeamBudgetProfile(profile: AgentTeamBudgetProfile): void {
   localStorage.setItem(AGENT_TEAM_BUDGET_PROFILE_KEY, profile)
 }
 
-/** 根据 HTTP 状态码和英文错误信息，返回中文解释 */
-function getChineseExplanation(status: number, msg: string): string {
+/**
+ * 根据 HTTP 状态码和英文错误信息，返回本地化解释。
+ * 通过 errors:aiConfig.* 键在所有支持语言下提供文案。
+ */
+function getLocalizedExplanation(status: number, msg: string): string {
+  const t = getT()
+
+  // 静态映射：HTTP 状态码 → i18n key（避免计算键/类型转换）
+  let statusKey:
+    | 'errors:aiConfig.status401'
+    | 'errors:aiConfig.status402'
+    | 'errors:aiConfig.status403'
+    | 'errors:aiConfig.status404'
+    | 'errors:aiConfig.status429'
+    | 'errors:aiConfig.status500'
+    | 'errors:aiConfig.status502'
+    | 'errors:aiConfig.status503'
+    | null = null
+  if (status === 401) statusKey = 'errors:aiConfig.status401'
+  else if (status === 402) statusKey = 'errors:aiConfig.status402'
+  else if (status === 403) statusKey = 'errors:aiConfig.status403'
+  else if (status === 404) statusKey = 'errors:aiConfig.status404'
+  else if (status === 429) statusKey = 'errors:aiConfig.status429'
+  else if (status === 500) statusKey = 'errors:aiConfig.status500'
+  else if (status === 502) statusKey = 'errors:aiConfig.status502'
+  else if (status === 503) statusKey = 'errors:aiConfig.status503'
+
+  if (statusKey) return t(statusKey)
+
   const lower = msg.toLowerCase()
 
-  // 按 HTTP 状态码
-  if (status === 401) return 'API Key 无效或已过期'
-  if (status === 402) return '账户余额不足，请充值后使用'
-  if (status === 403) return 'API Key 权限不足，无权访问该模型'
-  if (status === 404) return 'API 地址或模型名称错误，请检查 Base URL 和模型名'
-  if (status === 429) return '请求频率超限，请稍后再试'
-  if (status === 500) return '服务器内部错误，请稍后重试'
-  if (status === 502) return '网关错误，服务暂时不可用'
-  if (status === 503) return '服务暂时不可用，可能正在维护'
-
-  // 按错误信息关键词匹配
+  // 按错误信息关键词匹配（静态映射，避免计算键）
   if (lower.includes('insufficient balance') || lower.includes('insufficient_balance'))
-    return '账户余额不足，请充值'
+    return t('errors:aiConfig.insufficientBalance')
   if (lower.includes('invalid api key') || lower.includes('invalid_api_key'))
-    return 'API Key 无效，请检查是否填写正确'
+    return t('errors:aiConfig.invalidApiKey')
   if (lower.includes('authentication') || lower.includes('unauthorized'))
-    return '认证失败，API Key 无效或已过期'
+    return t('errors:aiConfig.authenticationFailed')
   if (lower.includes('rate limit') || lower.includes('rate_limit'))
-    return '请求频率超限，请稍后再试'
+    return t('errors:aiConfig.rateLimit')
   if (lower.includes('model not found') || lower.includes('model_not_found'))
-    return '模型不存在，请检查模型名称是否正确'
+    return t('errors:aiConfig.modelNotFound')
   if (lower.includes('context length') || lower.includes('context_length'))
-    return '输入内容超过模型最大上下文长度'
+    return t('errors:aiConfig.contextLengthExceeded')
   if (lower.includes('quota exceeded') || lower.includes('quota_exceeded'))
-    return '配额已用完'
+    return t('errors:aiConfig.quotaExceeded')
   if (lower.includes('server error') || lower.includes('internal error'))
-    return '服务器内部错误'
+    return t('errors:aiConfig.serverError')
   if (lower.includes('timeout'))
-    return '请求超时'
+    return t('errors:aiConfig.timeout')
   if (lower.includes('bad request'))
-    return '请求格式错误，请检查参数'
+    return t('errors:aiConfig.badRequest')
   if (lower.includes('not found'))
-    return '接口不存在，请检查 Base URL'
+    return t('errors:aiConfig.notFound')
   if (lower.includes('permission denied'))
-    return '权限不足'
+    return t('errors:aiConfig.permissionDenied')
   if (lower.includes('billing') || lower.includes('payment'))
-    return '账单/付款问题，请检查账户'
+    return t('errors:aiConfig.billingIssue')
   if (lower.includes('overloaded') || lower.includes('capacity'))
-    return '服务过载，请稍后重试'
+    return t('errors:aiConfig.serviceOverloaded')
   if (lower.includes('thinking') && lower.includes('budget'))
-    return '思考模式参数冲突，请不要手动传 thinking 相关参数'
+    return t('errors:aiConfig.thinkingBudgetConflict')
 
   return ''
 }
@@ -275,7 +293,7 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
     const id = nanoid()
     const preset: AIConfigPreset = {
       id,
-      name: name.trim() || '未命名配置',
+      name: name.trim() || getT()('common:defaults.unnamedAIConfig'),
       config: presetConfig(get().config, get().rememberApiKey),
     }
     const presets = [...get().presets, preset]
@@ -392,7 +410,7 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
         },
         body: JSON.stringify({
           model: config.model,
-          messages: [{ role: 'user', content: '请回复"连接成功"' }],
+          messages: [{ role: 'user', content: getT()('errors-lib:ai.testPromptContent') }],
         }),
       })
 
@@ -402,7 +420,12 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
       if (response.ok) {
         updateLog(log.id, { status: 'success', statusCode: response.status, duration, responseBody: bodyText.slice(0, 200) })
         const prefix = normalized.warnings.length ? `${normalized.warnings.join(' ')} ` : ''
-        return { ok: true, message: `✅ ${prefix}连接成功`, statusCode: response.status, duration }
+        return {
+          ok: true,
+          message: getT()('errors-lib:ai.connectionSuccess', { prefix }),
+          statusCode: response.status,
+          duration,
+        }
       }
 
       // 解析错误信息
@@ -416,24 +439,34 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
         if (bodyText.length < 200) rawErrorMsg += ': ' + bodyText
       }
 
-      // 常见英文错误 → 中文翻译映射
-      const cnExplanation = getChineseExplanation(response.status, rawErrorMsg)
+      // 常见英文错误 → 本地化翻译映射（当前仅 zh-CN 有文案）
+      const localizedExplanation = getLocalizedExplanation(response.status, rawErrorMsg)
 
       // HTTP 402 = 余额不足，但说明连接和认证都成功了
       if (response.status === 402) {
-        const msg = `${rawErrorMsg}（${cnExplanation}）`
+        const note = localizedExplanation ? `${rawErrorMsg}（${localizedExplanation}）` : rawErrorMsg
         updateLog(log.id, { status: 'success', statusCode: response.status, duration, responseBody: bodyText.slice(0, 200) })
         const prefix = normalized.warnings.length ? `${normalized.warnings.join(' ')} ` : ''
-        return { ok: true, message: `✅ ${prefix}连接成功 — ${msg}`, statusCode: response.status, duration }
+        return {
+          ok: true,
+          message: getT()('errors-lib:ai.connectionSuccessWithNote', { prefix, note }),
+          statusCode: response.status,
+          duration,
+        }
       }
 
+      const t = getT()
+      const lang = t('common:language')
       const urlHint = normalized.warnings.length
-        ? `；${normalized.warnings.join(' ')}`
+        ? (lang === 'zh-CN' ? `；${normalized.warnings.join(' ')}` : `; ${normalized.warnings.join(' ')}`)
         : ''
       const localHint = ['custom', 'ollama'].includes(config.provider)
-        ? '；本地 OpenAI 兼容服务的 Base URL 通常应填到 /v1，例如 LM Studio: http://主机:1234/v1，Ollama: http://localhost:11434/v1'
+        ? t('errors-lib:ai.localServiceUrlHint')
         : ''
-      const errorMsg = `${cnExplanation ? `${rawErrorMsg}（${cnExplanation}）` : rawErrorMsg}${urlHint}${localHint}`
+      const explained = localizedExplanation
+        ? `${rawErrorMsg}（${localizedExplanation}）`
+        : rawErrorMsg
+      const errorMsg = `${explained}${urlHint}${localHint}`
 
       updateLog(log.id, { status: 'error', statusCode: response.status, duration, errorMessage: errorMsg, responseBody: bodyText.slice(0, 500) })
       return { ok: false, message: `❌ ${errorMsg}`, statusCode: response.status, duration }
@@ -443,12 +476,13 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
       const error = err as Error
       let errorMsg: string
 
+      const t = getT()
       if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-        errorMsg = '网络错误 — 可能原因：1) 网络不通 2) 该平台不支持浏览器直接调用(CORS) 3) Base URL 错误'
+        errorMsg = t('errors-lib:ai.networkError')
       } else if (error.name === 'AbortError') {
-        errorMsg = '请求超时'
+        errorMsg = t('errors-lib:ai.requestTimeout')
       } else {
-        errorMsg = error.message || '未知错误'
+        errorMsg = error.message || t('errors-lib:ai.unknownError')
       }
 
       updateLog(log.id, { status: 'error', duration, errorMessage: errorMsg })

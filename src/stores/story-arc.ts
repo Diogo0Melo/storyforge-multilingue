@@ -42,7 +42,24 @@ export const useStoryArcStore = create<StoryArcStore>((set, get) => ({
   loadAll: async (projectId: number) => {
     set({ loading: true })
     try {
-      const arcs = await db.storyArcs.where('projectId').equals(projectId).toArray()
+      let arcs = await db.storyArcs.where('projectId').equals(projectId).toArray()
+      // 修复历史脏数据：早期版本用 { count } 调用 defaultSubName，而模板插值的是
+      // {{index}}，导致 "Subenredo {{index}}" 字面量被持久化。仅重命名仍含字面
+      // 占位符的支线（用户手动改名的不受影响），编号取该支线在全部支线中的创建顺序。
+      const subArcs = arcs
+        .filter(a => a.type === 'sub')
+        .sort((a, b) => (a.createdAt - b.createdAt) || ((a.id ?? 0) - (b.id ?? 0)))
+      const repairs = new Map<number, string>()
+      subArcs.forEach((a, i) => {
+        if (a.name.includes('{{index}}')) {
+          repairs.set(a.id!, a.name.replace(/\{\{index\}\}/g, String(i + 1)))
+        }
+      })
+      if (repairs.size > 0) {
+        await Promise.all([...repairs.entries()].map(([id, name]) =>
+          db.storyArcs.update(id, { name, updatedAt: now() })))
+        arcs = arcs.map(a => repairs.has(a.id!) ? { ...a, name: repairs.get(a.id!)!, updatedAt: now() } : a)
+      }
       set({ arcs, loading: false })
       // 默认选中主线
       if (arcs.length > 0 && !get().activeArcId) {

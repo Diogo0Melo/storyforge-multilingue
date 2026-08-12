@@ -12,6 +12,7 @@ import {
 } from '../../lib/history/ai-plan'
 import { usePromptStore } from '../../stores/prompt'
 import type { AIProvider } from '../../lib/types'
+import i18next from 'i18next'
 
 type HistoryAIStream = Pick<
   UseAIStreamReturn,
@@ -123,7 +124,7 @@ export function useHistoryAI({
       if (requestRef.current[mode] !== requestId) return
       console.error('[HistoryAI] 生成失败:', error)
       ai.reset()
-      onError(`历史 AI 准备失败：${error instanceof Error ? error.message : '未知错误'}。`)
+      onError(i18next.t('history:aiError.prepareFailed', { error: error instanceof Error ? error.message : String(error) }))
     } finally {
       if (requestRef.current[mode] === requestId) {
         if (mode === 'consult') setConsultPreparing(false)
@@ -149,7 +150,8 @@ export function useHistoryAI({
         data: { [field]: text },
       })
       if (result.written.length === 0) {
-        onError(`历史 AI 结果未能保存：${result.skipped[0]?.reason ?? '写回校验未通过'}。`)
+        const fallbackReason = String(result.skipped[0]?.reason ?? 'validation failed')
+        onError(i18next.t('history:aiError.saveFailedSkipped', { reason: fallbackReason }))
         return
       }
       if (eventId != null) await reloadEvents()
@@ -165,7 +167,7 @@ export function useHistoryAI({
       }
     } catch (error) {
       console.error('[HistoryAI] 保存失败:', error)
-      onError(`历史 AI 结果保存失败：${error instanceof Error ? error.message : '未知错误'}。`)
+      onError(i18next.t('history:aiError.saveFailedError', { error: error instanceof Error ? error.message : String(error) }))
     }
   }, [consultAI, consultEventId, consultKeywordId, onError, projectId, reloadEvents, reloadKeywords, stormAI, stormEventId, stormKeywordId, worldGroupId])
 

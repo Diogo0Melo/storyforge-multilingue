@@ -27,6 +27,7 @@ import { resolveRequestConfig } from '../ai/client'
 import { chatWithAbort } from './chat-with-abort'
 import { CHARACTER_DIMENSIONS } from '../character/character-dimensions'
 import { transactionTablesFor } from '../registry/lifecycle'
+import { getT } from '../../i18n'
 
 // 合并保留的角色文字字段：所有维度 + relationships(单源，加维度自动跟随)
 const CHARACTER_MERGE_KEYS = [...CHARACTER_DIMENSIONS.map(d => d.key), 'relationships'] as const
@@ -47,18 +48,19 @@ export async function runCharacterMerge(args: RunCharacterMergeArgs): Promise<vo
   const { sessionId, projectId, isFinal, signal, isPaused } = args
   if (isPaused?.()) return
 
+  const t = getT()
   const statusStore = useImportStatusStore.getState()
   const sessionStore = useImportSessionStore.getState()
 
   statusStore.setPhase('merging')
   statusStore.pushActivity('info',
-    isFinal ? '🔀 终末跨块角色合并...' : '🔀 阶段性跨块角色合并...')
+    isFinal ? t('errors-lib:import.mergePhaseFinal') : t('errors-lib:import.mergePhaseInterim'))
 
   // 拉当前项目所有角色
   const allChars = await db.characters.where('projectId').equals(projectId).toArray()
   if (allChars.length < 2) {
     statusStore.setPhase('running')
-    statusStore.pushActivity('info', '角色数 < 2，跳过合并')
+    statusStore.pushActivity('info', t('errors-lib:import.mergeSkipTooFew'))
     return
   }
   // 角色清单（截到最近 200 个，避免 prompt 爆炸）
@@ -99,22 +101,29 @@ export async function runCharacterMerge(args: RunCharacterMergeArgs): Promise<vo
         if (merged > 0) {
           mergedCount += merged
           await sessionStore.log(sessionId, -1, 'success',
-            `合并：${g.aliases.join(' = ')} → ${g.canonical}${g.reason ? '（' + g.reason + '）' : ''}`)
+            t('errors-lib:import.mergeSuccessLog', {
+              aliases: g.aliases.join(' = '),
+              canonical: g.canonical,
+              reason: g.reason ? `（${g.reason}）` : '',
+            }))
           statusStore.pushActivity('success',
-            `合并：${g.aliases.join(' = ')} → ${g.canonical}`)
+            t('errors-lib:import.mergeSuccessActivity', {
+              aliases: g.aliases.join(' = '),
+              canonical: g.canonical,
+            }))
         }
       }
     }
     if (mergedCount === 0) {
-      statusStore.pushActivity('info', '本轮无角色需要合并')
+      statusStore.pushActivity('info', t('errors-lib:import.mergeNoneThisRound'))
     }
     // 通知 UI 刷新
     await useCharacterStore.getState().loadAll(projectId)
   } catch (err) {
     if ((err as Error).name === 'AbortError') return
     const msg = err instanceof Error ? err.message : String(err)
-    statusStore.pushActivity('warn', `角色合并失败（不影响主流程）：${msg.slice(0, 80)}`)
-    await sessionStore.log(sessionId, -1, 'warn', `角色合并失败：${msg}`)
+    statusStore.pushActivity('warn', t('errors-lib:import.mergeFailureActivity', { message: msg.slice(0, 80) }))
+    await sessionStore.log(sessionId, -1, 'warn', t('errors-lib:import.mergeFailureLog', { message: msg }))
   } finally {
     statusStore.setPhase('running')
   }
@@ -148,7 +157,10 @@ async function applyMergeGroup(
     (merged as Record<string, unknown>)[k] = (primary as unknown as Record<string, unknown>)[k] || ''
   }
   // 收集别名（写到 relationships 里附记）
-  const aliasNote = `（曾用名/别称：${aliases.filter(a => a !== canonical).join('、')}）`
+  const t = getT()
+  const aliasNote = t('errors-lib:import.mergeAliasNote', {
+    aliases: aliases.filter(a => a !== canonical).join('、'),
+  })
 
   for (const o of others) {
     for (const k of CHARACTER_MERGE_KEYS) {

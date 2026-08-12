@@ -10,6 +10,8 @@ import {
 } from 'lucide-react'
 import {
   buildRagLibrary,
+  getFieldLabelKey,
+  getSourceLabelKey,
   readRecentRagRecalls,
   updateRagDocumentPolicy,
   updateRagFieldPolicy,
@@ -24,25 +26,21 @@ import type { Project, RagLibraryEntry } from '../../lib/types'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useDialog } from '../shared/Dialog'
 import { useToast } from '../shared/Toast'
+import { useDomainT } from '../../i18n'
 
 interface DocumentGroup {
   id: string
   tableName: string
   recordId: number
+  sourceKey: string
   sourceLabel: string
   title: string
   updatedAt: number
   fields: RagLibraryEntry[]
 }
 
-const VECTOR_LABELS: Record<RagLibraryEntry['vectorState'], string> = {
-  none: '未建章节索引',
-  keyword: '本地关键词',
-  partial: '部分向量',
-  ready: '向量就绪',
-}
-
 export default function RagLibraryPanel({ project }: { project: Project }) {
+  const { t } = useDomainT('retrieval')
   const projectId = project.id!
   const activeWorldGroupId = useWorldGroupStore(state => state.activeGroupId)
   const worldGroupId = project.enableMultiWorld ? activeWorldGroupId : null
@@ -93,6 +91,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
         id: entry.documentId,
         tableName: entry.tableName,
         recordId: entry.recordId,
+        sourceKey: entry.sourceKey,
         sourceLabel: entry.sourceLabel,
         title: entry.title,
         updatedAt: entry.updatedAt,
@@ -130,11 +129,15 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
       const summaries = await rebuildProjectNarrativeSummaries({ projectId })
       await load()
       toast.success(
-        `索引已重建：${chunks.chunks} 个正文块，`
-        + `${summaries.chapterNodes + summaries.volumeNodes + summaries.bookNodes} 个叙事摘要。`,
+        t('library.toastRebuildSuccess', {
+          chunks: chunks.chunks,
+          summaries: summaries.chapterNodes + summaries.volumeNodes + summaries.bookNodes,
+        }),
       )
     } catch (reason) {
-      toast.error(`重建失败：${reason instanceof Error ? reason.message : String(reason)}`)
+      toast.error(t('library.toastRebuildFailed', {
+        message: reason instanceof Error ? reason.message : String(reason),
+      }))
     } finally {
       setBusy(null)
     }
@@ -142,9 +145,9 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
 
   const clear = async () => {
     const confirmed = await dialog.confirm({
-      title: '删除可重建检索缓存？',
-      message: '只会删除章节切块、向量和叙事摘要缓存；章节正文、角色、设定和资料策略不会删除。',
-      confirmText: '删除派生缓存',
+      title: t('library.confirmClearTitle'),
+      message: t('library.confirmClearMessage'),
+      confirmText: t('library.confirmClearConfirmText'),
       tone: 'danger',
     })
     if (!confirmed) return
@@ -152,12 +155,34 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
     try {
       const cleared = await clearProjectRetrievalCache(projectId)
       await load()
-      toast.success(`已删除 ${cleared.chunks} 个检索块和 ${cleared.summaries} 个派生摘要；Canon 未改动。`)
+      toast.success(t('library.toastClearSuccess', {
+        chunks: cleared.chunks,
+        summaries: cleared.summaries,
+      }))
     } catch (reason) {
-      toast.error(`删除失败：${reason instanceof Error ? reason.message : String(reason)}`)
+      toast.error(t('library.toastClearFailed', {
+        message: reason instanceof Error ? reason.message : String(reason),
+      }))
     } finally {
       setBusy(null)
     }
+  }
+
+  const vectorLabel = (state: RagLibraryEntry['vectorState']) => {
+    if (state === 'none') return t('vectorState.none')
+    if (state === 'keyword') return t('vectorState.keyword')
+    if (state === 'partial') return t('vectorState.partial')
+    return t('vectorState.ready')
+  }
+
+  // I18N-F4 · 来源/字段标签按 i18n 键解析，未登记键回退存储的 zh 标签（无需重建索引）。
+  const resolveSourceLabel = (sourceKey: string, fallback: string) => {
+    const key = getSourceLabelKey(sourceKey)
+    return key ? t(key, { defaultValue: fallback }) : fallback
+  }
+  const resolveFieldLabel = (entry: RagLibraryEntry) => {
+    const key = getFieldLabelKey(entry.sourceKey, entry.fieldKey)
+    return key ? t(key, { defaultValue: entry.fieldLabel }) : entry.fieldLabel
   }
 
   return (
@@ -167,11 +192,10 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
           <div>
             <div className="flex items-center gap-2">
               <Database className="h-5 w-5 text-accent" />
-              <h1 className="text-lg font-semibold text-text-primary">资料与检索库</h1>
+              <h1 className="text-lg font-semibold text-text-primary">{t('library.title')}</h1>
             </div>
             <p className="mt-1 max-w-3xl text-xs leading-5 text-text-secondary">
-              这里实时投影项目 Canon，不复制第二份真相。你可以查看每条输入、控制字段是否参与创作、
-              调整优先权与预算，并检查节点运行时真正召回了什么。
+              {t('library.subtitle')}
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -182,7 +206,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
               className="flex items-center gap-1.5 rounded border border-border bg-bg-surface px-3 py-2 text-xs text-text-secondary hover:border-accent hover:text-accent disabled:opacity-50"
             >
               {busy === 'rebuild' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-              重建派生索引
+              {t('library.rebuildButton')}
             </button>
             <button
               type="button"
@@ -191,17 +215,17 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
               className="flex items-center gap-1.5 rounded border border-error/40 px-3 py-2 text-xs text-error hover:bg-error/10 disabled:opacity-50"
             >
               {busy === 'clear' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Trash2 className="h-3.5 w-3.5" />}
-              删除派生索引
+              {t('library.clearButton')}
             </button>
           </div>
         </header>
 
         <section className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
-            ['可见记录', stats.documents.toLocaleString()],
-            ['可见字段', `${stats.enabled}/${stats.fields}`],
-            ['启用内容估算', `${stats.tokens.toLocaleString()} tokens`],
-            ['章节检索块', stats.totalChunks.toLocaleString()],
+            [t('library.statVisibleRecords'), stats.documents.toLocaleString()],
+            [t('library.statVisibleFields'), `${stats.enabled}/${stats.fields}`],
+            [t('library.statEnabledTokens'), `${stats.tokens.toLocaleString()} tokens`],
+            [t('library.statChunks'), stats.totalChunks.toLocaleString()],
           ].map(([label, value]) => (
             <div key={label} className="rounded-lg border border-border bg-bg-surface p-3">
               <p className="text-[10px] text-text-muted">{label}</p>
@@ -213,28 +237,28 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
         <section className="rounded-xl border border-border bg-bg-surface">
           <div className="flex flex-wrap items-center gap-3 border-b border-border p-3">
             <div>
-              <h2 className="text-sm font-medium text-text-primary">输入资料</h2>
-              <p className="text-[10px] text-text-muted">修改只影响检索策略，不改写作品正文或设定内容。</p>
+              <h2 className="text-sm font-medium text-text-primary">{t('library.inputSectionTitle')}</h2>
+              <p className="text-[10px] text-text-muted">{t('library.inputSectionHint')}</p>
             </div>
             <label className="ml-auto flex min-w-64 items-center gap-2 rounded border border-border bg-bg-base px-2 py-1.5">
               <Search className="h-3.5 w-3.5 text-text-muted" />
               <input
-                aria-label="搜索资料库"
+                aria-label={t('library.searchAria')}
                 value={query}
                 onChange={event => setQuery(event.target.value)}
-                placeholder="搜索来源、记录、字段或正文"
+                placeholder={t('library.searchPlaceholder')}
                 className="min-w-0 flex-1 bg-transparent text-xs text-text-primary outline-none"
               />
             </label>
           </div>
           {loading && !entries.length ? (
             <p className="flex items-center justify-center gap-2 py-16 text-xs text-text-muted">
-              <Loader2 className="h-4 w-4 animate-spin" /> 正在读取项目资料…
+              <Loader2 className="h-4 w-4 animate-spin" /> {t('library.loadingEntries')}
             </p>
           ) : error ? (
             <p className="m-4 rounded bg-error/10 p-3 text-xs text-error">{error}</p>
           ) : !groups.length ? (
-            <p className="py-16 text-center text-xs text-text-muted">当前世界没有匹配的可见资料。</p>
+            <p className="py-16 text-center text-xs text-text-muted">{t('library.emptyWorld')}</p>
           ) : (
             <div className="divide-y divide-border">
               {groups.map(group => {
@@ -251,7 +275,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                       <ChevronDown className="h-3.5 w-3.5 text-text-muted transition-transform group-open:rotate-180" />
                       <input
                         type="checkbox"
-                        aria-label={`启用资料 ${group.title}`}
+                        aria-label={t('library.enableDocumentAria', { title: group.title })}
                         checked={first.documentEnabled}
                         onClick={event => event.stopPropagation()}
                         onChange={event => void mutate(() => updateRagDocumentPolicy({
@@ -264,16 +288,16 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                       />
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-medium text-text-primary">
-                          <span className="mr-2 text-text-muted">{group.sourceLabel}</span>{group.title}
+                          <span className="mr-2 text-text-muted">{resolveSourceLabel(group.sourceKey, group.sourceLabel)}</span>{group.title}
                         </p>
                         <p className="mt-0.5 text-[10px] text-text-muted">
-                          {group.fields.length} 字段 · {totalTokens.toLocaleString()} tokens ·
-                          {' '}{chunkCount ? `${chunkCount} 块 · ` : ''}{VECTOR_LABELS[vectorState]} ·
-                          {' '}更新 {group.updatedAt ? new Date(group.updatedAt).toLocaleString() : '未知'}
+                          {t('library.fieldCount', { count: group.fields.length })} · {totalTokens.toLocaleString()} tokens ·
+                          {' '}{chunkCount ? `${t('library.chunkCount', { count: chunkCount })} · ` : ''}{vectorLabel(vectorState)} ·
+                          {' '}{t('library.updatedAt', { date: group.updatedAt ? new Date(group.updatedAt).toLocaleString() : t('library.updatedAtUnknown') })}
                         </p>
                       </div>
                       <label className="text-[10px] text-text-muted" onClick={event => event.stopPropagation()}>
-                        默认权重
+                        {t('library.defaultWeightLabel')}
                         <input
                           type="number"
                           min={0.1}
@@ -290,7 +314,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                         />
                       </label>
                       <label className="text-[10px] text-text-muted" onClick={event => event.stopPropagation()}>
-                        字段上限
+                        {t('library.fieldCapLabel')}
                         <input
                           type="number"
                           min={100}
@@ -312,7 +336,7 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                           <div className="flex items-center gap-2">
                             <input
                               type="checkbox"
-                              aria-label={`启用字段 ${entry.fieldLabel}`}
+                              aria-label={t('library.enableFieldAria', { label: resolveFieldLabel(entry) })}
                               checked={entry.enabled}
                               disabled={!entry.documentEnabled}
                               onChange={event => void mutate(() => updateRagFieldPolicy({
@@ -324,9 +348,9 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
                               }))}
                               className="accent-[var(--color-accent)]"
                             />
-                            <span className="text-[11px] font-medium text-text-secondary">{entry.fieldLabel}</span>
+                            <span className="text-[11px] font-medium text-text-secondary">{resolveFieldLabel(entry)}</span>
                             <span className="ml-auto text-[9px] text-text-muted">
-                              {entry.tokenEstimate} tokens · 权重 {entry.weight} · 上限 {entry.tokenCap}
+                              {t('library.fieldMeta', { tokens: entry.tokenEstimate, weight: entry.weight, cap: entry.tokenCap })}
                             </span>
                           </div>
                           <pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap text-[10px] leading-4 text-text-muted">
@@ -346,24 +370,28 @@ export default function RagLibraryPanel({ project }: { project: Project }) {
           <div className="flex items-center gap-2 border-b border-border p-3">
             <FileSearch className="h-4 w-4 text-accent" />
             <div>
-              <h2 className="text-sm font-medium text-text-primary">最近实际召回</h2>
-              <p className="text-[10px] text-text-muted">来自已保存的节点运行快照，不会因资料后来变化而重算。</p>
+              <h2 className="text-sm font-medium text-text-primary">{t('library.recallSectionTitle')}</h2>
+              <p className="text-[10px] text-text-muted">{t('library.recallSectionHint')}</p>
             </div>
           </div>
           {!recalls.length ? (
-            <p className="p-6 text-center text-xs text-text-muted">尚无精确资料节点运行记录。</p>
+            <p className="p-6 text-center text-xs text-text-muted">{t('library.recallEmpty')}</p>
           ) : (
             <div className="divide-y divide-border">
               {recalls.map(recall => (
                 <details key={`${recall.runId}:${recall.nodeTitle}`} className="p-3">
                   <summary className="cursor-pointer text-xs text-text-secondary">
                     {recall.nodeTitle} · {new Date(recall.startedAt).toLocaleString()} ·
-                    {' '}纳入 {recall.included.length} / 省略 {recall.omitted.length} / 裁剪 {recall.trimmed.length}
+                    {' '}{t('library.recallSummary', {
+                      included: recall.included.length,
+                      omitted: recall.omitted.length,
+                      trimmed: recall.trimmed.length,
+                    })}
                   </summary>
                   <div className="mt-2 grid gap-2 text-[10px] text-text-muted md:grid-cols-3">
-                    <p><strong className="text-text-secondary">已纳入</strong><br />{recall.included.join('\n') || '无'}</p>
-                    <p><strong className="text-text-secondary">已省略</strong><br />{recall.omitted.join('\n') || '无'}</p>
-                    <p><strong className="text-text-secondary">已裁剪</strong><br />{recall.trimmed.join('\n') || '无'}</p>
+                    <p><strong className="text-text-secondary">{t('library.recallIncluded')}</strong><br />{recall.included.join('\n') || t('library.recallNone')}</p>
+                    <p><strong className="text-text-secondary">{t('library.recallOmitted')}</strong><br />{recall.omitted.join('\n') || t('library.recallNone')}</p>
+                    <p><strong className="text-text-secondary">{t('library.recallTrimmed')}</strong><br />{recall.trimmed.join('\n') || t('library.recallNone')}</p>
                   </div>
                 </details>
               ))}

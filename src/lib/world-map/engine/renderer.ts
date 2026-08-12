@@ -6,6 +6,7 @@
 import type { VoronoiMapData, LayerVisibility, BiomeOverride, MapStylePreset } from './types'
 import { BIOMES } from './climate'
 import { getStyleConfig, type StyleConfig } from './style-presets'
+import { getT } from '../../../i18n'
 
 /** 渲染选项 */
 export interface RenderOptions {
@@ -577,7 +578,10 @@ function drawScaleBar(
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
   ctx.fillStyle = style.scaleBarColor
-  const label = barKm >= 1000 ? `${barKm / 1000}千公里` : `${barKm}公里`
+  const t = getT()
+  const label = barKm >= 1000
+    ? `${barKm / 1000}${t('geography:voronoi.mapScaleThousandKm')}`
+    : `${barKm}${t('geography:voronoi.mapScaleKm')}`
   ctx.fillText(label, x + barPx / 2, y + 3)
 }
 

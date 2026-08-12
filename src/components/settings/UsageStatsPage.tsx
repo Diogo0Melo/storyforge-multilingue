@@ -10,6 +10,7 @@ import { useAIUsageStore } from '../../stores/ai-usage'
 import { categoryMeta, getUsdCnyRate, setUsdCnyRate } from '../../lib/ai/usage-log'
 import type { Project } from '../../lib/types'
 import { useDialog } from '../shared/Dialog'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   project?: Project
@@ -28,24 +29,25 @@ function fmtCny(n: number): string {
   return '¥' + n.toFixed(n < 0.01 ? 4 : 2)
 }
 
-const TASK_KIND_LABELS = {
-  creation: '创作',
-  extraction: '提取',
-  analysis: '分析',
-  review: '审查',
-  'agent-orchestrator': '主 Agent',
-  'agent-world-origin': '世界 Agent',
-  'agent-character': '角色 Agent',
-  'agent-inspiration': '灵感 Agent',
-  'agent-outline': '大纲 Agent',
-  'agent-prose': '正文 Agent',
+const TASK_KIND_LABEL_KEYS: Record<string, string> = {
+  creation: 'usageStats.taskKindLabels.creation',
+  extraction: 'usageStats.taskKindLabels.extraction',
+  analysis: 'usageStats.taskKindLabels.analysis',
+  review: 'usageStats.taskKindLabels.review',
+  'agent-orchestrator': 'usageStats.taskKindLabels.agentOrchestrator',
+  'agent-world-origin': 'usageStats.taskKindLabels.agentWorldOrigin',
+  'agent-character': 'usageStats.taskKindLabels.agentCharacter',
+  'agent-inspiration': 'usageStats.taskKindLabels.agentInspiration',
+  'agent-outline': 'usageStats.taskKindLabels.agentOutline',
+  'agent-prose': 'usageStats.taskKindLabels.agentProse',
 } as const
 
 export default function UsageStatsPage({ project }: Props) {
+  const { t } = useDomainT('settings')
   const dialog = useDialog()
   const { entries, loading, loadAll, clearAll } = useAIUsageStore()
   const [rate, setRate] = useState(getUsdCnyRate())
-  const [scopeProject, setScopeProject] = useState(true)  // 仅当前项目 / 全部
+  const [scopeProject, setScopeProject] = useState(true)
 
   useEffect(() => {
     loadAll(scopeProject ? (project?.id ?? null) : null)
@@ -71,9 +73,9 @@ export default function UsageStatsPage({ project }: Props) {
 
   const handleClear = async () => {
     const ok = await dialog.confirm({
-      title: '清空消耗记录？',
-      message: '此操作不可撤销。',
-      confirmText: '清空',
+      title: t('usageStats.clearTitle'),
+      message: t('usageStats.clearMessage'),
+      confirmText: t('usageStats.clear'),
       tone: 'danger',
     })
     if (ok) clearAll(scopeProject ? (project?.id ?? null) : null)
@@ -83,11 +85,11 @@ export default function UsageStatsPage({ project }: Props) {
     <div className="max-w-5xl mx-auto p-6 space-y-4">
       <div className="flex items-center gap-2">
         <Coins className="w-5 h-5 text-accent" />
-        <h2 className="text-xl font-bold text-text-primary">消耗统计</h2>
-        <span className="text-xs text-text-muted">（{totals.count} 次调用）</span>
+        <h2 className="text-xl font-bold text-text-primary">{t('usageStats.title')}</h2>
+        <span className="text-xs text-text-muted">{t('usageStats.callsCount', { count: totals.count })}</span>
         <div className="ml-auto flex items-center gap-3">
           <label className="text-xs text-text-muted flex items-center gap-1">
-            汇率 1$ =
+            {t('usageStats.exchangeRate')}
             <input
               type="number" value={rate} step="0.1" min="0.1"
               onChange={e => handleRateChange(e.target.value)}
@@ -97,29 +99,29 @@ export default function UsageStatsPage({ project }: Props) {
           </label>
           <label className="text-xs text-text-muted flex items-center gap-1">
             <input type="checkbox" checked={scopeProject} onChange={e => setScopeProject(e.target.checked)} />
-            仅当前项目
+            {t('usageStats.currentProjectOnly')}
           </label>
           <button
             onClick={() => loadAll(scopeProject ? (project?.id ?? null) : null)}
             className="text-xs text-text-muted hover:text-text-primary inline-flex items-center gap-1"
           >
-            <RefreshCw className="w-3.5 h-3.5" /> 刷新
+            <RefreshCw className="w-3.5 h-3.5" /> {t('usageStats.refresh')}
           </button>
           <button
             onClick={() => { void handleClear() }}
             className="text-xs text-red-400 hover:text-red-300 inline-flex items-center gap-1"
           >
-            <Trash2 className="w-3.5 h-3.5" /> 清空
+            <Trash2 className="w-3.5 h-3.5" /> {t('usageStats.clear')}
           </button>
         </div>
       </div>
 
       {/* 汇总卡 */}
       <div className="grid grid-cols-3 gap-3">
-        <SummaryCard label="总输入 Token" value={totals.input.toLocaleString()} />
-        <SummaryCard label="总输出 Token" value={totals.output.toLocaleString()} />
+        <SummaryCard label={t('usageStats.totalInputTokens')} value={totals.input.toLocaleString()} />
+        <SummaryCard label={t('usageStats.totalOutputTokens')} value={totals.output.toLocaleString()} />
         <SummaryCard
-          label="总花费"
+          label={t('usageStats.totalCost')}
           value={fmtUsd(totals.usd)}
           sub={fmtCny(totals.usd * rate)}
         />
@@ -130,20 +132,20 @@ export default function UsageStatsPage({ project }: Props) {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-bg-elevated text-text-muted text-xs">
-              <th className="text-left font-medium px-3 py-2">时间</th>
-              <th className="text-left font-medium px-3 py-2">消耗类型</th>
-              <th className="text-left font-medium px-3 py-2">模型</th>
-              <th className="text-right font-medium px-3 py-2">输入</th>
-              <th className="text-right font-medium px-3 py-2">输出</th>
-              <th className="text-right font-medium px-3 py-2">花费</th>
+              <th className="text-left font-medium px-3 py-2">{t('usageStats.timeColumn')}</th>
+              <th className="text-left font-medium px-3 py-2">{t('usageStats.categoryColumn')}</th>
+              <th className="text-left font-medium px-3 py-2">{t('usageStats.modelColumn')}</th>
+              <th className="text-right font-medium px-3 py-2">{t('usageStats.inputColumn')}</th>
+              <th className="text-right font-medium px-3 py-2">{t('usageStats.outputColumn')}</th>
+              <th className="text-right font-medium px-3 py-2">{t('usageStats.costColumn')}</th>
             </tr>
           </thead>
           <tbody>
             {loading && (
-              <tr><td colSpan={6} className="text-center text-text-muted py-6">加载中…</td></tr>
+              <tr><td colSpan={6} className="text-center text-text-muted py-6">{t('usageStats.loading')}</td></tr>
             )}
             {!loading && entries.length === 0 && (
-              <tr><td colSpan={6} className="text-center text-text-muted py-8">暂无消耗记录。使用任意 AI 生成功能后，这里会自动记录。</td></tr>
+              <tr><td colSpan={6} className="text-center text-text-muted py-8">{t('usageStats.empty')}</td></tr>
             )}
             {entries.map(e => {
               const meta = categoryMeta(e.category)
@@ -162,7 +164,7 @@ export default function UsageStatsPage({ project }: Props) {
                     <div className="truncate">{e.model}</div>
                     {(e.provider || e.taskKind) && (
                       <div className="truncate text-[10px] text-text-muted/70">
-                        {[e.provider, e.taskKind ? TASK_KIND_LABELS[e.taskKind] : null].filter(Boolean).join(' · ')}
+                        {[e.provider, e.taskKind ? t(TASK_KIND_LABEL_KEYS[e.taskKind] as any) : null].filter(Boolean).join(' · ')}
                       </div>
                     )}
                   </td>
@@ -180,8 +182,7 @@ export default function UsageStatsPage({ project }: Props) {
       </div>
 
       <p className="text-xs text-text-muted leading-relaxed">
-        说明：费用按模型估算单价 × token 计算（不同中转站实际价格不同，仅供参考）；可上方调整美元→人民币汇率。
-        消耗类型来自各 AI 行为标识，未标注的归「其他」（将随统一执行层逐步补全）。
+        {t('usageStats.footer')}
       </p>
     </div>
   )

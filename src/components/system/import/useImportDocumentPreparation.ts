@@ -2,10 +2,12 @@ import { useMemo, useRef, useState } from 'react'
 import { extractTextFromFile } from '../../../lib/doc-parser'
 import { chunkDocument, type ChunkPlan } from '../../../lib/import/chunker'
 import { detectVolumeStructure, type VolumeDetectResult } from '../../../lib/import/volume-detector'
+import { useDomainT } from '../../../i18n'
 
 const DEFAULT_CHUNK_SIZE = 50000
 
 export default function useImportDocumentPreparation() {
+  const { t } = useDomainT('system')
   const [filename, setFilename] = useState('')
   const [rawText, setRawText] = useState('')
   const [fileError, setFileError] = useState<string | null>(null)
@@ -32,10 +34,10 @@ export default function useImportDocumentPreparation() {
       const result = await extractTextFromFile(file)
       setRawText(result.text)
       const parts = [
-        `文件 ${(file.size / 1024 / 1024).toFixed(2)} MB`,
-        `抽取 ${result.rawChars.toLocaleString()} 字符`,
+        t('preparation.extractInfoFile', { size: (file.size / 1024 / 1024).toFixed(2) }),
+        t('preparation.extractInfoChars', { count: result.rawChars.toLocaleString() }),
       ]
-      if (result.pageCount) parts.push(`${result.pageCount} 页`)
+      if (result.pageCount) parts.push(t('preparation.extractInfoPages', { count: result.pageCount }))
       setExtractInfo(parts.join(' · '))
     } catch (error) {
       setFilename('')
@@ -66,7 +68,7 @@ export default function useImportDocumentPreparation() {
 
   const sourceBlob = () => ({
     blob: lastUploadedFile.current ?? new Blob([rawText], { type: 'text/plain;charset=utf-8' }),
-    filename: lastUploadedFile.current?.name || filename || '粘贴内容.txt',
+    filename: lastUploadedFile.current?.name || filename || t('preparation.pasteFilenameFallback'),
   })
 
   const previewPlans = useMemo(() => {

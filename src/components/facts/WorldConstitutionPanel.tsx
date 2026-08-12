@@ -2,10 +2,11 @@ import { useEffect, useMemo, useState } from 'react'
 import { Check, Landmark, Loader2, ScanSearch, X } from 'lucide-react'
 import type { FactStatus, Project } from '../../lib/types'
 import { db } from '../../lib/db/schema'
+import { useDomainT } from '../../i18n'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
 import { useFactLedgerStore } from '../../stores/fact-ledger'
-import { getFactPredicate, isConstitutionPredicate } from '../../lib/registry/fact-predicate-registry'
+import { getFactPredicate, getFactPredicateLabelKey, isConstitutionPredicate } from '../../lib/registry/fact-predicate-registry'
 import {
   buildSettingAssertionExtractPrompt,
   listSettingAssertionSources,
@@ -15,17 +16,18 @@ import {
 type ConstitutionTab = 'candidate' | 'confirmed' | 'exceptions' | 'rejected'
 const EXCEPTIONS: FactStatus[] = ['stale', 'source-missing', 'invalid-range']
 
-const TAB_LABEL: Record<ConstitutionTab, string> = {
-  candidate: '待确认',
-  confirmed: '已确认',
-  exceptions: '来源异常',
-  rejected: '已否决',
-}
+const TAB_LABEL_KEYS = {
+  candidate: 'constitution.tabCandidate' as const,
+  confirmed: 'constitution.tabConfirmed' as const,
+  exceptions: 'constitution.tabExceptions' as const,
+  rejected: 'constitution.tabRejected' as const,
+} satisfies Record<ConstitutionTab, string>
 
 export default function WorldConstitutionPanel({ project, onShowFacts }: {
   project: Project
   onShowFacts: () => void
 }) {
+  const { t, lang } = useDomainT('facts')
   const {
     facts, loading, load, adoptSetting, confirmFact, replaceConstitutionFact, rejectFact,
   } = useFactLedgerStore()
@@ -60,13 +62,14 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
       db.characters.where('projectId').equals(project.id).toArray(),
     ])
     if (!sources.length) {
-      setMessage('当前世界观、力量体系、故事核心和角色档案中没有可扫描的已登记字段。')
+      setMessage(t('constitution.noScanSourcesMsg'))
       return
     }
+    const defaultWorldName = t('constitution.defaultWorldName')
     const subjects = {
       worldGroups: worldGroups.length
         ? worldGroups.map(item => ({ id: item.id!, name: item.name }))
-        : [{ id: null, name: '默认世界' }],
+        : [{ id: null, name: defaultWorldName }],
       characters: characters
         .filter(item => item.id != null)
         .map(item => ({
@@ -91,9 +94,14 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
         subjects,
       })
       setTab('candidate')
-      setMessage(`扫描 ${sources.length} 个来源字段，解析 ${candidates.length} 条闭集候选；写入 ${result.written} 条，跳过 ${result.skipped} 条。`)
+      setMessage(t('constitution.scanSuccessMsg', {
+        sources: sources.length,
+        candidates: candidates.length,
+        written: result.written,
+        skipped: result.skipped,
+      }))
     } catch (error) {
-      setMessage(`设定扫描失败：${error instanceof Error ? error.message : String(error)}`)
+      setMessage(t('constitution.scanFailedMsg', { message: error instanceof Error ? error.message : String(error) }))
     }
   }
 
@@ -101,52 +109,55 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
     const result = await confirmFact(project.id!, factId)
     if (result.confirmed) {
       setReplacementCandidateId(null)
-      setMessage('已确认为世界宪法，并会回注后续生成与一致性审校。')
+      setMessage(t('constitution.confirmSuccessMsg'))
       return
     }
     if (result.clashes.length) {
       setReplacementCandidateId(factId)
-      const values = result.clashes.map(item => `“${item.confirmed.value}”`).join('、')
-      setMessage(`确认被阻止：同一主体和主题已有互斥 Canon ${values}。请否决候选、修改来源，或先人工处理旧断言。`)
+      const values = new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' })
+        .format(result.clashes.map(item => `"${item.confirmed.value}"`))
+      setMessage(t('constitution.confirmClashMsg', { values }))
       return
     }
     if (result.reason === 'source-stale' || result.reason === 'source-missing') {
       setMessage(result.reason === 'source-stale'
-        ? '确认被阻止：来源字段在提取后已经修改。请重新扫描设定，旧候选不会继续注入。'
-        : '确认被阻止：来源记录或登记字段已缺失。请检查设定并重新扫描。')
+        ? t('constitution.confirmStaleMsg')
+        : t('constitution.confirmMissingMsg'))
       return
     }
-    setMessage('该断言当前不可确认，请刷新后重试。')
+    setMessage(t('constitution.confirmUnavailableMsg'))
   }
 
   const handleExplicitReplacement = async () => {
     if (replacementCandidateId == null) return
     const result = await replaceConstitutionFact(project.id!, replacementCandidateId)
     if (result.confirmed) {
-      setMessage(`已明确取代 ${result.replaced} 条旧世界宪法；旧断言保留为“已取代”审计记录。`)
+      setMessage(t('constitution.replaceSuccessMsg', { count: result.replaced }))
       setReplacementCandidateId(null)
     } else if (result.reason === 'locked-conflict') {
-      setMessage('旧世界宪法已锁定，不能取代。请先在事实库解除锁定或保留旧断言。')
+      setMessage(t('constitution.replaceLockedMsg'))
     } else {
-      setMessage('取代失败：候选或来源状态已变化，请重新扫描并复核。')
+      setMessage(t('constitution.replaceFailedMsg'))
       setReplacementCandidateId(null)
     }
   }
+
+  const tabKeys = Object.keys(TAB_LABEL_KEYS) as ConstitutionTab[]
 
   return (
     <div className="p-6 max-w-4xl mx-auto">
       <div className="flex items-center justify-between gap-3 mb-1">
         <div className="flex items-center gap-2">
           <Landmark className="w-5 h-5 text-amber-400" />
-          <h1 className="text-lg font-bold text-text-primary">世界宪法（CONSISTENCY-3）</h1>
+          <h1 className="text-lg font-bold text-text-primary">{t('constitution.title')}</h1>
         </div>
         <button onClick={onShowFacts}
           className="px-3 py-1.5 text-xs rounded-md bg-bg-elevated text-text-secondary hover:text-text-primary">
-          查看世界事实
+          {t('constitution.backToFactsButton')}
         </button>
       </div>
       <p className="text-xs text-text-muted mb-4">
-        扫描只从登记过的设定字段和主题闭集中提取逐字证据，结果一律是候选。作者确认时，同一主体、同一主题的不同值会被硬性阻止。
+        {t('constitution.subtitle')}
       </p>
 
       <div className="mb-4 p-3 rounded-lg border border-border bg-bg-elevated/60">
@@ -154,52 +165,58 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
           <button onClick={() => void extractFromSettings()} disabled={ai.isStreaming}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/15 text-xs text-amber-300 hover:bg-amber-500/25 disabled:opacity-50">
             {ai.isStreaming ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ScanSearch className="w-3.5 h-3.5" />}
-            {ai.isStreaming ? '正在扫描设定…' : '扫描已登记设定'}
+            {ai.isStreaming ? t('constitution.scanningButton') : t('constitution.scanButton')}
           </button>
           {message && <span className="text-[11px] text-text-muted">{message}</span>}
         </div>
         {replacementCandidateId != null && (
           <button onClick={() => void handleExplicitReplacement()}
             className="mt-2 px-3 py-1.5 rounded-md border border-rose-500/40 bg-rose-500/10 text-xs text-rose-300 hover:bg-rose-500/20">
-            明确以本候选取代互斥旧宪法
+            {t('constitution.replaceExplicitButton')}
           </button>
         )}
       </div>
 
       <div className="flex gap-2 mb-4 flex-wrap">
-        {(Object.keys(TAB_LABEL) as ConstitutionTab[]).map(key => (
-          <button key={key} onClick={() => setTab(key)}
-            className={`px-3 py-1.5 text-xs rounded-md ${tab === key ? 'bg-amber-500/20 text-amber-300' : 'bg-bg-elevated text-text-muted hover:text-text-secondary'}`}>
-            {TAB_LABEL[key]}{counts[key] ? `（${counts[key]}）` : ''}
-          </button>
-        ))}
+        {tabKeys.map(key => {
+          const labelKey = TAB_LABEL_KEYS[key]
+          return (
+            <button key={key} onClick={() => setTab(key)}
+              className={`px-3 py-1.5 text-xs rounded-md ${tab === key ? 'bg-amber-500/20 text-amber-300' : 'bg-bg-elevated text-text-muted hover:text-text-secondary'}`}>
+              {t(labelKey)}{counts[key] ? t('constitution.tabCountSuffix', { count: counts[key] }) : ''}
+            </button>
+          )
+        })}
       </div>
 
-      {loading && <p className="text-sm text-text-muted">加载中…</p>}
-      {!loading && rows.length === 0 && (
-        <p className="text-sm text-text-muted py-8 text-center">暂无{TAB_LABEL[tab]}世界宪法断言。</p>
-      )}
+      {loading && <p className="text-sm text-text-muted">{t('constitution.loading')}</p>}
+      {!loading && rows.length === 0 && (() => {
+        const emptyLabelKey = TAB_LABEL_KEYS[tab]
+        return (
+          <p className="text-sm text-text-muted py-8 text-center">{t('constitution.emptyState', { tab: t(emptyLabelKey) })}</p>
+        )
+      })()}
       <div className="space-y-2">
         {rows.map(fact => (
           <div key={fact.id} className="flex items-start gap-3 p-3 bg-bg-elevated rounded-lg border border-border">
             <div className="flex-1 min-w-0">
               <p className="text-sm text-text-primary">
                 <span className="font-medium">{fact.subjectName}</span>
-                <span className="text-text-muted"> · {getFactPredicate(fact.predicate)?.label ?? fact.predicate}：</span>
+                <span className="text-text-muted"> · {t('constitution.predicateValueLabel', { label: getFactPredicateLabelKey(fact.predicate) ? t(getFactPredicateLabelKey(fact.predicate)!) : (getFactPredicate(fact.predicate)?.label ?? fact.predicate) })}</span>
                 <span>{fact.value}</span>
               </p>
               <p className="text-[11px] text-text-muted mt-1">
-                来源：{fact.sourceRecordTable ?? '未知'}.{fact.sourceField ?? '未知字段'}
-                {fact.sourceQuote ? ` · 证据：“${fact.sourceQuote}”` : ''}
+                {t('constitution.sourcePrefix')}{fact.sourceRecordTable ?? t('constitution.sourceUnknownTable')}.{fact.sourceField ?? t('constitution.sourceUnknownField')}
+                {fact.sourceQuote ? ` · ${t('constitution.evidencePrefix', { quote: fact.sourceQuote })}` : ''}
               </p>
             </div>
             {(['candidate', ...EXCEPTIONS] as FactStatus[]).includes(fact.status) && fact.id != null && (
               <div className="flex items-center gap-1 shrink-0">
-                <button onClick={() => void handleConfirm(fact.id!)} title="确认世界宪法"
+                <button onClick={() => void handleConfirm(fact.id!)} title={t('constitution.confirmTitle')}
                   className="p-1.5 text-emerald-400 hover:bg-emerald-500/15 rounded">
                   <Check className="w-4 h-4" />
                 </button>
-                <button onClick={() => void rejectFact(project.id!, fact.id!)} title="否决"
+                <button onClick={() => void rejectFact(project.id!, fact.id!)} title={t('constitution.rejectTitle')}
                   className="p-1.5 text-rose-400 hover:bg-rose-500/15 rounded">
                   <X className="w-4 h-4" />
                 </button>

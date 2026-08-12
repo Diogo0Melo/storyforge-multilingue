@@ -5,6 +5,7 @@ import {
   type BackupChoice,
   type RequireBackupOptions,
 } from '../../lib/safety/require-backup-before'
+import { useDomainT } from '../../i18n'
 
 type DialogTone = 'info' | 'danger'
 
@@ -37,9 +38,10 @@ function normalizeOptions(options: DialogOptions | string): DialogOptions {
   return typeof options === 'string' ? { title: options } : options
 }
 
-export function DialogProvider({ children }: { children: React.ReactNode }) {
+function DialogProviderInner({ children }: { children: React.ReactNode }) {
   const [dialog, setDialog] = useState<DialogState | null>(null)
   const [inputValue, setInputValue] = useState('')
+  const { t } = useDomainT('shared')
 
   const open = useCallback((mode: DialogMode, options: DialogOptions | string) => new Promise<boolean | string | null>((resolve) => {
     const next = normalizeOptions(options)
@@ -67,30 +69,30 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
     setBackupDialogAdapter({
       chooseBackup: async (options: RequireBackupOptions): Promise<BackupChoice> => {
         const proceed = await api.confirm({
-          title: `危险操作:${options.operation}`,
+          title: t('dialog.backupDangerTitle', { operation: options.operation }),
           message: [
             options.details,
-            '此操作不可恢复。是否继续？下一步会询问是否立即备份。',
+            t('dialog.backupDangerMessage'),
           ].filter(Boolean).join('\n\n'),
-          confirmText: options.confirmLabel ?? '继续',
-          cancelText: options.cancelLabel ?? '取消',
+          confirmText: options.confirmLabel ?? t('common:confirm'),
+          cancelText: options.cancelLabel ?? t('dialog.defaultCancel'),
           tone: 'danger',
         })
         if (!proceed) return 'cancel'
         if (options.projectId == null) return 'proceed-already-backed-up'
 
         const wantBackup = await api.confirm({
-          title: '是否立即下载备份(JSON 文件到本地)?',
-          message: '确认后会立即下载备份，然后继续；取消表示你已经备份过，直接继续。',
-          confirmText: '立即备份',
-          cancelText: '已备份，继续',
+          title: t('dialog.backupDownloadTitle'),
+          message: t('dialog.backupDownloadMessage'),
+          confirmText: t('dialog.backupConfirmLabel'),
+          cancelText: t('dialog.backupCancelLabel'),
         })
         return wantBackup ? 'proceed-backup-now' : 'proceed-already-backed-up'
       },
       confirm: api.confirm,
     })
     return () => setBackupDialogAdapter(null)
-  }, [api])
+  }, [api, t])
 
   const isDanger = dialog?.tone === 'danger'
   const Icon = isDanger ? AlertTriangle : Info
@@ -113,7 +115,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={() => close(dialog.mode === 'alert' ? true : null)}
                 className="rounded p-1 text-text-muted hover:bg-bg-elevated hover:text-text-primary"
-                aria-label="关闭"
+                aria-label={t('dialog.closeAria')}
               >
                 <X className="h-4 w-4" />
               </button>
@@ -142,7 +144,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                   onClick={() => close(null)}
                   className="rounded border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-elevated hover:text-text-primary"
                 >
-                  {dialog.cancelText ?? '取消'}
+                  {dialog.cancelText ?? t('dialog.defaultCancel')}
                 </button>
               )}
               <button
@@ -152,7 +154,7 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
                   isDanger ? 'bg-error hover:bg-error/90' : 'bg-accent hover:bg-accent-hover'
                 }`}
               >
-                {dialog.confirmText ?? (dialog.mode === 'alert' ? '知道了' : '确认')}
+                {dialog.confirmText ?? (dialog.mode === 'alert' ? t('dialog.defaultAlert') : t('dialog.defaultConfirm'))}
               </button>
             </div>
           </div>
@@ -160,6 +162,10 @@ export function DialogProvider({ children }: { children: React.ReactNode }) {
       )}
     </DialogContext.Provider>
   )
+}
+
+export function DialogProvider({ children }: { children: React.ReactNode }) {
+  return <DialogProviderInner>{children}</DialogProviderInner>
 }
 
 export function useDialog(): DialogContextValue {

@@ -15,6 +15,7 @@ import {
   formatWorkflowUpstreamContext,
   groupWorkflowInputsByVariable,
 } from '../../../lib/workflow/graph'
+import { getT } from '../../../i18n'
 
 /**
  * FB-1 修复 · 工作流步骤上下文整形(纯函数,可单测)。
@@ -99,23 +100,23 @@ export const ALL_MODULE_KEYS_FOR_WORKFLOW = [
   'geography.concept-map', 'geography.image-map-prompt',
 ] as const
 
-/** WorkflowEditor "自动保存目标" 下拉预设 */
+/** WorkflowEditor "自动保存目标" 下拉预设（labelKey 引用 settings.saveTargets.*） */
 export const SAVE_TARGET_PRESETS = [
-  { label: '不自动保存（仅复制）', value: '' },
-  { label: '世界观.世界起源', value: 'worldview-field:worldOrigin' },
-  { label: '世界观.力量体系', value: 'worldview-field:powerHierarchy' },
-  { label: '世界观.世界历史线', value: 'worldview-field:historyLine' },
-  { label: '世界观.世界观摘要', value: 'worldview-field:summary' },
-  { label: '故事.一句话故事', value: 'storyCore-field:logline' },
-  { label: '故事.故事概念', value: 'storyCore-field:concept' },
-  { label: '故事.主题', value: 'storyCore-field:theme' },
-  { label: '故事.核心冲突', value: 'storyCore-field:centralConflict' },
-  { label: '故事.故事主线', value: 'storyCore-field:mainPlot' },
-  { label: '创作规则.写作风格', value: 'creativeRules-field:writingStyle' },
-  { label: '创作规则.基调氛围', value: 'creativeRules-field:toneAndMood' },
-  { label: '⚡ 批量创建：角色库（要求 AI 输出 JSON 数组）', value: 'create-characters:_' },
-  { label: '⚡ 批量创建：大纲节点（要求 AI 输出 JSON 数组）', value: 'create-outline-nodes:_' },
-  { label: '⚡ 批量创建：伏笔（要求 AI 输出 JSON 数组）', value: 'create-foreshadows:_' },
+  { labelKey: 'saveTargets.none', value: '' },
+  { labelKey: 'saveTargets.worldviewField', fieldKey: 'fields.worldOrigin', value: 'worldview-field:worldOrigin' },
+  { labelKey: 'saveTargets.worldviewField', fieldKey: 'fields.powerHierarchy', value: 'worldview-field:powerHierarchy' },
+  { labelKey: 'saveTargets.worldviewField', fieldKey: 'fields.historyLine', value: 'worldview-field:historyLine' },
+  { labelKey: 'saveTargets.worldviewField', fieldKey: 'fields.summary', value: 'worldview-field:summary' },
+  { labelKey: 'saveTargets.storyCoreField', fieldKey: 'fields.logline', value: 'storyCore-field:logline' },
+  { labelKey: 'saveTargets.storyCoreField', fieldKey: 'fields.concept', value: 'storyCore-field:concept' },
+  { labelKey: 'saveTargets.storyCoreField', fieldKey: 'fields.theme', value: 'storyCore-field:theme' },
+  { labelKey: 'saveTargets.storyCoreField', fieldKey: 'fields.centralConflict', value: 'storyCore-field:centralConflict' },
+  { labelKey: 'saveTargets.storyCoreField', fieldKey: 'fields.mainPlot', value: 'storyCore-field:mainPlot' },
+  { labelKey: 'saveTargets.creativeRulesField', fieldKey: 'fields.writingStyle', value: 'creativeRules-field:writingStyle' },
+  { labelKey: 'saveTargets.creativeRulesField', fieldKey: 'fields.toneAndMood', value: 'creativeRules-field:toneAndMood' },
+  { labelKey: 'saveTargets.createCharacters', value: 'create-characters:_' },
+  { labelKey: 'saveTargets.createOutlineNodes', value: 'create-outline-nodes:_' },
+  { labelKey: 'saveTargets.createForeshadows', value: 'create-foreshadows:_' },
 ] as const
 
 /** SaveTarget 转 select value 字符串（`type:field` 或 `type:_`） */
@@ -149,24 +150,55 @@ export function valueToSaveTarget(v: string): SaveTarget | undefined {
   }
 }
 
-/** 字段 key → 中文标签的映射，供 targetLabel 使用 */
-const SAVE_TARGET_FIELD_LABELS: Record<string, string> = {
-  worldOrigin: '世界起源', powerHierarchy: '力量体系',
-  historyLine: '世界历史线', summary: '世界观摘要',
-  logline: '一句话故事', concept: '故事概念', theme: '主题',
-  centralConflict: '核心冲突', mainPlot: '故事主线',
-  writingStyle: '写作风格', toneAndMood: '基调氛围',
+/** 字段 key → settings.saveTargets.fields.* 子键的映射，供 targetLabelKey 使用 */
+const SAVE_TARGET_FIELD_KEY_MAP: Record<string, string> = {
+  worldOrigin: 'fields.worldOrigin',
+  powerHierarchy: 'fields.powerHierarchy',
+  historyLine: 'fields.historyLine',
+  summary: 'fields.summary',
+  logline: 'fields.logline',
+  concept: 'fields.concept',
+  theme: 'fields.theme',
+  centralConflict: 'fields.centralConflict',
+  mainPlot: 'fields.mainPlot',
+  writingStyle: 'fields.writingStyle',
+  toneAndMood: 'fields.toneAndMood',
 }
 
-/** 把 SaveTarget 格式化成运行时 UI 里展示的中文标签 */
-export function targetLabel(target: SaveTarget): string {
-  if (target.type === 'create-characters') return '角色库（批量创建）'
-  if (target.type === 'create-outline-nodes') return '大纲（批量创建）'
-  if (target.type === 'create-foreshadows') return '伏笔库（批量创建）'
+/**
+ * 返回用于 t() 的 i18n key + 插值参数；调用方负责用 useDomainT('settings').t 渲染。
+ * 非 React 场景可用 getT() 取翻译函数后传入。
+ */
+export function targetLabelKey(target: SaveTarget): { key: string; params?: Record<string, string> } | null {
+  if (target.type === 'create-characters') return { key: 'saveTargets.createCharacters' }
+  if (target.type === 'create-outline-nodes') return { key: 'saveTargets.createOutlineNodes' }
+  if (target.type === 'create-foreshadows') return { key: 'saveTargets.createForeshadows' }
   const field = (target as { field?: string }).field || ''
-  const label = SAVE_TARGET_FIELD_LABELS[field] || field
-  if (target.type === 'worldview-field') return `世界观.${label}`
-  if (target.type === 'storyCore-field') return `故事.${label}`
-  if (target.type === 'creativeRules-field') return `创作规则.${label}`
-  return ''
+  const fieldKey = SAVE_TARGET_FIELD_KEY_MAP[field]
+  if (!fieldKey) return null
+  if (target.type === 'worldview-field') return { key: 'saveTargets.worldviewField', params: { field: `__FIELD__${fieldKey}` } }
+  if (target.type === 'storyCore-field') return { key: 'saveTargets.storyCoreField', params: { field: `__FIELD__${fieldKey}` } }
+  if (target.type === 'creativeRules-field') return { key: 'saveTargets.creativeRulesField', params: { field: `__FIELD__${fieldKey}` } }
+  return null
+}
+
+/**
+ * 兼容旧调用点：直接返回已翻译字符串。main.tsx 保证 initI18n 在渲染前完成，
+ * 因此运行时不会出现 i18n 未初始化的情况。若被单元测试直接导入且未初始化 i18n，
+ * 返回空字符串（测试应自行初始化 i18n 或使用 targetLabelKey）。
+ */
+export function targetLabel(target: SaveTarget): string {
+  try {
+    // Keys are dynamically constructed by targetLabelKey(); cast needed for string-typed keys.
+    const t = getT() as (key: string, opts?: Record<string, unknown>) => string
+    const resolved = targetLabelKey(target)
+    if (!resolved) return ''
+    if (!resolved.params) return t(resolved.key)
+    // Nested interpolation: first resolve the field sub-key, then inject into parent template.
+    const fieldText = t(`saveTargets.${resolved.params.field}`)
+    return t(resolved.key, { field: fieldText })
+  } catch {
+    // i18n not initialized — return empty; callers in test should init i18n first.
+    return ''
+  }
 }

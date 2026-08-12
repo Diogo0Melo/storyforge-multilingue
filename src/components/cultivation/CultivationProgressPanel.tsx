@@ -20,15 +20,17 @@ import { useCultivationProgressStore } from '../../stores/cultivation-progress'
 import { useOutlineStore } from '../../stores/outline'
 import { useProjectStore } from '../../stores/project'
 import { useDialog } from '../shared/Dialog'
+import { useDomainT } from '../../i18n'
 
-const TRANSITION_LABELS = {
-  enter: '首次确认',
-  advance: '突破',
-  regress: '倒退',
-  switch: '改道',
+const TRANSITION_KEYS = {
+  enter: 'transition.enter',
+  advance: 'transition.advance',
+  regress: 'transition.regress',
+  switch: 'transition.switch',
 } as const
 
 export default function CultivationProgressPanel({ project }: { project: Project }) {
+  const { t } = useDomainT('cultivation')
   const dialog = useDialog()
   const aiConfig = useAIConfigStore(state => state.config)
   const chapters = useChapterStore(state => state.chapters)
@@ -132,7 +134,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
       && systemIds.has(character.cultivationSystemId)
       && (character.isCrossWorld || (character.homeWorldGroupId ?? null) === worldGroupId))
     if (!scopedCharacters.length) {
-      setMessage('本章世界没有已关联修炼体系的角色，请先在角色卡设置主修体系。')
+      setMessage(t('analyze.noLinkedCharacter'))
       return
     }
     const content = htmlToPlainText(chapter.content || '').trim()
@@ -157,9 +159,9 @@ export default function CultivationProgressPanel({ project }: { project: Project
         systems: scopedSystems,
       })
       setCandidates(next)
-      setMessage(next.length ? `发现 ${next.length} 条可靠候选，请逐条确认。` : '没有发现可可靠确认的境界变化。')
+      setMessage(next.length ? t('analyze.candidatesFound', { count: next.length }) : t('analyze.noCandidates'))
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '分析失败')
+      setMessage(error instanceof Error ? error.message : t('analyze.failed'))
     } finally {
       setAnalyzing(false)
     }
@@ -179,9 +181,9 @@ export default function CultivationProgressPanel({ project }: { project: Project
       await loadEvents(project.id!)
       setCandidates(currentRows => currentRows.filter(row => candidateKey(row) !== key))
       setSelectedCharacterId(candidate.characterId)
-      setMessage('已确认并写入修炼历程。')
+      setMessage(t('accept.success'))
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : '确认失败')
+      setMessage(error instanceof Error ? error.message : t('accept.failed'))
     } finally {
       setAcceptingKey(null)
     }
@@ -189,9 +191,9 @@ export default function CultivationProgressPanel({ project }: { project: Project
 
   const removeEvent = async (id: number) => {
     if (!await dialog.confirm({
-      title: '删除这条已确认修炼事件？',
-      message: '删除后当前境界和实际路径会按剩余事件重新投影。',
-      confirmText: '删除',
+      title: t('delete.confirmTitle'),
+      message: t('delete.confirmMessage'),
+      confirmText: t('delete.confirmButton'),
       tone: 'danger',
     })) return
     await deleteEvent(id)
@@ -203,10 +205,10 @@ export default function CultivationProgressPanel({ project }: { project: Project
       <header className="flex items-start justify-between gap-4 border-b border-border/40 pb-4">
         <div>
           <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            <GitBranch className="w-5 h-5" /> 修炼进度
+            <GitBranch className="w-5 h-5" /> {t('panel.title')}
           </h2>
           <p className="text-xs text-text-muted mt-1">
-            这里是正文确认后的下游历程；角色卡“当前设定境界”仍是上游预设，两者不会互相冒充。
+            {t('panel.subtitle')}
           </p>
         </div>
         <label className="flex items-center gap-2 text-xs text-text-secondary border border-border rounded-lg px-3 py-2">
@@ -217,16 +219,16 @@ export default function CultivationProgressPanel({ project }: { project: Project
               includeCultivationProgressInAI: event.target.checked,
             })}
           />
-          反哺后续写作（默认关闭）
+          {t('panel.feedbackToggle')}
         </label>
       </header>
 
       <section className="rounded-xl border border-border bg-bg-surface p-4 space-y-3">
         <div className="flex items-end gap-3">
           <label className="flex-1">
-            <span className="block text-xs text-text-muted mb-1">选择已写章节</span>
+            <span className="block text-xs text-text-muted mb-1">{t('panel.selectChapterLabel')}</span>
             <select
-              aria-label="修炼进度来源章节"
+              aria-label={t('panel.sourceChapterAria')}
               value={selectedChapterId ?? ''}
               onChange={event => {
                 setSelectedChapterId(event.target.value ? Number(event.target.value) : null)
@@ -235,7 +237,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
               }}
               className="w-full bg-bg-base border border-border rounded-lg px-3 py-2 text-sm text-text-primary"
             >
-              {writtenChapters.length === 0 && <option value="">暂无已写章节</option>}
+              {writtenChapters.length === 0 && <option value="">{t('panel.noWrittenChapters')}</option>}
               {writtenChapters.map(chapter => <option key={chapter.id} value={chapter.id}>{chapter.title}</option>)}
             </select>
           </label>
@@ -245,7 +247,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-accent text-white text-sm disabled:opacity-40"
           >
             {analyzing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {analyzing ? '分析中' : '分析本章'}
+            {analyzing ? t('panel.analyzing') : t('panel.analyzeButton')}
           </button>
         </div>
         {message && <p className="text-xs text-text-secondary">{message}</p>}
@@ -262,7 +264,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-text-primary">
                         {character?.name} · {system?.name} → {stage?.name}
-                        <span className="ml-2 text-[10px] text-accent">{TRANSITION_LABELS[candidate.transition]}</span>
+                        <span className="ml-2 text-[10px] text-accent">{t(TRANSITION_KEYS[candidate.transition])}</span>
                       </p>
                       {candidate.trigger && <p className="text-xs text-text-muted mt-1">{candidate.trigger}</p>}
                       <blockquote className="text-xs text-text-secondary mt-2 border-l-2 border-accent/40 pl-2">
@@ -271,7 +273,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                     </div>
                     <div className="flex gap-1">
                       <button
-                        aria-label="确认修炼候选"
+                        aria-label={t('panel.confirmCandidateAria')}
                         disabled={acceptingKey === key}
                         onClick={() => accept(candidate)}
                         className="p-1.5 rounded text-green-500 hover:bg-green-500/10 disabled:opacity-40"
@@ -281,7 +283,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                           : <Check className="w-4 h-4" />}
                       </button>
                       <button
-                        aria-label="忽略修炼候选"
+                        aria-label={t('panel.ignoreCandidateAria')}
                         onClick={() => setCandidates(rows => rows.filter(row => candidateKey(row) !== key))}
                         className="p-1.5 rounded text-text-muted hover:text-error"
                       >
@@ -298,7 +300,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
 
       {trackableCharacters.length === 0 ? (
         <div className="border border-dashed border-border rounded-xl py-12 text-center text-sm text-text-muted">
-          还没有关联主修体系的角色。请先到“角色生成”设置主修体系。
+          {t('panel.noTrackableCharacters')}
         </div>
       ) : (
         <>
@@ -313,7 +315,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                     : 'border-border text-text-secondary'
                 }`}
               >
-                {character.name}{character.roleWeight === 'main' ? ' · 主要' : ''}
+                {character.name}{character.roleWeight === 'main' ? ` · ${t('panel.mainRoleSuffix')}` : ''}
               </button>
             ))}
           </div>
@@ -321,14 +323,14 @@ export default function CultivationProgressPanel({ project }: { project: Project
           <section className="rounded-xl border border-border bg-bg-surface p-4">
             <div className="flex items-center justify-between gap-3 mb-4">
               <div>
-                <p className="text-xs text-text-muted">{selectedSystem?.name ?? '未关联体系'}</p>
+                <p className="text-xs text-text-muted">{selectedSystem?.name ?? t('panel.unlinkedSystem')}</p>
                 <h3 className="text-lg font-semibold text-text-primary">
-                  {current ? `正文当前：${current.stageName}` : '正文尚无已确认境界'}
+                  {current ? t('panel.currentStage', { stage: current.stageName }) : t('panel.noConfirmedStage')}
                 </h3>
               </div>
               {selectedCharacter?.cultivationStageId && (
                 <span className="text-[10px] text-text-muted">
-                  角色卡设定：{selectedStages.find(stage => stage.id === selectedCharacter.cultivationStageId)?.name ?? '已失效'}
+                  {t('panel.characterCardSetting', { stage: selectedStages.find(stage => stage.id === selectedCharacter.cultivationStageId)?.name ?? t('panel.invalidStage') })}
                 </span>
               )}
             </div>
@@ -338,7 +340,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                 <div className="flex gap-4 min-w-max">
                   {Array.from({ length: Math.max(...tiers.values(), 0) + 1 }, (_, tier) => (
                     <div key={tier} className="w-36 space-y-2">
-                      <p className="text-[10px] text-text-muted text-center">层级 {tier}</p>
+                      <p className="text-[10px] text-text-muted text-center">{t('panel.tierLabel', { tier })}</p>
                       {selectedStages.filter(stage => (tiers.get(stage.id) ?? 0) === tier).map(stage => (
                         <div
                           key={stage.id}
@@ -366,7 +368,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
             )}
 
             {selectedEvents.length === 0 ? (
-              <p className="text-sm text-text-muted text-center py-6">暂无作者确认的正文修炼事件</p>
+              <p className="text-sm text-text-muted text-center py-6">{t('panel.noConfirmedEvents')}</p>
             ) : (
               <div className="space-y-2 border-l border-border ml-2 pl-4">
                 {selectedEvents.map(event => (
@@ -376,7 +378,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                       <div className="flex-1">
                         <p className="text-sm text-text-primary">
                           {event.stageName}
-                          <span className="ml-2 text-[10px] text-accent">{TRANSITION_LABELS[event.transition]}</span>
+                          <span className="ml-2 text-[10px] text-accent">{t(TRANSITION_KEYS[event.transition])}</span>
                           {event.status !== 'confirmed' && (
                             <span className="ml-2 text-[10px] text-error">{event.status}</span>
                           )}
@@ -388,7 +390,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                       </div>
                       {event.id != null && (
                         <button
-                          aria-label="删除修炼事件"
+                          aria-label={t('panel.deleteEventAria')}
                           onClick={() => removeEvent(event.id!)}
                           className="p-1 text-text-muted hover:text-error"
                         >

@@ -1,10 +1,11 @@
-/**
+﻿/**
  * 质量审校面板 — Phase F
  *
  * 集成三套质量检测：审校(F1)、去AI味(F2)、追读力(F3)
  */
 import { useEffect, useState } from 'react'
 import { X, ShieldCheck, Bot, TrendingUp, Loader2, AlertTriangle, AlertCircle, Info, Wand2, ScanSearch } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
 import { useReviewResultStore, selectChapterReview, type ReviewTab } from '../../stores/review-result'
@@ -50,14 +51,18 @@ interface Props {
 
 type TabType = ReviewTab
 
-const TABS: { key: TabType; label: string; icon: typeof ShieldCheck }[] = [
-  { key: 'consistency', label: '一致性', icon: ScanSearch },
-  { key: 'review', label: '审校', icon: ShieldCheck },
-  { key: 'antiAI', label: '去AI味', icon: Bot },
-  { key: 'readability', label: '追读力', icon: TrendingUp },
-]
+function getTabs(t: (...args: any[]) => string): { key: TabType; label: string; icon: typeof ShieldCheck }[] {
+  return [
+    { key: 'consistency', label: t('review.tabConsistency'), icon: ScanSearch },
+    { key: 'review', label: t('review.tabReview'), icon: ShieldCheck },
+    { key: 'antiAI', label: t('review.tabAntiAI'), icon: Bot },
+    { key: 'readability', label: t('review.tabReadability'), icon: TrendingUp },
+  ]
+}
 
 export default function ReviewPanel(props: Props) {
+  const { t } = useDomainT('editor')
+  const TABS = getTabs(t)
   const { projectId, chapterId, outlineNodeId, worldGroupId, chapterContent, chapterTitle, worldContext, characterContext,
     prevChapterSummary, nextChapterSummary, foreshadowContext, stateContext, onClose, onReviseByReport } = props
 
@@ -147,7 +152,7 @@ export default function ReviewPanel(props: Props) {
       setConsistency(chapterId, toConsistencyAuditResult(candidate))
       props.onConsistencyRun?.(run)
     } catch (error) {
-      setConsistencyError(error instanceof Error ? error.message : '一致性 Agent 运行失败')
+      setConsistencyError(error instanceof Error ? error.message : t('review.consistencyAgentFailed'))
     }
   }
 
@@ -190,11 +195,11 @@ export default function ReviewPanel(props: Props) {
             <button
               onClick={() => onReviseByReport(reviewResult)}
               disabled={ai.isStreaming}
-              title="让 AI 按上面的审校报告修改全文，结果会先预览"
+              title={t('review.btnReviseByReportTitle')}
               className="flex items-center gap-1 px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-400 rounded-md hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
             >
               <Wand2 className="w-3 h-3" />
-              按报告 AI 修改
+              {t('review.btnReviseByReport')}
             </button>
           )}
           <button
@@ -203,7 +208,7 @@ export default function ReviewPanel(props: Props) {
             className="flex items-center gap-1 px-3 py-1.5 text-xs bg-accent text-white rounded-md hover:bg-accent-hover disabled:opacity-50 transition-colors"
           >
             {ai.isStreaming ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-            {ai.isStreaming ? '检测中...' : '开始检测'}
+            {ai.isStreaming ? t('review.btnDetecting') : t('review.btnStartDetection')}
           </button>
           <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary rounded">
             <X className="w-4 h-4" />
@@ -216,8 +221,8 @@ export default function ReviewPanel(props: Props) {
         {activeTab === 'consistency' && (
           <div className="mb-3 flex gap-2">
             {([
-              ['fast', 'Fast Guard · 高置信硬冲突'],
-              ['deep', 'Deep Audit · 因果/动机/伏笔'],
+              ['fast', t('review.auditModeFast')],
+              ['deep', t('review.auditModeDeep')],
             ] as const).map(([value, label]) => (
               <button
                 key={value}
@@ -236,17 +241,17 @@ export default function ReviewPanel(props: Props) {
               : 'border-border bg-bg-base text-text-muted'
           }`}>
             <p>
-              {props.consistencyCurrent === false ? '正文已变化，以下报告已过期。' : '当前正文报告'}
-              {' · '}{consistencyMeta.mode === 'background' ? '自动 Fast Guard' : consistencyMeta.mode === 'fast' ? 'Fast Guard' : 'Deep Audit'}
-              {' · '}{consistencyMeta.budget.calls}/{consistencyMeta.budget.maxCalls} 次模型调用
-              {' · '}约 {consistencyMeta.budget.usedTokens.toLocaleString()} / {consistencyMeta.budget.maxTokens.toLocaleString()} tokens
+              {props.consistencyCurrent === false ? t('review.consistencyStale') : t('review.consistencyCurrent')}
+              {' · '}{consistencyMeta.mode === 'background' ? t('review.consistencyAutoFastGuard') : consistencyMeta.mode === 'fast' ? t('review.consistencyFastGuard') : t('review.consistencyDeepAudit')}
+              {' · '}{t('review.consistencyCalls', { used: consistencyMeta.budget.calls, max: consistencyMeta.budget.maxCalls })}
+              {' · '}{t('review.consistencyTokensApprox', { used: consistencyMeta.budget.usedTokens.toLocaleString(), max: consistencyMeta.budget.maxTokens.toLocaleString() })}
             </p>
             {consistencyMeta.context.included.length > 0 && (
               <p className="mt-1">
-                输入证据 {consistencyMeta.context.inputTokens.toLocaleString()} / {consistencyMeta.context.inputBudget.toLocaleString()} tokens
-                {' · '}纳入 {consistencyMeta.context.included.length}
-                {' · '}省略 {consistencyMeta.context.omitted.length}
-                {' · '}裁剪 {consistencyMeta.context.trimmed.length}
+                {t('review.consistencyInputEvidence', { inputTokens: consistencyMeta.context.inputTokens.toLocaleString(), inputBudget: consistencyMeta.context.inputBudget.toLocaleString() })}
+                {' · '}{t('review.consistencyIncluded', { count: consistencyMeta.context.included.length })}
+                {' · '}{t('review.consistencyOmitted', { count: consistencyMeta.context.omitted.length })}
+                {' · '}{t('review.consistencyTrimmed', { count: consistencyMeta.context.trimmed.length })}
               </p>
             )}
           </div>
@@ -259,51 +264,51 @@ export default function ReviewPanel(props: Props) {
 
         {!currentResult && !ai.isStreaming && (
           <div className="text-center py-8 text-text-muted text-sm">
-            点击「开始检测」运行{activeTab === 'consistency' ? (auditMode === 'fast' ? ' Fast Guard' : ' Deep Audit') : activeTab === 'review' ? '审校' : activeTab === 'antiAI' ? '去AI味检测' : '追读力评估'}
+            {t('review.emptyHint', { mode: activeTab === 'consistency' ? (auditMode === 'fast' ? t('review.consistencyFastGuard') : t('review.consistencyDeepAudit')) : activeTab === 'review' ? t('review.tabReview') : activeTab === 'antiAI' ? t('review.tabAntiAI') : t('review.tabReadability') })}
           </div>
         )}
 
         {ai.isStreaming && (
           <div className="flex items-center justify-center py-8 gap-2 text-text-muted text-sm">
             <Loader2 className="w-4 h-4 animate-spin" />
-            AI 正在分析...
+            {t('review.analyzing')}
             {ai.output.length > 0 && (
               <span className="text-xs">≈ ~{Math.round(ai.output.length * 1.5).toLocaleString()} tokens</span>
             )}
           </div>
         )}
         {ai.tokenUsage && !ai.isStreaming && (
-          <div className="text-[10px] text-text-muted mb-2" title={`输入 ${ai.tokenUsage.inputTokens} + 输出 ${ai.tokenUsage.outputTokens}`}>
+          <div className="text-[10px] text-text-muted mb-2" title={t('reviewTokens.usageTooltip', { input: ai.tokenUsage.inputTokens, output: ai.tokenUsage.outputTokens })}>
             Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
           </div>
         )}
 
         {activeTab === 'consistency' && consistencyResult && !ai.isStreaming && (
-          <ConsistencyResultView result={consistencyResult} />
+          <ConsistencyResultView result={consistencyResult} t={t} />
         )}
 
         {/* F1: 审校结果 */}
         {activeTab === 'review' && reviewResult && !ai.isStreaming && (
-          <ReviewResultView result={reviewResult} />
+          <ReviewResultView result={reviewResult} t={t} />
         )}
 
         {/* F2: 去AI味结果 */}
         {activeTab === 'antiAI' && antiAIResult && !ai.isStreaming && (
-          <AntiAIResultView result={antiAIResult} />
+          <AntiAIResultView result={antiAIResult} t={t} />
         )}
 
         {/* F3: 追读力结果 */}
         {activeTab === 'readability' && readabilityResult && !ai.isStreaming && (
-          <ReadabilityResultView result={readabilityResult} />
+          <ReadabilityResultView result={readabilityResult} t={t} />
         )}
       </div>
     </div>
   )
 }
 
-function ConsistencyResultView({ result }: { result: ConsistencyAuditResult }) {
+function ConsistencyResultView({ result, t }: { result: ConsistencyAuditResult; t: (...args: any[]) => string }) {
   if (!result.findings.length) {
-    return <p className="text-sm text-success">未发现有证据支持的一致性问题。</p>
+    return <p className="text-sm text-success">{t('review.consistencyNoIssues')}</p>
   }
   return (
     <div className="space-y-3">
@@ -314,18 +319,18 @@ function ConsistencyResultView({ result }: { result: ConsistencyAuditResult }) {
               finding.severity === 'hard' ? 'text-error'
                 : finding.severity === 'risk' ? 'text-warning' : 'text-text-muted'
             }>
-              {finding.severity === 'hard' ? '硬冲突' : finding.severity === 'risk' ? '软风险' : '信息不足'}
+              {finding.severity === 'hard' ? t('review.severityHard') : finding.severity === 'risk' ? t('review.severityRisk') : t('review.severityInsufficient')}
             </span>
             <span className="text-text-muted">{finding.category}</span>
           </div>
           <p className="mt-1 text-xs text-text-primary">{finding.reason}</p>
-          <p className="mt-1 text-[11px] text-text-muted border-l-2 border-border pl-2">正文：“{finding.quote}”</p>
+          <p className="mt-1 text-[11px] text-text-muted border-l-2 border-border pl-2">{t('review.evidenceQuotePrefix', { quote: finding.quote })}</p>
           {finding.evidence.map((evidence, evidenceIndex) => (
             <p key={evidenceIndex} className="mt-1 text-[11px] text-accent/80">
-              证据 {evidence.sourceType}#{evidence.sourceId}：“{evidence.quote}”
+              {t('review.evidenceSourceQuote', { type: evidence.sourceType, id: evidence.sourceId, quote: evidence.quote })}
             </p>
           ))}
-          {finding.suggestion && <p className="mt-1 text-xs text-accent">建议：{finding.suggestion}</p>}
+          {finding.suggestion && <p className="mt-1 text-xs text-accent">{t('review.suggestionPrefix', { suggestion: finding.suggestion })}</p>}
         </div>
       ))}
     </div>
@@ -354,17 +359,17 @@ function SeverityIcon({ severity }: { severity: string }) {
 
 // ── F1: 审校结果视图 ──
 
-function ReviewResultView({ result }: { result: ReviewResult }) {
+function ReviewResultView({ result, t }: { result: ReviewResult; t: (...args: any[]) => string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <ScoreBadge score={result.overallScore} />
-        <span className="text-sm text-text-primary font-medium">综合评分</span>
+        <span className="text-sm text-text-primary font-medium">{t('review.reviewOverallScore')}</span>
       </div>
 
       {result.issues.length > 0 && (
         <div className="space-y-2">
-          <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wide">发现的问题</h4>
+          <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wide">{t('review.reviewIssuesTitle')}</h4>
           {result.issues.map((issue, idx) => (
             <div key={idx} className="flex items-start gap-2 bg-bg-base rounded-lg p-3">
               <SeverityIcon severity={issue.severity} />
@@ -387,7 +392,7 @@ function ReviewResultView({ result }: { result: ReviewResult }) {
 
       {result.suggestions.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1.5">总体建议</h4>
+          <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1.5">{t('review.reviewSuggestionsTitle')}</h4>
           <ul className="space-y-1">
             {result.suggestions.map((s, i) => (
               <li key={i} className="text-xs text-text-secondary flex items-start gap-1.5">
@@ -404,12 +409,12 @@ function ReviewResultView({ result }: { result: ReviewResult }) {
 
 // ── F2: 去AI味结果视图 ──
 
-function AntiAIResultView({ result }: { result: AntiAIResult }) {
+function AntiAIResultView({ result, t }: { result: AntiAIResult; t: (...args: any[]) => string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <ScoreBadge score={result.overallScore} />
-        <span className="text-sm text-text-primary font-medium">人味指数（越高越好）</span>
+        <span className="text-sm text-text-primary font-medium">{t('review.antiAIOverallScore')}</span>
       </div>
 
       {result.dimensions.length > 0 && (
@@ -439,7 +444,7 @@ function AntiAIResultView({ result }: { result: AntiAIResult }) {
 
       {result.highFreqWords.length > 0 && (
         <div>
-          <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1.5">高频词警告</h4>
+          <h4 className="text-xs font-semibold text-text-muted uppercase tracking-wide mb-1.5">{t('review.antiAIHighFreqTitle')}</h4>
           <div className="flex flex-wrap gap-1">
             {result.highFreqWords.map((w, i) => (
               <span key={i} className="text-[10px] px-2 py-1 bg-warning/10 text-warning rounded-full">{w}</span>
@@ -453,12 +458,12 @@ function AntiAIResultView({ result }: { result: AntiAIResult }) {
 
 // ── F3: 追读力结果视图 ──
 
-function ReadabilityResultView({ result }: { result: ReadabilityResult }) {
+function ReadabilityResultView({ result, t }: { result: ReadabilityResult; t: (...args: any[]) => string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <ScoreBadge score={result.overallScore} />
-        <span className="text-sm text-text-primary font-medium">追读力评分</span>
+        <span className="text-sm text-text-primary font-medium">{t('review.readabilityOverallScore')}</span>
       </div>
 
       {result.dimensions.length > 0 && (
@@ -469,7 +474,7 @@ function ReadabilityResultView({ result }: { result: ReadabilityResult }) {
               <div key={idx} className="bg-bg-base rounded-lg p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-text-primary">
-                    {meta?.emoji} {meta?.label || dim.dimension}
+                    {meta?.emoji} {t(`review.readabilityDimensions.${dim.dimension}`, meta?.label || dim.dimension)}
                   </span>
                   <ScoreBadge score={dim.score} size="sm" />
                 </div>
@@ -484,7 +489,7 @@ function ReadabilityResultView({ result }: { result: ReadabilityResult }) {
       <div className="grid grid-cols-2 gap-3">
         {result.highlights.length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold text-success mb-1">✨ 亮点</h4>
+            <h4 className="text-xs font-semibold text-success mb-1">{t('review.readabilityHighlights')}</h4>
             <ul className="space-y-0.5">
               {result.highlights.map((h, i) => (
                 <li key={i} className="text-[10px] text-text-secondary">• {h}</li>
@@ -494,7 +499,7 @@ function ReadabilityResultView({ result }: { result: ReadabilityResult }) {
         )}
         {result.weaknesses.length > 0 && (
           <div>
-            <h4 className="text-xs font-semibold text-warning mb-1">⚠️ 薄弱</h4>
+            <h4 className="text-xs font-semibold text-warning mb-1">{t('review.readabilityWeaknesses')}</h4>
             <ul className="space-y-0.5">
               {result.weaknesses.map((w, i) => (
                 <li key={i} className="text-[10px] text-text-secondary">• {w}</li>

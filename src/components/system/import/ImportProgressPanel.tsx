@@ -3,11 +3,13 @@ import { useImportStatusStore } from '../../../stores/import-status'
 import { useImportSessionStore } from '../../../stores/import-session'
 import type { ImportSession, ChunkState } from '../../../lib/types/import-session'
 import { CheckCircle2, XCircle, Loader2, Circle, Clock } from 'lucide-react'
+import { useDomainT } from '../../../i18n'
 
 /** 分块进度面板：N 个小方块，每个方块显示第 X 块状态 */
 export default function ImportProgressPanel() {
   const status = useImportStatusStore()
   const [session, setSession] = useState<ImportSession | null>(null)
+  const { t } = useDomainT('system')
 
   // 每次状态变化都重新拉 session（chunk 列表最新）
   useEffect(() => {
@@ -30,10 +32,14 @@ export default function ImportProgressPanel() {
       <div className="flex items-center justify-between mb-3">
         <div>
           <div className="text-sm font-semibold text-text-primary">
-            分块进度 · {session.filename}
+            {t('progress.heading', { filename: session.filename })}
           </div>
           <div className="text-xs text-text-muted mt-0.5">
-            共 {session.totalChunks} 块 · 每块约 {session.chunkSize.toLocaleString()} 字 · 总 {session.totalChars.toLocaleString()} 字
+            {t('progress.stats', {
+              totalChunks: session.totalChunks,
+              chunkSize: session.chunkSize.toLocaleString(),
+              totalChars: session.totalChars.toLocaleString(),
+            })}
           </div>
         </div>
         <div className="text-right text-xs">
@@ -50,6 +56,7 @@ export default function ImportProgressPanel() {
             chunk={c}
             isActive={status.activeChunkIndex === c.index}
             activeAttempts={status.activeChunkIndex === c.index ? status.activeAttempts : 0}
+            t={t}
           />
         ))}
       </div>
@@ -58,46 +65,57 @@ export default function ImportProgressPanel() {
       {status.activeChunkIndex !== null && (
         <div className="mt-3 px-3 py-2 bg-accent/5 border border-accent/20 rounded text-xs text-accent">
           <Loader2 className="inline w-3 h-3 animate-spin mr-1" />
-          正在处理第 {status.activeChunkIndex + 1}/{session.totalChunks} 块
-          {status.activeAttempts > 1 && ` · 第 ${status.activeAttempts} 次尝试`}
+          {t('progress.processingChunk', {
+            index: status.activeChunkIndex + 1,
+            total: session.totalChunks,
+          })}
+          {status.activeAttempts > 1 && t('progress.attemptSuffix', { count: status.activeAttempts })}
           {session.chunks[status.activeChunkIndex]?.label &&
-            ` · ${session.chunks[status.activeChunkIndex].label}`}
+            `${t('common:colon')}${session.chunks[status.activeChunkIndex].label}`}
         </div>
       )}
     </div>
   )
 }
 
-function ChunkCell({ chunk, isActive, activeAttempts }: {
+function ChunkCell({ chunk, isActive, activeAttempts, t }: {
   chunk: ChunkState
   isActive: boolean
   activeAttempts: number
+  t: ReturnType<typeof useDomainT>['t']
 }) {
   let Icon = Circle
   let color = 'text-text-muted bg-bg-base'
-  let title = `第 ${chunk.index + 1} 块 · ${chunk.charCount.toLocaleString()} 字`
-  if (chunk.label) title += ` · ${chunk.label}`
+  let title = t('progress.chunkTitleBase', {
+    index: chunk.index + 1,
+    chars: chunk.charCount.toLocaleString(),
+  })
+  if (chunk.label) title += `${t('common:colon')}${chunk.label}`
 
   if (chunk.status === 'done') {
     Icon = CheckCircle2
     color = 'text-success bg-success/10 border-success/30'
-    title += '\n✓ 已完成'
+    title += `\n${t('progress.chunkDoneSuffix')}`
     if (chunk.extractedCounts) {
-      title += `\n世界观 ${chunk.extractedCounts.worldviewFields} · 角色 ${chunk.extractedCounts.characters} · 大纲 ${chunk.extractedCounts.outlineNodes}`
+      title += `\n${t('progress.chunkExtractedCounts', {
+        worldview: chunk.extractedCounts.worldviewFields,
+        characters: chunk.extractedCounts.characters,
+        outline: chunk.extractedCounts.outlineNodes,
+      })}`
     }
   } else if (chunk.status === 'failed') {
     Icon = XCircle
     color = 'text-error bg-error/10 border-error/30'
-    title += `\n✗ 失败（重试 ${chunk.attempts} 次）\n${chunk.errorMessage || ''}`
+    title += `\n${t('progress.chunkFailedSuffix', { attempts: chunk.attempts })}\n${chunk.errorMessage || ''}`
   } else if (chunk.status === 'running' || isActive) {
     Icon = Loader2
     color = 'text-accent bg-accent/20 border-accent animate-pulse'
-    title += `\n▶ 处理中`
-    if (activeAttempts > 1) title += `（第 ${activeAttempts} 次尝试）`
+    title += `\n${t('progress.chunkRunningSuffix')}`
+    if (activeAttempts > 1) title += t('progress.attemptSuffix', { count: activeAttempts })
   } else {
     Icon = Clock
     color = 'text-text-muted bg-bg-base border-border'
-    title += '\n⏳ 等待中'
+    title += `\n${t('progress.chunkWaitingSuffix')}`
   }
 
   return (

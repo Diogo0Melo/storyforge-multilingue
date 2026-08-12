@@ -1,12 +1,12 @@
 /**
- * Phase 28.2 — 结构化分析报告查看器
+ * Phase 28.2 — Structured analysis report viewer
  *
- * 替代原 ChunkAnalysisViewer，新增：
- *  · 左侧 TOC 侧边导航（按维度分组 + 锚点跳转）
- *  · 合并视图（去重后按维度展示）+ 分块视图（原始逐块查看）
- *  · 角色合并卡片
- *  · 全书 AI 总结展示
- *  · 每条标注 chunk 来源
+ * Replaces the former ChunkAnalysisViewer, adding:
+ *  · Top TOC navigation (grouped by dimension + anchor jump)
+ *  · Merged view (deduplicated per-dimension) + chunk view (raw per-chunk)
+ *  · Character merge cards
+ *  · Full-book AI summary display
+ *  · Per-item chunk source label
  */
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import {
@@ -26,6 +26,7 @@ import { useAIConfigStore } from '../../stores/ai-config'
 import { extractJSON } from '../../lib/ai/adapters/import-adapter'
 import { useToast } from '../shared/Toast'
 import { updateReferenceAnalysisDerived } from '../../lib/reference-analysis/lifecycle'
+import { useDomainT } from '../../i18n'
 
 const DIM_COLORS: Partial<Record<AnalysisDimension, string>> = {
   narrativeStyle:     'text-blue-400',
@@ -56,6 +57,7 @@ interface Props {
 }
 
 export default function AnalysisReportViewer({ reference, run, chunks, isHistorical }: Props) {
+  const { t } = useDomainT('project')
   const toast = useToast()
   const [view, setView] = useState<'merged' | 'chunks'>('merged')
   const [activeDim, setActiveDim] = useState<string | null>(null)
@@ -70,13 +72,13 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
     setCharactersJSON(run.mergedCharacters)
   }, [run.id, run.analysisSummary, run.mergedCharacters])
 
-  // 合并分析结果（维度部分本地去重；角色部分由 AI 聚合，见下）
+  // Merge analysis results (dimensions deduped locally; characters aggregated by AI below)
   const merged = useMemo(
     () => mergeAnalysisResults(chunks, isHistorical),
     [chunks, isHistorical],
   )
 
-  // 解析已有的 AI 角色聚合结果
+  // Parse existing AI character aggregation result
   const aiCharacters = useMemo<AIMergedCharacter[]>(() => {
     if (!charactersJSON) return []
     try {
@@ -85,26 +87,26 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
     } catch { return [] }
   }, [charactersJSON])
 
-  // 是否存在可供 AI 聚合的人物塑造分析
+  // Whether there are character-craft analyses available for AI aggregation
   const hasCharacterCraft = useMemo(
     () => collectCharacterCraftTexts(chunks).length > 0,
     [chunks],
   )
 
-  // 解析已有的 AI 总结
+  // Parse existing AI summary
   const summaryMap = useMemo<Record<string, string>>(() => {
     if (!summaryJSON) return {}
     try { return JSON.parse(summaryJSON) } catch { return {} }
   }, [summaryJSON])
 
-  // 滚动到维度锚点
+  // Scroll to dimension anchor
   const scrollToDim = useCallback((dimId: string) => {
     setActiveDim(dimId)
     const el = document.getElementById(`dim-${dimId}`)
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
-  // AI 全书总结
+  // AI full-book summary
   const handleGenerateSummary = async () => {
     if (!reference.id || !run.id) return
     setGeneratingSummary(true)
@@ -128,19 +130,19 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
         setSummaryJSON(summaryStr)
       }
     } catch (err) {
-      toast.error(`生成总结失败：${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('analysisReport.summaryFailed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
       setGeneratingSummary(false)
     }
   }
 
-  // AI 角色卡聚合（替代正则抠名，彻底去重）
+  // AI character card aggregation (replaces regex name scraping, fully deduplicates)
   const handleAggregateCharacters = async () => {
     if (!reference.id || !run.id) return
     setAggregatingChars(true)
     try {
       const craftTexts = collectCharacterCraftTexts(chunks)
-      if (craftTexts.length === 0) throw new Error('暂无人物塑造分析可供整理')
+      if (craftTexts.length === 0) throw new Error(t('analysisReport.noCraftTexts'))
       const config = useAIConfigStore.getState().config
       const meta = { category: 'reference.characters', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } } as const
       const effectiveConfig = resolveRequestConfig(config, meta).config
@@ -154,27 +156,27 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
         { category: 'reference.characters', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } },
       )
       const characters = parseCharacterMergeOutput(output)
-      if (characters.length === 0) throw new Error('AI 未能解析出角色，请重试')
+      if (characters.length === 0) throw new Error(t('analysisReport.noParsedCharacters'))
       const next = JSON.stringify(characters)
       await updateReferenceAnalysisDerived(run.id, { mergedCharacters: next })
       setCharactersJSON(next)
     } catch (err) {
-      toast.error(`整理角色卡失败：${err instanceof Error ? err.message : String(err)}`)
+      toast.error(t('analysisReport.aggregateFailed', { message: err instanceof Error ? err.message : String(err) }))
     } finally {
       setAggregatingChars(false)
     }
   }
 
-  // 非空维度
+  // Non-empty dimensions
   const nonEmptyDims = merged.dimensions.filter(d => d.items.length > 0)
 
   return (
     <div className="space-y-4" ref={contentRef}>
-      {/* 顶部横向目录导航（原左侧竖栏移到上方，释放横向空间，便于阅读长分析内容） */}
+      {/* Top horizontal TOC nav (moved from left sidebar to free horizontal space for long analyses) */}
       <div className="sticky top-0 z-10 -mx-0.5 px-0.5 py-2 bg-bg-base/85 backdrop-blur-sm border-b border-border flex flex-wrap items-center gap-1.5">
-        <span className="text-[10px] text-text-muted uppercase tracking-wider mr-0.5">目录</span>
+        <span className="text-[10px] text-text-muted uppercase tracking-wider mr-0.5">{t('analysisReport.tocLabel')}</span>
 
-        {/* 总结区 */}
+        {/* Summary section */}
         {Object.keys(summaryMap).length > 0 && (
           <button
             onClick={() => {
@@ -184,11 +186,11 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
             }}
             className="px-2 py-1 text-xs rounded-md border border-accent/30 hover:bg-accent/10 text-accent transition-colors whitespace-nowrap"
           >
-            📋 全书总结
+            📋 {t('analysisReport.fullBookSummary')}
           </button>
         )}
 
-        {/* 角色区 */}
+        {/* Character section */}
         {(aiCharacters.length > 0 || hasCharacterCraft) && (
           <button
             onClick={() => {
@@ -198,11 +200,13 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
             }}
             className="px-2 py-1 text-xs rounded-md border border-purple-400/30 hover:bg-purple-500/10 text-purple-400 transition-colors whitespace-nowrap"
           >
-            👤 角色卡片{aiCharacters.length > 0 ? ` (${aiCharacters.length})` : ''}
+            👤 {aiCharacters.length > 0
+              ? t('analysisReport.characterCardsCount', { count: aiCharacters.length })
+              : t('analysisReport.characterCards')}
           </button>
         )}
 
-        {/* 维度列表 */}
+        {/* Dimension list */}
         {nonEmptyDims.map(d => (
           <button
             key={d.dimension}
@@ -219,20 +223,20 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
           </button>
         ))}
 
-        {/* 分块视图入口 */}
+        {/* Chunk view entry */}
         <button
           onClick={() => setView('chunks')}
           className={`px-2 py-1 text-xs rounded-md border transition-colors whitespace-nowrap ${
             view === 'chunks' ? 'bg-accent/10 text-accent border-accent/40' : 'border-border/60 hover:bg-bg-hover text-text-muted'
           }`}
         >
-          📦 按分块查看 ({merged.totalChunks})
+          📦 {t('analysisReport.chunkViewButton', { count: merged.totalChunks })}
         </button>
       </div>
 
-      {/* 内容区（全宽） */}
+      {/* Content area (full width) */}
       <div className="space-y-4">
-        {/* 视图切换 + 总结按钮 */}
+        {/* View toggle + summary button */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex bg-bg-elevated rounded-lg p-0.5">
             <button
@@ -241,7 +245,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
                 view === 'merged' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              合并视图
+              {t('analysisReport.mergedView')}
             </button>
             <button
               onClick={() => setView('chunks')}
@@ -249,7 +253,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
                 view === 'chunks' ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
               }`}
             >
-              分块视图
+              {t('analysisReport.chunkView')}
             </button>
           </div>
 
@@ -262,7 +266,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
               {generatingSummary
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Sparkles className="w-3.5 h-3.5" />}
-              {generatingSummary ? '生成中…' : 'AI 全书总结'}
+              {generatingSummary ? t('analysisReport.generatingSummary') : t('analysisReport.generateSummaryButton')}
             </button>
           )}
         </div>
@@ -284,7 +288,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
   )
 }
 
-// ── 合并视图 ─────────────────────────────────────────────────
+// ── Merged view ────────────────────────────────────────────────────
 
 function MergedView({
   merged, summaryMap, aiCharacters, hasCharacterCraft, onAggregate, aggregating,
@@ -296,16 +300,17 @@ function MergedView({
   onAggregate: () => void
   aggregating: boolean
 }) {
+  const { t } = useDomainT('project')
   const hasSummary = Object.keys(summaryMap).length > 0
 
   return (
     <div className="space-y-4">
-      {/* AI 全书总结 */}
+      {/* AI full-book summary */}
       {hasSummary && (
         <div id="section-summary" className="rounded-xl border border-accent/30 bg-accent/5 p-4 space-y-3">
           <h3 className="text-sm font-semibold text-accent flex items-center gap-1.5">
             <Sparkles className="w-4 h-4" />
-            AI 全书总结
+            {t('analysisReport.aiSummaryHeading')}
           </h3>
           <div className="space-y-2">
             {merged.dimensions
@@ -324,13 +329,13 @@ function MergedView({
         </div>
       )}
 
-      {/* 角色合并卡片（AI 聚合去重） */}
+      {/* Character merge cards (AI-consolidated deduplication) */}
       {(aiCharacters.length > 0 || hasCharacterCraft) && (
         <div id="section-characters" className="space-y-2">
           <div className="flex items-center gap-2 flex-wrap">
             <h3 className="text-sm font-semibold text-purple-400 flex items-center gap-1.5">
               <Users2 className="w-4 h-4" />
-              角色分析（AI 聚合去重）
+              {t('analysisReport.characterAnalysisHeading')}
             </h3>
             {hasCharacterCraft && (
               <button
@@ -339,8 +344,8 @@ function MergedView({
                 className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-500/10 transition disabled:opacity-50"
               >
                 {aggregating
-                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> 整理中…</>
-                  : <><Sparkles className="w-3.5 h-3.5" /> {aiCharacters.length > 0 ? '重新整理角色卡' : 'AI 整理角色卡'}</>}
+                  ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('analysisReport.aggregating')}</>
+                  : <><Sparkles className="w-3.5 h-3.5" /> {aiCharacters.length > 0 ? t('analysisReport.reAggregate') : t('analysisReport.aggregateCharacters')}</>}
               </button>
             )}
           </div>
@@ -352,13 +357,13 @@ function MergedView({
             </div>
           ) : (
             <p className="text-xs text-text-muted leading-relaxed rounded-lg border border-dashed border-purple-400/20 bg-bg-surface px-3 py-2.5">
-              点击「AI 整理角色卡」，让 AI 阅读所有分块的人物塑造分析，自动归并同一角色（含不同称呼）并去重，生成干净的角色清单。
+              {t('analysisReport.aggregateHelp')}
             </p>
           )}
         </div>
       )}
 
-      {/* 各维度 */}
+      {/* Dimensions */}
       {merged.dimensions
         .filter(d => d.items.length > 0)
         .map(d => (
@@ -369,6 +374,7 @@ function MergedView({
 }
 
 function DimensionSection({ dim }: { dim: MergedDimension }) {
+  const { t } = useDomainT('project')
   const [expanded, setExpanded] = useState(true)
   const [showAll, setShowAll] = useState(false)
   const displayItems = showAll ? dim.items : dim.items.slice(0, 5)
@@ -384,7 +390,7 @@ function DimensionSection({ dim }: { dim: MergedDimension }) {
         <span className={`text-sm font-semibold ${DIM_COLORS[dim.dimension] || 'text-text-primary'}`}>
           {dim.label}
         </span>
-        <span className="text-xs text-text-muted ml-auto">{dim.items.length} 条</span>
+        <span className="text-xs text-text-muted ml-auto">{t('analysisReport.itemsCount', { count: dim.items.length })}</span>
       </button>
 
       {expanded && (
@@ -402,7 +408,7 @@ function DimensionSection({ dim }: { dim: MergedDimension }) {
               onClick={() => setShowAll(true)}
               className="text-xs text-accent hover:underline"
             >
-              展开剩余 {dim.items.length - 5} 条…
+              {t('analysisReport.expandRemaining', { count: dim.items.length - 5 })}
             </button>
           )}
           {showAll && hasMore && (
@@ -410,7 +416,7 @@ function DimensionSection({ dim }: { dim: MergedDimension }) {
               onClick={() => setShowAll(false)}
               className="text-xs text-text-muted hover:text-text-primary"
             >
-              收起
+              {t('analysisReport.collapse')}
             </button>
           )}
         </div>
@@ -451,9 +457,10 @@ function AICharacterCard({ card }: { card: AIMergedCharacter }) {
   )
 }
 
-// ── 分块视图 ─────────────────────────────────────────────────
+// ── Chunk view ─────────────────────────────────────────────────────
 
 function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysis[]; isHistorical: boolean }) {
+  const { t } = useDomainT('project')
   const sorted = useMemo(() => [...chunks].sort((a, b) => a.chunkIndex - b.chunkIndex), [chunks])
   const [selectedChunk, setSelectedChunk] = useState(0)
 
@@ -469,9 +476,9 @@ function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysi
 
   return (
     <div className="space-y-3">
-      {/* 块选择器 */}
+      {/* Chunk selector */}
       <div className="flex items-center gap-2 flex-wrap">
-        <span className="text-xs text-text-muted">分块：</span>
+        <span className="text-xs text-text-muted">{t('analysisReport.chunkSelectorLabel')}</span>
         <div className="flex flex-wrap gap-1">
           {sorted.map((c, i) => (
             <button
@@ -483,13 +490,13 @@ function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysi
                   : 'bg-bg-elevated text-text-muted hover:text-text-secondary'
               }`}
             >
-              {c.label || `块 ${i + 1}`}
+              {c.label || t('analysisReport.chunkFallbackLabel', { index: i + 1 })}
             </button>
           ))}
         </div>
       </div>
 
-      {/* 维度内容 */}
+      {/* Dimension content */}
       <div className="space-y-1">
         {visibleDimensions.map(dim => {
           const content = chunk[dim]
@@ -510,10 +517,10 @@ function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysi
         })}
       </div>
 
-      {/* 精彩片段 */}
+      {/* Highlighted excerpts */}
       {chunk.rawExcerpt && (
         <div className="border border-border/40 rounded-lg p-3">
-          <h4 className="text-xs font-medium text-text-muted mb-1.5">精彩片段引用</h4>
+          <h4 className="text-xs font-medium text-text-muted mb-1.5">{t('analysisReport.excerptHeading')}</h4>
           <div className="text-sm text-text-secondary italic leading-relaxed whitespace-pre-wrap">
             {chunk.rawExcerpt}
           </div>

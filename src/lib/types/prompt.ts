@@ -123,10 +123,14 @@ export interface PromptParameter {
   key: string
   /** UI 显示名 */
   label: string
+  /** i18n key for the label (settings ns); when set, UI renders t(labelKey) instead of raw label. Raw label stays as fallback/source. */
+  labelKey?: string
   /** 类型：select 下拉 / slider 滑块 / number 数字 / text 文本 / boolean 开关 */
   type: 'select' | 'slider' | 'number' | 'text' | 'boolean'
   /** select 类型的可选项（label 与 value 同） */
   options?: string[]
+  /** Per-option i18n keys (settings ns). When set, UI renders t(optionLabelKeys[i]) while emitting raw options[i] to templates. Length must match options. */
+  optionLabelKeys?: string[]
   /** slider/number 范围 */
   min?: number
   max?: number
@@ -137,6 +141,8 @@ export interface PromptParameter {
   default: string | number | boolean
   /** 短描述（鼠标悬停或副标题展示） */
   description?: string
+  /** i18n key for the description (settings ns); when set, UI renders t(descriptionKey) instead of raw description. */
+  descriptionKey?: string
   /** 用户是否可关闭（关闭后不传给 AI，对应 {{#if usesXxx}} 条件） */
   optional?: boolean
 }

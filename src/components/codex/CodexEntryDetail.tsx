@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { ChevronRight, Star } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { CInput, CTextarea } from '../shared/CompositionInput'
 import {
   codexEntryInWorld,
@@ -35,6 +36,9 @@ export default function CodexEntryDetail({
   nameDuplicate,
   onChange,
 }: Props) {
+  const { t, lang } = useDomainT('codex')
+  // 语言感知的列表连接（标签输入展示用 narrow 风格，与解析正则保持一致）
+  const tagsFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'narrow' }), [lang])
   const schema = useMemo(() => parseFieldSchema(category.fieldSchema), [category.fieldSchema])
   const fields = useMemo(() => parseEntryFields(entry.fields), [entry.fields])
   const refs = useMemo(() => parseEntryRefs(entry.refs), [entry.refs])
@@ -60,27 +64,27 @@ export default function CodexEntryDetail({
         <CInput
           value={entry.icon || ''}
           onChange={event => onChange({ icon: event.target.value })}
-          placeholder="图标"
+          placeholder={t('entryDetail.iconPlaceholder')}
           className="w-14 text-center px-2 py-2 rounded-lg bg-bg-elevated border border-border text-sm"
         />
         <div className="flex-1">
           <CInput
             value={entry.name}
             onChange={event => onChange({ name: event.target.value })}
-            placeholder="名称"
+            placeholder={t('entryDetail.namePlaceholder')}
             className={`w-full px-3 py-2 rounded-lg bg-bg-elevated border text-sm font-medium ${nameDuplicate ? 'border-amber-400/60' : 'border-border'}`}
           />
-          {nameDuplicate && <p className="mt-1 text-[11px] text-amber-400">⚠ 本分类下已有同名词条，注意是否重复</p>}
+          {nameDuplicate && <p className="mt-1 text-[11px] text-amber-400">{t('entryDetail.duplicateWarning')}</p>}
         </div>
       </div>
       <div className="flex items-center gap-2">
-        <span className="text-xs text-text-muted w-12">重要度</span>
+        <span className="text-xs text-text-muted w-12">{t('entryDetail.importanceLabel')}</span>
         <div className="flex items-center gap-0.5">
           {[1, 2, 3, 4, 5].map(value => (
             <button
               key={value}
               type="button"
-              title={`${value} 星`}
+              title={t('entryDetail.starUnit', { count: value })}
               onClick={() => onChange({ importance: entry.importance === value ? 0 : value })}
               className="p-0.5 hover:scale-110 transition-transform"
             >
@@ -88,26 +92,26 @@ export default function CodexEntryDetail({
             </button>
           ))}
         </div>
-        {(entry.importance ?? 0) > 0 && <span className="text-[11px] text-amber-400/80">{entry.importance} 星</span>}
+        {(entry.importance ?? 0) > 0 && <span className="text-[11px] text-amber-400/80">{t('entryDetail.starUnit', { count: entry.importance })}</span>}
       </div>
       <CInput
         value={entry.summary}
         onChange={event => onChange({ summary: event.target.value })}
-        placeholder="一句话简介"
+        placeholder={t('entryDetail.summaryPlaceholder')}
         className="w-full px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm"
       />
       <CInput
-        value={tags.join('、')}
+        value={tagsFormat.format(tags)}
         onChange={event => onChange({
-          tags: JSON.stringify(event.target.value.split(/[、,，]/).map(tag => tag.trim()).filter(Boolean)),
+          tags: JSON.stringify(event.target.value.split(/[,，、;；]/).map(tag => tag.trim()).filter(Boolean)),
         })}
-        placeholder="标签（用顿号或逗号分隔）"
+        placeholder={t('entryDetail.tagsPlaceholder')}
         className="w-full px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm"
       />
       <CTextarea
         value={entry.description}
         onChange={event => onChange({ description: event.target.value })}
-        placeholder="详细描述"
+        placeholder={t('entryDetail.descriptionPlaceholder')}
         rows={3}
         className="w-full px-3 py-2 rounded-lg bg-bg-elevated border border-border text-sm resize-y"
       />
@@ -119,7 +123,7 @@ export default function CodexEntryDetail({
         <CodexImportantLocationLink entry={entry} onChange={onChange} />
       )}
 
-      {schema.length > 0 && <div className="border-t border-border pt-3 text-xs text-text-muted">专属属性</div>}
+      {schema.length > 0 && <div className="border-t border-border pt-3 text-xs text-text-muted">{t('entryDetail.customFieldsDivider')}</div>}
       {schema.map(definition => (
         <CodexFieldRow
           key={definition.key}
@@ -145,6 +149,7 @@ function CodexImportantLocationLink({
   entry: CodexEntry
   onChange: (patch: Partial<CodexEntry>) => void
 }) {
+  const { t } = useDomainT('codex')
   const locations = useLocationStore(state => state.locations)
   const loadAll = useLocationStore(state => state.loadAll)
   useEffect(() => { void loadAll(entry.projectId) }, [entry.projectId, loadAll])
@@ -152,22 +157,22 @@ function CodexImportantLocationLink({
 
   return (
     <label className="block border-t border-border pt-3">
-      <span className="block text-xs text-text-muted mb-1">结构化重要地点</span>
+      <span className="block text-xs text-text-muted mb-1">{t('locationLink.label')}</span>
       <select
-        aria-label="城池重要地点"
+        aria-label={t('locationLink.aria')}
         value={entry.importantLocationId ?? ''}
         onChange={event => onChange({
           importantLocationId: event.target.value ? Number(event.target.value) : null,
         })}
         className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm"
       >
-        <option value="">未关联</option>
+        <option value="">{t('locationLink.unlinkedOption')}</option>
         {projectLocations.map(location => (
           <option key={location.id} value={location.id}>{location.name}</option>
         ))}
       </select>
       <span className="block mt-1 text-[11px] text-text-muted">
-        地点树负责空间层级；这里保留城池的人文属性。删除地点只会断开关联，不会删除词条。
+        {t('locationLink.hint')}
       </span>
     </label>
   )
@@ -180,6 +185,7 @@ function CodexCultivationLink({
   entry: CodexEntry
   onChange: (patch: Partial<CodexEntry>) => void
 }) {
+  const { t } = useDomainT('codex')
   const systems = useCultivationStore(state => state.systems)
   const loadAll = useCultivationStore(state => state.loadAll)
   useEffect(() => { loadAll(entry.projectId) }, [entry.projectId, loadAll])
@@ -190,9 +196,9 @@ function CodexCultivationLink({
   return (
     <div className="grid grid-cols-2 gap-2 border-t border-border pt-3">
       <label>
-        <span className="block text-xs text-text-muted mb-1">结构化修炼体系</span>
+        <span className="block text-xs text-text-muted mb-1">{t('cultivationLink.systemLabel')}</span>
         <select
-          aria-label="异兽修炼体系"
+          aria-label={t('cultivationLink.systemAria')}
           value={entry.cultivationSystemId ?? ''}
           onChange={event => onChange({
             cultivationSystemId: event.target.value ? Number(event.target.value) : null,
@@ -200,20 +206,20 @@ function CodexCultivationLink({
           })}
           className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm"
         >
-          <option value="">未关联</option>
+          <option value="">{t('cultivationLink.unlinkedOption')}</option>
           {visible.map(system => <option key={system.id} value={system.id}>{system.name}</option>)}
         </select>
       </label>
       <label>
-        <span className="block text-xs text-text-muted mb-1">当前境界</span>
+        <span className="block text-xs text-text-muted mb-1">{t('cultivationLink.stageLabel')}</span>
         <select
-          aria-label="异兽当前境界"
+          aria-label={t('cultivationLink.stageAria')}
           disabled={!selected}
           value={entry.cultivationStageId ?? ''}
           onChange={event => onChange({ cultivationStageId: event.target.value || null })}
           className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm disabled:opacity-40"
         >
-          <option value="">未指定</option>
+          <option value="">{t('cultivationLink.unspecifiedOption')}</option>
           {stages.map(stage => <option key={stage.id} value={stage.id}>{stage.name}</option>)}
         </select>
       </label>
@@ -242,23 +248,29 @@ function CodexFieldRow({
   onValue: (value: string) => void
   onRef: (ids: number[]) => void
 }) {
+  const { t } = useDomainT('codex')
+  const displayLabel = definition.labelKey ? t(definition.labelKey as any, definition.label) : definition.label
+  const displayPlaceholder = definition.placeholderKey ? t(definition.placeholderKey as any, definition.placeholder ?? '') : definition.placeholder
+  const displayOptions = (definition.options || []).map((option, i) =>
+    definition.optionKeys?.[i] ? t(definition.optionKeys[i] as any, option) : option
+  )
   return (
     <div className="grid grid-cols-[5rem_1fr] gap-2 items-start">
-      <label className="text-xs text-text-muted pt-2 text-right">{definition.label}</label>
+      <label className="text-xs text-text-muted pt-2 text-right">{displayLabel}</label>
       <div className="min-w-0">
         {definition.type === 'longtext' && (
-          <CTextarea value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholder} rows={2}
+          <CTextarea value={value} onChange={event => onValue(event.target.value)} placeholder={displayPlaceholder} rows={2}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm resize-y" />
         )}
         {definition.type === 'select' && (
-          <select value={value} onChange={event => onValue(event.target.value)} aria-label={definition.label}
+          <select value={value} onChange={event => onValue(event.target.value)} aria-label={displayLabel}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm">
-            <option value="">（未选择）</option>
-            {(definition.options || []).map(option => <option key={option} value={option}>{option}</option>)}
+            <option value="">{t('entryDetail.selectUnselected')}</option>
+            {(definition.options || []).map((option, i) => <option key={option} value={option}>{displayOptions[i]}</option>)}
           </select>
         )}
         {definition.type === 'number' && (
-          <CInput value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholder}
+          <CInput value={value} onChange={event => onValue(event.target.value)} placeholder={displayPlaceholder}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm" />
         )}
         {definition.type === 'ref' && (
@@ -274,7 +286,7 @@ function CodexFieldRow({
           />
         )}
         {definition.type === 'text' && (
-          <CInput value={value} onChange={event => onValue(event.target.value)} placeholder={definition.placeholder}
+          <CInput value={value} onChange={event => onValue(event.target.value)} placeholder={displayPlaceholder}
             className="w-full px-3 py-1.5 rounded-lg bg-bg-elevated border border-border text-sm" />
         )}
       </div>
@@ -301,6 +313,7 @@ function CodexRefSelector({
   worldGroupId: number | null
   onChange: (ids: number[]) => void
 }) {
+  const { t } = useDomainT('codex')
   const [open, setOpen] = useState(false)
   const candidates = useMemo(() => {
     const hintCategoryIds = refCategory
@@ -332,11 +345,11 @@ function CodexRefSelector({
               <span key={entry.id} className="px-1.5 py-0.5 rounded bg-accent/10 text-accent text-xs">{entry.icon} {entry.name}</span>
             ))}
           </span>
-        ) : <span className="text-text-muted">点击关联词条…</span>}
+        ) : <span className="text-text-muted">{t('entryDetail.refClickToAssociate')}</span>}
       </button>
       {open && (
         <div className="border-t border-border max-h-48 overflow-y-auto p-1">
-          {candidates.length === 0 && <p className="text-xs text-text-muted px-2 py-2">暂无可关联的词条</p>}
+          {candidates.length === 0 && <p className="text-xs text-text-muted px-2 py-2">{t('entryDetail.refNoCandidates')}</p>}
           {candidates.map(entry => (
             <label key={entry.id} className="flex items-center gap-2 px-2 py-1 rounded hover:bg-bg-hover cursor-pointer text-sm">
               <input type="checkbox" checked={value.includes(entry.id!)} onChange={() => toggle(entry.id!)} />

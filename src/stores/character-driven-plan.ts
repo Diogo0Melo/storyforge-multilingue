@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT } from '../i18n'
 import type {
   CharacterDrivenPlan,
   CharacterDrivenPlanArc,
@@ -74,7 +75,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
     const ts = now()
     const plan: CharacterDrivenPlan = {
       projectId,
-      name: name?.trim() || `角色驱动方案 ${get().plans.length + 1}`,
+      name: name?.trim() || `${getT()('errors:characterDrivenPlan.defaultNamePrefix')} ${get().plans.length + 1}`,
       arcs: '[]',
       userHint: '',
       generatedVolumes: '[]',
@@ -91,7 +92,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
 
   copyAsNewVersion: async (id) => {
     const source = get().plans.find(plan => plan.id === id) ?? await db.characterDrivenPlans.get(id)
-    if (!source?.id) throw new Error('来源方案不存在')
+    if (!source?.id) throw new Error(getT()('errors:characterDrivenPlan.sourcePlanMissing'))
     const ts = now()
     const version = Math.max(1, source.version) + 1
     const copy: CharacterDrivenPlan = {
@@ -123,7 +124,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
 
   saveInputs: async (id, input) => {
     const plan = get().plans.find(item => item.id === id) ?? await db.characterDrivenPlans.get(id)
-    if (!plan) throw new Error('方案不存在')
+    if (!plan) throw new Error(getT()('errors:characterDrivenPlan.planMissing'))
     const validCharacterIds = new Set(
       (await db.characters.where('projectId').equals(plan.projectId).primaryKeys()) as number[],
     )
@@ -145,7 +146,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
 
   saveGenerated: async (id, volumes) => {
     const parsed = parseCharacterDrivenPlotVolumes(volumes)
-    if (parsed.length === 0) throw new Error('生成结果没有可保存的有效卷')
+    if (parsed.length === 0) throw new Error(getT()('errors:characterDrivenPlan.noValidVolumes'))
     const patch: Partial<CharacterDrivenPlan> = {
       generatedVolumes: stringifyCharacterDrivenPlotVolumes(parsed),
       status: 'generated',
@@ -164,7 +165,7 @@ export const useCharacterDrivenPlanStore = create<CharacterDrivenPlanStore>((set
   setActivePlan: async (projectId, id) => {
     if (id != null) {
       const plan = get().plans.find(item => item.id === id) ?? await db.characterDrivenPlans.get(id)
-      if (!plan || plan.projectId !== projectId) throw new Error('不能激活其它项目的角色驱动方案')
+      if (!plan || plan.projectId !== projectId) throw new Error(getT()('errors:characterDrivenPlan.crossProjectActivation'))
     }
     await db.projects.update(projectId, {
       activeCharacterDrivenPlanId: id,

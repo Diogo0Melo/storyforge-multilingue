@@ -5,8 +5,9 @@ import { useProjectStore } from '../../stores/project'
 import { useWorldGroupStore } from '../../stores/world-group'
 import type { Project } from '../../lib/types'
 import { GENRE_OPTIONS } from '../../lib/types'
+import { useDomainT } from '../../i18n'
 
-// 按 group 分组
+// Group by group
 const GENRE_GROUPS = Array.from(
   GENRE_OPTIONS.reduce((map, opt) => {
     if (!map.has(opt.group)) map.set(opt.group, [])
@@ -21,6 +22,7 @@ interface ProjectInfoPanelProps {
 }
 
 export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanelProps) {
+  const { t } = useDomainT('project')
   const { updateProject } = useProjectStore()
   const [form, setForm] = useState({
     name: project.name,
@@ -57,30 +59,33 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
   }
 
   const getGenreLabels = (genres: string[]) => {
-    if (!genres || genres.length === 0) return '选择流派…'
+    if (!genres || genres.length === 0) return t('projectInfo.genrePlaceholder')
     return genres
       .slice(0, 3)
-      .map(v => GENRE_OPTIONS.find(o => o.value === v)?.label ?? v)
+      .map(v => {
+        const opt = GENRE_OPTIONS.find(o => o.value === v)
+        return opt ? t(`project:${opt.labelKey}`) : v
+      })
       .join(' · ') + (genres.length > 3 ? ` +${genres.length - 3}` : '')
   }
 
   return (
     <div className="max-w-2xl">
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-bold text-text-primary">基本信息</h2>
+        <h2 className="text-xl font-bold text-text-primary">{t('projectInfo.heading')}</h2>
         <button
           onClick={handleSave}
           disabled={saving}
           className="flex items-center gap-2 px-4 py-2 bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 transition-colors text-sm font-medium"
         >
           <Save className="w-4 h-4" />
-          {saving ? '保存中...' : '保存'}
+          {saving ? t('projectInfo.saving') : t('projectInfo.save')}
         </button>
       </div>
 
       <div className="space-y-5">
         <div>
-          <label className="block text-sm text-text-secondary mb-1.5">项目名称</label>
+          <label className="block text-sm text-text-secondary mb-1.5">{t('projectInfo.nameLabel')}</label>
           <input
             type="text"
             value={form.name}
@@ -91,24 +96,24 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
 
         <div>
           <label className="block text-sm text-text-secondary mb-1.5">
-            流派
-            {form.genres.length > 0 && <span className="ml-1.5 text-accent text-xs">已选 {form.genres.length}</span>}
+            {t('projectInfo.genreLabel')}
+            {form.genres.length > 0 && <span className="ml-1.5 text-accent text-xs">{' '}{t('projectInfo.genreSelected', { count: form.genres.length })}</span>}
           </label>
-          {/* 已选标签 */}
+          {/* Selected tags */}
           {form.genres.length > 0 && (
             <div className="flex flex-wrap gap-1 mb-2">
               {form.genres.map(g => {
                 const opt = GENRE_OPTIONS.find(o => o.value === g)
                 return (
                   <span key={g} className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent border border-accent/20">
-                    {opt?.label ?? g}
+                    {opt ? t(`project:${opt.labelKey}`) : g}
                     <button onClick={() => toggleGenre(g)} className="hover:text-error"><X className="w-2.5 h-2.5" /></button>
                   </span>
                 )
               })}
             </div>
           )}
-          {/* 下拉选择 */}
+          {/* Dropdown */}
           <div className="relative">
             <button
               type="button"
@@ -123,7 +128,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
                 {GENRE_GROUPS.map(([group, opts]) => (
                   <div key={group}>
                     <div className="px-3 py-1.5 text-[10px] font-semibold text-text-muted uppercase tracking-wider bg-bg-elevated border-b border-border/50">
-                      {group}
+                      {t(`project:${opts[0]?.groupKey ?? ''}`) || group}
                     </div>
                     <div className="flex flex-wrap gap-1 p-2">
                       {opts.map(opt => (
@@ -137,7 +142,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
                               : 'bg-bg-base text-text-secondary hover:bg-bg-hover'
                           }`}
                         >
-                          {opt.label}
+                          {t(`project:${opt.labelKey}`)}
                         </button>
                       ))}
                     </div>
@@ -149,7 +154,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
         </div>
 
         <div>
-          <label className="block text-sm text-text-secondary mb-1.5">简介</label>
+          <label className="block text-sm text-text-secondary mb-1.5">{t('projectInfo.descriptionLabel')}</label>
           <CTextarea
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
@@ -160,7 +165,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
 
         <div>
           <label className="block text-sm text-text-secondary mb-1.5">
-            目标字数：{(form.targetWordCount / 10000).toFixed(0)} 万字
+            {t('projectInfo.targetWordCount', { count: Number((form.targetWordCount / 10000).toFixed(0)) })}
           </label>
           <input
             type="range"
@@ -173,22 +178,22 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
           />
         </div>
 
-        {/* 多世界开关 */}
+        {/* Multi-world toggle */}
         <div className="p-4 bg-bg-surface border border-border rounded-lg">
           <div className="flex items-center justify-between">
             <div>
               <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
-                🌐 多世界模式
+                {t('projectInfo.multiWorldToggle')}
               </div>
               <p className="text-xs text-text-muted mt-0.5">
-                适用于诸天流/无限流/快穿/修仙多界等题材，开启后可为每个世界创建独立的世界观、力量体系、地理和角色设定
+                {t('projectInfo.multiWorldDescription')}
               </p>
             </div>
             <button
               onClick={async () => {
                 if (!project.id) return
                 const next = !project.enableMultiWorld
-                // 开启时：确保主世界组 + 把现有项目级数据归属到主世界组
+                // When enabling: ensure primary world group + assign existing project-level data to it
                 if (next) {
                   const migrated = await useWorldGroupStore.getState().migrateToMultiWorld(project.id)
                   if (!migrated) return
@@ -211,8 +216,10 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
 
         <div className="pt-4 border-t border-border">
           <p className="text-text-muted text-xs">
-            创建于 {new Date(project.createdAt).toLocaleString('zh-CN')} ·
-            更新于 {new Date(project.updatedAt).toLocaleString('zh-CN')}
+            {t('projectInfo.timestamps', {
+              created: new Date(project.createdAt).toLocaleString(),
+              updated: new Date(project.updatedAt).toLocaleString(),
+            })}
           </p>
         </div>
       </div>

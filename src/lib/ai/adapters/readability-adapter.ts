@@ -26,6 +26,14 @@ export const READABILITY_DIMENSION_LABELS: Record<string, { label: string; emoji
   pacing:      { label: '叙事节奏', emoji: '🎵' },
 }
 
+/** i18n keys for UI display (resolved at render time; READABILITY_DIMENSION_LABELS remains for prompt building) */
+export const READABILITY_DIMENSION_LABEL_KEYS: Record<string, string> = {
+  hook:        'editor:dimensionLabels.hook',
+  coolpoint:   'editor:dimensionLabels.coolpoint',
+  micropayoff: 'editor:dimensionLabels.micropayoff',
+  pacing:      'editor:dimensionLabels.readabilityPacing',
+}
+
 export function buildReadabilityPrompt(
   chapterContent: string,
   chapterTitle: string,

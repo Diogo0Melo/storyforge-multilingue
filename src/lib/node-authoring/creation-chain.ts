@@ -1,4 +1,5 @@
 import { nanoid } from 'nanoid'
+import { getT } from '../../i18n'
 import { AUTHORING_NODE_BY_ID, defaultConfigForTemplate } from './catalog'
 import type {
   AuthoringEdge,
@@ -26,6 +27,18 @@ export const AUTHORING_CREATION_CHAIN_NODE_IDS = Object.freeze({
 
 type ChainNodeKey = keyof typeof AUTHORING_CREATION_CHAIN_NODE_IDS
 
+/**
+ * I18N-F5 · 创建期持久化默认节点名解析（A4 translate-at-creation）。
+ * 优先 node-authoring ns 的 labelKey，键缺失时回退 zh label；zh label 仍是
+ * AI prompt payload 与兜底事实源（见 catalog.ts 双重用途约定）。
+ * 创作链/官方模板图由工作区点击处理函数同步构建，此时 node-authoring ns
+ * 已随组件加载；测试环境同步 eager 加载全部命名空间。
+ */
+export function resolveAuthoringNodeTitle(template: { label: string; labelKey: string }): string {
+  const translated = (getT() as any)(`node-authoring:${template.labelKey}`, { defaultValue: template.label })
+  return typeof translated === 'string' && translated ? translated : template.label
+}
+
 function node(
   key: ChainNodeKey,
   templateId: string,
@@ -34,12 +47,12 @@ function node(
   config: Record<string, unknown> = {},
 ): AuthoringNodeInstance {
   const template = AUTHORING_NODE_BY_ID.get(templateId)
-  if (!template) throw new Error(`完整创作链缺少节点模板：${templateId}`)
+  if (!template) throw new Error(getT()('node-authoring:creationChain.missingNodeTemplate', { templateId }))
   return {
     id: AUTHORING_CREATION_CHAIN_NODE_IDS[key],
     templateId,
     templateVersion: template.version,
-    title: template.label,
+    title: resolveAuthoringNodeTitle(template),
     x,
     y,
     config: { ...defaultConfigForTemplate(template), ...config },
@@ -138,9 +151,9 @@ export function buildAuthoringCreationChainGraph(): {
       edges,
       viewport: { x: 0, y: 0, zoom: 0.8 },
       groups: [
-        { id: 'chain-world-story', title: '世界与故事', color: '#7c3aed' },
-        { id: 'chain-outline-prose', title: '大纲到正文', color: '#0284c7' },
-        { id: 'chain-controls', title: '执行控制', color: '#d97706' },
+        { id: 'chain-world-story', title: getT()('node-authoring:creationChain.groups.worldStory'), color: '#7c3aed' },
+        { id: 'chain-outline-prose', title: getT()('node-authoring:creationChain.groups.outlineProse'), color: '#0284c7' },
+        { id: 'chain-controls', title: getT()('node-authoring:creationChain.groups.controls'), color: '#d97706' },
       ],
     },
     nodeIds: AUTHORING_CREATION_CHAIN_NODE_IDS,

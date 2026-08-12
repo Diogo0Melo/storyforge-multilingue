@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import type { DetailedOutline, EmotionArc } from '../types'
 import {
   normalizeParsedScenes,
@@ -25,14 +26,14 @@ export async function adoptChapterOutlineWorkshopResult(input: {
   // 作者确认的是屏幕上这份 JSON；采纳阶段不得悄悄再调用模型改写。
   const parsed = parseEnhancedDetailResult(input.raw)
   if (!parsed) {
-    return { ok: false, sceneCount: 0, prohibitionCount: 0, reason: '无法解析场景卡 JSON' }
+    return { ok: false, sceneCount: 0, prohibitionCount: 0, reason: getT()('outline:detailed.workshopParseFailed') }
   }
   const scenes = normalizeParsedScenes(
     parsed.scenes,
     ids => [...new Set(ids.filter(id => input.validCharacterIds.has(id)))],
   )
   if (scenes.length === 0) {
-    return { ok: false, sceneCount: 0, prohibitionCount: 0, reason: '没有可采纳的场景' }
+    return { ok: false, sceneCount: 0, prohibitionCount: 0, reason: getT()('outline:detailed.workshopNoScenes') }
   }
   const prohibitions = Array.isArray(parsed.prohibitions)
     ? [...new Set(parsed.prohibitions.map(item => String(item).trim()).filter(Boolean))].slice(0, 40)
@@ -63,10 +64,10 @@ export async function adoptChapterOutlineWorkshopResult(input: {
   })
   if (result.written.length === 0) {
     const reason = [
-      ...result.typeErrors.map(item => `${item.field} 类型错误`),
-      ...result.fkErrors.map(item => `${item.field} 引用失效`),
+      ...result.typeErrors.map(item => getT()('outline:detailed.workshopTypeError', { field: item.field })),
+      ...result.fkErrors.map(item => getT()('outline:detailed.workshopFkError', { field: item.field })),
       ...result.skipped.map(item => item.reason),
-    ][0] ?? '写入未生效'
+    ][0] ?? getT()('outline:detailed.workshopWriteNoop')
     return { ok: false, sceneCount: 0, prohibitionCount: 0, reason }
   }
   return {

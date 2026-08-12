@@ -14,6 +14,7 @@ import {
 } from '../../lib/style/style-learning'
 import { countWords, htmlToPlainText } from '../../lib/utils/html'
 import type { Project, Chapter, ChapterStatus } from '../../lib/types'
+import { useDomainT } from '../../i18n'
 import StyleCalibrationPanel from './StyleCalibrationPanel'
 import StyleRevisionPairsPanel from './StyleRevisionPairsPanel'
 
@@ -23,12 +24,18 @@ interface Props {
 
 /** 可作为文风语料的章节状态:用户亲手打磨过的 */
 const CORPUS_STATUSES: ChapterStatus[] = ['revised', 'polished', 'final']
-const STATUS_LABEL: Record<string, string> = { revised: '已修改', polished: '已润色', final: '定稿' }
+type StatusKey = 'revised' | 'polished' | 'final'
+const STATUS_LABEL_KEY: Record<StatusKey, 'status.revised' | 'status.polished' | 'status.final'> = {
+  revised: 'status.revised',
+  polished: 'status.polished',
+  final: 'status.final',
+}
 /** 每章取样上限(控 token);整体也按选中章数自然封顶 */
 const PER_CHAPTER_CHARS = 2500
 const MAX_CORPUS_CHAPTERS = 6
 
 export default function StyleLearningPanel({ project }: Props) {
+  const { t } = useDomainT('style')
   const { chapters, loadAll } = useChapterStore()
   const {
     profile,
@@ -87,7 +94,7 @@ export default function StyleLearningPanel({ project }: Props) {
 
   const toggle = (id: number) => {
     if (!selectedIds.has(id) && selectedIds.size >= MAX_CORPUS_CHAPTERS) {
-      setError(`为控制输入成本，每次最多选择 ${MAX_CORPUS_CHAPTERS} 章。可取消一章后再选择。`)
+      setError(t('learning.errorMaxChapters', { max: MAX_CORPUS_CHAPTERS }))
       return
     }
     setError(null)
@@ -124,7 +131,7 @@ export default function StyleLearningPanel({ project }: Props) {
       })
       const out = await chat(messages, aiConfig, { category: 'style.learn', projectId: project.id! })
       const text = out.trim()
-      if (!text) { setError('AI 未返回内容,请重试。'); return }
+      if (!text) { setError(t('learning.errorEmptyResponse')); return }
       await saveProfile(project.id!, {
         profile: text,
         sourceChapterIds: selected.map(c => c.id!),
@@ -133,7 +140,7 @@ export default function StyleLearningPanel({ project }: Props) {
       })
     } catch (e) {
       console.error('[StyleLearning] 学习失败:', e)
-      setError(e instanceof Error ? e.message : '学习失败,请重试。')
+      setError(e instanceof Error ? e.message : t('learning.errorLearnFailed'))
     } finally {
       setRunning(false)
     }
@@ -145,29 +152,26 @@ export default function StyleLearningPanel({ project }: Props) {
         {/* 标题 */}
         <div>
           <h2 className="flex items-center gap-2 text-lg font-bold text-text-primary">
-            <Brain className="w-5 h-5 text-accent" /> 文风学习
+            <Brain className="w-5 h-5 text-accent" /> {t('learning.title')}
           </h2>
           <p className="text-xs text-text-muted mt-1">
-            让 AI 阅读你已打磨过的章节,总结出你的个人文风画像。开启后,后续章节生成会自动贴合你的笔触。
+            {t('learning.subtitle')}
           </p>
         </div>
 
         {/* 语料选择 */}
         <div className="bg-bg-surface border border-border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
-            <span className="text-sm font-medium text-text-primary">学习语料</span>
+            <span className="text-sm font-medium text-text-primary">{t('learning.corpusLabel')}</span>
             <span className="text-xs text-text-muted">
-              已选 {selected.length} 章 · 约 {sampleWords.toLocaleString()} 字
+              {t('learning.selectedStats', { count: selected.length, words: sampleWords.toLocaleString() })}
             </span>
           </div>
 
           {candidates.length === 0 ? (
             <div className="flex items-start gap-2 text-xs text-text-muted bg-bg-base rounded p-3">
               <AlertCircle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-              <span>
-                暂无可学习的章节。请先写几章正文,并把它们的状态设为「已修改 / 已润色 / 定稿」
-                (这些是你亲手打磨过的内容,最能代表你的文风),或先保存改稿对照样本。
-              </span>
+              <span>{t('learning.emptyCorpus')}</span>
             </div>
           ) : (
             <div className="space-y-1 max-h-56 overflow-y-auto">
@@ -181,9 +185,17 @@ export default function StyleLearningPanel({ project }: Props) {
                   />
                   <span className="text-sm text-text-primary flex-1 truncate">{c.title}</span>
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-accent/10 text-accent shrink-0">
-                    {STATUS_LABEL[c.status] || c.status}
+                    {(() => {
+                      const s = c.status
+                      if (s === 'revised' || s === 'polished' || s === 'final') {
+                        return t(STATUS_LABEL_KEY[s])
+                      }
+                      return s
+                    })()}
                   </span>
-                  <span className="text-[10px] text-text-muted shrink-0">{(c.wordCount || c.content.length).toLocaleString()} 字</span>
+                  <span className="text-[10px] text-text-muted shrink-0">
+                    {t('learning.chapterWords', { count: (c.wordCount || c.content.length).toLocaleString() })}
+                  </span>
                 </label>
               ))}
             </div>
@@ -195,13 +207,12 @@ export default function StyleLearningPanel({ project }: Props) {
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent text-white rounded-md text-sm font-medium hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {running
-              ? <><Loader2 className="w-4 h-4 animate-spin" /> 正在学习你的文风…</>
-              : <><Sparkles className="w-4 h-4" /> {hasProfile ? '重新学习我的文风' : '一键学习我的文风'}</>}
+              ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('learning.learnButtonRunning')}</>
+              : <><Sparkles className="w-4 h-4" /> {hasProfile ? t('learning.learnButtonRelearn') : t('learning.learnButtonFirst')}</>}
           </button>
 
           <p className="text-[11px] leading-5 text-text-muted">
-            每次最多读取 {MAX_CORPUS_CHAPTERS} 章、每章 {PER_CHAPTER_CHARS.toLocaleString()} 字符；
-            改稿对照最多注入 3 组短片段，不会反复发送整章。
+            {t('learning.learnHint', { maxChapters: MAX_CORPUS_CHAPTERS, maxChars: PER_CHAPTER_CHARS.toLocaleString() })}
           </p>
 
           {error && (
@@ -214,9 +225,9 @@ export default function StyleLearningPanel({ project }: Props) {
         <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <h3 className="text-sm font-medium text-text-primary">改稿对照样本</h3>
+              <h3 className="text-sm font-medium text-text-primary">{t('learning.revisionPairsSectionTitle')}</h3>
               <p className="mt-1 text-[11px] text-text-muted">
-                已保存 {revisionPairs.length} / 8 组；带作者说明的样本会优先参与学习。
+                {t('learning.revisionPairsSectionHint', { count: revisionPairs.length })}
               </p>
             </div>
           </div>
@@ -232,22 +243,21 @@ export default function StyleLearningPanel({ project }: Props) {
           <div className="bg-bg-surface border border-border rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between">
               <span className="flex items-center gap-1.5 text-sm font-medium text-text-primary">
-                <Check className="w-4 h-4 text-success" /> 我的文风画像
+                <Check className="w-4 h-4 text-success" /> {t('learning.profileTitle')}
               </span>
               <button
                 onClick={() => setEnabled(!profile.enabled)}
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded text-xs font-medium transition-colors ${
                   profile.enabled ? 'bg-success/15 text-success' : 'bg-text-muted/15 text-text-muted'
                 }`}
-                title={profile.enabled ? '已开启:生成时注入文风' : '已关闭:生成时不注入'}
+                title={profile.enabled ? t('learning.toggleEnabled') : t('learning.toggleDisabled')}
               >
-                <Power className="w-3.5 h-3.5" /> {profile.enabled ? '注入中' : '已关闭'}
+                <Power className="w-3.5 h-3.5" /> {profile.enabled ? t('learning.toggleOn') : t('learning.toggleOff')}
               </button>
             </div>
 
             <p className="text-[11px] text-text-muted">
-              画像基于 {profile.sampleCount} 章、约 {profile.sampleWords.toLocaleString()} 字学习而成。
-              下方可手动修改,失焦自动保存。
+              {t('learning.profileStats', { chapters: profile.sampleCount, words: profile.sampleWords.toLocaleString() })}
             </p>
 
             <textarea
@@ -256,7 +266,7 @@ export default function StyleLearningPanel({ project }: Props) {
               onChange={e => setDraft(e.target.value)}
               onBlur={() => { if (draft !== (profile.profile || '')) updateProfileText(draft) }}
               rows={16}
-              placeholder="文风画像(可手动编辑,失焦自动保存)"
+              placeholder={t('learning.profilePlaceholder')}
               className="w-full px-3 py-2 bg-bg-base border border-border rounded text-sm text-text-secondary leading-relaxed resize-y focus:outline-none focus:border-accent font-mono"
             />
           </div>

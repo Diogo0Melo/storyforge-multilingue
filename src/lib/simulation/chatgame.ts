@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import type { ChatMessage } from '../types'
 
 export const MAX_CHAT_MESSAGE_CHARS = 12_000
@@ -10,10 +11,10 @@ export function buildChatGamePrompt(input: {
 }): ChatMessage[] {
   const userMessage = input.userMessage.trim()
   if (!userMessage || userMessage.length > MAX_CHAT_MESSAGE_CHARS) {
-    throw new Error('用户聊天消息无效。')
+    throw new Error(getT()('simulation:runtime.chat.userMessageInvalid'))
   }
   const characterName = input.characterName.trim()
-  if (!characterName) throw new Error('角色名称不能为空。')
+  if (!characterName) throw new Error(getT()('simulation:chatGame.characterNameEmptyError'))
   return [
     {
       role: 'system',
@@ -41,7 +42,7 @@ export function buildChatGamePrompt(input: {
 
 export function parseChatReply(draft: string): string {
   const reply = draft.trim()
-  if (!reply) throw new Error('角色回复为空。')
-  if (reply.length > MAX_CHAT_REPLY_CHARS) throw new Error(`角色回复不能超过 ${MAX_CHAT_REPLY_CHARS} 个字符。`)
+  if (!reply) throw new Error(getT()('simulation:chatGame.replyEmptyError'))
+  if (reply.length > MAX_CHAT_REPLY_CHARS) throw new Error(getT()('simulation:chatGame.replyTooLongError', { max: MAX_CHAT_REPLY_CHARS }))
   return reply
 }

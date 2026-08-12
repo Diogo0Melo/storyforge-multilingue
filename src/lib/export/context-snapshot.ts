@@ -9,6 +9,7 @@ import { db } from '../db/schema'
 import { htmlToPlainText } from '../utils/html'
 import { buildBestChapterByOutlineMap } from '../chapters/selectors'
 import type { OutlineNode, Chapter } from '../types'
+import { getT } from '../../i18n'
 
 const SEPARATOR = '\n\n---\n\n'
 
@@ -36,7 +37,7 @@ export async function generateContextSnapshot(projectId: number): Promise<string
     db.foreshadows.where('projectId').equals(projectId).toArray(),
   ])
 
-  if (!project) throw new Error('项目不存在')
+  if (!project) throw new Error(getT()('errors-lib:export.textExportProjectMissing'))
 
   const sections: string[] = []
 

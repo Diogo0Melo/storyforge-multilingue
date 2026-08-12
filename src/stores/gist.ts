@@ -6,6 +6,7 @@
  * 用户显式选择记住本机时才落 localStorage。
  */
 import { create } from 'zustand'
+import { getT } from '../i18n'
 import {
   exportToGist, importFromGist, validateGitHubPAT, listStoryforgeGists, listGistRevisions,
   type GistBackupMeta, type GistRevisionMeta,
@@ -101,7 +102,7 @@ export const useGistStore = create<GistState>((set, get) => ({
       set({ pat: pat.trim(), username: login, rememberPat, busy: false })
       return true
     } catch (e) {
-      set({ busy: false, error: e instanceof Error ? e.message : '连接失败' })
+      set({ busy: false, error: e instanceof Error ? e.message : getT()('errors:gist.connectFailed') })
       return false
     }
   },
@@ -119,7 +120,7 @@ export const useGistStore = create<GistState>((set, get) => ({
 
   backupProject: async (projectId) => {
     const { pat } = get()
-    if (!pat) { set({ error: '未连接 GitHub' }); return null }
+    if (!pat) { set({ error: getT()('errors:gist.notConnected') }); return null }
     set({ busy: true, error: null })
     try {
       const data = await exportProjectJSON(projectId)
@@ -129,14 +130,14 @@ export const useGistStore = create<GistState>((set, get) => ({
       set({ busy: false })
       return { url: res.url }
     } catch (e) {
-      set({ busy: false, error: e instanceof Error ? e.message : '备份失败' })
+      set({ busy: false, error: e instanceof Error ? e.message : getT()('errors:gist.backupFailed') })
       return null
     }
   },
 
   restoreFromGist: async (gistId, sha) => {
     const { pat } = get()
-    if (!pat) { set({ error: '未连接 GitHub' }); return null }
+    if (!pat) { set({ error: getT()('errors:gist.notConnected') }); return null }
     set({ busy: true, error: null })
     try {
       const data = await importFromGist(gistId, pat, sha)
@@ -144,7 +145,7 @@ export const useGistStore = create<GistState>((set, get) => ({
       set({ busy: false })
       return newId
     } catch (e) {
-      set({ busy: false, error: e instanceof Error ? e.message : '恢复失败' })
+      set({ busy: false, error: e instanceof Error ? e.message : getT()('errors:gist.restoreFailed') })
       return null
     }
   },

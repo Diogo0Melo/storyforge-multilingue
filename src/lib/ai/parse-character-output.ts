@@ -2,7 +2,7 @@ import type { CharacterMoralAxis, CharacterOrderAxis, CharacterRoleWeight } from
 import type { AIConfig } from '../types'
 import { chat } from './client'
 import { MORAL_AXES, ORDER_AXES, ROLE_WEIGHTS } from '../character/character-axes'
-import { CHARACTER_DIMENSIONS, type CharacterDimensionKey } from '../character/character-dimensions'
+import { CHARACTER_DIMENSIONS, getDimensionLabel, type CharacterDimensionKey } from '../character/character-dimensions'
 
 /**
  * 解析结果 —— 对应 Character 可写字段。
@@ -39,7 +39,7 @@ function normalizeEnum<T extends string>(
 
 // 维度字段的 JSON schema 行，从 CHARACTER_DIMENSIONS 动态生成（与展示/落库同源）
 const DIMENSION_SCHEMA_LINES = CHARACTER_DIMENSIONS
-  .map(d => `  "${d.key}": "${d.label}（去除 Markdown，纯文字；原文没有则填空字符串）"`)
+  .map(d => `  "${d.key}": "${getDimensionLabel(d.key)}（去除 Markdown，纯文字；原文没有则填空字符串）"`)
   .join(',\n')
 
 /**

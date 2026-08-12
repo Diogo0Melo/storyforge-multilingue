@@ -6,14 +6,15 @@ import { useCharacterRelationStore } from '../../stores/character-relation'
 import { useGeographyStore } from '../../stores/project-singletons'
 import { useForeshadowStore } from '../../stores/foreshadow'
 import type { SidebarModule } from './Sidebar'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   activeModule: SidebarModule
   onClose: () => void
 }
 
-function formatDate(ts: number) {
-  return new Date(ts).toLocaleDateString('zh-CN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+function formatDate(ts: number, lang: string) {
+  return new Date(ts).toLocaleDateString(lang, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
 }
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -43,6 +44,7 @@ function Section({ title, icon: Icon, children }: { title: string; icon: React.C
 function OutlineProps() {
   const { nodes } = useOutlineStore()
   const { chapters, currentChapter } = useChapterStore()
+  const { t, lang } = useDomainT('layout')
 
   const volumes = nodes.filter(n => n.type === 'volume').length
   const arcs = nodes.filter(n => n.type === 'arc').length
@@ -52,19 +54,19 @@ function OutlineProps() {
 
   return (
     <>
-      <Section title="大纲统计" icon={BookOpen}>
-        <Stat label="卷数" value={volumes} />
-        <Stat label="篇章数" value={arcs} />
-        <Stat label="章节数" value={chapterNodes} />
-        <Stat label="已写章节" value={`${writtenChapters} / ${chapterNodes}`} />
-        <Stat label="累计字数" value={`${totalWords.toLocaleString()} 字`} />
+      <Section title={t('propertiesPanel.outlineStats')} icon={BookOpen}>
+        <Stat label={t('propertiesPanel.volumeCount')} value={volumes} />
+        <Stat label={t('propertiesPanel.arcCount')} value={arcs} />
+        <Stat label={t('propertiesPanel.chapterCount')} value={chapterNodes} />
+        <Stat label={t('propertiesPanel.writtenChapters')} value={`${writtenChapters} / ${chapterNodes}`} />
+        <Stat label={t('propertiesPanel.totalWords')} value={t('propertiesPanel.wordsUnit', { count: totalWords.toLocaleString() })} />
       </Section>
       {currentChapter && (
-        <Section title="当前章节" icon={PenTool}>
-          <Stat label="标题" value={currentChapter.title} />
-          <Stat label="状态" value={currentChapter.status} />
-          <Stat label="字数" value={`${currentChapter.wordCount.toLocaleString()} 字`} />
-          <Stat label="更新时间" value={formatDate(currentChapter.updatedAt)} />
+        <Section title={t('propertiesPanel.currentChapter')} icon={PenTool}>
+          <Stat label={t('propertiesPanel.chapterTitle')} value={currentChapter.title} />
+          <Stat label={t('propertiesPanel.chapterStatus')} value={currentChapter.status} />
+          <Stat label={t('propertiesPanel.chapterWords')} value={t('propertiesPanel.wordsUnit', { count: currentChapter.wordCount.toLocaleString() })} />
+          <Stat label={t('propertiesPanel.chapterUpdatedAt')} value={formatDate(currentChapter.updatedAt, lang)} />
         </Section>
       )}
     </>
@@ -75,6 +77,7 @@ function OutlineProps() {
 function CharacterProps() {
   const { characters } = useCharacterStore()
   const { relations } = useCharacterRelationStore()
+  const { t } = useDomainT('layout')
 
   const weightCount = {
     main: characters.filter(c => c.roleWeight === 'main').length,
@@ -89,12 +92,12 @@ function CharacterProps() {
   }
 
   return (
-    <Section title="角色统计" icon={Users}>
-      <Stat label="总角色数" value={characters.length} />
-      <Stat label="主要 / 次要" value={`${weightCount.main} / ${weightCount.secondary}`} />
-      <Stat label="NPC / 路人" value={`${weightCount.npc} / ${weightCount.extra}`} />
-      <Stat label="善 / 中 / 恶" value={`${moralCount.good} / ${moralCount.neutral} / ${moralCount.evil}`} />
-      <Stat label="关系连线" value={relations.length} />
+    <Section title={t('propertiesPanel.characterStats')} icon={Users}>
+      <Stat label={t('propertiesPanel.totalCharacters')} value={characters.length} />
+      <Stat label={t('propertiesPanel.mainSecondary')} value={`${weightCount.main} / ${weightCount.secondary}`} />
+      <Stat label={t('propertiesPanel.npcExtra')} value={`${weightCount.npc} / ${weightCount.extra}`} />
+      <Stat label={t('propertiesPanel.moralAxis')} value={`${moralCount.good} / ${moralCount.neutral} / ${moralCount.evil}`} />
+      <Stat label={t('propertiesPanel.relationLines')} value={relations.length} />
     </Section>
   )
 }
@@ -103,18 +106,19 @@ function CharacterProps() {
 function RelationProps() {
   const { relations } = useCharacterRelationStore()
   const { characters } = useCharacterStore()
+  const { t } = useDomainT('layout')
 
   const typeCount: Record<string, number> = {}
   relations.forEach(r => { typeCount[r.relationType] = (typeCount[r.relationType] || 0) + 1 })
   const topType = Object.entries(typeCount).sort((a, b) => b[1] - a[1])[0]
 
   return (
-    <Section title="关系统计" icon={Heart}>
-      <Stat label="角色数" value={characters.length} />
-      <Stat label="关系总数" value={relations.length} />
-      <Stat label="双向关系" value={relations.filter(r => r.isBidirectional).length} />
-      <Stat label="单向关系" value={relations.filter(r => !r.isBidirectional).length} />
-      {topType && <Stat label="最多类型" value={`${topType[0]}（${topType[1]}条）`} />}
+    <Section title={t('propertiesPanel.relationStats')} icon={Heart}>
+      <Stat label={t('propertiesPanel.characterCount')} value={characters.length} />
+      <Stat label={t('propertiesPanel.totalRelations')} value={relations.length} />
+      <Stat label={t('propertiesPanel.bidirectional')} value={relations.filter(r => r.isBidirectional).length} />
+      <Stat label={t('propertiesPanel.unidirectional')} value={relations.filter(r => !r.isBidirectional).length} />
+      {topType && <Stat label={t('propertiesPanel.topRelationType')} value={t('propertiesPanel.topRelationTypeValue', { type: topType[0], count: topType[1] })} />}
     </Section>
   )
 }
@@ -122,6 +126,7 @@ function RelationProps() {
 /** 地理属性 */
 function GeographyProps() {
   const { geography } = useGeographyStore()
+  const { t } = useDomainT('layout')
 
   let locations: { type: string }[] = []
   try { locations = JSON.parse(geography?.locations || '[]') } catch { /* ignore */ }
@@ -130,8 +135,8 @@ function GeographyProps() {
   locations.forEach((l) => { typeCount[l.type] = (typeCount[l.type] || 0) + 1 })
 
   return (
-    <Section title="地理统计" icon={MapPin}>
-      <Stat label="地点总数" value={locations.length} />
+    <Section title={t('propertiesPanel.geographyStats')} icon={MapPin}>
+      <Stat label={t('propertiesPanel.locationTotal')} value={locations.length} />
       {Object.entries(typeCount).map(([type, count]) => (
         <Stat key={type} label={type} value={count} />
       ))}
@@ -142,6 +147,7 @@ function GeographyProps() {
 /** 伏笔属性 */
 function ForeshadowProps() {
   const { foreshadows } = useForeshadowStore()
+  const { t } = useDomainT('layout')
 
   const planned = foreshadows.filter(f => f.status === 'planned').length
   const planted = foreshadows.filter(f => f.status === 'planted').length
@@ -149,75 +155,52 @@ function ForeshadowProps() {
   const resolved = foreshadows.filter(f => f.status === 'resolved').length
 
   return (
-    <Section title="伏笔统计" icon={Eye}>
-      <Stat label="总伏笔" value={foreshadows.length} />
-      <Stat label="计划中" value={planned} />
-      <Stat label="已埋设" value={planted} />
-      <Stat label="已呼应" value={echoed} />
-      <Stat label="已回收" value={resolved} />
-      <Stat label="未回收" value={planned + planted + echoed} />
+    <Section title={t('propertiesPanel.foreshadowStats')} icon={Eye}>
+      <Stat label={t('propertiesPanel.totalForeshadows')} value={foreshadows.length} />
+      <Stat label={t('propertiesPanel.planned')} value={planned} />
+      <Stat label={t('propertiesPanel.planted')} value={planted} />
+      <Stat label={t('propertiesPanel.echoed')} value={echoed} />
+      <Stat label={t('propertiesPanel.resolved')} value={resolved} />
+      <Stat label={t('propertiesPanel.unresolved')} value={planned + planted + echoed} />
     </Section>
   )
 }
 
+/** 通用提示 — 静态 key 映射（避免 computed key，满足 typed t()） */
+interface TipsEntry {
+  icon: React.ComponentType<{ className?: string }>
+  titleKey: 'propertiesPanel.tips.worldview.title' | 'propertiesPanel.tips.storyCore.title' | 'propertiesPanel.tips.powerSystem.title' | 'propertiesPanel.tips.history.title' | 'propertiesPanel.tips.rules.title' | 'propertiesPanel.tips.backup.title' | 'propertiesPanel.tips.export.title' | 'propertiesPanel.tips.settings.title' | 'propertiesPanel.tips.info.title'
+  itemsKey: 'propertiesPanel.tips.worldview.items' | 'propertiesPanel.tips.storyCore.items' | 'propertiesPanel.tips.powerSystem.items' | 'propertiesPanel.tips.history.items' | 'propertiesPanel.tips.rules.items' | 'propertiesPanel.tips.backup.items' | 'propertiesPanel.tips.export.items' | 'propertiesPanel.tips.settings.items' | 'propertiesPanel.tips.info.items'
+}
+
+const TIPS_MAP: Record<string, TipsEntry> = {
+  worldview:     { icon: Globe,    titleKey: 'propertiesPanel.tips.worldview.title',     itemsKey: 'propertiesPanel.tips.worldview.items' },
+  'story-core':  { icon: FileText, titleKey: 'propertiesPanel.tips.storyCore.title',     itemsKey: 'propertiesPanel.tips.storyCore.items' },
+  'power-system':{ icon: Info,     titleKey: 'propertiesPanel.tips.powerSystem.title',   itemsKey: 'propertiesPanel.tips.powerSystem.items' },
+  history:       { icon: Info,     titleKey: 'propertiesPanel.tips.history.title',       itemsKey: 'propertiesPanel.tips.history.items' },
+  rules:         { icon: Info,     titleKey: 'propertiesPanel.tips.rules.title',         itemsKey: 'propertiesPanel.tips.rules.items' },
+  backup:        { icon: Info,     titleKey: 'propertiesPanel.tips.backup.title',        itemsKey: 'propertiesPanel.tips.backup.items' },
+  export:        { icon: Info,     titleKey: 'propertiesPanel.tips.export.title',        itemsKey: 'propertiesPanel.tips.export.items' },
+  settings:      { icon: Info,     titleKey: 'propertiesPanel.tips.settings.title',      itemsKey: 'propertiesPanel.tips.settings.items' },
+  info:          { icon: FileText, titleKey: 'propertiesPanel.tips.info.title',          itemsKey: 'propertiesPanel.tips.info.items' },
+}
+
 /** 通用提示 */
 function GenericProps({ module }: { module: SidebarModule }) {
-  const tips: Record<string, { icon: React.ComponentType<{ className?: string }>; title: string; tips: string[] }> = {
-    worldview: {
-      icon: Globe,
-      title: '世界观',
-      tips: ['世界观是AI写作的核心上下文', '建议先填写基础设定再开始写作', '功法体系会影响战斗场景的生成质量'],
-    },
-    'story-core': {
-      icon: FileText,
-      title: '故事核心',
-      tips: ['故事核心定义主线冲突与主题', '清晰的主角动机有助于AI保持人物一致性'],
-    },
-    'power-system': {
-      icon: Info,
-      title: '力量体系',
-      tips: ['力量体系的层次越清晰，战斗场景越合理', '建议列出主角所在等级与突破条件'],
-    },
-    history: {
-      icon: Info,
-      title: '历史年表',
-      tips: ['历史事件会为伏笔提供时间参考', '标注影响当前剧情的关键节点'],
-    },
-    rules: {
-      icon: Info,
-      title: '创作规则',
-      tips: ['创作规则会作为system prompt附加到所有AI请求', '规则越简洁越有效'],
-    },
-    backup: {
-      icon: Info,
-      title: '版本历史',
-      tips: ['每5分钟自动备份一次', '可手动创建快照保存重要版本'],
-    },
-    export: {
-      icon: Info,
-      title: '导出',
-      tips: ['支持 Markdown、TXT、JSON 三种格式', 'JSON格式可完整还原项目数据'],
-    },
-    settings: {
-      icon: Info,
-      title: '设置',
-      tips: ['推荐使用 DeepSeek 以降低成本', 'API Key 默认仅保存本次会话；勾选记住本机才写入 localStorage，AI 请求会发送到所选模型服务'],
-    },
-    info: {
-      icon: FileText,
-      title: '基本信息',
-      tips: ['项目信息会附加在AI上下文中', '目标字数用于追踪写作进度'],
-    },
-  }
+  const { t } = useDomainT('layout')
+  const entry = TIPS_MAP[module]
+  if (!entry) return null
 
-  const data = tips[module]
-  if (!data) return null
-  const Icon = data.icon
+  const Icon = entry.icon
+  const title = t(entry.titleKey)
+  const items = t(entry.itemsKey, { returnObjects: true }) as unknown as string[]
+
+  if (!Array.isArray(items)) return null
 
   return (
-    <Section title={data.title} icon={Icon}>
+    <Section title={title} icon={Icon}>
       <div className="py-1 space-y-2">
-        {data.tips.map((tip, i) => (
+        {items.map((tip, i) => (
           <p key={i} className="text-xs text-text-muted leading-relaxed">
             · {tip}
           </p>
@@ -229,6 +212,8 @@ function GenericProps({ module }: { module: SidebarModule }) {
 
 /** 属性面板主体 */
 export default function PropertiesPanel({ activeModule, onClose }: Props) {
+  const { t } = useDomainT('layout')
+
   const renderContent = () => {
     switch (activeModule) {
       case 'outline':
@@ -251,7 +236,7 @@ export default function PropertiesPanel({ activeModule, onClose }: Props) {
     <aside className="w-60 bg-bg-surface border-l border-border flex flex-col h-full shrink-0">
       {/* 标题栏 */}
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-border">
-        <span className="text-xs font-semibold text-text-secondary uppercase tracking-wide">属性</span>
+        <span className="text-xs font-semibold text-text-secondary uppercase tracking-wide">{t('propertiesPanel.title')}</span>
         <button
           onClick={onClose}
           className="p-1 rounded text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"

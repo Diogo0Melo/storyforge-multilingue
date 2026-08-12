@@ -1,15 +1,32 @@
 import type { ComponentType } from 'react'
 import { BookMarked, Library, Palette } from 'lucide-react'
 import type { ReferenceType } from '../../lib/types'
+import { getT } from '../../i18n'
 
 export const REFERENCE_TYPE_CONFIG: Record<ReferenceType, {
-  label: string
+  labelKey: string
   icon: ComponentType<{ className?: string }>
   color: string
 }> = {
-  story: { label: '故事参考', icon: BookMarked, color: 'text-accent bg-accent/10 border-accent/30' },
-  style: { label: '风格参考', icon: Palette, color: 'text-purple-400 bg-purple-500/10 border-purple-400/30' },
-  historical: { label: '历史资料', icon: Library, color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
+  story: { labelKey: 'referenceType.story', icon: BookMarked, color: 'text-accent bg-accent/10 border-accent/30' },
+  style: { labelKey: 'referenceType.style', icon: Palette, color: 'text-purple-400 bg-purple-500/10 border-purple-400/30' },
+  historical: { labelKey: 'referenceType.historical', icon: Library, color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
+}
+
+/** Static key map — keeps typed t() happy (no computed keys). */
+const REFERENCE_TYPE_LABEL_KEY: Record<ReferenceType, `project:${string}`> = {
+  story: 'project:referenceType.story',
+  style: 'project:referenceType.style',
+  historical: 'project:referenceType.historical',
+}
+
+/** Resolve the translated label for a reference type at call time. */
+export function getReferenceTypeLabel(type: ReferenceType): string {
+  const t = getT()
+  const key = REFERENCE_TYPE_LABEL_KEY[type]
+  // Typed i18next rejects template-literal keys; cast is safe because
+  // REFERENCE_TYPE_LABEL_KEY is a closed static map over registered keys.
+  return t(key as 'project:referenceType.story')
 }
 
 export const REFERENCE_GLYPH_COLORS = [

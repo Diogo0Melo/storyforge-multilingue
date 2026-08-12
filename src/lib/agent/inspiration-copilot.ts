@@ -1,4 +1,5 @@
 import { useAIConfigStore } from '../../stores/ai-config'
+import { getT } from '../../i18n'
 import { useInspirationWorkspaceStore } from '../../stores/inspiration-workspace'
 import {
   buildInspirationReverseMultiWorldPrompt,
@@ -82,7 +83,7 @@ interface InspirationCopilotDependencies {
 
 export class InspirationCopilotStaleError extends Error {
   constructor() {
-    super('灵感工作区已在候选生成后发生变化。为避免覆盖新版本，请重新生成候选。')
+    super(getT()('agent:copilot.inspiration.staleError'))
     this.name = 'InspirationCopilotStaleError'
   }
 }
@@ -113,8 +114,8 @@ async function readWorkspaceSnapshot(projectId: number): Promise<InspirationWork
 
 function assertAuthorRequest(value: string): string {
   const request = value.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的本轮反推要求。')
-  if (request.length > 1000) throw new Error('单次反推要求不能超过 1000 个字符。')
+  if (request.length < 2) throw new Error(getT()('agent:copilot.inspiration.requestTooShort'))
+  if (request.length > 1000) throw new Error(getT()('agent:copilot.inspiration.requestTooLong'))
   return request
 }
 
@@ -152,12 +153,12 @@ export function parseInspirationCandidateDraft(
   mode: InspirationResultMode,
 ): InspirationCopilotResult {
   const trimmed = draft.trim()
-  if (!trimmed) throw new Error('灵感反推候选为空。')
+  if (!trimmed) throw new Error(getT()('agent:copilot.inspiration.candidateEmpty'))
   if (trimmed.length > MAX_INSPIRATION_RESULT_CHARS) {
-    throw new Error(`灵感反推候选超过 ${MAX_INSPIRATION_RESULT_CHARS} 字符。`)
+    throw new Error(getT()('agent:copilot.inspiration.candidateTooLong', { max: MAX_INSPIRATION_RESULT_CHARS }))
   }
   const parsed = parseResult(trimmed, mode)
-  if (!parsed) throw new Error('候选不是有效的灵感反推 JSON 结构。')
+  if (!parsed) throw new Error(getT()('agent:copilot.inspiration.candidateInvalidStructure'))
   return parsed
 }
 
@@ -174,7 +175,7 @@ export async function prepareInspirationCopilot(input: {
   signal?: AbortSignal
 }): Promise<PreparedInspirationCopilot> {
   const project = await db.projects.get(input.projectId)
-  if (!project) throw new Error('项目不存在。')
+  if (!project) throw new Error(getT()('agent:copilot.inspiration.projectNotFound'))
   const mode: InspirationResultMode = project.enableMultiWorld ? 'multiworld' : 'single'
   const snapshot = await readWorkspaceSnapshot(input.projectId)
   const fragments = parseInspirationFragments(snapshot.fragments)
@@ -182,10 +183,10 @@ export async function prepareInspirationCopilot(input: {
   if (
     selectedFragmentIds.length === 0
     || selectedFragmentIds.length > MAX_INSPIRATION_FRAGMENTS
-  ) throw new Error(`请选择 1-${MAX_INSPIRATION_FRAGMENTS} 条已保存的灵感碎片。`)
+  ) throw new Error(getT()('agent:copilot.inspiration.selectFragments', { max: MAX_INSPIRATION_FRAGMENTS }))
   const existingIds = new Set(fragments.map(fragment => fragment.id))
   if (selectedFragmentIds.some(id => !existingIds.has(id))) {
-    throw new Error('所选灵感碎片已不存在或不属于当前项目。')
+    throw new Error(getT()('agent:copilot.inspiration.fragmentsNotExist'))
   }
 
   const routingCategory = input.routingCategory ?? 'inspiration.reverse'
@@ -206,7 +207,7 @@ export async function prepareInspirationCopilot(input: {
     { fragmentIds: selectedFragmentIds, mode },
   )
   if (!context.ok || !context.meta.included.includes('inspirationWorkspace')) {
-    throw new Error(context.error || '当前选择没有可用的灵感上下文。')
+    throw new Error(context.error || getT()('agent:copilot.inspiration.noUsableContext'))
   }
 
   const versions = parseInspirationVersions(snapshot.versions)
@@ -284,7 +285,7 @@ export function createInspirationCopilotNode(
         ),
     run: async messages => {
       const parsed = parseResult(await runAI(messages), input.mode)
-      if (!parsed) throw new Error('Agnes 返回内容无法解析为灵感反推结构。')
+      if (!parsed) throw new Error(getT()('agent:copilot.inspiration.parseFailed'))
       return parsed
     },
     gate: output => {
@@ -293,19 +294,19 @@ export function createInspirationCopilotNode(
       try {
         serialized = JSON.stringify(output)
       } catch {
-        issues.push({ code: 'inspiration-not-serializable', message: '候选无法序列化为 JSON。' })
+        issues.push({ code: 'inspiration-not-serializable', message: getT()('agent:copilot.inspiration.notSerializable') })
       }
       if (serialized.length > MAX_INSPIRATION_RESULT_CHARS) {
         issues.push({
           code: 'inspiration-too-long',
-          message: `候选超过 ${MAX_INSPIRATION_RESULT_CHARS} 字符。`,
+          message: getT()('agent:copilot.inspiration.tooLong', { max: MAX_INSPIRATION_RESULT_CHARS }),
         })
       }
       if (!resultHasValue(output, input.mode)) {
-        issues.push({ code: 'inspiration-empty-shell', message: '候选没有可用的世界、故事或角色内容。' })
+        issues.push({ code: 'inspiration-empty-shell', message: getT()('agent:copilot.inspiration.emptyShell') })
       }
       if (input.mode === 'multiworld' && (output as ReverseMultiWorldResult).worlds.length === 0) {
-        issues.push({ code: 'inspiration-no-world', message: '多世界候选至少需要一个世界。' })
+        issues.push({ code: 'inspiration-no-world', message: getT()('agent:copilot.inspiration.noWorld') })
       }
       return { status: issues.length ? 'blocked' : 'pass', issues }
     },

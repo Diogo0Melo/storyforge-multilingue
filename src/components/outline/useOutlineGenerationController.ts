@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { useDomainT } from '../../i18n'
 import type { UseAIStreamReturn } from '../../hooks/useAIStream'
 import type { RunOptions } from '../../lib/ai/adapters/outline-adapter'
 import {
@@ -59,6 +60,7 @@ export function useOutlineGenerationController({
   onInfo,
   onError,
 }: Options) {
+  const { t } = useDomainT('outline')
   const [activeModuleKey, setActiveModuleKey] = useState<'outline.volume' | 'outline.chapter'>('outline.volume')
   const [pendingRequest, setPendingRequest] = useState<OutlineGenerationRequest | null>(null)
   const [preparedContext, setPreparedContext] = useState<PreparedGenerationContext | null>(null)
@@ -107,10 +109,10 @@ export function useOutlineGenerationController({
     } catch (error) {
       return {
         prepared: null,
-        error: error instanceof Error ? error.message : '无法装配最终提示词',
+        error: error instanceof Error ? error.message : t('generation.assembleFailed'),
       }
     }
-  }, [buildNode, pendingRequest, preparedContext])
+  }, [buildNode, pendingRequest, preparedContext, t])
 
   const execute = useCallback(async (
     request: OutlineGenerationRequest,
@@ -139,15 +141,16 @@ export function useOutlineGenerationController({
     } catch (error) {
       if (error instanceof OutlineGenerationSkipError) {
         ai.reset()
-        if (error.message.includes('无需继续生成')) onInfo(error.message)
+        const noMoreToken = t('errors-lib:outline.skipNoMoreGeneration')
+        if (noMoreToken && error.message.includes(noMoreToken)) onInfo(error.message)
         else onError(error.message)
         return
       }
       console.error('[Outline] 准备生成失败:', error)
       ai.reset()
-      onError(`准备大纲生成时出错：${error instanceof Error ? error.message : '未知错误'}。`)
+      onError(t('generation.prepareFailed', { error: error instanceof Error ? error.message : t('common:unknownError') }))
     }
-  }, [ai, assembleContext, buildNode, clearPreview, nodes, onError, onInfo, volumes])
+  }, [ai, assembleContext, buildNode, clearPreview, nodes, onError, onInfo, volumes, t])
 
   const prepare = useCallback(async (request: OutlineGenerationRequest) => {
     const requestId = contextRequestRef.current + 1
@@ -173,11 +176,11 @@ export function useOutlineGenerationController({
       setPreparedContext({ operation, assembled })
     } catch (error) {
       if (contextRequestRef.current !== requestId) return
-      setContextError(error instanceof Error ? error.message : '未知错误')
+      setContextError(error instanceof Error ? error.message : t('common:unknownError'))
     } finally {
       if (contextRequestRef.current === requestId) setContextLoading(false)
     }
-  }, [assembleContext, clearPreview, nodes, openPromptPanel, volumes])
+  }, [assembleContext, clearPreview, nodes, openPromptPanel, volumes, t])
 
   const cancel = useCallback(() => {
     contextRequestRef.current += 1

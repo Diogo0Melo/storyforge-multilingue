@@ -1,4 +1,5 @@
 import { Check, Loader2, Sparkles, X } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 
 interface Props<T> {
   title: string
@@ -15,24 +16,25 @@ interface Props<T> {
 export default function ExtractionReviewPanel<T>({
   title, items, selected, loading, error, renderItem, onToggle, onConfirm, onClose,
 }: Props<T>) {
+  const { t } = useDomainT('shared')
   return (
     <div className="mt-3 rounded-xl border border-accent/30 bg-bg-surface p-3 space-y-3">
       <div className="flex items-center justify-between gap-3">
         <h3 className="text-sm font-semibold text-text-primary flex items-center gap-2">
           <Sparkles className="w-4 h-4 text-accent" /> {title}
         </h3>
-        <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary" title="关闭">
+        <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary" title={t('extractionReview.closeTitle')}>
           <X className="w-4 h-4" />
         </button>
       </div>
       {loading && (
         <div className="flex items-center gap-2 text-xs text-text-muted">
-          <Loader2 className="w-4 h-4 animate-spin" /> AI 正在分析并整理候选项…
+          <Loader2 className="w-4 h-4 animate-spin" /> {t('extractionReview.analyzing')}
         </div>
       )}
       {error && <p className="text-xs text-red-400">{error}</p>}
       {!loading && !error && items.length === 0 && (
-        <p className="text-xs text-text-muted">没有发现可写入的新内容。</p>
+        <p className="text-xs text-text-muted">{t('extractionReview.empty')}</p>
       )}
       {items.length > 0 && (
         <>
@@ -60,7 +62,7 @@ export default function ExtractionReviewPanel<T>({
               disabled={selected.size === 0}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-accent text-white text-xs disabled:opacity-40"
             >
-              <Check className="w-3.5 h-3.5" /> 确认写入（{selected.size}）
+              <Check className="w-3.5 h-3.5" /> {t('extractionReview.confirmWrite', { count: selected.size })}
             </button>
           </div>
         </>

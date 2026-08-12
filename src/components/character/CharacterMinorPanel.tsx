@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Plus, Trash2, User } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useCharacterStore } from '../../stores/character'
 import type { Project, Character } from '../../lib/types'
 import { filterCharactersByRoleWeight } from '../../lib/character/character-axes'
@@ -13,6 +14,7 @@ interface Props {
 
 /** v3 §2.1 — 次要角色（小卡片网格视图） */
 export default function CharacterMinorPanel({ project }: Props) {
+  const { t } = useDomainT('character')
   const { characters, loadAll, addCharacter, updateCharacter, deleteCharacter } = useCharacterStore()
   const [editing, setEditing] = useState<number | null>(null)
 
@@ -23,7 +25,7 @@ export default function CharacterMinorPanel({ project }: Props) {
   const handleAdd = async () => {
     const id = await addCharacter({
       projectId: project.id!,
-      name: '新次要角色',
+      name: t('minor.defaultName'),
       roleWeight: 'secondary',
       moralAxis: 'neutral',
       orderAxis: 'neutral',
@@ -40,20 +42,20 @@ export default function CharacterMinorPanel({ project }: Props) {
     <div className="max-w-5xl p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold text-text-primary mb-1">👥 次要角色</h2>
-          <p className="text-sm text-text-muted">配角群像 — 简要卡片视图，记录关键信息即可。</p>
+          <h2 className="text-xl font-bold text-text-primary mb-1">{t('minor.title')}</h2>
+          <p className="text-sm text-text-muted">{t('minor.subtitle')}</p>
         </div>
         <button
           onClick={handleAdd}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded hover:bg-accent-hover"
         >
-          <Plus className="w-4 h-4" /> 新增
+          <Plus className="w-4 h-4" /> {t('minor.add')}
         </button>
       </div>
 
       {list.length === 0 ? (
         <div className="text-center py-12 text-text-muted text-sm">
-          还没有次要角色，点上方「新增」开始。
+          {t('minor.empty')}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -81,7 +83,7 @@ export default function CharacterMinorPanel({ project }: Props) {
                 <button
                   onClick={() => deleteCharacter(c.id!)}
                   className="p-1 text-text-muted hover:text-error"
-                  title="删除"
+                  title={t('minor.deleteTitle')}
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                 </button>
@@ -89,7 +91,7 @@ export default function CharacterMinorPanel({ project }: Props) {
               <CTextarea
                 value={c.shortDescription}
                 onChange={e => update(c.id!, { shortDescription: e.target.value })}
-                placeholder="一句话简介..."
+                placeholder={t('minor.shortDescriptionPlaceholder')}
                 rows={2}
                 className="w-full px-2 py-1 bg-bg-base border border-border rounded text-xs text-text-primary resize-none focus:outline-none focus:border-accent"
               />
@@ -100,7 +102,7 @@ export default function CharacterMinorPanel({ project }: Props) {
                     onClick={() => setEditing(null)}
                     className="text-xs text-accent hover:underline"
                   >
-                    收起
+                    {t('minor.collapse')}
                   </button>
                 </div>
               ) : (
@@ -108,7 +110,7 @@ export default function CharacterMinorPanel({ project }: Props) {
                   onClick={() => setEditing(c.id!)}
                   className="mt-2 text-xs text-text-secondary hover:text-accent"
                 >
-                  展开完整设定 ▾
+                  {t('minor.expand')}
                 </button>
               )}
             </div>

@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, Trash2 } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import type { Character, WorldGroup } from '../../lib/types'
 import {
-  MORAL_AXIS_LABELS,
-  ORDER_AXIS_LABELS,
-  ROLE_WEIGHT_LABELS,
+  getMoralAxisLabel,
+  getOrderAxisLabel,
+  getRoleWeightLabel,
 } from '../../lib/character/character-axes'
 import { InlineInput, InlineTextarea } from '../shared/InlineEdit'
 import CharacterAxesPicker from './CharacterAxesPicker'
@@ -36,6 +37,7 @@ export default function CharacterDetailCard({
   onReload,
   onDelete,
 }: Props) {
+  const { t } = useDomainT('character')
   const [expanded, setExpanded] = useState(true)
 
   return (
@@ -48,15 +50,15 @@ export default function CharacterDetailCard({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-1.5 text-xs text-text-muted mb-0.5">
             <span className="px-1.5 py-0.5 rounded text-[10px] font-medium border border-border bg-bg-elevated text-text-secondary">
-              {ROLE_WEIGHT_LABELS[char.roleWeight]}
+              {getRoleWeightLabel(char.roleWeight)}
             </span>
             <span className="px-1.5 py-0.5 rounded text-[10px] font-medium border border-border bg-bg-elevated text-text-secondary">
-              {ORDER_AXIS_LABELS[char.orderAxis]}{MORAL_AXIS_LABELS[char.moralAxis]}
+              {getOrderAxisLabel(char.orderAxis)}{getMoralAxisLabel(char.moralAxis)}
             </span>
 
             {multiWorld && (
               <select
-                aria-label="角色所属世界"
+                aria-label={t('detail.worldAriaLabel')}
                 value={char.isCrossWorld ? 'cross' : (char.homeWorldGroupId ?? '')}
                 onChange={event => {
                   const value = event.target.value
@@ -71,9 +73,9 @@ export default function CharacterDetailCard({
                       })
                 }}
                 className="px-1.5 py-0.5 bg-bg-elevated text-text-secondary text-[10px] rounded border border-border focus:outline-none focus:border-accent cursor-pointer"
-                title="角色所属世界"
+                title={t('detail.worldAriaLabel')}
               >
-                <option value="cross">🌐 跨世界</option>
+                <option value="cross">{t('detail.crossWorldOption')}</option>
                 {worldGroups.map(group => (
                   <option key={group.id} value={group.id}>{group.icon || '🌐'} {group.name}</option>
                 ))}
@@ -90,9 +92,9 @@ export default function CharacterDetailCard({
             value={char.shortDescription || ''}
             onChange={value => onUpdateField('shortDescription', value)}
             className={`text-sm mt-1 italic ${char.shortDescription ? 'text-text-secondary' : 'text-text-muted'}`}
-            prefix={char.shortDescription ? '“' : undefined}
-            suffix={char.shortDescription ? '”' : undefined}
-            placeholder="点击添加一句话简介…"
+            prefix={char.shortDescription ? '"' : undefined}
+            suffix={char.shortDescription ? '"' : undefined}
+            placeholder={t('detail.shortDescriptionPlaceholder')}
           />
         </div>
 
@@ -106,14 +108,14 @@ export default function CharacterDetailCard({
           <button
             onClick={() => setExpanded(value => !value)}
             className="p-1.5 text-text-muted hover:text-text-primary rounded transition-colors"
-            aria-label={expanded ? '收起角色详情' : '展开角色详情'}
+            aria-label={expanded ? t('detail.collapseDetails') : t('detail.expandDetails')}
           >
             {expanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
           </button>
           <button
             onClick={onDelete}
             className="p-1.5 text-text-muted hover:text-error rounded transition-colors"
-            aria-label="删除角色"
+            aria-label={t('detail.deleteAriaLabel')}
           >
             <Trash2 className="w-4 h-4" />
           </button>
@@ -148,12 +150,12 @@ export default function CharacterDetailCard({
             exclude={['shortDescription']}
           />
           <div className="flex gap-2">
-            <span className="w-20 flex-shrink-0 pt-1.5 text-xs text-text-muted">人物关系</span>
+            <span className="w-20 flex-shrink-0 pt-1.5 text-xs text-text-muted">{t('detail.relationshipsLabel')}</span>
             <div className="flex-1 min-w-0">
               <InlineTextarea
                 value={char.relationships || ''}
                 onChange={value => onUpdateField('relationships', value)}
-                placeholder="点击填写人物关系…"
+                placeholder={t('detail.relationshipsPlaceholder')}
               />
             </div>
           </div>

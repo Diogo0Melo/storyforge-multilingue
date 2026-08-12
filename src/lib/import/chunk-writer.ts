@@ -18,6 +18,7 @@ import {
   mergeCharacterFields,
   checkOutlineDuplicate,
 } from './dedup'
+import { getT } from '../../i18n'
 
 // 角色文字字段单一事实源：所有维度 + relationships(非维度，单列保留)。加维度自动跟随导入。
 const CHARACTER_TEXT_KEYS = [...CHARACTER_DIMENSIONS.map(d => d.key), 'relationships'] as const
@@ -290,12 +291,14 @@ export async function applyChunkResult(
         fallbackVolumeId = vols[vols.length - 1].id ?? null
         fallbackChildRef.value = existingNodes.filter(n => n.parentId === fallbackVolumeId).length
       } else {
+        const t = getT()
+        const fallbackTitle = t('errors-lib:import.fallbackVolumeTitle')
         const adopted = await adopt({
           projectId, worldGroupId: targetWorldGroupId,
           target: 'outlineNodes', mode: 'add',
           data: {
             parentId: null, type: 'volume', worldGroupId: targetWorldGroupId,
-            title: '导入章节', summary: '',
+            title: fallbackTitle, summary: '',
             order: existingNodes.filter(n => n.parentId === null).length,
           },
         })
@@ -303,7 +306,7 @@ export async function applyChunkResult(
         if (fallbackVolumeId != null) {
           existingNodes.push({
             id: fallbackVolumeId, projectId, parentId: null, type: 'volume',
-            title: '导入章节', summary: '', order: 0, worldGroupId: targetWorldGroupId,
+            title: fallbackTitle, summary: '', order: 0, worldGroupId: targetWorldGroupId,
             createdAt: Date.now(), updatedAt: Date.now(),
           } as typeof existingNodes[number])
           outlineAdded++

@@ -1,5 +1,6 @@
 import { Plus, X, Settings2 } from 'lucide-react'
 import type { PromptParameter } from '../../../lib/types/prompt'
+import { useDomainT } from '../../../i18n'
 
 interface Props {
   parameters: PromptParameter[]
@@ -7,25 +8,25 @@ interface Props {
   readOnly?: boolean
 }
 
-const TYPE_LABELS: Record<PromptParameter['type'], string> = {
-  select:  '下拉',
-  slider:  '滑块',
-  number:  '数字',
-  text:    '文本',
-  boolean: '开关',
-}
+const TYPE_KEYS = ['select', 'slider', 'number', 'text', 'boolean'] as const
 
-/**
- * 模板参数编辑器（仅在编辑模板时用）。
- * 用户用模板时的"调参"是另一个组件（PromptParametersRunner，运行时面板）。
- */
 export default function PromptParametersEditor({ parameters, onChange, readOnly }: Props) {
+  const { t } = useDomainT('settings')
+
+  const typeLabels: Record<string, string> = {
+    select: t('promptParameters.typeLabels.select'),
+    slider: t('promptParameters.typeLabels.slider'),
+    number: t('promptParameters.typeLabels.number'),
+    text: t('promptParameters.typeLabels.text'),
+    boolean: t('promptParameters.typeLabels.boolean'),
+  }
+
   const addParam = () => {
     onChange([
       ...parameters,
       {
         key: `param${parameters.length + 1}`,
-        label: '新参数',
+        label: t('promptParameters.newParameterLabel'),
         type: 'text',
         default: '',
         optional: true,
@@ -48,24 +49,23 @@ export default function PromptParametersEditor({ parameters, onChange, readOnly 
         <div className="flex items-center gap-2">
           <Settings2 className="w-4 h-4 text-text-secondary" />
           <label className="text-sm font-medium text-text-primary">
-            可调参数
+            {t('promptParameters.title')}
           </label>
-          <span className="text-xs text-text-muted">（{parameters.length}）</span>
+          <span className="text-xs text-text-muted">({parameters.length})</span>
         </div>
         {!readOnly && (
           <button
             onClick={addParam}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded"
           >
-            <Plus className="w-3 h-3" /> 新增参数
+            <Plus className="w-3 h-3" /> {t('promptParameters.add')}
           </button>
         )}
       </div>
 
       {parameters.length === 0 ? (
         <p className="text-xs text-text-muted py-2">
-          尚无参数。声明参数后，模板里可用 <code className="px-1 bg-bg-base rounded">{'{{key}}'}</code> 引用，
-          可选参数支持 <code className="px-1 bg-bg-base rounded">{'{{#if usesKey}}...{{/if}}'}</code> 包住。
+          <span dangerouslySetInnerHTML={{ __html: t('promptParameters.empty') }} />
         </p>
       ) : (
         <div className="space-y-2">
@@ -76,14 +76,14 @@ export default function PromptParametersEditor({ parameters, onChange, readOnly 
                   value={p.key}
                   onChange={e => updateParam(idx, { key: e.target.value })}
                   readOnly={readOnly}
-                  placeholder="key（用于 {{key}}）"
+                  placeholder={t('promptParameters.keyPlaceholder')}
                   className="px-2 py-1 bg-bg-surface border border-border rounded text-xs text-text-primary font-mono focus:outline-none focus:border-accent"
                 />
                 <input
                   value={p.label}
                   onChange={e => updateParam(idx, { label: e.target.value })}
                   readOnly={readOnly}
-                  placeholder="UI 显示名"
+                  placeholder={t('promptParameters.labelPlaceholder')}
                   className="px-2 py-1 bg-bg-surface border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
               </div>
@@ -94,15 +94,15 @@ export default function PromptParametersEditor({ parameters, onChange, readOnly 
                   disabled={readOnly}
                   className="px-2 py-1 bg-bg-surface border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
                 >
-                  {Object.entries(TYPE_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
+                  {TYPE_KEYS.map(k => (
+                    <option key={k} value={k}>{typeLabels[k]}</option>
                   ))}
                 </select>
                 <input
                   value={String(p.default)}
                   onChange={e => updateParam(idx, { default: e.target.value })}
                   readOnly={readOnly}
-                  placeholder="默认值"
+                  placeholder={t('promptParameters.defaultPlaceholder')}
                   className="px-2 py-1 bg-bg-surface border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
                 <label className="flex items-center gap-1.5 text-xs text-text-secondary">
@@ -113,7 +113,7 @@ export default function PromptParametersEditor({ parameters, onChange, readOnly 
                     disabled={readOnly}
                     className="accent-accent"
                   />
-                  允许关闭
+                  {t('promptParameters.optionalToggle')}
                 </label>
               </div>
               {p.type === 'select' && (
@@ -121,7 +121,7 @@ export default function PromptParametersEditor({ parameters, onChange, readOnly 
                   value={(p.options || []).join(',')}
                   onChange={e => updateParam(idx, { options: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
                   readOnly={readOnly}
-                  placeholder="选项，逗号分隔（如：严肃,轻松,幽默）"
+                  placeholder={t('promptParameters.selectOptionsPlaceholder')}
                   className="w-full px-2 py-1 bg-bg-surface border border-border rounded text-xs text-text-primary mb-2 focus:outline-none focus:border-accent"
                 />
               )}
@@ -158,7 +158,7 @@ export default function PromptParametersEditor({ parameters, onChange, readOnly 
                   value={p.description ?? ''}
                   onChange={e => updateParam(idx, { description: e.target.value })}
                   readOnly={readOnly}
-                  placeholder="说明（鼠标悬停显示）"
+                  placeholder={t('promptParameters.descriptionPlaceholder')}
                   className="flex-1 px-2 py-1 bg-bg-surface border border-border rounded text-xs text-text-secondary focus:outline-none focus:border-accent"
                 />
                 {!readOnly && (

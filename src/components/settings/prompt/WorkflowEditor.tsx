@@ -23,6 +23,8 @@ import {
 import { useDialog } from '../../shared/Dialog'
 import { useToast } from '../../shared/Toast'
 import WorkflowCanvas from './WorkflowCanvas'
+import { useDomainT } from '../../../i18n'
+import { resolveSystemSeedDisplay } from '../../../lib/ai/seed-i18n'
 
 type EditorMode = 'canvas' | 'details'
 
@@ -33,6 +35,9 @@ export default function WorkflowEditor({
   workflow: PromptWorkflow
   onClose: () => void
 }) {
+  const { t, lang } = useDomainT('settings')
+  // 语言感知的列表连接（图校验问题列表）
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const dialog = useDialog()
   const toast = useToast()
   const saveWorkflow = useWorkflowStore(state => state.save)
@@ -83,7 +88,7 @@ export default function WorkflowEditor({
       const row = currentGraph.nodes.length % 3
       const step: PromptWorkflowStep = {
         stepId,
-        label: `节点 ${current.steps.length + 1}`,
+        label: t('workflow.newNodeLabel', { index: current.steps.length + 1 }),
         promptModuleKey: 'chapter.content',
         userConfirmRequired: true,
       }
@@ -187,13 +192,13 @@ export default function WorkflowEditor({
 
   const handleSave = async () => {
     if (graphIssues.length) {
-      toast.error('请先修复工作流图错误。')
+      toast.error(t('workflow.graphIssuesPrefix'))
       return
     }
     try {
       await saveWorkflow(draft)
       setDirty(false)
-      toast.success('节点模式已保存')
+      toast.success(t('workflow.savedToast'))
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error))
     }
@@ -202,9 +207,9 @@ export default function WorkflowEditor({
   const handleClose = async () => {
     if (dirty) {
       const ok = await dialog.confirm({
-        title: '放弃未保存的更改？',
-        message: '当前节点、连线或参数尚未保存，返回后会丢失。',
-        confirmText: '放弃并返回',
+        title: t('workflow.discardTitle'),
+        message: t('workflow.discardMessage'),
+        confirmText: t('workflow.discardConfirm'),
         tone: 'danger',
       })
       if (!ok) return
@@ -215,9 +220,9 @@ export default function WorkflowEditor({
   const handleDelete = async () => {
     if (!draft.id) return
     const ok = await dialog.confirm({
-      title: `删除工作流「${draft.name}」？`,
-      message: '节点布局和连线也会一并删除，此操作不可恢复。',
-      confirmText: '删除',
+      title: t('workflow.deleteTitle', { name: draft.name }),
+      message: t('workflow.deleteFullMessage'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -237,16 +242,18 @@ export default function WorkflowEditor({
       )
     : undefined
   const bindings = template?.variableBindings ?? []
+  // 系统工作流种子显示名经 settings ns 解析;名称输入框与删除对话框仍用原文(Gate 5 · B2)
+  const { name: displayName } = resolveSystemSeedDisplay(t, 'workflow', draft)
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-bg-surface px-4 py-3">
         <div className="min-w-0">
           <h2 className="truncate text-base font-semibold text-text-primary">
-            节点模式 · {draft.name}
+            {t('workflow.editorTitle', { name: displayName })}
           </h2>
           <p className="text-xs text-text-muted">
-            FLOW-1 第一阶段 · DAG 编排会复用现有 GenerationNode 和作者确认写回
+            {t('workflow.editorSubtitle')}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -258,7 +265,7 @@ export default function WorkflowEditor({
                 mode === 'canvas' ? 'bg-accent text-white' : 'text-text-secondary'
               }`}
             >
-              <GitBranch className="h-3.5 w-3.5" /> 画布
+              <GitBranch className="h-3.5 w-3.5" /> {t('workflow.canvasTab')}
             </button>
             <button
               type="button"
@@ -267,7 +274,7 @@ export default function WorkflowEditor({
                 mode === 'details' ? 'bg-accent text-white' : 'text-text-secondary'
               }`}
             >
-              <List className="h-3.5 w-3.5" /> 顺序
+              <List className="h-3.5 w-3.5" /> {t('workflow.sequenceTab')}
             </button>
           </div>
           <button
@@ -276,14 +283,14 @@ export default function WorkflowEditor({
             disabled={!dirty || graphIssues.length > 0}
             className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-sm text-white hover:bg-accent-hover disabled:opacity-40"
           >
-            <Save className="h-4 w-4" /> 保存{dirty && ' *'}
+            <Save className="h-4 w-4" /> {t('common:save')}{dirty && ' *'}
           </button>
           <button
             type="button"
             onClick={() => { void handleClose() }}
             className="rounded px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover"
           >
-            返回
+            {t('workflow.back')}
           </button>
         </div>
       </div>
@@ -291,7 +298,7 @@ export default function WorkflowEditor({
       {graphIssues.length > 0 && (
         <div role="alert" className="flex items-start gap-2 border-b border-error/30 bg-error/10 px-4 py-2 text-xs text-error">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
-          <span>{graphIssues.map(issue => issue.message).join('；')}</span>
+          <span>{listFormat.format(graphIssues.map(issue => issue.message))}</span>
         </div>
       )}
 
@@ -316,9 +323,9 @@ export default function WorkflowEditor({
             <div className="h-full min-h-[620px] overflow-y-auto rounded-xl border border-border bg-bg-surface p-4">
               <div className="mb-3 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-medium text-text-primary">作者顺序</h3>
+                  <h3 className="text-sm font-medium text-text-primary">{t('workflow.authorOrderTitle')}</h3>
                   <p className="text-[11px] text-text-muted">
-                    拓扑排序并列时使用这里的顺序；真实依赖仍由画布连线决定。
+                    {t('workflow.authorOrderHint')}
                   </p>
                 </div>
                 <button
@@ -326,7 +333,7 @@ export default function WorkflowEditor({
                   onClick={addStep}
                   className="flex items-center gap-1 rounded px-2 py-1 text-xs text-accent hover:bg-accent/10"
                 >
-                  <Plus className="h-3 w-3" /> 添加节点
+                  <Plus className="h-3 w-3" /> {t('workflow.addNode')}
                 </button>
               </div>
               <div className="space-y-2">
@@ -350,7 +357,7 @@ export default function WorkflowEditor({
                     </button>
                     <button
                       type="button"
-                      aria-label={`上移节点 ${step.label}`}
+                      aria-label={t('workflow.moveUpAria', { label: step.label })}
                       disabled={index === 0}
                       onClick={() => moveStepOrder(step.stepId, -1)}
                       className="rounded px-1 text-xs text-text-muted hover:bg-bg-hover disabled:opacity-30"
@@ -359,7 +366,7 @@ export default function WorkflowEditor({
                     </button>
                     <button
                       type="button"
-                      aria-label={`下移节点 ${step.label}`}
+                      aria-label={t('workflow.moveDownAria', { label: step.label })}
                       disabled={index === draft.steps.length - 1}
                       onClick={() => moveStepOrder(step.stepId, 1)}
                       className="rounded px-1 text-xs text-text-muted hover:bg-bg-hover disabled:opacity-30"
@@ -368,7 +375,7 @@ export default function WorkflowEditor({
                     </button>
                     <button
                       type="button"
-                      aria-label={`删除节点 ${step.label}`}
+                      aria-label={t('workflow.deleteNodeAria', { label: step.label })}
                       onClick={() => removeStepById(step.stepId)}
                       className="rounded p-1 text-text-muted hover:bg-error/10 hover:text-error"
                     >
@@ -384,7 +391,7 @@ export default function WorkflowEditor({
         <aside className="min-h-0 overflow-y-auto border-l border-border bg-bg-surface p-4">
           <div className="mb-4 space-y-3 border-b border-border pb-4">
             <div>
-              <label className="mb-1 block text-[10px] text-text-muted">工作流名称</label>
+              <label className="mb-1 block text-[10px] text-text-muted">{t('workflow.workflowNameLabel')}</label>
               <input
                 value={draft.name}
                 onChange={event => update({ name: event.target.value })}
@@ -392,7 +399,7 @@ export default function WorkflowEditor({
               />
             </div>
             <div>
-              <label className="mb-1 block text-[10px] text-text-muted">说明</label>
+              <label className="mb-1 block text-[10px] text-text-muted">{t('workflow.descriptionLabel')}</label>
               <textarea
                 value={draft.description}
                 onChange={event => update({ description: event.target.value })}
@@ -405,13 +412,13 @@ export default function WorkflowEditor({
           {selectedStep ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h3 className="text-sm font-medium text-text-primary">节点检查器</h3>
+                <h3 className="text-sm font-medium text-text-primary">{t('workflow.inspectorTitle')}</h3>
                 <span className="text-[10px] text-text-muted">
                   {selectedStepIndex + 1} / {draft.steps.length}
                 </span>
               </div>
               <div>
-                <label className="mb-1 block text-[10px] text-text-muted">节点名称</label>
+                <label className="mb-1 block text-[10px] text-text-muted">{t('workflow.nodeLabel')}</label>
                 <input
                   value={selectedStep.label}
                   onChange={event => updateStepById(selectedStep.stepId, { label: event.target.value })}
@@ -419,7 +426,7 @@ export default function WorkflowEditor({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[10px] text-text-muted">Prompt 模块</label>
+                <label className="mb-1 block text-[10px] text-text-muted">{t('workflow.promptModuleLabel')}</label>
                 <select
                   value={selectedStep.promptModuleKey}
                   onChange={event => updateStepById(selectedStep.stepId, {
@@ -434,7 +441,7 @@ export default function WorkflowEditor({
                 </select>
               </div>
               <div>
-                <label className="mb-1 block text-[10px] text-text-muted">给 AI 的提示</label>
+                <label className="mb-1 block text-[10px] text-text-muted">{t('workflow.userHintLabel')}</label>
                 <textarea
                   value={selectedStep.userHint ?? ''}
                   onChange={event => updateStepById(selectedStep.stepId, { userHint: event.target.value })}
@@ -443,7 +450,7 @@ export default function WorkflowEditor({
                 />
               </div>
               <div>
-                <label className="mb-1 block text-[10px] text-text-muted">作者确认后的保存目标</label>
+                <label className="mb-1 block text-[10px] text-text-muted">{t('workflow.saveTargetLabel')}</label>
                 <select
                   value={saveTargetToValue(selectedStep.saveTarget)}
                   onChange={event => updateStepById(selectedStep.stepId, {
@@ -451,9 +458,14 @@ export default function WorkflowEditor({
                   })}
                   className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
                 >
-                  {SAVE_TARGET_PRESETS.map(preset => (
-                    <option key={preset.value} value={preset.value}>{preset.label}</option>
-                  ))}
+                  {SAVE_TARGET_PRESETS.map(preset => {
+                    const label = 'fieldKey' in preset
+                      ? t(preset.labelKey, { field: t(`saveTargets.${preset.fieldKey}`) })
+                      : t(preset.labelKey)
+                    return (
+                      <option key={preset.value} value={preset.value}>{label}</option>
+                    )
+                  })}
                 </select>
               </div>
               <label className="flex items-center gap-2 text-xs text-text-secondary">
@@ -465,19 +477,19 @@ export default function WorkflowEditor({
                   })}
                   className="accent-accent"
                 />
-                本节点完成后暂停，等待作者确认
+                {t('workflow.pauseForConfirmation')}
               </label>
 
               {incomingEdges.length > 0 && (
                 <div className="border-t border-border pt-3">
-                  <p className="mb-2 text-[10px] font-medium text-text-secondary">输入端口</p>
+                  <p className="mb-2 text-[10px] font-medium text-text-secondary">{t('workflow.inputPortsTitle')}</p>
                   <div className="space-y-2">
                     {incomingEdges.map(edge => {
                       const source = draft.steps.find(step => step.stepId === edge.sourceStepId)
                       return (
                         <div key={edge.edgeId} className="rounded border border-border bg-bg-base p-2">
                           <div className="mb-1 flex items-center justify-between gap-2 text-[10px] text-text-muted">
-                            <span className="truncate">来自：{source?.label ?? edge.sourceStepId}</span>
+                            <span className="truncate">{t('workflow.fromPrefix', { label: source?.label ?? edge.sourceStepId })}</span>
                             <button
                               type="button"
                               onClick={() => removeEdge(edge.edgeId)}
@@ -487,7 +499,7 @@ export default function WorkflowEditor({
                             </button>
                           </div>
                           <input
-                            aria-label={`连线变量 ${source?.label ?? edge.sourceStepId}`}
+                            aria-label={t('workflow.edgeVariableAria', { label: source?.label ?? edge.sourceStepId })}
                             value={edge.targetVariable}
                             onChange={event => updateEdgeVariable(edge.edgeId, event.target.value)}
                             className="w-full rounded border border-border bg-bg-surface px-2 py-1 text-[11px] text-text-primary focus:border-accent focus:outline-none"
@@ -502,7 +514,7 @@ export default function WorkflowEditor({
               {bindings.length > 0 && (
                 <div className="border-t border-border pt-3">
                   <p className="mb-2 text-[10px] text-text-muted">
-                    模板字段会先读取登记项目资料；这里是作者补充，不会覆盖图入边。
+                    {t('workflow.templateFieldsHint')}
                   </p>
                   <div className="space-y-2">
                     {bindings.map(binding => (
@@ -529,7 +541,7 @@ export default function WorkflowEditor({
             </div>
           ) : (
             <div className="py-10 text-center text-xs text-text-muted">
-              添加或选择一个节点后编辑参数。
+              {t('workflow.selectNodeHint')}
             </div>
           )}
 
@@ -539,7 +551,7 @@ export default function WorkflowEditor({
               onClick={() => { void handleDelete() }}
               className="mt-6 flex items-center gap-1.5 rounded px-3 py-1.5 text-xs text-error hover:bg-error/10"
             >
-              <Trash2 className="h-3 w-3" /> 删除整个工作流
+              <Trash2 className="h-3 w-3" /> {t('workflow.deleteEntireWorkflow')}
             </button>
           )}
         </aside>

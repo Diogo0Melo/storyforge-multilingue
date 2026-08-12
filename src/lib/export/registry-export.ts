@@ -15,6 +15,7 @@ import { parseCharacterDrivenPlanArcs } from '../types/character-driven-plan'
 import type { TableSpec } from '../registry/types'
 import type { ProjectExportData } from './json-export'
 import { redactAuthoringSecrets } from '../node-authoring/contracts'
+import { getT } from '../../i18n'
 
 /** 当前导出格式版本(与手写版保持一致) */
 const EXPORT_VERSION = 3
@@ -104,7 +105,7 @@ function parseIdArray(value: unknown): number[] {
  */
 export async function deriveExportProjectJSON(projectId: number): Promise<ProjectExportData> {
   const project = await db.projects.get(projectId)
-  if (!project) throw new Error('项目不存在')
+  if (!project) throw new Error(getT()('errors-lib:export.registryExportProjectMissing'))
 
   const specs = PROJECT_TABLES.filter(s => s.exportable && s.name !== 'projects')
 
@@ -121,7 +122,7 @@ export async function deriveExportProjectJSON(projectId: number): Promise<Projec
 
   // 第二遍:逐行转导出对象
   const projectSpec = REGISTRY_BY_NAME.get('projects')
-  if (!projectSpec) throw new Error('[deriveExport] PROJECT_TABLES 缺少 projects 根表')
+  if (!projectSpec) throw new Error(getT()('errors-lib:export.registryExportProjectsRootMissing'))
   const projectData = toExportRow(projectSpec, project, 0, idMaps)
   const result: any = {
     version: EXPORT_VERSION,

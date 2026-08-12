@@ -5,6 +5,7 @@ import {
   type ChapterSearchTarget,
   type FindReplaceOptions,
 } from './find-replace'
+import { getT } from '../../i18n'
 
 export type ReplaceMode = 'one' | 'chapter' | 'book'
 
@@ -59,15 +60,15 @@ export async function executeFindReplace(args: ExecuteReplaceArgs): Promise<Exec
   const targetsWithMatches = args.targets
     .filter(target => (findChapterMatches(target, args.options)?.count ?? 0) > 0)
   if (!targetsWithMatches.length) {
-    throw new Error('没有可替换的命中')
+    throw new Error(getT()('errors-lib:editor.findReplaceNoMatches'))
   }
 
   const snapshotId = await args.createSnapshot(args.projectId, args.label, 'manual')
   const undoPatch: FindReplaceUndoPatch = {
-    label: `${args.label} · 快照 #${snapshotId}`,
+    label: getT()('errors-lib:editor.snapshotSuffix', { label: args.label, id: snapshotId }),
     chapters: targetsWithMatches.map(target => {
       const chapter = args.chapters.find(item => item.id === target.id)
-      if (!chapter) throw new Error(`章节不存在:${target.id}`)
+      if (!chapter) throw new Error(getT()('errors-lib:editor.findReplaceChapterMissing', { id: target.id }))
       return {
         id: target.id,
         content: chapter.content || '',

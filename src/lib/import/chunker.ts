@@ -26,6 +26,8 @@ export interface ChunkOptions {
   overlapChars?: number
 }
 
+import { getT } from '../../i18n'
+
 const DEFAULT_TARGET = 30000
 const DEFAULT_OVERLAP = 500
 
@@ -33,6 +35,7 @@ const DEFAULT_OVERLAP = 500
 const CHAPTER_REGEX = /^\s*第\s*[一二三四五六七八九十百千万零〇两\d０-９]+\s*[章回节卷部篇][\s\S]{0,30}$/gm
 
 export function chunkDocument(text: string, opts: ChunkOptions = {}): ChunkPlan[] {
+  const t = getT()
   const target = Math.max(5000, opts.targetChars ?? DEFAULT_TARGET)
   const overlap = Math.max(0, Math.min(2000, opts.overlapChars ?? DEFAULT_OVERLAP))
 
@@ -45,7 +48,7 @@ export function chunkDocument(text: string, opts: ChunkOptions = {}): ChunkPlan[
       startChar: 0,
       endChar: text.length,
       charCount: text.length,
-      label: '全文',
+      label: t('errors-lib:import.chunkFullText'),
       text,
     }]
   }
@@ -53,15 +56,15 @@ export function chunkDocument(text: string, opts: ChunkOptions = {}): ChunkPlan[
   // ── 第 1 步：找章节边界 ────────────────────────────────────
   const boundaries = findChapterBoundaries(text)
   if (boundaries.length >= 2) {
-    return chunkByChapters(text, boundaries, target)
+    return chunkByChapters(text, boundaries, target, t)
   }
 
   // ── 第 2 步：按段落凑块 ────────────────────────────────────
-  const paraChunks = chunkByParagraphs(text, target)
+  const paraChunks = chunkByParagraphs(text, target, t)
   if (paraChunks.length >= 2) return paraChunks
 
   // ── 第 3 步：硬切 ───────────────────────────────────────────
-  return chunkByCharacters(text, target, overlap)
+  return chunkByCharacters(text, target, overlap, t)
 }
 
 function findChapterBoundaries(text: string): Array<{ start: number; title: string }> {
@@ -81,6 +84,7 @@ function chunkByChapters(
   text: string,
   boundaries: Array<{ start: number; title: string }>,
   target: number,
+  t: ReturnType<typeof getT>,
 ): ChunkPlan[] {
   // 把章节扩为 [start, end)
   const chapters = boundaries.map((b, i) => ({
@@ -95,7 +99,7 @@ function chunkByChapters(
   const chunks: ChunkPlan[] = []
   let bufStart = preface ? 0 : chapters[0].start
   let bufEnd = bufStart
-  let bufLabels: string[] = preface ? ['（前言）'] : []
+  let bufLabels: string[] = preface ? [t('errors-lib:import.chunkPreface')] : []
 
   const flush = () => {
     if (bufEnd <= bufStart) return
@@ -106,7 +110,7 @@ function chunkByChapters(
       endChar: bufEnd,
       charCount: slice.length,
       label: bufLabels.length > 3
-        ? `${bufLabels[0]} … ${bufLabels[bufLabels.length - 1]}（共 ${bufLabels.length} 节）`
+        ? t('errors-lib:import.chunkRange', { first: bufLabels[0], last: bufLabels[bufLabels.length - 1], count: bufLabels.length })
         : bufLabels.join(' · '),
       text: slice,
     })
@@ -131,7 +135,7 @@ function chunkByChapters(
   return chunks
 }
 
-function chunkByParagraphs(text: string, target: number): ChunkPlan[] {
+function chunkByParagraphs(text: string, target: number, t: ReturnType<typeof getT>): ChunkPlan[] {
   const paras = text.split(/\n{2,}/)
   const chunks: ChunkPlan[] = []
   let bufStart = 0
@@ -146,7 +150,7 @@ function chunkByParagraphs(text: string, target: number): ChunkPlan[] {
       startChar: from,
       endChar: to,
       charCount: slice.length,
-      label: `段落 ${chunks.length + 1}`,
+      label: t('errors-lib:import.chunkParagraph', { n: chunks.length + 1 }),
       text: slice,
     })
   }
@@ -165,7 +169,7 @@ function chunkByParagraphs(text: string, target: number): ChunkPlan[] {
   return chunks
 }
 
-function chunkByCharacters(text: string, target: number, overlap: number): ChunkPlan[] {
+function chunkByCharacters(text: string, target: number, overlap: number, t: ReturnType<typeof getT>): ChunkPlan[] {
   const chunks: ChunkPlan[] = []
   let pos = 0
   while (pos < text.length) {
@@ -176,7 +180,7 @@ function chunkByCharacters(text: string, target: number, overlap: number): Chunk
       startChar: pos,
       endChar: end,
       charCount: slice.length,
-      label: `区段 ${chunks.length + 1}`,
+      label: t('errors-lib:import.chunkSection', { n: chunks.length + 1 }),
       text: slice,
     })
     if (end >= text.length) break

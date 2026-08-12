@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import { estimateTokens } from '../ai/context-budget'
 import { chat } from '../ai/client'
 import { useAIConfigStore } from '../../stores/ai-config'
@@ -231,7 +232,7 @@ function parseRunMaps(run: NodeRunRecord): {
       candidates: JSON.parse(run.nodeResultsJson || '{}') as AuthoringCandidateMap,
     }
   } catch {
-    throw new Error('节点运行记录损坏，不能作为恢复或重跑基线。')
+    throw new Error(getT()('node-authoring:executor.runRecordCorrupted'))
   }
 }
 
@@ -251,7 +252,7 @@ async function executeNode(input: {
   domain?: AuthoringCandidateDomain
 }> {
   const template = AUTHORING_NODE_BY_ID.get(input.node.templateId)
-  if (!template) throw new Error(`节点模板不存在：${input.node.templateId}`)
+  if (!template) throw new Error(getT()('node-authoring:executor.templateMissing', { templateId: input.node.templateId }))
   const { node, inputs } = input
   if (node.binding?.mode === 'live' && node.binding.ref) {
     const binding = await readAuthoringCanonBinding({
@@ -260,7 +261,7 @@ async function executeNode(input: {
       worldGroupId: input.worldGroupId,
       contextBudget: numberConfig(node, 'contextBudget', 12_000),
     })
-    if (binding.missing.length) throw new Error(`绑定来源已不存在：${binding.missing.join('、')}`)
+    if (binding.missing.length) throw new Error(getT()('node-authoring:executor.bindingSourceMissing', { sources: binding.missing.join('、') }))
     return {
       output: binding.content,
       sourceKeys: binding.sourceKeys,
@@ -277,9 +278,9 @@ async function executeNode(input: {
     const sourceKeys = configuredSourceKeys.length
       ? arrayConfig(node, 'sourceKeys')
       : template.reads?.sourceKeys ?? []
-    if (!sourceKeys.length) throw new Error('项目资料节点尚未选择资料来源。')
+    if (!sourceKeys.length) throw new Error(getT()('node-authoring:executor.projectSourceNotSelected'))
     if (sourceKeys.includes('ragSelection') && !arrayConfig(node, 'ragEntryKeys').length) {
-      throw new Error('项目资料节点选择了精确资料，但尚未绑定任何资料字段。')
+      throw new Error(getT()('node-authoring:executor.ragBindingMissing'))
     }
     const binding = await readAuthoringCanonBinding({
       node,
@@ -306,7 +307,7 @@ async function executeNode(input: {
       }
     }
     const instruction = stringConfig(node, 'instruction').trim()
-    if (!instruction) throw new Error('自由创作节点缺少创作指令。')
+    if (!instruction) throw new Error(getT()('node-authoring:executor.freeGenerationMissingInstruction'))
     const aiConfig = requestedAIConfig(node, inputs)
     const promptTemplate = inputControl(inputs, 'control.prompt')
     const generationCount = Math.min(8, Math.max(1, Math.round(controlNumber(inputs, 'control.count', numberConfig(node, 'candidateCount', 1)))))
@@ -420,8 +421,8 @@ export async function adoptAuthoringCandidate(input: {
 }) {
   const parsed = parseAuthoringGraph(input.flow.graphJson)
   const node = parsed.graph.nodes.find(item => item.id === input.nodeId)
-  if (!node) throw new Error('候选节点不存在。')
-  if (node.binding?.mode === 'live') throw new Error('实时 Canon 绑定节点只读，不能重复采纳；请采纳它的下游候选节点。')
+  if (!node) throw new Error(getT()('node-authoring:executor.candidateNodeMissing'))
+  if (node.binding?.mode === 'live') throw new Error(getT()('node-authoring:executor.liveBindingReadOnly'))
   const template = AUTHORING_NODE_BY_ID.get(node.templateId)
   const latestRuns = await db.nodeRuns.where('flowId').equals(input.flow.id!).toArray()
   latestRuns.sort((left, right) => right.startedAt - left.startedAt)
@@ -446,7 +447,7 @@ export async function adoptAuthoringCandidate(input: {
       worldGroupId: input.flow.worldGroupId ?? null,
     })
     if (currentTarget && !currentTarget.ambiguous && currentTarget.hash !== expectedSignature.targetHash) {
-      throw new Error('目标内容已在分步骤模式或其它入口中更新；请重新运行节点后再采纳，避免覆盖新内容。')
+      throw new Error(getT()('node-authoring:executor.targetUpdatedElsewhere'))
     }
   }
   if (latestDomain) {
@@ -459,7 +460,7 @@ export async function adoptAuthoringCandidate(input: {
     })
     if (adopted) return adopted
   }
-  if (!template?.writes) throw new Error('该节点没有登记可采纳的写回契约。')
+  if (!template?.writes) throw new Error(getT()('node-authoring:executor.noWritableContract'))
   const write = template.writes
   if (write.fields?.length === 1 && (write.mode === 'replace' || write.mode === 'merge-diffs')) {
     const recordId = await resolveAuthoringBoundRecordId({
@@ -469,7 +470,7 @@ export async function adoptAuthoringCandidate(input: {
       target: write.target,
     })
     if (write.target === 'characters' && recordId == null) {
-      throw new Error('角色维度节点需要先绑定一个目标角色，避免把内容写入错误角色。')
+      throw new Error(getT()('node-authoring:executor.characterDimensionUnbound'))
     }
     return adopt({
       projectId: input.flow.projectId,
@@ -487,9 +488,9 @@ export async function adoptAuthoringCandidate(input: {
       ? parsedOutput.filter((item): item is Record<string, unknown> => !!item && typeof item === 'object' && !Array.isArray(item))
       : [parsedOutput as Record<string, unknown>]
   } catch {
-    throw new Error('集合节点的候选必须是合法 JSON；请先编辑为 JSON 后再采纳。')
+    throw new Error(getT()('node-authoring:executor.collectionCandidateInvalidJson'))
   }
-  if (!data.length) throw new Error('候选没有可采纳的记录。')
+  if (!data.length) throw new Error(getT()('node-authoring:executor.noAdoptableRecords'))
   return adopt({
     projectId: input.flow.projectId,
     worldGroupId: input.flow.worldGroupId ?? null,
@@ -528,13 +529,13 @@ export async function runAuthoringGraph(input: {
   signal?: AbortSignal
   onUpdate?: (update: AuthoringRunUpdate) => void
 }): Promise<AuthoringRunUpdate> {
-  if (input.flow.id == null) throw new Error('请先保存节点图。')
+  if (input.flow.id == null) throw new Error(getT()('node-authoring:executor.saveGraphFirst'))
   const parsed = parseAuthoringGraph(input.flow.graphJson)
   const issues = validateAuthoringGraph(parsed.graph)
   if (issues.length) throw new Error(issues.map(issue => issue.message).join('；'))
   let ordered = topologicalAuthoringOrder(parsed.graph, input.targetNodeId)
   if (input.runNodeIds) ordered = ordered.filter(node => input.runNodeIds?.has(node.id))
-  if (!ordered.length) throw new Error('本次执行计划没有需要运行的节点。')
+  if (!ordered.length) throw new Error(getT()('node-authoring:executor.noRunnableNodes'))
   const now = Date.now()
   let plan = buildAuthoringExecutionPlan({
     graph: parsed.graph,
@@ -549,14 +550,14 @@ export async function runAuthoringGraph(input: {
   if (input.resumeRunId != null) {
     const existing = await db.nodeRuns.get(input.resumeRunId)
     if (!existing || existing.flowId !== input.flow.id || existing.projectId !== input.flow.projectId) {
-      throw new Error('要恢复的运行记录不存在或不属于当前节点图。')
+      throw new Error(getT()('node-authoring:executor.resumeRunMissing'))
     }
     if (existing.status !== 'paused' && existing.status !== 'failed') {
-      throw new Error('只有已暂停或失败的运行可以从断点恢复。')
+      throw new Error(getT()('node-authoring:executor.resumeOnlyPausedOrFailed'))
     }
     const previousPlan = parseAuthoringExecutionPlan(existing.executionPlanJson)
     if (!previousPlan || previousPlan.graphHash !== plan.graphHash) {
-      throw new Error('节点图已变化，不能继续旧断点；请开始一次新的运行。')
+      throw new Error(getT()('node-authoring:executor.graphChangedCannotResume'))
     }
     ;({ snapshots, candidates } = parseRunMaps(existing))
     const completed = new Set(previousPlan.completedNodeIds)
@@ -564,7 +565,7 @@ export async function runAuthoringGraph(input: {
       .filter(nodeId => !completed.has(nodeId))
       .map(nodeId => parsed.graph.nodes.find(node => node.id === nodeId))
       .filter((node): node is AuthoringNodeInstance => Boolean(node))
-    if (!ordered.length) throw new Error('该运行没有待恢复节点。')
+    if (!ordered.length) throw new Error(getT()('node-authoring:executor.noNodesToResume'))
     plan = { ...previousPlan, pendingNodeIds: ordered.map(node => node.id) }
     for (const node of ordered) {
       if (candidates[node.id]?.status === 'blocked') delete candidates[node.id]
@@ -581,7 +582,7 @@ export async function runAuthoringGraph(input: {
     if (input.baseRunId != null) {
       const base = await db.nodeRuns.get(input.baseRunId)
       if (!base || base.flowId !== input.flow.id || base.projectId !== input.flow.projectId) {
-        throw new Error('过期重跑基线不存在或不属于当前节点图。')
+        throw new Error(getT()('node-authoring:executor.staleBaseMissing'))
       }
       ;({ snapshots, candidates } = parseRunMaps(base))
     }

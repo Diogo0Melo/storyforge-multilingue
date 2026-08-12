@@ -11,11 +11,11 @@ export type OutlineNodeType =
 export type StoryStructure = 'three-act' | 'kishotenketsu' | 'jo-ha-kyu' | 'custom'
 
 /** 内置故事结构定义 */
-export const STORY_STRUCTURES: Record<StoryStructure, { label: string; blocks: string[] }> = {
-  'three-act':      { label: '三幕式',     blocks: ['第一幕：铺垫', '第二幕：对抗', '第三幕：解决'] },
-  'kishotenketsu':  { label: '起承转合',   blocks: ['起：引入', '承：发展', '转：转折', '合：收束'] },
-  'jo-ha-kyu':      { label: '序破急',     blocks: ['序：缓起', '破：展开', '急：高潮'] },
-  'custom':         { label: '自定义',     blocks: [] },
+export const STORY_STRUCTURES: Record<StoryStructure, { label: string; labelKey: string; blocks: string[]; blockKeys?: string[] }> = {
+  'three-act':      { label: '三幕式',     labelKey: 'outline:structure.threeAct.label',     blocks: ['第一幕：铺垫', '第二幕：对抗', '第三幕：解决'], blockKeys: ['outline:structure.threeAct.block.0', 'outline:structure.threeAct.block.1', 'outline:structure.threeAct.block.2'] },
+  'kishotenketsu':  { label: '起承转合',   labelKey: 'outline:structure.kishotenketsu.label', blocks: ['起：引入', '承：发展', '转：转折', '合：收束'], blockKeys: ['outline:structure.kishotenketsu.block.0', 'outline:structure.kishotenketsu.block.1', 'outline:structure.kishotenketsu.block.2', 'outline:structure.kishotenketsu.block.3'] },
+  'jo-ha-kyu':      { label: '序破急',     labelKey: 'outline:structure.joHaKyu.label',       blocks: ['序：缓起', '破：展开', '急：高潮'],             blockKeys: ['outline:structure.joHaKyu.block.0', 'outline:structure.joHaKyu.block.1', 'outline:structure.joHaKyu.block.2'] },
+  'custom':         { label: '自定义',     labelKey: 'outline:structure.custom.label',        blocks: [],                                                blockKeys: [] },
 }
 
 /** 大纲节点 */

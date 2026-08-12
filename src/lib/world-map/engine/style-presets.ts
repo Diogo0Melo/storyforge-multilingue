@@ -256,7 +256,7 @@ export function getStyleConfig(preset: MapStylePreset = 'topographic'): StyleCon
   return PRESETS[preset] || PRESETS.topographic
 }
 
-/** 风格预设描述（UI 用） */
+/** 风格预设描述（UI 用）— LEAVE as data key for potential AI prompt usage */
 export const STYLE_PRESET_LABELS: Record<MapStylePreset, string> = {
   topographic: '等高线地形图',
   parchment: '羊皮纸古典',
@@ -264,4 +264,14 @@ export const STYLE_PRESET_LABELS: Record<MapStylePreset, string> = {
   dark: '暗黑风格',
   clean: '简洁现代',
   atlas: '地图集',
+}
+
+/** i18n keys for UI display (resolved at render time; STYLE_PRESET_LABELS remains as data key) */
+export const STYLE_PRESET_LABEL_KEYS: Record<MapStylePreset, string> = {
+  topographic: 'geography:stylePresets.topographic',
+  parchment: 'geography:stylePresets.parchment',
+  watercolor: 'geography:stylePresets.watercolor',
+  dark: 'geography:stylePresets.dark',
+  clean: 'geography:stylePresets.clean',
+  atlas: 'geography:stylePresets.atlas',
 }

@@ -17,6 +17,7 @@ import {
   type RenamableEntity,
   type RenamableEntityKind,
 } from '../../lib/editor/entity-rename'
+import { useDomainT } from '../../i18n'
 import { useDialog } from '../shared/Dialog'
 import { useToast } from '../shared/Toast'
 
@@ -25,10 +26,12 @@ interface Props {
   onSelectOutlineNode: (outlineNodeId: number) => void
 }
 
-const KIND_LABELS: Record<RenamableEntityKind, string> = {
-  character: '角色',
-  location: '地点',
-  codexEntry: '词条',
+function getKindLabels(t: (...args: any[]) => string): Record<RenamableEntityKind, string> {
+  return {
+    character: t('entityRename.kindCharacter'),
+    location: t('entityRename.kindLocation'),
+    codexEntry: t('entityRename.kindCodexEntry'),
+  }
 }
 
 function formatTime(ts: number): string {
@@ -48,6 +51,7 @@ function parseEntityKey(value: string): EntityRenameTarget | null {
 }
 
 export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Props) {
+  const { t } = useDomainT('editor')
   const dialog = useDialog()
   const toast = useToast()
   const createSnapshot = useBackupStore(state => state.createSnapshot)
@@ -92,28 +96,28 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
         if (active) setEntities(items)
       })
       .catch(error => {
-        if (active) toast.error(`实体加载失败：${error instanceof Error ? error.message : String(error)}`)
+        if (active) toast.error(t('entityRename.toastLoadFailed', { message: error instanceof Error ? error.message : String(error) }))
       })
     return () => {
       active = false
     }
-  }, [projectId, toast])
+  }, [projectId, toast, t])
 
   const buildPreview = async () => {
     const target = parseEntityKey(selectedKey)
     if (!target) {
-      toast.error('请先选择要改名的实体')
+      toast.error(t('entityRename.toastSelectEntityFirst'))
       return
     }
     if (!newName.trim()) {
-      toast.error('请输入新名称')
+      toast.error(t('entityRename.toastEnterNewName'))
       return
     }
     setBusy(true)
     try {
       setPreview(await buildEntityRenamePreview(projectId, target, newName))
     } catch (error) {
-      toast.error(`预览失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('entityRename.toastPreviewFailed', { message: error instanceof Error ? error.message : String(error) }))
     } finally {
       setBusy(false)
     }
@@ -122,14 +126,14 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
   const applyRename = async () => {
     if (!preview || preview.blockers.length) return
     const ok = await dialog.confirm({
-      title: `确认将「${preview.entity.name}」改为「${preview.newName}」？`,
-      message: [
-        `正文将替换 ${preview.chapterReplacementCount} 处，结构化记录将更新 ${preview.changes.filter(change => change.target !== 'chapters').length} 条。`,
-        `另有 ${preview.manualReview.length} 条自由文本仅列入人工复核，不会自动改写。`,
-        '执行前会创建项目快照，正文、主档和冗余显示名将在同一事务中提交。',
-      ].join('\n'),
-      confirmText: '创建快照并改名',
-      cancelText: '取消',
+      title: t('entityRename.confirmRenameTitle', { oldName: preview.entity.name, newName: preview.newName }),
+      message: t('entityRename.confirmRenameMessage', {
+        chapterReplacementCount: preview.chapterReplacementCount,
+        structuredCount: preview.changes.filter(change => change.target !== 'chapters').length,
+        manualReviewCount: preview.manualReview.length,
+      }),
+      confirmText: t('entityRename.confirmRenameBtn'),
+      cancelText: t('common:cancel'),
       tone: 'danger',
     })
     if (!ok) return
@@ -142,7 +146,7 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
         newName: preview.newName,
         expectedBaseline: preview.baseline,
         createSnapshot,
-        label: `实体改名前自动快照 ${formatTime(Date.now())}`,
+        label: `${t('entityRename.snapshotLabelPrefix')} ${formatTime(Date.now())}`,
       })
       setUndoPatch(result.undoPatch)
       await refreshProjectStores()
@@ -153,9 +157,9 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
       setSelectedKey(renamed ? entityKey(renamed) : '')
       setNewName('')
       setPreview(null)
-      toast.success(`改名完成：同步 ${result.changedRecords} 条记录，正文替换 ${result.chapterReplacements} 处`)
+      toast.success(t('entityRename.toastRenameSuccess', { records: result.changedRecords, replacements: result.chapterReplacements }))
     } catch (error) {
-      toast.error(`改名失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('entityRename.toastRenameFailed', { message: error instanceof Error ? error.message : String(error) }))
     } finally {
       setBusy(false)
     }
@@ -164,13 +168,10 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
   const undoRename = async () => {
     if (!undoPatch) return
     const ok = await dialog.confirm({
-      title: '撤销上次实体改名？',
-      message: [
-        `将把「${undoPatch.newName}」恢复为「${undoPatch.oldName}」。`,
-        '只有相关记录都未被再次修改时才会执行；否则请使用已创建的项目快照。',
-      ].join('\n'),
-      confirmText: '原子撤销',
-      cancelText: '取消',
+      title: t('entityRename.undoConfirmTitle'),
+      message: t('entityRename.undoConfirmMessage', { newName: undoPatch.newName, oldName: undoPatch.oldName }),
+      confirmText: t('entityRename.undoConfirmBtn'),
+      cancelText: t('common:cancel'),
       tone: 'danger',
     })
     if (!ok) return
@@ -183,9 +184,9 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
       setNewName('')
       setPreview(null)
       setUndoPatch(null)
-      toast.success('已撤销上次实体改名')
+      toast.success(t('entityRename.toastUndoSuccess'))
     } catch (error) {
-      toast.error(`撤销失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('entityRename.toastUndoFailed', { message: error instanceof Error ? error.message : String(error) }))
     } finally {
       setBusy(false)
     }
@@ -196,7 +197,7 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
       <div className="space-y-3">
         <div className="grid gap-2 md:grid-cols-2">
           <label className="space-y-1">
-            <span className="text-[11px] text-text-muted">选择稳定实体</span>
+            <span className="text-[11px] text-text-muted">{t('entityRename.labelSelectEntity')}</span>
             <select
               value={selectedKey}
               onChange={event => {
@@ -206,23 +207,23 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
               }}
               className="w-full rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
             >
-              <option value="">选择角色、地点或词条</option>
+              <option value="">{t('entityRename.selectPlaceholder')}</option>
               {entities.map(entity => (
                 <option key={entityKey(entity)} value={entityKey(entity)}>
-                  {KIND_LABELS[entity.kind]} · {entity.label}（{entity.detail}）
+                  {t('entityRename.optionFormat', { kind: getKindLabels(t)[entity.kind], label: entity.label, detail: entity.detail })}
                 </option>
               ))}
             </select>
           </label>
           <label className="space-y-1">
-            <span className="text-[11px] text-text-muted">新名称</span>
+            <span className="text-[11px] text-text-muted">{t('entityRename.labelNewName')}</span>
             <input
               value={newName}
               onChange={event => {
                 setNewName(event.target.value)
                 setPreview(null)
               }}
-              placeholder={selected ? `将「${selected.name}」改为…` : '先选择实体'}
+              placeholder={selected ? t('entityRename.newNamePlaceholderSelected', { name: selected.name }) : t('entityRename.newNamePlaceholderEmpty')}
               disabled={!selected}
               className="w-full rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-text-primary outline-none focus:border-accent disabled:opacity-50"
             />
@@ -235,7 +236,7 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
             disabled={busy || !selected || !newName.trim()}
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50"
           >
-            <Eye className="h-3.5 w-3.5" /> 预览影响范围
+            <Eye className="h-3.5 w-3.5" /> {t('entityRename.btnPreview')}
           </button>
           {preview && !preview.blockers.length && (
             <button
@@ -243,7 +244,7 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
               disabled={busy}
               className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
             >
-              <ShieldCheck className="h-3.5 w-3.5" /> 创建快照并改名
+              <ShieldCheck className="h-3.5 w-3.5" /> {t('entityRename.btnApply')}
             </button>
           )}
           {undoPatch && (
@@ -252,14 +253,14 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
               disabled={busy}
               className="inline-flex items-center gap-1.5 rounded-md border border-warning/40 bg-warning/10 px-3 py-1.5 text-xs text-warning hover:bg-warning/20 disabled:opacity-50"
             >
-              <RotateCcw className="h-3.5 w-3.5" /> 撤销上次实体改名
+              <RotateCcw className="h-3.5 w-3.5" /> {t('entityRename.btnUndo')}
             </button>
           )}
         </div>
 
         <div className="rounded-lg border border-border bg-bg-base p-3 text-[11px] leading-5 text-text-muted">
-          <p>物品不进入智能改名：当前物品以“持有人 + 名称”聚合，没有独立稳定 ID。贸然全局改名可能合并不同角色的同名物品。</p>
-          <p>大纲、档案描述、事实引文等自由文本只列入复核，不会在缺少语义判断时自动改写。</p>
+          <p>{t('entityRename.disclaimerItems')}</p>
+          <p>{t('entityRename.disclaimerFreeText')}</p>
         </div>
 
         {preview && (
@@ -273,7 +274,7 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
             {!preview.blockers.length && (
               <div className="flex gap-2 rounded-lg border border-success/30 bg-success/10 p-3 text-xs text-success">
                 <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
-                <span>未发现名称归属冲突，可按本预览安全执行。</span>
+                <span>{t('entityRename.safeToProceed')}</span>
               </div>
             )}
             {preview.warnings.map(warning => (
@@ -287,38 +288,38 @@ export default function EntityRenamePanel({ projectId, onSelectOutlineNode }: Pr
       </div>
 
       <aside className="rounded-lg border border-border bg-bg-base p-3">
-        <p className="mb-2 text-xs font-medium text-text-secondary">影响预览</p>
-        {!preview && <p className="py-8 text-center text-xs text-text-muted">选择实体并生成预览后显示。</p>}
+        <p className="mb-2 text-xs font-medium text-text-secondary">{t('entityRename.previewTitle')}</p>
+        {!preview && <p className="py-8 text-center text-xs text-text-muted">{t('entityRename.previewHint')}</p>}
         {preview && (
           <div className="max-h-80 space-y-3 overflow-y-auto pr-1 text-[11px]">
             <section>
-              <p className="font-medium text-text-secondary">正文</p>
-              <p className="text-text-muted">{preview.chapterReplacementCount} 处 / {preview.chapterMatches.length} 章</p>
+              <p className="font-medium text-text-secondary">{t('entityRename.previewSectionChapters')}</p>
+              <p className="text-text-muted">{t('entityRename.previewStatsChapters', { count: preview.chapterReplacementCount, chapters: preview.chapterMatches.length })}</p>
               {preview.chapterMatches.map(match => (
                 <button
                   key={match.chapterId}
                   onClick={() => onSelectOutlineNode(match.outlineNodeId)}
                   className="mt-1 block w-full truncate text-left text-accent hover:underline"
                 >
-                  {match.title} · {match.count} 处
+                  {match.title} · {t('findReplace.matchCountSuffix', { count: match.count })}
                 </button>
               ))}
             </section>
             <section>
-              <p className="font-medium text-text-secondary">结构化同步</p>
+              <p className="font-medium text-text-secondary">{t('entityRename.previewSectionStructured')}</p>
               {preview.structuredCounts.map(item => (
-                <p key={item.label} className="text-text-muted">{item.label} · {item.count} 条</p>
+                <p key={item.label} className="text-text-muted">{t('entityRename.previewStructuredItem', { label: item.label, count: item.count })}</p>
               ))}
             </section>
             <section>
-              <p className="font-medium text-text-secondary">人工复核 · {preview.manualReview.length} 条</p>
+              <p className="font-medium text-text-secondary">{t('entityRename.previewSectionManual', { count: preview.manualReview.length })}</p>
               {preview.manualReview.slice(0, 12).map((item, index) => (
                 <p key={`${item.source}-${item.label}-${index}`} className="mt-1 text-text-muted">
-                  {item.source} · {item.label}：{item.detail}
+                  {t('entityRename.manualReviewItem', { source: item.source, label: item.label, detail: item.detail })}
                 </p>
               ))}
               {preview.manualReview.length > 12 && (
-                <p className="mt-1 text-text-muted">另有 {preview.manualReview.length - 12} 条。</p>
+                <p className="mt-1 text-text-muted">{t('entityRename.previewManualMore', { count: preview.manualReview.length - 12 })}</p>
               )}
             </section>
           </div>

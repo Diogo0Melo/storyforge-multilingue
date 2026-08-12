@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Sparkles } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useWorldviewStore } from '../../stores/worldview'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIStream } from '../../hooks/useAIStream'
@@ -15,23 +16,35 @@ import type { FieldGenerationMode } from '../../lib/ai/field-generation-context'
 
 // ── 字段定义 ──────────────────────────────────────────────────
 
+/** Static key map for story core fields — no computed keys. */
+const STORY_CORE_FIELD_KEYS = {
+  logline:         { labelKey: 'storyCore.fields.logline.label' as const,         descKey: 'storyCore.fields.logline.description' as const },
+  concept:         { labelKey: 'storyCore.fields.concept.label' as const,         descKey: 'storyCore.fields.concept.description' as const },
+  theme:           { labelKey: 'storyCore.fields.theme.label' as const,           descKey: 'storyCore.fields.theme.description' as const },
+  centralConflict: { labelKey: 'storyCore.fields.centralConflict.label' as const, descKey: 'storyCore.fields.centralConflict.description' as const },
+  plotPattern:     { labelKey: 'storyCore.fields.plotPattern.label' as const,     descKey: 'storyCore.fields.plotPattern.description' as const },
+  mainPlot:        { labelKey: 'storyCore.fields.mainPlot.label' as const,        descKey: 'storyCore.fields.mainPlot.description' as const },
+  subPlots:        { labelKey: 'storyCore.fields.subPlots.label' as const,        descKey: 'storyCore.fields.subPlots.description' as const },
+}
+
+type StoryCoreFieldKey = keyof typeof STORY_CORE_FIELD_KEYS
+
 interface FieldDef {
-  key: string
+  key: StoryCoreFieldKey
   emoji: string
-  label: string
-  description: string
+  /** Dimension string passed to AI prompt builder — zh value used intentionally for AI context. */
   dimension: string
   saveKey: string
 }
 
 const FIELDS: FieldDef[] = [
-  { key: 'logline',         emoji: '📜', label: '一句话故事',   description: '用一句话讲清楚你的故事是什么。',                      dimension: '一句话故事（logline）',       saveKey: 'logline' },
-  { key: 'concept',         emoji: '💡', label: '故事概念',     description: "独特设定或反差点：'如果……会怎么样？'",                 dimension: '故事概念（high concept）',    saveKey: 'concept' },
-  { key: 'theme',           emoji: '🎯', label: '故事主题',     description: '想探讨的人性/价值观主题。',                            dimension: '故事主题',                    saveKey: 'theme' },
-  { key: 'centralConflict', emoji: '⚔️', label: '核心冲突',     description: '主角面对的最大矛盾（外在 + 内在）。',                  dimension: '核心冲突',                    saveKey: 'centralConflict' },
-  { key: 'plotPattern',     emoji: '📊', label: '故事模式',     description: '线性 / 莲花地图 / 多线并行 / 蒙太奇 等。',            dimension: '故事模式',                    saveKey: 'plotPattern' },
-  { key: 'mainPlot',        emoji: '🛤', label: '故事主线',     description: '核心情节线 — 主角的目标与阻碍。',                      dimension: '故事主线',                    saveKey: 'mainPlot' },
-  { key: 'subPlots',        emoji: '🎼', label: '故事复线',     description: '副线情节（情感线 / 配角线 / 暗线 / 悬念线）。',        dimension: '故事复线',                    saveKey: 'subPlots' },
+  { key: 'logline',         emoji: '📜', dimension: '一句话故事（logline）',       saveKey: 'logline' },
+  { key: 'concept',         emoji: '💡', dimension: '故事概念（high concept）',    saveKey: 'concept' },
+  { key: 'theme',           emoji: '🎯', dimension: '故事主题',                    saveKey: 'theme' },
+  { key: 'centralConflict', emoji: '⚔️', dimension: '核心冲突',                    saveKey: 'centralConflict' },
+  { key: 'plotPattern',     emoji: '📊', dimension: '故事模式',                    saveKey: 'plotPattern' },
+  { key: 'mainPlot',        emoji: '🛤', dimension: '故事主线',                    saveKey: 'mainPlot' },
+  { key: 'subPlots',        emoji: '🎼', dimension: '故事复线',                    saveKey: 'subPlots' },
 ]
 
 // ── 主面板 ─────────────────────────────────────────────────────
@@ -39,11 +52,12 @@ const FIELDS: FieldDef[] = [
 interface Props { project: Project }
 
 export default function StoryCorePanel({ project }: Props) {
+  const { t } = useDomainT('worldview')
   const { storyCore, worldview, saveStoryCore, loadAll } = useWorldviewStore()
   const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
 
   const [values, setValues] = useState<Record<string, string>>({})
-  const [activeKey, setActiveKey] = useState(FIELDS[0].key)
+  const [activeKey, setActiveKey] = useState<StoryCoreFieldKey>(FIELDS[0].key)
   // 跟踪哪些字段正在 streaming（用于侧边栏小圆点）
   const [streamingKeys, setStreamingKeys] = useState<Set<string>>(new Set())
 
@@ -69,6 +83,7 @@ export default function StoryCorePanel({ project }: Props) {
     saveStoryCore({ projectId: project.id!, [field.saveKey]: v })
   }
 
+  // NOTE: 【...】 context markers are AI prompt content, not user-visible UI strings.
   const worldCtx = (): string => {
     if (!worldview) return ''
     const parts: string[] = []
@@ -102,6 +117,7 @@ export default function StoryCorePanel({ project }: Props) {
           const active = activeKey === f.key
           const hasContent = !!values[f.key]
           const isFieldStreaming = streamingKeys.has(f.key)
+          const label = t(STORY_CORE_FIELD_KEYS[f.key].labelKey)
           return (
             <button
               key={f.key}
@@ -115,7 +131,7 @@ export default function StoryCorePanel({ project }: Props) {
               <span className="text-base shrink-0">{f.emoji}</span>
               <div className="min-w-0 flex-1">
                 <p className={`text-sm font-medium truncate ${active ? 'text-accent' : 'text-text-primary'}`}>
-                  {f.label}
+                  {label}
                 </p>
                 {hasContent && (
                   <p className="text-[10px] text-text-muted truncate">
@@ -167,12 +183,16 @@ function FieldEditor({
   sessionEntity: string
   onStreamingChange: (streaming: boolean) => void
 }) {
+  const { t } = useDomainT('worldview')
   const [hint, setHint] = useState('')
   const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({})
   const [systemOverride, setSystemOverride] = useState<string | null>(null)
   const [userOverride, setUserOverride] = useState<string | null>(null)
   const [mode, setMode] = useState<FieldGenerationMode>('expand')
   const ai = useAIStream(createAISessionKey(project.id!, 'story.generate', sessionEntity))
+
+  const label = t(STORY_CORE_FIELD_KEYS[field.key].labelKey)
+  const description = t(STORY_CORE_FIELD_KEYS[field.key].descKey)
 
   // 通知父组件 streaming 状态
   useEffect(() => {
@@ -194,6 +214,7 @@ function FieldEditor({
         userPromptTemplate: userOverride ?? undefined,
       } : undefined,
     }
+    // field.dimension is zh AI prompt payload — intentional, not user-visible
     const messages = buildStoryGeneratePrompt(
       field.dimension, project.name, project.genre || '', fullWorldContext, hint, opts, value, mode,
     )
@@ -205,9 +226,9 @@ function FieldEditor({
       {/* 标题 + 描述 */}
       <div>
         <h2 className="text-xl font-bold text-text-primary mb-0.5">
-          {field.emoji} {field.label}
+          {field.emoji} {label}
         </h2>
-        <p className="text-sm text-text-muted">{field.description}</p>
+        <p className="text-sm text-text-muted">{description}</p>
       </div>
 
       {/* 内容区 — 行内编辑 */}
@@ -215,7 +236,7 @@ function FieldEditor({
         <InlineTextarea
           value={value}
           onChange={onChange}
-          placeholder={`点击填写${field.label}…`}
+          placeholder={t('storyCore.placeholderFill', { label })}
         />
       </div>
 
@@ -226,7 +247,7 @@ function FieldEditor({
           <input
             value={hint}
             onChange={e => setHint(e.target.value)}
-            placeholder="补充提示（可选）"
+            placeholder={t('storyCore.hintPlaceholder')}
             className="flex-1 px-2 py-1.5 bg-bg-surface border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
           />
           <button
@@ -234,7 +255,7 @@ function FieldEditor({
             disabled={ai.isStreaming}
             className="flex items-center gap-1.5 px-3 py-2 bg-bg-elevated text-text-secondary text-sm rounded-md hover:text-accent disabled:opacity-50 transition-colors border border-border hover:border-accent/50"
           >
-            <Sparkles className="w-3.5 h-3.5" /> AI 生成
+            <Sparkles className="w-3.5 h-3.5" /> {t('storyCore.aiGenerate')}
           </button>
         </div>
 

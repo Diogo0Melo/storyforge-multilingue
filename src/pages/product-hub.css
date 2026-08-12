@@ -76,7 +76,8 @@
 
 .sf-nav-tab {
   display: inline-flex;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   align-items: center;
   gap: 7px;
   padding: 22px 11px 20px;
@@ -88,6 +89,8 @@
   white-space: nowrap;
   cursor: pointer;
 }
+.sf-nav-tab > svg { flex: 0 0 auto; }
+.sf-nav-tab > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 
 .sf-nav-tab:hover { color: var(--text-primary); }
 .sf-nav-tab-active { border-bottom-color: var(--accent); color: var(--accent); }

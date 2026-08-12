@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { BookOpenCheck, DatabaseZap, Gamepad2, PenLine, Settings2, WandSparkles } from 'lucide-react'
 import {
-  MODULE_CONTENT_TYPE_DEFINITIONS,
+  buildModuleContentTypeDefinitions,
   type ModuleContentType,
 } from './sidebar-tree'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   contentType: ModuleContentType
@@ -35,15 +37,29 @@ export default function ContentTypeBadge({
   showDescription = false,
   className = '',
 }: Props) {
-  const definition = MODULE_CONTENT_TYPE_DEFINITIONS[contentType]
+  // Rebuild definitions when language changes so labels stay translated.
+  // useDomainT provides a REAL react-i18next subscription, so `lang` is a
+  // reactive memo key on language switch (reading the i18n.language singleton
+  // directly was not — P0-1 cold-mount raw keys). Cold-load correctness rides
+  // on `layout` ∈ PRELOAD_NS (src/i18n/index.ts): the subscription alone would
+  // NOT rebuild this memo when a late ns arrives, because `lang` hasn't
+  // changed — do not drop `layout` from the preload set.
+  const { t, lang } = useDomainT('layout')
+  const definitions = useMemo(
+    () => buildModuleContentTypeDefinitions(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- lang 来自 useDomainT 的响应式订阅
+    [lang],
+  )
+  const definition = definitions[contentType]
   const Icon = TYPE_ICONS[contentType]
+  const tooltip = t('sidebar.contentTypeTooltip', { label: definition.label, description: definition.description })
 
   if (compact) {
     return (
       <span
         data-content-type={contentType}
         aria-hidden="true"
-        title={`${definition.label}：${definition.description}`}
+        title={tooltip}
         className={`ml-auto inline-flex shrink-0 items-center rounded-sm px-1 py-0.5 text-[9px] font-medium ${TYPE_STYLES[contentType]} ${className}`}
       >
         {definition.label}
@@ -54,7 +70,7 @@ export default function ContentTypeBadge({
   return (
     <span
       data-content-type={contentType}
-      title={`${definition.label}：${definition.description}`}
+      title={tooltip}
       className={`inline-flex min-w-0 items-center gap-1.5 rounded border px-2 py-1 text-xs ${TYPE_STYLES[contentType]} ${className}`}
     >
       <Icon className="h-3.5 w-3.5 shrink-0" />

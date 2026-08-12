@@ -5,6 +5,7 @@ import { formatHistoricalYear } from '../../lib/history/year'
 import { CInput, CTextarea } from '../shared/CompositionInput'
 import HistoryAgentWorkspace, { type HistoryAgentViewState } from './HistoryAgentWorkspace'
 import HistoryChapterPicker from './HistoryChapterPicker'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   event: HistoricalTimelineEvent
@@ -47,7 +48,12 @@ export default function HistoryTimelineEventCard({
   onAcceptConsult,
   onAcceptStorm,
 }: Props) {
-  const eraLabel = HISTORICAL_ERA_LABELS[event.era as HistoricalEra] || event.era
+  const { t } = useDomainT('history')
+  // era 数据域是 `HistoricalEra | string`（开放集）；仅当命中受控纪元时才走
+  // eraLabels.* 键，收窄为 HistoricalEra 让模板键落在字面量联合内。
+  const eraLabel = HISTORICAL_ERA_LABELS[event.era as HistoricalEra]
+    ? t(`eraLabels.${event.era as HistoricalEra}`)
+    : event.era
   const yearText = formatHistoricalYear(event.year)
 
   return (
@@ -81,11 +87,11 @@ export default function HistoryTimelineEventCard({
                   ? 'border-blue-500/20 text-blue-400 bg-blue-500/5'
                   : 'border-purple-500/20 text-purple-400 bg-purple-500/5'
               }`}>
-                {event.isHistorical ? '⚓ 史实锚点' : '✨ 虚构/架空'}
+                {event.isHistorical ? t('timeline.historicalBadge') : t('timeline.fictionalBadge')}
               </span>
               {event.isHistorical && (
-                <span className="text-[10px] text-amber-400/70" title="此事件为史实锚点，AI 生成时不可违反">
-                  AI 不可违反
+                <span className="text-[10px] text-amber-400/70" title={t('timeline.aiConstraintTitle')}>
+                  {t('timeline.aiConstraint')}
                 </span>
               )}
               {worldBadge && (
@@ -108,7 +114,7 @@ export default function HistoryTimelineEventCard({
           <div className="px-4 pb-4 border-t border-border/50 pt-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] text-text-muted mb-1">事件名称</label>
+                <label className="block text-[11px] text-text-muted mb-1">{t('timeline.eventNameLabel')}</label>
                 <CInput
                   value={event.title}
                   onChange={change => onChange({ title: change.target.value })}
@@ -116,26 +122,26 @@ export default function HistoryTimelineEventCard({
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-text-muted mb-1">历史时期</label>
+                <label className="block text-[11px] text-text-muted mb-1">{t('timeline.eraLabel')}</label>
                 <select
-                  aria-label="历史时期"
+                  aria-label={t('timeline.eraLabel')}
                   value={event.era}
                   onChange={change => onChange({ era: change.target.value as HistoricalEra })}
                   className="w-full px-2 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 >
-                  {Object.entries(HISTORICAL_ERA_LABELS).map(([key, label]) => (
-                    <option key={key} value={key}>{label}</option>
+                  {(Object.keys(HISTORICAL_ERA_LABELS) as HistoricalEra[]).map(key => (
+                    <option key={key} value={key}>{t(`eraLabels.${key}`)}</option>
                   ))}
                 </select>
               </div>
               <div>
-                <label className="block text-[11px] text-text-muted mb-1">数字化年份 (排序用)</label>
+                <label className="block text-[11px] text-text-muted mb-1">{t('timeline.yearLabel')}</label>
                 <input
-                  aria-label="数字化年份"
+                  aria-label={t('timeline.yearAria')}
                   type="number"
                   value={event.year}
                   onChange={change => onChange({ year: parseInt(change.target.value) || 0 })}
-                  placeholder="负数表示公元前"
+                  placeholder={t('timeline.yearPlaceholder')}
                   className="w-full px-2.5 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
               </div>
@@ -143,29 +149,29 @@ export default function HistoryTimelineEventCard({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] text-text-muted mb-1">具体时间描述</label>
+                <label className="block text-[11px] text-text-muted mb-1">{t('timeline.dateLabel')}</label>
                 <CInput
                   value={event.date}
                   onChange={change => onChange({ date: change.target.value })}
-                  placeholder="如：开元十三年、公元725年"
+                  placeholder={t('timeline.datePlaceholder')}
                   className="w-full px-2.5 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-text-muted mb-1">具体时间范围/区间 (可选)</label>
+                <label className="block text-[11px] text-text-muted mb-1">{t('timeline.timeRangeLabel')}</label>
                 <CInput
                   value={event.customTimeRange || ''}
                   onChange={change => onChange({ customTimeRange: change.target.value })}
-                  placeholder="如：公元712年-756年、18世纪中叶"
+                  placeholder={t('timeline.timeRangePlaceholder')}
                   className="w-full px-2.5 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
               </div>
               <div>
-                <label className="block text-[11px] text-text-muted mb-1">地理位置/范围 (可选)</label>
+                <label className="block text-[11px] text-text-muted mb-1">{t('timeline.locationLabel')}</label>
                 <CInput
                   value={event.location || ''}
                   onChange={change => onChange({ location: change.target.value })}
-                  placeholder="如：江南地区、君士坦丁堡、中原"
+                  placeholder={t('timeline.locationPlaceholder')}
                   className="w-full px-2.5 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
               </div>
@@ -173,7 +179,7 @@ export default function HistoryTimelineEventCard({
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <label className="block text-[11px] text-text-muted mb-1">事件属性</label>
+                <label className="block text-[11px] text-text-muted mb-1">{t('timeline.attributeLabel')}</label>
                 <div className="flex gap-2 h-[30px] items-center">
                   <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                     <input
@@ -182,7 +188,7 @@ export default function HistoryTimelineEventCard({
                       onChange={() => onChange({ isHistorical: true })}
                       className="accent-blue-500"
                     />
-                    <span className="text-text-secondary">真实史实</span>
+                    <span className="text-text-secondary">{t('timeline.attrHistorical')}</span>
                   </label>
                   <label className="flex items-center gap-1.5 text-xs cursor-pointer">
                     <input
@@ -191,18 +197,18 @@ export default function HistoryTimelineEventCard({
                       onChange={() => onChange({ isHistorical: false })}
                       className="accent-purple-500"
                     />
-                    <span className="text-text-secondary">虚构/架空</span>
+                    <span className="text-text-secondary">{t('timeline.attrFictional')}</span>
                   </label>
                 </div>
               </div>
               <div className="md:col-span-2">
                 <label className="block text-[11px] text-text-muted mb-1">
-                  {event.isHistorical ? '史料来源 / 考证出处' : '虚构设定备注'}
+                  {event.isHistorical ? t('timeline.sourceLabelHistorical') : t('timeline.sourceLabelFictional')}
                 </label>
                 <CInput
                   value={event.source || ''}
                   onChange={change => onChange({ source: change.target.value })}
-                  placeholder={event.isHistorical ? '如：《旧唐书 · 舆服志》、《资治通鉴》卷二百' : '如：参考了宋代水车结构进行架空改动'}
+                  placeholder={event.isHistorical ? t('timeline.sourcePlaceholderHistorical') : t('timeline.sourcePlaceholderFictional')}
                   className="w-full px-2.5 py-1.5 bg-bg-base border border-border rounded-lg text-xs text-text-primary focus:outline-none focus:border-accent"
                 />
               </div>
@@ -210,28 +216,28 @@ export default function HistoryTimelineEventCard({
 
             <div>
               <label className="block text-[11px] text-text-muted mb-1">
-                📒 条目定稿（写作时会进入小说上下文；考据 / 风暴 agent 会读取作为核验或发散对象，但<span className="text-amber-500">不会直接覆盖</span>）
+                {t('entryFinal.label')}<span className="text-amber-500">{t('entryFinal.noOverwrite')}</span>{t('entryFinal.labelSuffix')}
               </label>
               <CTextarea
                 value={event.description}
                 onChange={change => onChange({ description: change.target.value })}
-                placeholder="作者打磨好的最终条目内容，将作为 AI 写作的历史背景注入。例如：『公元 712 年，李隆基即位为唐玄宗，开元之治始。』"
+                placeholder={t('entryFinal.eventPlaceholder')}
                 className="w-full h-24 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] text-text-muted mb-1">对剧情/世界的影响 (可选)</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('timeline.impactLabel')}</label>
               <CTextarea
                 value={event.impact || ''}
                 onChange={change => onChange({ impact: change.target.value })}
-                placeholder="该事件如何推动主角剧情，或者对架空世界线产生什么影响..."
+                placeholder={t('timeline.impactPlaceholder')}
                 className="w-full h-20 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] text-text-muted mb-1">关联章节</label>
+              <label className="block text-[11px] text-text-muted mb-1">{t('relatedChapters.label')}</label>
               <HistoryChapterPicker
                 chapters={chapters}
                 relatedChapterIds={event.relatedChapterIds}
@@ -241,12 +247,12 @@ export default function HistoryTimelineEventCard({
 
             <div>
               <label className="block text-[11px] text-text-muted mb-1">
-                🧭 概念与创作思路（提交给 AI 之前的初步设定；得到 agent 反馈后可在此处修正）
+                {t('conceptNote.label')}
               </label>
               <CTextarea
                 value={event.conceptNote || ''}
                 onChange={change => onChange({ conceptNote: change.target.value })}
-                placeholder="描述你为这条事件想达到的效果、能接受的艺术改造或架空范围、希望保留 / 偏离的史实点。例如：『允许把火药提前到本朝；其余制度仍按真实唐制写。』"
+                placeholder={t('conceptNote.eventPlaceholder')}
                 className="w-full h-24 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
               />
             </div>
@@ -254,23 +260,23 @@ export default function HistoryTimelineEventCard({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <div>
                 <label className="block text-[11px] text-text-muted mb-1">
-                  📝 给「历史考据 agent」的补充说明
+                  {t('agentPrompt.consultLabel')}
                 </label>
                 <CTextarea
                   value={event.consultPrompt || ''}
                   onChange={change => onChange({ consultPrompt: change.target.value })}
-                  placeholder="例：本作允许将火药提前到唐代，不必再纠结这一项；请重点检查官制称谓和时令风俗。"
+                  placeholder={t('agentPrompt.consultEventPlaceholder')}
                   className="w-full h-20 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
                 />
               </div>
               <div>
                 <label className="block text-[11px] text-text-muted mb-1">
-                  💡 给「头脑风暴 agent」的补充说明
+                  {t('agentPrompt.stormLabel')}
                 </label>
                 <CTextarea
                   value={event.stormPrompt || ''}
                   onChange={change => onChange({ stormPrompt: change.target.value })}
-                  placeholder="例：重点发散街市气味、市井人物对白、能引出主角第一次进城的可能场景。"
+                  placeholder={t('agentPrompt.stormEventPlaceholder')}
                   className="w-full h-20 p-2 bg-bg-base border border-border rounded-lg text-xs text-text-primary resize-y focus:outline-none focus:border-accent"
                 />
               </div>
@@ -286,8 +292,8 @@ export default function HistoryTimelineEventCard({
               stormAI={stormAI}
               savedConsult={event.aiConsult}
               savedStorm={event.aiBrainstorm}
-              savedStormLabel="AI 头脑风暴结果"
-              deleteLabel="删除事件"
+              savedStormLabel={t('agentWorkspace.savedStormEventLabel')}
+              deleteLabel={t('agentWorkspace.deleteEvent')}
               onConsult={onConsult}
               onStorm={onStorm}
               onDelete={onDelete}

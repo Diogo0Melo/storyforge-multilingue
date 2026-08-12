@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import { adopt } from '../registry/adopt'
 
 export interface GeneratedOutlineItem {
@@ -34,7 +35,7 @@ export async function adoptGeneratedOutlineSummary(
   })
   return {
     written: result.written.length > 0,
-    reason: result.written.length === 0 ? (result.skipped[0]?.reason ?? '结果为空') : undefined,
+    reason: result.written.length === 0 ? (result.skipped[0]?.reason ?? getT()('outline:adopt.emptyResult')) : undefined,
   }
 }
 
@@ -65,7 +66,7 @@ export async function adoptGeneratedOutlineItems(
       writtenCount++
       if (firstId == null) firstId = id
     } else {
-      skippedReasons.add(result.skipped[0]?.reason ?? '未知原因')
+      skippedReasons.add(result.skipped[0]?.reason ?? getT()('outline:adopt.unknownSkipReason'))
     }
   }
 

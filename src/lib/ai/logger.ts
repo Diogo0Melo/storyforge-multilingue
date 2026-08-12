@@ -2,6 +2,7 @@
  * AI 连接日志系统
  * 记录所有 API 调用的详细信息，方便排错
  */
+import i18n, { getT } from '../../i18n'
 
 export interface TokenUsage {
   inputTokens: number
@@ -75,12 +76,12 @@ function notify() {
 
 /** 格式化日志为可读文本 */
 export function formatLog(entry: AILogEntry): string {
-  const time = new Date(entry.timestamp).toLocaleTimeString('zh-CN')
+  const time = new Date(entry.timestamp).toLocaleTimeString(i18n.language)
   const status = entry.status === 'success' ? '✅' : entry.status === 'error' ? '❌' : '⏳'
   const dur = entry.duration ? ` (${entry.duration}ms)` : ''
   let line = `${status} [${time}] ${entry.type.toUpperCase()} → ${entry.provider} ${entry.url}${dur}`
   if (entry.statusCode) line += ` HTTP ${entry.statusCode}`
   if (entry.usage) line += `\n   Token: ↑${entry.usage.inputTokens} ↓${entry.usage.outputTokens} = ${entry.usage.totalTokens}`
-  if (entry.errorMessage) line += `\n   错误: ${entry.errorMessage}`
+  if (entry.errorMessage) line += `\n   ${getT()('errors-lib:ai.connectionLogError', { message: entry.errorMessage })}`
   return line
 }

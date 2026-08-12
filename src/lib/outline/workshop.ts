@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import type { UseAIStreamReturn } from '../../hooks/useAIStream'
 import {
   checkHeldItemAcquisition,
@@ -29,6 +30,15 @@ export const OUTLINE_WORKSHOP_STAGES = [
 
 export type OutlineWorkshopStage = typeof OUTLINE_WORKSHOP_STAGES[number]
 
+/** i18n keys for workshop stage meta (UI only). AI prompts keep zh strings. */
+export const OUTLINE_WORKSHOP_STAGE_I18N_KEYS: Record<OutlineWorkshopStage, { titleKey: string; descriptionKey: string }> = {
+  scan:       { titleKey: 'outline:workshop.stage.scan.title',       descriptionKey: 'outline:workshop.stage.scan.description' },
+  motivation: { titleKey: 'outline:workshop.stage.motivation.title', descriptionKey: 'outline:workshop.stage.motivation.description' },
+  collision:  { titleKey: 'outline:workshop.stage.collision.title',  descriptionKey: 'outline:workshop.stage.collision.description' },
+  quality:    { titleKey: 'outline:workshop.stage.quality.title',    descriptionKey: 'outline:workshop.stage.quality.description' },
+  scenes:     { titleKey: 'outline:workshop.stage.scenes.title',     descriptionKey: 'outline:workshop.stage.scenes.description' },
+}
+
 export const OUTLINE_WORKSHOP_STAGE_META: Record<OutlineWorkshopStage, {
   title: string
   description: string
@@ -52,12 +62,23 @@ export function confirmWorkshopArtifact(
   nextStage: OutlineWorkshopStage | null
 } {
   const index = OUTLINE_WORKSHOP_STAGES.indexOf(stage)
+  const t = getT()
   for (const required of OUTLINE_WORKSHOP_STAGES.slice(0, index)) {
     if (!artifacts[required]?.trim()) {
-      throw new Error(`必须先确认“${OUTLINE_WORKSHOP_STAGE_META[required].title}”。`)
+      // User-visible error resolved via outline ns. Stage title uses the same
+      // outline:workshop.stage.* keys as the UI; META zh titles are defaultValue fallbacks.
+      const stageTitle = t(OUTLINE_WORKSHOP_STAGE_I18N_KEYS[required].titleKey, {
+        defaultValue: OUTLINE_WORKSHOP_STAGE_META[required].title,
+      })
+      throw new Error(t('outline:workshop.mustConfirmStage', {
+        stage: stageTitle,
+        defaultValue: `必须先确认"${OUTLINE_WORKSHOP_STAGE_META[required].title}"。`,
+      }))
     }
   }
-  if (!output.trim()) throw new Error('当前节点没有可确认的产物。')
+  if (!output.trim()) {
+    throw new Error(t('outline:workshop.noArtifactToConfirm', { defaultValue: '当前节点没有可确认的产物。' }))
+  }
   return {
     artifacts: { ...artifacts, [stage]: output.trim() },
     nextStage: OUTLINE_WORKSHOP_STAGES[index + 1] ?? null,
@@ -358,7 +379,8 @@ function parseAdvisories(raw: string, generatedDraft: string): WorkshopAdvisory[
     const reason = String(row.reason ?? '').trim()
     if (!quote || !reason || !generatedDraft.includes(quote)) return []
     return [{
-      category: String(row.category ?? '其它').trim() || '其它',
+      // 分类仅作展示(不与枚举做字符串匹配),回退值在解析时翻译;AI 返回的其它枚举值仍为原文。
+      category: String(row.category ?? getT()('outline:workshop.advisoryCategoryOther')).trim() || getT()('outline:workshop.advisoryCategoryOther'),
       quote,
       reason,
       suggestion: String(row.suggestion ?? '').trim(),
@@ -383,7 +405,7 @@ export function evaluateWorkshopQuality(input: {
   )
   heldFindings.forEach((finding, index) => issues.push({
     code: `held-item:${index}`,
-    message: `${finding.reason} 引文：“${finding.quote}”`,
+    message: `${finding.reason} ${getT()('outline:workshop.gate.citationSuffix', { quote: finding.quote })}`,
   }))
 
   const cognitionReferences = parseCognitionReferences(
@@ -397,7 +419,7 @@ export function evaluateWorkshopQuality(input: {
     input.cognition.projected,
   ).forEach((finding, index) => issues.push({
     code: `cognition:${index}`,
-    message: `${finding.reason} 引文：“${finding.quote}”`,
+    message: `${finding.reason} ${getT()('outline:workshop.gate.citationSuffix', { quote: finding.quote })}`,
   }))
 
   const canonById = new Map(
@@ -413,7 +435,13 @@ export function evaluateWorkshopQuality(input: {
       ) {
         issues.push({
           code: `canon:${index}`,
-          message: `草案采用“${claim.proposedValue}”，与作者确认的“${fact.subjectName}｜${fact.predicate}：${fact.value}”冲突。引文：“${claim.quote}”`,
+          message: getT()('outline:workshop.gate.canonConflict', {
+            proposedValue: claim.proposedValue,
+            subjectName: fact.subjectName,
+            predicate: fact.predicate,
+            factValue: fact.value,
+            quote: claim.quote,
+          }),
         })
       }
     })

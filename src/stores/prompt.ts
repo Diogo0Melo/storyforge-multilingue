@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT } from '../i18n'
 import type { PromptTemplate, PromptModuleKey } from '../lib/types/prompt'
 import { SYSTEM_PROMPT_SEEDS } from '../lib/ai/prompt-seeds'
 
@@ -130,7 +131,7 @@ export const usePromptStore = create<PromptStore>((set, get) => ({
     const cloneRow: PromptTemplate = {
       ...rest,
       scope: 'user',
-      name: newName || `${src.name} (副本)`,
+      name: newName || `${src.name} (${getT()('common:defaults.promptCloneSuffix')})`,
       parentId: src.id,
       isActive: false,
       createdAt: now,

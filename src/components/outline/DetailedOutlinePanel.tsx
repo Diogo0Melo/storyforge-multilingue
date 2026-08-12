@@ -16,18 +16,21 @@ import { assembleContext } from '../../lib/registry/assemble-context'
 import type { Project, DetailedOutline, DetailedScene, EmotionArc } from '../../lib/types'
 import { useToast } from '../shared/Toast'
 import DetailedOutlineSidebar from './DetailedOutlineSidebar'
+import { useDomainT, type DomainTFunction } from '../../i18n'
 import DetailedSceneCard from './DetailedSceneCard'
 
 interface Props {
   project: Project
 }
 
-const EMOTION_LABELS: Record<EmotionArc, string> = {
-  rising:  '📈 升温',
-  falling: '📉 降温',
-  flat:    '➡️ 平稳',
-  wave:    '🌊 波动',
-  climax:  '⚡ 高潮',
+function getEmotionLabels(t: DomainTFunction): Record<EmotionArc, string> {
+  return {
+    rising:  t('detailedEmotion.rising'),
+    falling: t('detailedEmotion.falling'),
+    flat:    t('detailedEmotion.flat'),
+    wave:    t('detailedEmotion.wave'),
+    climax:  t('detailedEmotion.climax'),
+  }
 }
 
 export function filterExistingIds(ids: number[], validIds: Set<number>): number[] {
@@ -36,11 +39,13 @@ export function filterExistingIds(ids: number[], validIds: Set<number>): number[
 
 /** v3 §2.1 — 创作区.细纲（场景拆分 + AI） */
 export default function DetailedOutlinePanel({ project }: Props) {
+  const { t } = useDomainT('outline')
   const toast = useToast()
   const { nodes, loadAll: loadOutline } = useOutlineStore()
   const { detailedOutlines, loadAll: loadDetailed, getOrCreate, save } = useDetailedOutlineStore()
   const { characters, loadAll: loadCharacters } = useCharacterStore()
   const aiConfig = useAIConfigStore(s => s.config)
+  const emotionLabels = useMemo(() => getEmotionLabels(t), [t])
   const { foreshadows, loadAll: loadForeshadows } = useForeshadowStore()
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null)
   const ai = useAIStream(createAISessionKey(project.id!, 'detail.scene', selectedNodeId ?? 'unselected'))
@@ -87,7 +92,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
     if (!dt) return
     const newScene: DetailedScene = {
       sceneId: nanoid(),
-      title: '新场景', summary: '',
+      title: t('detailed.newSceneTitle'), summary: '',
       characterIds: [], location: '', conflict: '',
       pace: 'medium', estimatedWords: 0, notes: '',
     }
@@ -151,7 +156,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
     ai.start(messages, undefined, { category: 'detail.scene', projectId: project.id! })
   }
 
-  // D2: 完善细纲
+  // D2: {t('detailed.enhanceDetail')}
   const handleEnhancedGenerate = async () => {
     if (!currentChapter) return
     const idx = chapterNodes.indexOf(currentChapter)
@@ -181,7 +186,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
   const handleAcceptEnhanced = async (text: string) => {
     const parsed = await parseEnhancedDetailSmart(text, aiConfig)
     if (!parsed) {
-      toast.error('解析增强细纲失败，请重试')
+      toast.error(t('detailed.parseEnhancedFailed'))
       return
     }
     if (!currentChapter?.id) return
@@ -305,7 +310,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
       <div className="flex-1 overflow-y-auto p-6">
         {!currentChapter ? (
           <div className="h-full flex items-center justify-center text-text-muted text-sm">
-            从左侧选一个章节开始编辑细纲。
+            {t('detailed.selectPrompt')}
           </div>
         ) : (
           <>
@@ -313,11 +318,11 @@ export default function DetailedOutlinePanel({ project }: Props) {
             <div className="mb-4">
               <h2 className="text-xl font-bold text-text-primary mb-1">📝 {currentChapter.title}</h2>
               <p className="text-sm text-text-muted">
-                {currentChapter.summary || '（章节大纲未填写）'}
+                {currentChapter.summary || t('detailed.chapterSummaryMissing')}
               </p>
               {currentDetailed && currentDetailed.scenes.length > 0 && (
                 <p className="text-xs text-text-muted mt-1">
-                  {currentDetailed.scenes.length} 个场景 · 估算 {totalWords.toLocaleString()} 字
+                  {t('detailed.stats', { scenes: currentDetailed.scenes.length, words: totalWords.toLocaleString() })}
                 </p>
               )}
             </div>
@@ -327,16 +332,16 @@ export default function DetailedOutlinePanel({ project }: Props) {
               <div className="mb-3 flex items-start gap-2 bg-warning/10 border border-warning/30 rounded-lg px-3 py-2">
                 <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
                 <div className="flex-1 min-w-0">
-                  <p className="text-xs font-medium text-warning">大纲已变更</p>
+                  <p className="text-xs font-medium text-warning">{t('detailed.syncWarningTitle')}</p>
                   <p className="text-[11px] text-text-muted mt-0.5">
-                    本章大纲摘要在生成细纲后发生了修改，当前细纲可能与大纲不一致。建议重新生成或手动调整。
+                    {t('detailed.syncWarningBody')}
                   </p>
                 </div>
                 <button
                   onClick={markSynced}
                   className="flex-shrink-0 text-[11px] px-2 py-0.5 rounded bg-warning/20 text-warning hover:bg-warning/30"
                 >
-                  忽略
+                  {t('detailed.syncIgnore')}
                 </button>
               </div>
             )}
@@ -347,21 +352,21 @@ export default function DetailedOutlinePanel({ project }: Props) {
                 onClick={addScene}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-accent text-white text-sm rounded hover:bg-accent-hover"
               >
-                <Plus className="w-4 h-4" /> 添加场景
+                <Plus className="w-4 h-4" /> {t('detailed.addScene')}
               </button>
               <button
                 onClick={handleAIGenerate}
                 disabled={ai.isStreaming || enhanceAI.isStreaming}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-accent text-sm rounded hover:bg-accent/20 disabled:opacity-50"
               >
-                <Sparkles className="w-4 h-4" /> AI 一键拆场景
+                <Sparkles className="w-4 h-4" /> {t('detailed.aiSplitScenes')}
               </button>
               <button
                 onClick={handleEnhancedGenerate}
                 disabled={ai.isStreaming || enhanceAI.isStreaming}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-success/10 text-success text-sm rounded hover:bg-success/20 disabled:opacity-50"
               >
-                <Wand2 className="w-4 h-4" /> 完善细纲
+                <Wand2 className="w-4 h-4" /> {t('detailed.enhanceDetail')}
               </button>
             </div>
 
@@ -380,17 +385,17 @@ export default function DetailedOutlinePanel({ project }: Props) {
                         ids => filterExistingIds(ids, validCharacterIds),
                       )
                       if (newScenes.length === 0) {
-                        toast.error('未能从 AI 输出解析出场景，请重试')
+                        toast.error(t('detailed.adoptScenesFailed'))
                         return
                       }
                       await adoptDetailedPatch(currentChapter.id, {
                         scenes: [...(currentDetailed?.scenes || []), ...newScenes],
                         lastUsedSummary: currentChapter.summary || '',
                       })
-                      toast.success(`已采纳 ${newScenes.length} 个场景`)
+                      toast.success(t('detailed.adoptScenesSuccess', { count: newScenes.length }))
                     } catch (err) {
                       console.error('[DetailedOutline] 采纳失败:', err)
-                      toast.error('采纳场景失败，请重试')
+                      toast.error(t('detailed.adoptGenericFailed'))
                     }
                     ai.reset()
                   }}
@@ -419,16 +424,16 @@ export default function DetailedOutlinePanel({ project }: Props) {
               || currentDetailed.prohibitions?.length
             ) && (
               <div className="mb-4 bg-bg-surface border border-border rounded-xl p-3 space-y-2">
-                <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide">章节细纲增强信息</h3>
+                <h3 className="text-xs font-semibold text-text-muted uppercase tracking-wide">{t('detailed.enhancedHeading')}</h3>
                 {currentDetailed.openingHook && (
                   <div>
-                    <span className="text-[10px] text-text-muted">🔗 开头衔接</span>
+                    <span className="text-[10px] text-text-muted">{t('detailed.openingHook')}</span>
                     <p className="text-xs text-text-primary mt-0.5">{currentDetailed.openingHook}</p>
                   </div>
                 )}
                 {currentDetailed.endingCliffhanger && (
                   <div>
-                    <span className="text-[10px] text-text-muted">🎣 结尾悬念</span>
+                    <span className="text-[10px] text-text-muted">{t('detailed.endingCliffhanger')}</span>
                     <p className="text-xs text-text-primary mt-0.5">{currentDetailed.endingCliffhanger}</p>
                   </div>
                 )}
@@ -437,22 +442,22 @@ export default function DetailedOutlinePanel({ project }: Props) {
                     <span className="text-text-secondary">📍 {currentDetailed.sceneLocation}</span>
                   )}
                   {currentDetailed.emotionArc && (
-                    <span className="text-text-secondary">{EMOTION_LABELS[currentDetailed.emotionArc] || currentDetailed.emotionArc}</span>
+                    <span className="text-text-secondary">{emotionLabels[currentDetailed.emotionArc] || currentDetailed.emotionArc}</span>
                   )}
                   {currentDetailed.appearingCharacterIds && currentDetailed.appearingCharacterIds.length > 0 && (
                     <span className="text-text-secondary">
-                      👥 {currentDetailed.appearingCharacterIds.length} 个角色
+                      {t('detailed.characterCount', { count: currentDetailed.appearingCharacterIds.length })}
                     </span>
                   )}
                   {currentDetailed.foreshadowIds && currentDetailed.foreshadowIds.length > 0 && (
                     <span className="text-text-secondary">
-                      🔮 {currentDetailed.foreshadowIds.length} 个伏笔
+                      {t('detailed.foreshadowCount', { count: currentDetailed.foreshadowIds.length })}
                     </span>
                   )}
                 </div>
                 {currentDetailed.prohibitions && currentDetailed.prohibitions.length > 0 && (
                   <div className="border-t border-border pt-2">
-                    <span className="text-[10px] text-warning">⛔ 不可写清单</span>
+                    <span className="text-[10px] text-warning">{t('detailed.prohibitionsLabel')}</span>
                     <ul className="mt-1 list-disc space-y-0.5 pl-4 text-xs text-text-secondary">
                       {currentDetailed.prohibitions.map((item, index) => (
                         <li key={`${item}-${index}`}>{item}</li>
@@ -466,7 +471,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
             {/* 场景列表 */}
             {!currentDetailed || currentDetailed.scenes.length === 0 ? (
               <div className="text-center py-12 text-text-muted text-sm">
-                还没有场景。点「添加场景」或「AI 一键拆场景」开始。
+                {t('detailed.emptyScenes')}
               </div>
             ) : (
               <div className="space-y-3">

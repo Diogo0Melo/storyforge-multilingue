@@ -68,12 +68,14 @@ const WorldGroupOverview = lazy(() => import('../components/world-group/WorldGro
 const ChatCopilotPanel = lazy(() => import('../components/agent/ChatCopilotPanel'))
 import { useLocationStore } from '../stores/location'
 import { useWorldGroupStore } from '../stores/world-group'
+import { useDomainT } from '../i18n'
 
 export default function WorkspacePage() {
   const { projectId } = useParams()
   const location = useLocation()
   const navigate = useNavigate()
   const { loadProject, projects, currentProjectId } = useProjectStore()
+  const { t } = useDomainT('pages')
   const initialModule = new URLSearchParams(location.search).get('module')
   const backPath = initialModule ? '/' : '/projects'
   const [activeModule, setActiveModule] = useState<SidebarModule>(
@@ -175,7 +177,7 @@ export default function WorkspacePage() {
   if (loading || !project) {
     return (
       <div className="min-h-screen bg-bg-base flex items-center justify-center">
-        <span className="text-text-muted">加载中...</span>
+        <span className="text-text-muted">{t('workspace.loading')}</span>
       </div>
     )
   }
@@ -195,8 +197,8 @@ export default function WorkspacePage() {
   const isImmersiveModule = immersiveModules.has(activeModule)
   const copilotWorldGroupId = project.enableMultiWorld ? activeWorldGroupId : null
   const copilotWorldName = project.enableMultiWorld
-    ? (worldGroups.find(group => group.id === activeWorldGroupId)?.name ?? '未选择世界')
-    : '单世界'
+    ? (worldGroups.find(group => group.id === activeWorldGroupId)?.name ?? t('workspace.defaultWorldName'))
+    : t('workspace.singleWorldLabel')
 
   /** 根据当前模块渲染主面板内容 */
   const renderMainPanel = () => {
@@ -352,8 +354,8 @@ export default function WorkspacePage() {
                   return !value
                 })
               }}
-              title={showCopilot ? '关闭 AI 对话副驾' : '打开 AI 对话副驾'}
-              aria-label={showCopilot ? '关闭 AI 对话副驾' : '打开 AI 对话副驾'}
+              title={showCopilot ? t('workspace.copilotToggleClose') : t('workspace.copilotToggleOpen')}
+              aria-label={showCopilot ? t('workspace.copilotToggleClose') : t('workspace.copilotToggleOpen')}
               className={`shrink-0 rounded p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text-primary ${showCopilot ? 'text-accent' : ''}`}
             >
               <MessageSquare className="h-4 w-4" />
@@ -365,8 +367,8 @@ export default function WorkspacePage() {
                   return !value
                 })
               }}
-              title={showProperties ? '关闭属性面板' : '打开属性面板'}
-              aria-label={showProperties ? '关闭属性面板' : '打开属性面板'}
+              title={showProperties ? t('workspace.propertiesToggleClose') : t('workspace.propertiesToggleOpen')}
+              aria-label={showProperties ? t('workspace.propertiesToggleClose') : t('workspace.propertiesToggleOpen')}
               className={`shrink-0 rounded p-1.5 text-text-muted transition-colors hover:bg-bg-hover hover:text-text-primary ${showProperties ? 'text-accent' : ''}`}
             >
               <PanelRight className="w-4 h-4" />
@@ -375,7 +377,7 @@ export default function WorkspacePage() {
         </div>
         <div className={`min-h-0 flex-1 overflow-y-auto ${isImmersiveModule ? '' : 'p-6'}`}>
           {/* Phase 3.5: 懒加载面板(地图类)加载时显示 fallback */}
-          <Suspense fallback={<div className="flex items-center justify-center h-64 text-text-muted text-sm">面板加载中…</div>}>
+          <Suspense fallback={<div className="flex items-center justify-center h-64 text-text-muted text-sm">{t('workspace.panelFallback')}</div>}>
             {renderMainPanel()}
           </Suspense>
         </div>
@@ -391,7 +393,7 @@ export default function WorkspacePage() {
       {showCopilot && (
         <Suspense fallback={(
           <aside className="fixed inset-y-0 right-0 z-30 flex h-full w-[min(24rem,calc(100vw-3rem))] shrink-0 items-center justify-center border-l border-border bg-bg-surface text-xs text-text-muted shadow-xl lg:static lg:z-auto lg:w-[24rem] lg:shadow-none">
-            AI 对话副驾加载中…
+            {t('workspace.copilotFallback')}
           </aside>
         )}>
           <ChatCopilotPanel

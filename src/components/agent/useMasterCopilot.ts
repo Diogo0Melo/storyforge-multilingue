@@ -16,10 +16,11 @@ import type { AgentEvent, Project } from '../../lib/types'
 import { parseAgentEventPayload } from '../../lib/types'
 import { AgentTeamBudgetTracker } from '../../lib/agent/team-budget'
 import { useAIConfigStore } from '../../stores/ai-config'
+import i18n, { getT } from '../../i18n'
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) return error.message
-  return '操作失败，请稍后重试。'
+  return getT()('agent:errors.operationFailed')
 }
 
 export interface PendingMasterCandidate {
@@ -60,12 +61,17 @@ export function useMasterCopilot(input: {
       setConversationId(conversation.id!)
       let rows = await readAgentEvents(conversation.id!)
       if (!rows.length) {
+        // Chat messages are persisted to IndexedDB; each row keeps the active locale's
+        // text from creation time (translate-at-creation, expected behavior).
+        // Ensure the 'agent' namespace is loaded before translating — getT() is sync
+        // and returns the raw key if the namespace hasn't been fetched yet.
+        await i18n.loadNamespaces('agent')
         await appendAgentEvent({
           projectId: project.id!,
           conversationId: conversation.id!,
           kind: 'message',
           role: 'assistant',
-          content: '直接告诉我你想完成什么。我会理解目标、调用需要的领域 Agent，并把结果统一交给你确认。',
+          content: getT()('agent:chat.greeting'),
         })
         rows = await readAgentEvents(conversation.id!)
       }
@@ -99,7 +105,7 @@ export function useMasterCopilot(input: {
           version: 1,
           taskId: '',
           agentId: 'character',
-          label: '候选',
+          label: getT()('agent:chat.candidateFallbackLabel'),
           contextSources: [],
           baseSnapshot: {},
         }),
@@ -146,7 +152,10 @@ export function useMasterCopilot(input: {
         conversationId,
         kind: 'message',
         role: 'assistant',
-        content: `${plan.summary} 我会在后台完成 ${plan.tasks.length} 个领域任务。`,
+        content: getT()('agent:chat.backgroundTasksNotice', {
+          summary: plan.summary,
+          count: plan.tasks.length,
+        }),
       })
       await reload(conversationId)
 
@@ -186,11 +195,13 @@ export function useMasterCopilot(input: {
         kind: 'message',
         role: 'assistant',
         content: [
-          `后台领域 Agent 已完成，生成了 ${candidates.length} 份候选。请检查、编辑并决定是否采纳。`,
-          `本轮团队约使用 ${teamBudget.snapshot().usedTokens.toLocaleString()} / `
-          + `${teamBudget.snapshot().maxTokens.toLocaleString()} tokens，`
-          + `${teamBudget.snapshot().calls} 次调用，`
-          + `Canon 受控打回 ${teamBudget.snapshot().canonRetries} 次。`,
+          getT()('agent:chat.completionCandidates', { count: candidates.length }),
+          getT()('agent:chat.completionBudget', {
+            used: teamBudget.snapshot().usedTokens.toLocaleString(),
+            max: teamBudget.snapshot().maxTokens.toLocaleString(),
+            calls: teamBudget.snapshot().calls,
+            retries: teamBudget.snapshot().canonRetries,
+          }),
         ].join(' '),
       })
     } catch (error) {
@@ -207,7 +218,7 @@ export function useMasterCopilot(input: {
           conversationId,
           kind: 'message',
           role: 'assistant',
-          content: `本轮没有完成：${message}`,
+          content: getT()('agent:chat.roundFailed', { message }),
         })
       }
     } finally {
@@ -237,7 +248,7 @@ export function useMasterCopilot(input: {
     if (busy || conversationId == null || candidate.event.id == null) return
     setBusy(true)
     try {
-      let message = '候选已拒绝，没有写入项目。'
+      let message = getT()('agent:chat.candidateRejected')
       if (decision === 'adopted') {
         message = await adoptMasterCandidate({
           projectId: project.id!,

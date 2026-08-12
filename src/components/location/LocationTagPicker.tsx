@@ -4,6 +4,7 @@
  */
 import { useState } from 'react'
 import { X, ChevronDown, ChevronUp } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import {
   TAG_CATEGORIES,
   TAG_EMOJI,
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export default function LocationTagPicker({ selected, onChange }: Props) {
+  const { t } = useDomainT('location')
   const [expanded, setExpanded] = useState(false)
 
   const toggle = (tag: LocationTag) => {
@@ -31,7 +33,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
       {/* 已选标签展示 */}
       <div className="flex flex-wrap gap-1.5 mb-2 min-h-[28px]">
         {selected.length === 0 && (
-          <span className="text-xs text-text-muted">点击下方添加标签…</span>
+          <span className="text-xs text-text-muted">{t('tagPicker.emptyHint')}</span>
         )}
         {selected.map(tag => (
           <span
@@ -55,7 +57,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
         className="flex items-center gap-1 text-xs text-text-muted hover:text-text-primary transition-colors mb-2"
       >
         {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-        {expanded ? '收起标签' : '展开标签选择'}
+        {expanded ? t('tagPicker.collapse') : t('tagPicker.expand')}
       </button>
 
       {/* 标签面板 */}
@@ -64,7 +66,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
           {TAG_CATEGORIES.map(cat => (
             <div key={cat.label}>
               <div className="text-xs font-medium mb-1.5" style={{ color: cat.color }}>
-                {cat.label}
+                {t(cat.labelKey)}
               </div>
               <div className="flex flex-wrap gap-1">
                 {cat.tags.map(tag => {

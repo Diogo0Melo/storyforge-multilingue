@@ -5,6 +5,7 @@
  * IndexedDB。旧版本可以缺少后来新增的表，但不能携带错误的根结构或错误的表类型。
  */
 import { PROJECT_TABLES } from '../registry/project-tables'
+import { getT } from '../../i18n'
 
 export const CURRENT_BACKUP_VERSION = 3
 
@@ -41,23 +42,23 @@ export function inspectProjectBackup(input: unknown): BackupTrustReport {
       recordCount: 0,
       missingTables: exportableTables,
       warnings,
-      errors: ['备份必须是 JSON 对象。'],
+      errors: [getT()('errors-lib:export.backupMustBeObject')],
     }
   }
 
   const version = typeof input.version === 'number' && Number.isInteger(input.version)
     ? input.version
     : null
-  if (version == null || version < 1) errors.push('缺少有效的备份版本号。')
+  if (version == null || version < 1) errors.push(getT()('errors-lib:export.backupMissingVersion'))
   if (version != null && version > CURRENT_BACKUP_VERSION) {
-    errors.push(`备份版本 v${version} 高于当前支持的 v${CURRENT_BACKUP_VERSION}，请先升级 StoryForge。`)
+    errors.push(getT()('errors-lib:export.backupVersionTooHigh', { version, current: CURRENT_BACKUP_VERSION }))
   }
 
   const project = input.project
   const projectName = isRecord(project) && typeof project.name === 'string' && project.name.trim()
     ? project.name.trim()
     : null
-  if (!projectName) errors.push('备份缺少项目名称，无法安全恢复。')
+  if (!projectName) errors.push(getT()('errors-lib:export.backupMissingProjectName'))
 
   const missingTables: string[] = []
   let presentTables = 0
@@ -69,7 +70,7 @@ export function inspectProjectBackup(input: unknown): BackupTrustReport {
     }
     const rows = input[tableName]
     if (!Array.isArray(rows)) {
-      errors.push(`表「${tableName}」不是数组，备份可能已损坏。`)
+      errors.push(getT()('errors-lib:export.backupTableNotArray', { table: tableName }))
       continue
     }
     presentTables += 1
@@ -77,10 +78,10 @@ export function inspectProjectBackup(input: unknown): BackupTrustReport {
   }
 
   if (missingTables.length > 0) {
-    warnings.push(`这是旧格式或精简备份，缺少 ${missingTables.length} 张后来新增的表；缺失表将按空表兼容导入。`)
+    warnings.push(getT()('errors-lib:export.backupMissingTables', { count: missingTables.length }))
   }
   if (version != null && version < CURRENT_BACKUP_VERSION) {
-    warnings.push(`备份版本 v${version} 将按兼容规则导入，并升级为当前项目格式。`)
+    warnings.push(getT()('errors-lib:export.backupUpgradeNotice', { version }))
   }
 
   return {
@@ -98,5 +99,5 @@ export function inspectProjectBackup(input: unknown): BackupTrustReport {
 /** 在任何写库动作前调用；错误信息保持面向用户且可定位。 */
 export function assertTrustedProjectBackup(input: unknown): asserts input is Record<string, unknown> {
   const report = inspectProjectBackup(input)
-  if (!report.valid) throw new Error(`备份预检失败：${report.errors.join('；')}`)
+  if (!report.valid) throw new Error(getT()('errors-lib:export.backupPrecheckFailed', { errors: report.errors.join('；') }))
 }

@@ -8,8 +8,8 @@ import { create } from 'zustand'
 import { db } from '../lib/db/schema'
 import { removeCodexEntryReferences } from '../lib/codex/references'
 import {
-  BUILTIN_CATEGORIES, stringifyFieldSchema,
-  type CodexCategory, type CodexEntry, type CodexDomain, type CodexFieldDef,
+  BUILTIN_CATEGORIES, stringifyFieldSchema, parseFieldSchema,
+  type BuiltInCategorySeed, type CodexCategory, type CodexEntry, type CodexDomain, type CodexFieldDef,
 } from '../lib/types/codex'
 
 interface CodexStore {
@@ -40,6 +40,47 @@ interface CodexStore {
 }
 
 const now = () => Date.now()
+
+/**
+ * B2 — fieldSchema i18n 键回填。
+ *
+ * Phase 3 之前播种的老项目,内置分类 fieldSchema 里的字段缺
+ * labelKey / placeholderKey / optionKeys。按「内置分类 + 字段显示名(label)与内置默认完全
+ * 一致」匹配,把缺失的键合并回去,让 CodexEntryDetail / 字段编辑器能恢复多语显示。
+ *
+ * 安全约束:
+ * - label 与内置默认不一致(用户改过名)的字段整体不动,避免把键挂到用户自定义字段上;
+ * - 只新增缺失的键,绝不删除或覆盖已有键;
+ * - optionKeys 仅在存储 options 与内置默认逐项一致时回填,防止与用户改过的选项错位;
+ * - 幂等:已含键的字段不再产生改动,返回 null(调用方据此跳过写库)。
+ */
+function backfillFieldSchemaKeys(fieldSchema: string, seed: BuiltInCategorySeed): string | null {
+  const stored = parseFieldSchema(fieldSchema)
+  if (stored.length === 0) return null
+  let changed = false
+  const merged = stored.map(field => {
+    const def = seed.fields.find(d => d.label === field.label)
+    if (!def) return field // label 被改过或用户自增字段 → 原样保留
+    const next: CodexFieldDef = { ...field }
+    let fieldChanged = false
+    if (!next.labelKey && def.labelKey) { next.labelKey = def.labelKey; fieldChanged = true }
+    // placeholder 无法在字段编辑器里改,但为稳妥仍要求与默认一致才回填键
+    const placeholderMatch = (next.placeholder ?? '') === (def.placeholder ?? '')
+    if (!next.placeholderKey && def.placeholderKey && placeholderMatch) {
+      next.placeholderKey = def.placeholderKey; fieldChanged = true
+    }
+    const optionsMatch =
+      Array.isArray(next.options) && Array.isArray(def.options) &&
+      next.options.length === def.options.length &&
+      next.options.every((opt, i) => opt === def.options![i])
+    if ((!next.optionKeys || next.optionKeys.length === 0) && def.optionKeys && optionsMatch) {
+      next.optionKeys = def.optionKeys; fieldChanged = true
+    }
+    if (fieldChanged) changed = true
+    return fieldChanged ? next : field
+  })
+  return changed ? stringifyFieldSchema(merged) : null
+}
 
 // 并发锁:同一项目的 ensureBuiltIns 同一时刻只跑一次。
 // 防止并发调用(如 React StrictMode 开发期把 effect 跑两遍、或多个面板内嵌词条同时挂载)
@@ -100,9 +141,12 @@ export const useCodexStore = create<CodexStore>((set, get) => ({
       arr.push(c)
       byKey.set(c.builtInKey!, arr)
     }
+    // 每个 builtInKey 去重后保留的那一条(id 最小),供后续键回填使用。
+    const keptBuiltins: CodexCategory[] = []
     for (const group of byKey.values()) {
-      if (group.length <= 1) continue
       group.sort((a, b) => (a.id ?? 0) - (b.id ?? 0))
+      keptBuiltins.push(group[0])
+      if (group.length <= 1) continue
       const keep = group[0]
       for (const extra of group.slice(1)) {
         // 多余分类下的词条改挂到保留项，避免删分类时孤立词条
@@ -122,7 +166,19 @@ export const useCodexStore = create<CodexStore>((set, get) => ({
       }
     }
 
-    // ② 补齐缺失的内置 key
+    // ② B2:为既有内置分类回填缺失的 fieldSchema i18n 键(幂等、不覆盖用户改动)。
+    // 必须在播种的 early-return 之前跑:分类齐全的老项目没有 missing,但字段可能缺键。
+    for (const cat of keptBuiltins) {
+      const seed = BUILTIN_CATEGORIES.find(s => s.builtInKey === cat.builtInKey)
+      if (!seed) continue
+      const nextSchema = backfillFieldSchemaKeys(cat.fieldSchema, seed)
+      if (nextSchema != null && cat.id != null) {
+        await db.codexCategories.update(cat.id, { fieldSchema: nextSchema, updatedAt: now() })
+        console.log('[Codex] 已回填内置分类字段键:', cat.builtInKey, '#', cat.id)
+      }
+    }
+
+    // ③ 补齐缺失的内置 key
     const existingKeys = new Set([...byKey.keys()])
     const missing = BUILTIN_CATEGORIES.filter(seed => !existingKeys.has(seed.builtInKey))
     if (missing.length === 0) return

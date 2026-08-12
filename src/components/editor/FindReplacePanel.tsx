@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronLeft, ChevronRight, Search, Replace, RotateCcw, ShieldCheck, X } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useBackupStore } from '../../stores/backup'
 import { useChapterStore } from '../../stores/chapter'
 import { useCharacterStore } from '../../stores/character'
@@ -45,6 +46,7 @@ export default function FindReplacePanel({
   onSelectOutlineNode,
   onClose,
 }: Props) {
+  const { t } = useDomainT('editor')
   const dialog = useDialog()
   const toast = useToast()
   const { updateChapter } = useChapterStore()
@@ -96,13 +98,13 @@ export default function FindReplacePanel({
         .map(target => findChapterMatches(target, searchOptions))
         .filter((item): item is ChapterMatchPreview => !!item)
     } catch (error) {
-      return [{ chapterId: -1, outlineNodeId: -1, title: '查找条件有误', count: 0, occurrences: [{
+      return [{ chapterId: -1, outlineNodeId: -1, title: t('findReplace.errorInvalidQuery'), count: 0, occurrences: [{
         occurrenceIndex: 0,
         matchText: '',
         snippet: error instanceof Error ? error.message : String(error),
       }] }]
     }
-  }, [query, searchOptions, targets])
+  }, [query, searchOptions, targets, t])
 
   const totalMatches = matches.reduce((sum, item) => sum + item.count, 0)
   const affectedChapters = matches.filter(match => match.chapterId > 0).length
@@ -140,11 +142,11 @@ export default function FindReplacePanel({
 
   const applyReplace = async (mode: ReplaceMode) => {
     if (!query.trim()) {
-      toast.error('请先输入查找内容')
+      toast.error(t('findReplace.toastEnterQuery'))
       return
     }
     if (!totalMatches) {
-      toast.info('没有可替换的命中')
+      toast.info(t('findReplace.toastNoMatches'))
       return
     }
 
@@ -156,21 +158,17 @@ export default function FindReplacePanel({
         : targets.filter(target => target.id === selectedChapterId)
 
     if (!chaptersToReplace.length) {
-      toast.error('没有可替换的章节')
+      toast.error(t('findReplace.toastNoChapters'))
       return
     }
 
     const plan = countPlannedReplacements(chaptersToReplace, searchOptions, mode)
 
     const ok = await dialog.confirm({
-      title: '确认替换？',
-      message: [
-        `将替换 ${plan.count} 处，分布在 ${plan.affectedChapters} 章。`,
-        '执行前会自动创建项目快照；本次会话内也可一键撤销到替换前内容。',
-        '如当前章有未保存草稿，请先点击正文页“保存”。',
-      ].join('\n'),
-      confirmText: '创建快照并替换',
-      cancelText: '取消',
+      title: t('findReplace.confirmTitle'),
+      message: t('findReplace.confirmMessage', { count: plan.count, chapters: plan.affectedChapters }),
+      confirmText: t('findReplace.btnSnapshotAndReplace'),
+      cancelText: t('common:cancel'),
       tone: mode === 'book' ? 'danger' : 'info',
     })
     if (!ok) return
@@ -186,14 +184,14 @@ export default function FindReplacePanel({
         selected: activeSelected,
         createSnapshot,
         updateChapter,
-        label: `查找替换前自动快照 ${formatTime(Date.now())}`,
+        label: `${t('findReplace.snapshotPrefix')} ${formatTime(Date.now())}`,
       })
 
       setUndoPatch(result.undoPatch)
       setSelected(null)
-      toast.success(`已替换 ${result.replaced} 处，并创建快照`)
+      toast.success(t('findReplace.toastReplaced', { count: result.replaced }))
     } catch (error) {
-      toast.error(`替换失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('findReplace.toastFailed', { message: error instanceof Error ? error.message : String(error) }))
     } finally {
       setBusy(false)
     }
@@ -202,10 +200,10 @@ export default function FindReplacePanel({
   const handleUndo = async () => {
     if (!undoPatch) return
     const ok = await dialog.confirm({
-      title: '撤销上次替换？',
-      message: `将把 ${undoPatch.chapters.length} 章恢复到「${undoPatch.label}」对应内容。`,
-      confirmText: '撤销',
-      cancelText: '取消',
+      title: t('findReplace.undoConfirmTitle'),
+      message: t('findReplace.undoConfirmMessage', { chapters: undoPatch.chapters.length, label: undoPatch.label }),
+      confirmText: t('findReplace.btnUndo'),
+      cancelText: t('common:cancel'),
       tone: 'danger',
     })
     if (!ok) return
@@ -213,9 +211,9 @@ export default function FindReplacePanel({
     try {
       await undoFindReplace(undoPatch, updateChapter)
       setUndoPatch(null)
-      toast.success('已撤销上次替换')
+      toast.success(t('findReplace.toastUndoSuccess'))
     } catch (error) {
-      toast.error(`撤销失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('findReplace.toastUndoFailed', { message: error instanceof Error ? error.message : String(error) }))
     } finally {
       setBusy(false)
     }
@@ -226,15 +224,15 @@ export default function FindReplacePanel({
       <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div>
           <p className="text-sm font-medium text-text-primary">
-            {panelMode === 'text' ? '全书查找替换' : '智能实体改名'}
+            {panelMode === 'text' ? t('findReplace.panelTitleText') : t('findReplace.panelTitleEntity')}
           </p>
           <p className="text-[11px] text-text-muted">
             {panelMode === 'text'
-              ? '基于已保存正文查找；批量替换前自动创建快照。'
-              : '同步稳定实体、正文和结构化冗余名称；执行前先预览并创建快照。'}
+              ? t('findReplace.subtitleText')
+              : t('findReplace.subtitleEntity')}
           </p>
         </div>
-        <button onClick={onClose} className="rounded p-1 text-text-muted hover:bg-bg-hover hover:text-text-primary" aria-label="关闭查找替换">
+        <button onClick={onClose} className="rounded p-1 text-text-muted hover:bg-bg-hover hover:text-text-primary" aria-label={t('findReplace.ariaClose')}>
           <X className="h-4 w-4" />
         </button>
       </div>
@@ -246,7 +244,7 @@ export default function FindReplacePanel({
             panelMode === 'text' ? 'bg-accent/10 text-accent' : 'text-text-muted hover:text-text-primary'
           }`}
         >
-          文字替换
+          {t('findReplace.tabText')}
         </button>
         <button
           onClick={() => setPanelMode('entity')}
@@ -254,7 +252,7 @@ export default function FindReplacePanel({
             panelMode === 'entity' ? 'bg-accent/10 text-accent' : 'text-text-muted hover:text-text-primary'
           }`}
         >
-          智能实体改名
+          {t('findReplace.tabEntity')}
         </button>
       </div>
 
@@ -265,21 +263,21 @@ export default function FindReplacePanel({
         <div className="space-y-3">
           <div className="grid gap-2 md:grid-cols-2">
             <label className="space-y-1">
-              <span className="text-[11px] text-text-muted">查找</span>
+              <span className="text-[11px] text-text-muted">{t('findReplace.labelFind')}</span>
               <input
                 ref={queryInputRef}
                 value={query}
                 onChange={event => { setQuery(event.target.value); setSelected(null) }}
-                placeholder="输入要查找的文字"
+                placeholder={t('findReplace.placeholderFind')}
                 className="w-full rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
               />
             </label>
             <label className="space-y-1">
-              <span className="text-[11px] text-text-muted">替换为</span>
+              <span className="text-[11px] text-text-muted">{t('findReplace.labelReplace')}</span>
               <input
                 value={replacement}
                 onChange={event => setReplacement(event.target.value)}
-                placeholder="留空表示删除命中文字"
+                placeholder={t('findReplace.placeholderReplace')}
                 className="w-full rounded-md border border-border bg-bg-base px-3 py-2 text-sm text-text-primary outline-none focus:border-accent"
               />
             </label>
@@ -288,23 +286,23 @@ export default function FindReplacePanel({
           <div className="flex flex-wrap items-center gap-2 text-xs">
             <label className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-base px-2 py-1 text-text-secondary">
               <input type="radio" checked={scope === 'chapter'} onChange={() => { setScope('chapter'); setSelected(null) }} />
-              单章
+              {t('findReplace.scopeChapter')}
             </label>
             <label className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-base px-2 py-1 text-text-secondary">
               <input type="radio" checked={scope === 'book'} onChange={() => { setScope('book'); setSelected(null) }} />
-              全书
+              {t('findReplace.scopeBook')}
             </label>
             <label className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-base px-2 py-1 text-text-secondary">
               <input type="checkbox" checked={wholeWord} onChange={event => { setWholeWord(event.target.checked); setSelected(null) }} />
-              全字匹配
+              {t('findReplace.optionWholeWord')}
             </label>
             <label className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-base px-2 py-1 text-text-secondary">
               <input type="checkbox" checked={caseSensitive} onChange={event => { setCaseSensitive(event.target.checked); setSelected(null) }} />
-              大小写敏感
+              {t('findReplace.optionCaseSensitive')}
             </label>
             <label className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-base px-2 py-1 text-text-secondary">
               <input type="checkbox" checked={useRegex} onChange={event => { setUseRegex(event.target.checked); setSelected(null) }} />
-              正则
+              {t('findReplace.optionRegex')}
             </label>
           </div>
 
@@ -314,21 +312,21 @@ export default function FindReplacePanel({
               disabled={busy || !totalMatches}
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50"
             >
-              <Replace className="h-3.5 w-3.5" /> 替换单处
+              <Replace className="h-3.5 w-3.5" /> {t('findReplace.btnReplaceOne')}
             </button>
             <button
               onClick={() => void applyReplace('chapter')}
               disabled={busy || !totalMatches}
               className="inline-flex items-center gap-1.5 rounded-md border border-border bg-bg-elevated px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50"
             >
-              <Replace className="h-3.5 w-3.5" /> 本章全部
+              <Replace className="h-3.5 w-3.5" /> {t('findReplace.btnReplaceChapter')}
             </button>
             <button
               onClick={() => void applyReplace('book')}
               disabled={busy || !totalMatches}
               className="inline-flex items-center gap-1.5 rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
             >
-              <ShieldCheck className="h-3.5 w-3.5" /> 全书替换
+              <ShieldCheck className="h-3.5 w-3.5" /> {t('findReplace.btnReplaceBook')}
             </button>
             {undoPatch && (
               <button
@@ -336,7 +334,7 @@ export default function FindReplacePanel({
                 disabled={busy}
                 className="inline-flex items-center gap-1.5 rounded-md border border-warning/40 bg-warning/10 px-3 py-1.5 text-xs text-warning hover:bg-warning/20 disabled:opacity-50"
               >
-                <RotateCcw className="h-3.5 w-3.5" /> 撤销上次替换
+                <RotateCcw className="h-3.5 w-3.5" /> {t('findReplace.btnUndoLast')}
               </button>
             )}
           </div>
@@ -345,15 +343,15 @@ export default function FindReplacePanel({
         <aside className="rounded-lg border border-border bg-bg-base p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
             <span className="inline-flex items-center gap-1 text-xs font-medium text-text-secondary">
-              <Search className="h-3.5 w-3.5" /> 命中
+              <Search className="h-3.5 w-3.5" /> {t('findReplace.matchesLabel')}
             </span>
             <div className="flex items-center gap-1">
               <button
                 onClick={() => selectFlatOccurrence(-1)}
                 disabled={!flatOccurrences.length}
                 className="rounded border border-border bg-bg-surface p-1 text-text-muted hover:text-text-primary disabled:opacity-40"
-                title="上一处"
-                aria-label="上一处命中"
+                title={t('findReplace.titlePrevMatch')}
+                aria-label={t('findReplace.ariaPrevMatch')}
               >
                 <ChevronLeft className="h-3 w-3" />
               </button>
@@ -361,17 +359,17 @@ export default function FindReplacePanel({
                 onClick={() => selectFlatOccurrence(1)}
                 disabled={!flatOccurrences.length}
                 className="rounded border border-border bg-bg-surface p-1 text-text-muted hover:text-text-primary disabled:opacity-40"
-                title="下一处"
-                aria-label="下一处命中"
+                title={t('findReplace.titleNextMatch')}
+                aria-label={t('findReplace.ariaNextMatch')}
               >
                 <ChevronRight className="h-3 w-3" />
               </button>
-              <span className="text-[11px] text-text-muted">{totalMatches} 处 / {affectedChapters} 章</span>
+              <span className="text-[11px] text-text-muted">{t('findReplace.statsSummary', { totalMatches, affectedChapters })}</span>
             </div>
           </div>
           <div className="max-h-64 space-y-2 overflow-y-auto pr-1">
-            {!query.trim() && <p className="py-8 text-center text-xs text-text-muted">输入查找内容后显示命中。</p>}
-            {query.trim() && !totalMatches && <p className="py-8 text-center text-xs text-text-muted">没有命中。</p>}
+            {!query.trim() && <p className="py-8 text-center text-xs text-text-muted">{t('findReplace.hintEnterQuery')}</p>}
+            {query.trim() && !totalMatches && <p className="py-8 text-center text-xs text-text-muted">{t('findReplace.noMatches')}</p>}
             {matches.map(match => (
               <div key={match.chapterId} className="space-y-1">
                 <button
@@ -380,7 +378,7 @@ export default function FindReplacePanel({
                   }}
                   className="w-full truncate text-left text-[11px] font-medium text-accent hover:underline"
                 >
-                  {match.title} · {match.count} 处
+                  {match.title} · {t('findReplace.matchCountSuffix', { count: match.count })}
                 </button>
                 {match.occurrences.slice(0, 5).map(occurrence => {
                   const active = activeSelected?.chapterId === match.chapterId && activeSelected.occurrenceIndex === occurrence.occurrenceIndex
@@ -397,19 +395,19 @@ export default function FindReplacePanel({
                           : 'border-border bg-bg-surface text-text-muted hover:text-text-secondary'
                       }`}
                     >
-                      {occurrence.snippet || occurrence.matchText || '命中'}
+                      {occurrence.snippet || occurrence.matchText || t('findReplace.matchesLabel')}
                     </button>
                   )
                 })}
                 {match.occurrences.length > 5 && (
-                  <p className="text-[10px] text-text-muted">另有 {match.occurrences.length - 5} 处命中。</p>
+                  <p className="text-[10px] text-text-muted">{t('findReplace.moreMatchesSuffix', { count: match.occurrences.length - 5 })}</p>
                 )}
               </div>
             ))}
           </div>
           {selectedChapterMatch && (
             <p className="mt-2 border-t border-border pt-2 text-[10px] text-text-muted">
-              已选: {selectedChapterMatch.title} 第 {(activeSelected?.occurrenceIndex ?? 0) + 1} 处
+              {t('findReplace.selectedInfo', { title: selectedChapterMatch.title, index: (activeSelected?.occurrenceIndex ?? 0) + 1 })}
             </p>
           )}
         </aside>

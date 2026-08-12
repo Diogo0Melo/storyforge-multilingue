@@ -11,7 +11,7 @@ import {
 } from 'lucide-react'
 import { useCodexStore } from '../../stores/codex'
 import {
-  CODEX_DOMAIN_LABELS, filterCodexEntriesByWorld, parseFieldSchema,
+  filterCodexEntriesByWorld, parseFieldSchema,
   type CodexDomain, type CodexCategory, type CodexEntry,
 } from '../../lib/types/codex'
 import type { Project } from '../../lib/types'
@@ -27,6 +27,7 @@ import { adopt } from '../../lib/registry/adopt'
 import { useToast } from '../shared/Toast'
 import { uniqueBy } from '../../lib/ai/structured-extraction'
 import { assembleContext } from '../../lib/registry/assemble-context'
+import { useDomainT } from '../../i18n'
 import CodexCategoryFieldsEditor from './CodexCategoryFieldsEditor'
 import CodexEntryDetail from './CodexEntryDetail'
 
@@ -49,6 +50,10 @@ interface Props {
 const DOMAINS: CodexDomain[] = ['natural', 'humanity']
 
 export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, embedded, extractionSourceText = '' }: Props) {
+  const { t } = useDomainT('codex')
+  // 内置分类按 builtInKey 解析多语名;自定义分类或缺键时回退到持久化 name(自愈旧行)
+  const catDisplayName = (cat: CodexCategory) =>
+    cat.builtInKey ? t(`builtinCategories.${cat.builtInKey}` as any, cat.name) : cat.name
   const dialog = useDialog()
   const toast = useToast()
   const aiConfig = useAIConfigStore(s => s.config)
@@ -145,8 +150,8 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
   // ── 分类操作 ──
   const handleAddCategory = async () => {
     const name = (await dialog.prompt({
-      title: `在「${CODEX_DOMAIN_LABELS[domain]}」下新增自定义分类`,
-      placeholder: '输入分类名称',
+      title: t('panel.addCategoryDialogTitle', { domain: t(`domain.${domain}`) }),
+      placeholder: t('panel.addCategoryPlaceholder'),
     }))?.trim()
     if (!name) return
     const id = await addCategory({
@@ -161,9 +166,9 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
   const handleDeleteCategory = async (cat: CodexCategory) => {
     if (cat.builtInKey) return
     const ok = await dialog.confirm({
-      title: `删除自定义分类「${cat.name}」？`,
-      message: '其下所有世界中的词条也会被删除，此操作不可撤销。',
-      confirmText: '删除',
+      title: t('panel.deleteCategoryConfirmTitle', { name: cat.name }),
+      message: t('panel.deleteCategoryConfirmMessage'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -174,12 +179,12 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
   const handleAddEntry = async () => {
     if (!activeCatId) return
     if (!scopeReady) {
-      toast.error('世界数据尚未加载完成，请稍后再试。')
+      toast.error(t('panel.worldDataNotReadyToast'))
       return
     }
     const id = await addEntry({
       projectId, categoryId: activeCatId,
-      name: '新词条', summary: '', description: '',
+      name: t('panel.newEntryDefaultName'), summary: '', description: '',
       fields: '{}', refs: '{}',
       order: catEntries.length, worldGroupId: scopedWorldGroupId,
     })
@@ -188,9 +193,9 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
 
   const handleDeleteEntry = async (entry: CodexEntry) => {
     const ok = await dialog.confirm({
-      title: `删除词条「${entry.name}」？`,
-      message: '此操作不可恢复。',
-      confirmText: '删除',
+      title: t('panel.deleteEntryConfirmTitle', { name: entry.name }),
+      message: t('panel.deleteEntryConfirmMessage'),
+      confirmText: t('common:delete'),
       tone: 'danger',
     })
     if (!ok) return
@@ -200,7 +205,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
 
   const openExtractor = () => {
     if (!scopeReady) {
-      toast.error('世界数据尚未加载完成，请稍后再试。')
+      toast.error(t('panel.worldDataNotReadyToast'))
       return
     }
     setExtractText(extractionSourceText)
@@ -239,7 +244,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
       )
       setCandidates(parsed)
       setSelectedCandidates(new Set(parsed.map((_, index) => index)))
-      if (!parsed.length) toast.info('AI 未从这段内容中识别出可独立登记的词条。')
+      if (!parsed.length) toast.info(t('extractor.noCandidatesToast'))
     } finally {
       setExtracting(false)
     }
@@ -269,7 +274,10 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
     })
     await loadAll(projectId)
     setExtractOpen(false)
-    toast.success(`已写入 ${result.written.length} 个词条${result.skipped.length ? `，跳过 ${result.skipped.length} 个重复项` : ''}。`)
+    toast.success(t('extractor.adoptSuccessToast', {
+      written: result.written.length,
+      skippedSuffix: result.skipped.length ? t('extractor.skippedSuffix', { count: result.skipped.length }) : '',
+    }))
   }
 
   return (
@@ -282,7 +290,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
         {!fixedDomain && (
           <>
             <Boxes className="w-5 h-5 text-accent" />
-            <h2 className="text-base font-semibold text-text-primary mr-2">设定词条</h2>
+            <h2 className="text-base font-semibold text-text-primary mr-2">{t('panel.title')}</h2>
             <div className="flex rounded-lg bg-bg-elevated p-0.5">
               {DOMAINS.map(d => (
                 <button
@@ -292,20 +300,20 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                     domain === d ? 'bg-accent text-white' : 'text-text-muted hover:text-text-primary'
                   }`}
                 >
-                  {CODEX_DOMAIN_LABELS[d]}
+                  {t(`domain.${d}`)}
                 </button>
               ))}
             </div>
           </>
         )}
-        {fixedDomain && <span className="text-sm font-medium text-text-secondary">📚 词条({CODEX_DOMAIN_LABELS[fixedDomain]})</span>}
+        {fixedDomain && <span className="text-sm font-medium text-text-secondary">{t('panel.domainLabel', { domain: t(`domain.${fixedDomain}`) })}</span>}
         <button
           onClick={() => setShowHidden(v => !v)}
           className="ml-auto text-xs text-text-muted hover:text-text-primary inline-flex items-center gap-1"
-          title="显示/隐藏被隐藏的分类"
+          title={t('panel.toggleHiddenTitle')}
         >
           {showHidden ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-          {showHidden ? '隐藏项已显示' : '显示隐藏项'}
+          {showHidden ? t('panel.hideShown') : t('panel.showHidden')}
         </button>
       </div>
       )}
@@ -324,7 +332,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                 } ${cat.hidden ? 'opacity-50' : ''}`}
               >
                 <span>{cat.icon || '📁'}</span>
-                <span className="truncate flex-1">{cat.name}</span>
+                <span className="truncate flex-1">{catDisplayName(cat)}</span>
                 <span className="text-[10px] text-text-muted">
                   {scopedEntries.filter(e => e.categoryId === cat.id).length || ''}
                 </span>
@@ -332,7 +340,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                   <button
                     onClick={(e) => { e.stopPropagation(); setCategoryHidden(cat.id!, !cat.hidden) }}
                     className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-text-primary"
-                    title={cat.hidden ? '取消隐藏' : '隐藏此内置分类'}
+                    title={cat.hidden ? t('panel.unhideBuiltInTitle') : t('panel.hideBuiltInTitle')}
                   >
                     {cat.hidden ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                   </button>
@@ -340,7 +348,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                   <button
                     onClick={(e) => { e.stopPropagation(); handleDeleteCategory(cat) }}
                     className="opacity-0 group-hover:opacity-100 text-text-muted hover:text-red-400"
-                    title="删除自定义分类"
+                    title={t('panel.deleteCustomCategoryTitle')}
                   >
                     <Trash2 className="w-3 h-3" />
                   </button>
@@ -353,7 +361,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
               onClick={handleAddCategory}
               className="m-2 px-2 py-1.5 text-xs rounded-lg border border-dashed border-border text-text-muted hover:text-accent hover:border-accent/50 inline-flex items-center justify-center gap-1"
             >
-              <FolderPlus className="w-3.5 h-3.5" /> 新增分类
+              <FolderPlus className="w-3.5 h-3.5" /> {t('panel.addCategory')}
             </button>
           )}
         </div>
@@ -363,20 +371,20 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
         <div className="w-52 shrink-0 border-r border-border flex flex-col">
           {/* 排序下拉 */}
           <div className="px-2 pt-2 pb-1 flex items-center gap-1.5">
-            <span className="text-[10px] text-text-muted shrink-0">排序</span>
+            <span className="text-[10px] text-text-muted shrink-0">{t('panel.sortLabel')}</span>
             <select
               value={sortMode}
               onChange={e => setSortMode(e.target.value as typeof sortMode)}
               className="flex-1 text-[11px] bg-bg-elevated border border-border rounded px-1.5 py-1 text-text-secondary"
             >
-              <option value="order">默认顺序</option>
-              <option value="importance">按重要度</option>
-              <option value="pinyin">按拼音首字母</option>
+              <option value="order">{t('panel.sortOrder')}</option>
+              <option value="importance">{t('panel.sortImportance')}</option>
+              <option value="pinyin">{t('panel.sortPinyin')}</option>
             </select>
           </div>
           <div className="flex-1 overflow-y-auto p-2 pt-1 space-y-0.5">
             {catEntries.length === 0 && (
-              <p className="text-xs text-text-muted px-2 py-3 text-center">暂无词条</p>
+              <p className="text-xs text-text-muted px-2 py-3 text-center">{t('panel.noEntries')}</p>
             )}
             {catEntries.map(entry => (
               <div
@@ -387,9 +395,9 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                 }`}
               >
                 <span>{entry.icon || activeCat?.icon || '•'}</span>
-                <span className="truncate flex-1">{entry.name || '未命名'}</span>
+                <span className="truncate flex-1">{entry.name || t('panel.unnamedEntry')}</span>
                 {entry.name && dupNames.has(entry.name.trim()) && (
-                  <span className="text-amber-400 shrink-0" title="本分类下有同名词条">⚠</span>
+                  <span className="text-amber-400 shrink-0" title={t('panel.duplicateWarningTitle')}>⚠</span>
                 )}
                 <button
                   onClick={(e) => { e.stopPropagation(); handleDeleteEntry(entry) }}
@@ -406,23 +414,23 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
               disabled={!activeCatId || !scopeReady}
               className="w-full px-2 py-1.5 text-xs rounded-lg border border-accent/30 text-accent hover:bg-accent/10 disabled:opacity-40 inline-flex items-center justify-center gap-1"
             >
-              <Sparkles className="w-3.5 h-3.5" /> AI 从内容拆分词条
+              <Sparkles className="w-3.5 h-3.5" /> {t('panel.aiExtractButton')}
             </button>
             <button
               onClick={handleAddEntry}
               disabled={!activeCatId || !scopeReady}
               className="w-full px-2 py-1.5 text-xs rounded-lg bg-accent text-white hover:bg-accent/90 disabled:opacity-40 inline-flex items-center justify-center gap-1"
             >
-              <Plus className="w-3.5 h-3.5" /> 新建词条
+              <Plus className="w-3.5 h-3.5" /> {t('panel.newEntryButton')}
             </button>
             {/* B1:管理本分类的专属字段(增删改字段 schema) */}
             <button
               onClick={() => setShowFieldsEditor(true)}
               disabled={!activeCat}
               className="w-full px-2 py-1.5 text-xs rounded-lg border border-border text-text-secondary hover:text-accent hover:border-accent/50 disabled:opacity-40 inline-flex items-center justify-center gap-1"
-              title="自定义本分类下词条的专属字段"
+              title={t('panel.manageFieldsTitle')}
             >
-              <Settings2 className="w-3.5 h-3.5" /> 管理字段
+              <Settings2 className="w-3.5 h-3.5" /> {t('panel.manageFieldsButton')}
             </button>
           </div>
         </div>
@@ -441,7 +449,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
             />
           ) : (
             <div className="h-full flex items-center justify-center text-text-muted text-sm">
-              {activeCat ? '从左侧选择或「新建词条」添加一个具体条目' : '请选择一个分类'}
+              {activeCat ? t('panel.selectEntryPrompt') : t('panel.selectCategoryPrompt')}
             </div>
           )}
         </div>
@@ -460,22 +468,22 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
           <div className="w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-bg-surface border border-border rounded-xl p-4 space-y-3" onClick={e => e.stopPropagation()}>
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="font-semibold text-text-primary">AI 拆分「{activeCat.name}」词条</h3>
-                <p className="text-xs text-text-muted">AI 只生成候选，确认后才写入；同名词条会自动合并/跳过。</p>
+                <h3 className="font-semibold text-text-primary">{t('extractor.title', { category: catDisplayName(activeCat) })}</h3>
+                <p className="text-xs text-text-muted">{t('extractor.subtitle')}</p>
               </div>
               <button onClick={() => setExtractOpen(false)}><X className="w-4 h-4 text-text-muted" /></button>
             </div>
             <textarea value={extractText} onChange={e => setExtractText(e.target.value)} rows={8}
-              placeholder="粘贴或编辑要拆分的整段设定内容"
+              placeholder={t('extractor.placeholder')}
               className="w-full p-3 bg-bg-base border border-border rounded-lg text-sm text-text-primary resize-y" />
             <label className="flex items-start gap-2 text-xs text-text-secondary">
               <input type="checkbox" checked={supplementTags} onChange={e => setSupplementTags(e.target.checked)} className="mt-0.5 accent-accent" />
-              <span>AI 补充词条标签 <span className="text-amber-400">⚠ 会增加少量 token 消耗</span></span>
+              <span>{t('extractor.supplementTagsLabel')} <span className="text-amber-400">{t('extractor.supplementTagsWarning')}</span></span>
             </label>
             <button onClick={handleExtractEntries} disabled={extracting || !extractText.trim()}
               className="px-3 py-1.5 bg-accent text-white rounded-lg text-sm disabled:opacity-40 inline-flex items-center gap-1.5">
               {extracting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-              {extracting ? 'AI 拆分中…' : '开始拆分'}
+              {extracting ? t('extractor.extracting') : t('extractor.startExtract')}
             </button>
             {candidates.length > 0 && (
               <div className="space-y-2 border-t border-border pt-3">
@@ -496,10 +504,10 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
                   </label>
                 ))}
                 <div className="flex justify-end gap-2">
-                  <button onClick={() => setExtractOpen(false)} className="px-3 py-1.5 text-xs text-text-muted">取消</button>
+                  <button onClick={() => setExtractOpen(false)} className="px-3 py-1.5 text-xs text-text-muted">{t('common:cancel')}</button>
                   <button onClick={handleAdoptCandidates} disabled={!selectedCandidates.size}
                     className="px-3 py-1.5 text-xs bg-accent text-white rounded disabled:opacity-40">
-                    写入所选 {selectedCandidates.size} 项
+                    {t('extractor.writeSelected', { count: selectedCandidates.size })}
                   </button>
                 </div>
               </div>

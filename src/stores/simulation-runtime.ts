@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
+import { getT } from '../i18n'
 import {
   appendSimulationEvent,
   appendChatMessage,
@@ -211,14 +212,14 @@ export const useSimulationRuntimeStore = create<SimulationRuntimeStore>((set, ge
 
     configureChat: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择角色聊天会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectChatSessionFirst'))
       await configureChatSession({ sessionId, ...input, baseSequence: get().runtimeState.lastSequence })
       await refreshSelected()
     },
 
     recordChatMessage: async text => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择角色聊天会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectChatSessionFirst'))
       const event = await appendChatMessage({ sessionId, text })
       await refreshSelected()
       return event.sequence
@@ -226,14 +227,14 @@ export const useSimulationRuntimeStore = create<SimulationRuntimeStore>((set, ge
 
     recordChatReply: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择角色聊天会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectChatSessionFirst'))
       await appendChatReply({ sessionId, ...input })
       await refreshSelected()
     },
 
     advanceTime: async amount => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await appendSimulationEvent({
         sessionId,
         type: 'time.advanced',
@@ -244,7 +245,7 @@ export const useSimulationRuntimeStore = create<SimulationRuntimeStore>((set, ge
 
     recordNarrative: async text => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await appendSimulationEvent({
         sessionId,
         type: 'narrative.recorded',
@@ -255,128 +256,128 @@ export const useSimulationRuntimeStore = create<SimulationRuntimeStore>((set, ge
 
     proposeNpcEvolution: async candidate => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await appendNpcEvolutionProposal({ sessionId, candidate })
       await refreshSelected()
     },
 
     acceptNpcEvolution: async proposalSequence => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await acceptNpcEvolutionProposal({ sessionId, proposalSequence })
       await refreshSelected()
     },
 
     rejectNpcEvolution: async (proposalSequence, reason) => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await rejectNpcEvolutionProposal({ sessionId, proposalSequence, reason })
       await refreshSelected()
     },
 
     openTtrpgScene: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await openTtrpgScene({ sessionId, ...input })
       await refreshSelected()
     },
 
     startTtrpgEncounter: async candidate => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await startTtrpgEncounter({ sessionId, candidate })
       await refreshSelected()
     },
 
     resolveTtrpgEncounter: async reason => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await resolveTtrpgEncounter({ sessionId, reason })
       await refreshSelected()
     },
 
     recordTtrpgTurn: async candidate => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await appendTtrpgTurn({ sessionId, candidate })
       await refreshSelected()
     },
 
     resolveTtrpgCheck: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await resolveTtrpgCheck({ sessionId, ...input })
       await refreshSelected()
     },
 
     resolveTtrpgAttack: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await resolveTtrpgAttack({ sessionId, ...input })
       await refreshSelected()
     },
 
     changeTtrpgResource: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await changeTtrpgResource({ sessionId, ...input })
       await refreshSelected()
     },
 
     applyTtrpgCondition: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await applyTtrpgCondition({ sessionId, ...input })
       await refreshSelected()
     },
 
     removeTtrpgCondition: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await removeTtrpgCondition({ sessionId, ...input })
       await refreshSelected()
     },
 
     updateTtrpgCampaignSummary: async (summary, baseSequence) => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await updateTtrpgCampaignSummary({ sessionId, summary, baseSequence })
       await refreshSelected()
     },
 
     upsertTtrpgQuest: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await upsertTtrpgQuest({ sessionId, ...input })
       await refreshSelected()
     },
 
     upsertTtrpgNpcSchedule: async input => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await upsertTtrpgNpcSchedule({ sessionId, ...input })
       await refreshSelected()
     },
 
     rollDice: async expression => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await resolveSimulationDice({ sessionId, expression })
       await refreshSelected()
     },
 
     checkpoint: async name => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       await createSimulationCheckpoint({ sessionId, name })
       await refreshSelected()
     },
 
     branch: async title => {
       const sessionId = get().selectedSessionId
-      if (sessionId == null) throw new Error('请先选择运行时会话。')
+      if (sessionId == null) throw new Error(getT()('errors:simulation.selectRuntimeSessionFirst'))
       const parent = get().sessions.find(row => row.id === sessionId)
-      if (!parent) throw new Error('当前运行时会话不存在。')
+      if (!parent) throw new Error(getT()('errors:simulation.currentSessionMissing'))
       const child = await branchSimulationSession({
         parentSessionId: sessionId,
         throughSequence: get().runtimeState.lastSequence,
@@ -390,9 +391,9 @@ export const useSimulationRuntimeStore = create<SimulationRuntimeStore>((set, ge
     restoreCheckpoint: async checkpointId => {
       const checkpoint = get().checkpoints.find(row => row.id === checkpointId)
       const parent = get().sessions.find(row => row.id === checkpoint?.sessionId)
-      if (!checkpoint || !parent) throw new Error('要恢复的检查点不存在。')
+      if (!checkpoint || !parent) throw new Error(getT()('errors:simulation.checkpointMissing'))
       if (!await verifySimulationCheckpoint(checkpointId)) {
-        throw new Error('检查点内容校验失败，不能用于恢复。')
+        throw new Error(getT()('errors:simulation.checkpointVerifyFailed'))
       }
       const child = await branchSimulationSession({
         parentSessionId: parent.id!,

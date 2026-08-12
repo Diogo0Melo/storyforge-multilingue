@@ -28,10 +28,10 @@ export type LocationTag = TerrainTag | PlaceTag
 /** 所有标签（合并） */
 export const ALL_LOCATION_TAGS: readonly LocationTag[] = [...TERRAIN_TAGS, ...PLACE_TAGS]
 
-/** 标签分类信息 */
+/** 标签分类信息 (labelKey for UI display; label remains as data key) */
 export const TAG_CATEGORIES = [
-  { label: '自然地形', tags: TERRAIN_TAGS, color: '#14b8a6' },
-  { label: '人文场所', tags: PLACE_TAGS, color: '#f59e0b' },
+  { label: '自然地形', labelKey: 'location:tagCategories.terrain', tags: TERRAIN_TAGS, color: '#14b8a6' },
+  { label: '人文场所', labelKey: 'location:tagCategories.place', tags: PLACE_TAGS, color: '#f59e0b' },
 ] as const
 
 /** 标签对应的 emoji */

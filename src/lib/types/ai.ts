@@ -74,21 +74,21 @@ export class AIError extends Error {
 }
 
 /** 各 provider 的可选模型列表（有下拉菜单的 provider 才需要配） */
-export const PROVIDER_MODELS: Record<string, { value: string; label: string; desc?: string }[]> = {
+export const PROVIDER_MODELS: Record<string, { value: string; label: string; desc?: string; descKey?: string }[]> = {
   deepseek: [
-    { value: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', desc: '快速，性价比高' },
-    { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', desc: '最强，支持深度思考' },
+    { value: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', descKey: 'aiConfig.modelDesc.deepseekV4Flash' },
+    { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', descKey: 'aiConfig.modelDesc.deepseekV4Pro' },
   ],
   // Gemini 模型列表（2026-05-11 通过 Google API 实际拉取校验）
   gemini: [
-    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash ⭐', desc: '推荐，稳定且免费额度高' },
-    { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite', desc: '轻量稳定版' },
-    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', desc: '最强稳定版，支持思考' },
-    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview)', desc: '⚠️ 预览版，高峰期可能 503' },
-    { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite', desc: '⚠️ 预览版' },
-    { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro (Preview)', desc: '⚠️ 预览版，可能不稳定' },
-    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (Preview)', desc: '⚠️ 预览版，可能不稳定' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', desc: '老版' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash ⭐', descKey: 'aiConfig.modelDesc.gemini25Flash' },
+    { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite', descKey: 'aiConfig.modelDesc.gemini25FlashLite' },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro', descKey: 'aiConfig.modelDesc.gemini25Pro' },
+    { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash (Preview)', descKey: 'aiConfig.modelDesc.gemini3FlashPreview' },
+    { value: 'gemini-3.1-flash-lite', label: 'Gemini 3.1 Flash-Lite', descKey: 'aiConfig.modelDesc.gemini31FlashLite' },
+    { value: 'gemini-3-pro-preview', label: 'Gemini 3 Pro (Preview)', descKey: 'aiConfig.modelDesc.gemini3ProPreview' },
+    { value: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro (Preview)', descKey: 'aiConfig.modelDesc.gemini31ProPreview' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', descKey: 'aiConfig.modelDesc.gemini20Flash' },
   ],
   poe: [
     { value: 'GPT-4o', label: 'GPT-4o' },
@@ -99,28 +99,28 @@ export const PROVIDER_MODELS: Record<string, { value: string; label: string; des
     { value: 'GLM-5.1-FM', label: 'GLM 5.1 FM' },
   ],
   nvidia: [
-    { value: 'meta/llama-3.3-70b-instruct', label: 'Llama 3.3 70B', desc: '最新 Llama，推荐' },
-    { value: 'meta/llama-3.1-405b-instruct', label: 'Llama 3.1 405B', desc: '最强开源模型' },
-    { value: 'meta/llama-3.1-70b-instruct', label: 'Llama 3.1 70B', desc: '高性能' },
-    { value: 'deepseek-ai/deepseek-r1', label: 'DeepSeek R1', desc: '推理模型' },
-    { value: 'qwen/qwen2.5-72b-instruct', label: 'Qwen 2.5 72B', desc: '通义千问' },
-    { value: 'google/gemma-2-27b-it', label: 'Gemma 2 27B', desc: 'Google 开源' },
-    { value: 'mistralai/mistral-large-2-instruct', label: 'Mistral Large 2', desc: 'Mistral 旗舰' },
+    { value: 'meta/llama-3.3-70b-instruct', label: 'Llama 3.3 70B', descKey: 'aiConfig.modelDesc.llama33_70b' },
+    { value: 'meta/llama-3.1-405b-instruct', label: 'Llama 3.1 405B', descKey: 'aiConfig.modelDesc.llama31_405b' },
+    { value: 'meta/llama-3.1-70b-instruct', label: 'Llama 3.1 70B', descKey: 'aiConfig.modelDesc.llama31_70b' },
+    { value: 'deepseek-ai/deepseek-r1', label: 'DeepSeek R1', descKey: 'aiConfig.modelDesc.deepseekR1' },
+    { value: 'qwen/qwen2.5-72b-instruct', label: 'Qwen 2.5 72B', descKey: 'aiConfig.modelDesc.qwen25_72b' },
+    { value: 'google/gemma-2-27b-it', label: 'Gemma 2 27B', descKey: 'aiConfig.modelDesc.gemma2_27b' },
+    { value: 'mistralai/mistral-large-2-instruct', label: 'Mistral Large 2', descKey: 'aiConfig.modelDesc.mistralLarge2' },
   ],
   modelscope: [
-    { value: 'Qwen/Qwen3-235B-A22B', label: 'Qwen3 235B A22B', desc: '最强 MoE 模型' },
-    { value: 'Qwen/Qwen3-32B', label: 'Qwen3 32B', desc: '高性能密集模型' },
-    { value: 'Qwen/Qwen3-30B-A3B', label: 'Qwen3 30B A3B', desc: '轻量 MoE，性价比高' },
-    { value: 'Qwen/Qwen3-14B', label: 'Qwen3 14B', desc: '中等规模密集模型' },
-    { value: 'Qwen/Qwen3-8B', label: 'Qwen3 8B', desc: '轻量密集模型' },
-    { value: 'Qwen/Qwen3-4B', label: 'Qwen3 4B', desc: '超轻量' },
+    { value: 'Qwen/Qwen3-235B-A22B', label: 'Qwen3 235B A22B', descKey: 'aiConfig.modelDesc.qwen3_235b' },
+    { value: 'Qwen/Qwen3-32B', label: 'Qwen3 32B', descKey: 'aiConfig.modelDesc.qwen3_32b' },
+    { value: 'Qwen/Qwen3-30B-A3B', label: 'Qwen3 30B A3B', descKey: 'aiConfig.modelDesc.qwen3_30b' },
+    { value: 'Qwen/Qwen3-14B', label: 'Qwen3 14B', descKey: 'aiConfig.modelDesc.qwen3_14b' },
+    { value: 'Qwen/Qwen3-8B', label: 'Qwen3 8B', descKey: 'aiConfig.modelDesc.qwen3_8b' },
+    { value: 'Qwen/Qwen3-4B', label: 'Qwen3 4B', descKey: 'aiConfig.modelDesc.qwen3_4b' },
   ],
   agnes: [
-    { value: 'agnes-1.5-flash', label: 'Agnes 1.5 Flash', desc: '清华系免费·稳定可用·推荐' },
-    { value: 'Agnes-2.0-Flash', label: 'Agnes 2.0 Flash', desc: '1M 上下文·部分时段维护中' },
+    { value: 'agnes-1.5-flash', label: 'Agnes 1.5 Flash', descKey: 'aiConfig.modelDesc.agnes15Flash' },
+    { value: 'Agnes-2.0-Flash', label: 'Agnes 2.0 Flash', descKey: 'aiConfig.modelDesc.agnes20Flash' },
   ],
   longcat: [
-    { value: 'LongCat-2.0', label: 'LongCat 2.0', desc: '美团 LongCat · OpenAI 兼容 · 1M 上下文' },
+    { value: 'LongCat-2.0', label: 'LongCat 2.0', descKey: 'aiConfig.modelDesc.longcat20' },
   ],
   opencode: [
     { value: 'kimi-k2.7-code', label: 'Kimi K2.7 Code', desc: 'OpenCode Go · chat/completions' },

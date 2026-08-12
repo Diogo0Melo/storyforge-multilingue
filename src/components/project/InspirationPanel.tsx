@@ -1,7 +1,7 @@
 /**
- * Phase 26.4 — 灵感反推面板
+ * Phase 26.4 — Inspiration reverse-engineering panel
  *
- * 用户写碎片灵感 → AI 反向生成世界观草稿 + 故事核心 + 初始角色卡 → 选择性采纳
+ * User writes fragment inspiration → AI reverse-generates worldview draft + story core + initial character cards → selective adoption
  */
 
 import { useState } from 'react'
@@ -21,12 +21,14 @@ import InspirationFusionReview from './InspirationFusionReview'
 import type { InspirationSourceKind } from '../../lib/types/inspiration-workspace'
 import { useIncrementalInspiration } from '../../hooks/useIncrementalInspiration'
 import { MAX_INSPIRATION_FRAGMENT_CHARS } from '../../lib/inspiration/workspace'
+import { useDomainT } from '../../i18n'
 
 interface Props {
   project: Project
 }
 
 export default function InspirationPanel({ project }: Props) {
+  const { t } = useDomainT('project')
   const wgStore = useWorldGroupStore()
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['worldview', 'storyCore', 'characters']))
   const [adoptedSections, setAdoptedSections] = useState<Set<string>>(new Set())
@@ -63,16 +65,16 @@ export default function InspirationPanel({ project }: Props) {
     removeFragment: handleRemoveFragment,
   } = fusion
 
-  // ── 多世界：一键采纳（创建世界组 + 各世界世界观 + 故事核心 + 角色归属）──
+  // ── Multi-world: one-click adopt (create world groups + per-world worldview + story core + character ownership) ──
   const handleAdoptMultiWorld = async () => {
     if (!mwResult || mwAdopted) return
     setAdopting(true)
     try {
-      // 确保多世界已开启 + 主世界组存在
+      // Ensure multi-world is enabled + primary world group exists
       const migrated = await wgStore.migrateToMultiWorld(project.id!)
       if (!migrated) return
 
-      // 1. 故事核心（项目级）
+      // 1. Story core (project-level)
       const sc = mwResult.storyCore
       await adopt({
         projectId: project.id!,
@@ -87,9 +89,9 @@ export default function InspirationPanel({ project }: Props) {
         },
       })
 
-      // 2. 逐个世界：创建世界组 + 写入该世界的世界观（字段严格对齐 Worldview）
+      // 2. Per-world: create world group + write that world's worldview (fields strictly aligned to Worldview)
       const nameToGroupId = new Map<string, number>()
-      // 已有主世界组（migrate 创建）：复用给输出中的 primary 世界（读最新 store 状态）
+      // Existing primary group (created by migrate): reuse for the output's primary world (read latest store state)
       const primaryGroupId = useWorldGroupStore.getState().groups.find(g => g.type === 'primary')?.id ?? null
       let primaryClaimed = false
       for (let i = 0; i < mwResult.worlds.length; i++) {
@@ -131,7 +133,7 @@ export default function InspirationPanel({ project }: Props) {
         })
       }
 
-      // 3. 角色：按 homeWorld 归属，跨世界角色标记
+      // 3. Characters: assign by homeWorld, mark cross-world characters
       for (const c of mwResult.characters) {
         if (!c.name) continue
         const homeGroupId = c.isCrossWorld ? null : (nameToGroupId.get(c.homeWorld) ?? null)
@@ -146,8 +148,8 @@ export default function InspirationPanel({ project }: Props) {
             moralAxis: c.moralAxis,
             orderAxis: c.orderAxis,
             isCrossWorld: c.isCrossWorld,
-            // 维度字段从 CHARACTER_DIMENSIONS 单源派生：解析对象带什么就写什么，
-            // 不硬编码字段表(空值由 adopt 跳过；缺的维度用户可后续 C1 补全)。
+            // Dimension fields derived from CHARACTER_DIMENSIONS single source: write whatever the parsed object carries;
+            // no hardcoded field list (null values skipped by adopt; missing dimensions can be filled later via C1).
             ...Object.fromEntries(
               CHARACTER_DIMENSIONS
                 .map(d => [d.key, (c as unknown as Record<string, unknown>)[d.key]])
@@ -157,7 +159,7 @@ export default function InspirationPanel({ project }: Props) {
         })
       }
 
-      // 刷新世界组 store
+      // Refresh world-group store
       await wgStore.loadAll(project.id!)
       setMwAdopted(true)
     } finally {
@@ -165,59 +167,59 @@ export default function InspirationPanel({ project }: Props) {
     }
   }
 
-  // 导出反推结果为 Markdown 文件
+  // Export reverse-engineering result to Markdown file
   const handleExportResult = () => {
-    const lines: string[] = [`# ${project.name} — 灵感反推结果\n`]
-    if (inspiration.trim()) lines.push(`## 原始灵感\n${inspiration}\n`)
+    const lines: string[] = [`# ${t('inspiration.exportTitle', { name: project.name })}\n`]
+    if (inspiration.trim()) lines.push(`## ${t('inspiration.exportOriginal')}\n${inspiration}\n`)
     if (mwResult) {
       const sc = mwResult.storyCore
-      lines.push(`## 故事主线`)
-      if (sc.logline) lines.push(`- 一句话：${sc.logline}`)
-      if (sc.theme) lines.push(`- 主题：${sc.theme}`)
-      if (sc.centralConflict) lines.push(`- 核心冲突：${sc.centralConflict}`)
-      if (sc.mainPlot) lines.push(`- 主线：${sc.mainPlot}`)
+      lines.push(`## ${t('inspiration.exportStoryline')}`)
+      if (sc.logline) lines.push(`- ${t('inspiration.exportLogline')}: ${sc.logline}`)
+      if (sc.theme) lines.push(`- ${t('inspiration.exportTheme')}: ${sc.theme}`)
+      if (sc.centralConflict) lines.push(`- ${t('inspiration.exportCentralConflict')}: ${sc.centralConflict}`)
+      if (sc.mainPlot) lines.push(`- ${t('inspiration.exportMainPlot')}: ${sc.mainPlot}`)
       lines.push('')
       mwResult.worlds.forEach((w, i) => {
-        lines.push(`## 世界 ${i + 1}：${w.name}（${w.type}）`)
-        if (w.worldOrigin) lines.push(`- 世界来源：${w.worldOrigin}`)
-        if (w.powerHierarchy) lines.push(`- 力量体系：${w.powerHierarchy}`)
-        if (w.continentLayout) lines.push(`- 地貌分布：${w.continentLayout}`)
-        if (w.historyLine) lines.push(`- 世界历史：${w.historyLine}`)
-        if (w.factionLayout) lines.push(`- 势力分布：${w.factionLayout}`)
-        if (w.entryCondition) lines.push(`- 进入条件：${w.entryCondition}`)
-        if (w.powerRestriction) lines.push(`- 能力限制：${w.powerRestriction}`)
+        lines.push(`## ${t('inspiration.exportWorld', { index: i + 1, name: w.name, type: w.type })}`)
+        if (w.worldOrigin) lines.push(`- ${t('inspiration.exportWorldOrigin')}: ${w.worldOrigin}`)
+        if (w.powerHierarchy) lines.push(`- ${t('inspiration.exportPowerHierarchy')}: ${w.powerHierarchy}`)
+        if (w.continentLayout) lines.push(`- ${t('inspiration.exportContinentLayout')}: ${w.continentLayout}`)
+        if (w.historyLine) lines.push(`- ${t('inspiration.exportHistoryLine')}: ${w.historyLine}`)
+        if (w.factionLayout) lines.push(`- ${t('inspiration.exportFactionLayout')}: ${w.factionLayout}`)
+        if (w.entryCondition) lines.push(`- ${t('inspiration.exportEntryCondition')}: ${w.entryCondition}`)
+        if (w.powerRestriction) lines.push(`- ${t('inspiration.exportPowerRestriction')}: ${w.powerRestriction}`)
         lines.push('')
       })
       if (mwResult.characters.length) {
-        lines.push(`## 初始角色`)
+        lines.push(`## ${t('inspiration.exportInitialCharacters')}`)
         mwResult.characters.forEach(c => {
-          const home = c.isCrossWorld ? '跨世界' : (c.homeWorld || '')
-          lines.push(`- **${c.name}**（${characterAxesLabel(c)}${home ? ` · ${home}` : ''}）：${c.shortDescription}`)
+          const home = c.isCrossWorld ? t('inspiration.exportCrossWorld') : (c.homeWorld || '')
+          lines.push(`- **${c.name}** (${characterAxesLabel(c)}${home ? ` · ${home}` : ''}): ${c.shortDescription}`)
         })
       }
     } else if (result) {
       const wv = result.worldview, sc = result.storyCore
-      lines.push(`## 世界观`)
-      if (wv.worldOrigin) lines.push(`- 世界来源：${wv.worldOrigin}`)
-      if (wv.powerHierarchy) lines.push(`- 力量体系：${wv.powerHierarchy}`)
-      if (wv.continentLayout) lines.push(`- 地貌分布：${wv.continentLayout}`)
-      if (wv.historyLine) lines.push(`- 世界历史：${wv.historyLine}`)
-      if (wv.factionLayout) lines.push(`- 势力分布：${wv.factionLayout}`)
-      lines.push(`\n## 故事核心`)
-      if (sc.logline) lines.push(`- 一句话：${sc.logline}`)
-      if (sc.theme) lines.push(`- 主题：${sc.theme}`)
-      if (sc.centralConflict) lines.push(`- 核心冲突：${sc.centralConflict}`)
-      if (sc.mainPlot) lines.push(`- 主线：${sc.mainPlot}`)
+      lines.push(`## ${t('inspiration.exportWorldview')}`)
+      if (wv.worldOrigin) lines.push(`- ${t('inspiration.exportWorldOrigin')}: ${wv.worldOrigin}`)
+      if (wv.powerHierarchy) lines.push(`- ${t('inspiration.exportPowerHierarchy')}: ${wv.powerHierarchy}`)
+      if (wv.continentLayout) lines.push(`- ${t('inspiration.exportContinentLayout')}: ${wv.continentLayout}`)
+      if (wv.historyLine) lines.push(`- ${t('inspiration.exportHistoryLine')}: ${wv.historyLine}`)
+      if (wv.factionLayout) lines.push(`- ${t('inspiration.exportFactionLayout')}: ${wv.factionLayout}`)
+      lines.push(`\n## ${t('inspiration.exportStoryCore')}`)
+      if (sc.logline) lines.push(`- ${t('inspiration.exportLogline')}: ${sc.logline}`)
+      if (sc.theme) lines.push(`- ${t('inspiration.exportTheme')}: ${sc.theme}`)
+      if (sc.centralConflict) lines.push(`- ${t('inspiration.exportCentralConflict')}: ${sc.centralConflict}`)
+      if (sc.mainPlot) lines.push(`- ${t('inspiration.exportMainPlot')}: ${sc.mainPlot}`)
       if (result.characters.length) {
-        lines.push(`\n## 初始角色`)
-        result.characters.forEach(c => lines.push(`- **${c.name}**（${characterAxesLabel(c)}）：${c.shortDescription}`))
+        lines.push(`\n## ${t('inspiration.exportInitialCharacters')}`)
+        result.characters.forEach(c => lines.push(`- **${c.name}** (${characterAxesLabel(c)}): ${c.shortDescription}`))
       }
     }
     const blob = new Blob([lines.join('\n')], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${project.name}-灵感反推.md`
+    a.download = t('inspiration.exportFilename', { name: project.name })
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -240,7 +242,7 @@ export default function InspirationPanel({ project }: Props) {
     })
   }
 
-  // ── 采纳世界观 ─────────────────────────────────
+  // ── Adopt worldview ────────────────────────────────
   const handleAdoptWorldview = async () => {
     if (!result || adoptedSections.has('worldview')) return
     setAdopting(true)
@@ -263,7 +265,7 @@ export default function InspirationPanel({ project }: Props) {
     setAdopting(false)
   }
 
-  // ── 采纳故事核心 ─────────────────────────────────
+  // ── Adopt story core ───────────────────────────────
   const handleAdoptStoryCore = async () => {
     if (!result || adoptedSections.has('storyCore')) return
     setAdopting(true)
@@ -284,7 +286,7 @@ export default function InspirationPanel({ project }: Props) {
     setAdopting(false)
   }
 
-  // ── 采纳角色 ─────────────────────────────────────
+  // ── Adopt characters ───────────────────────────────
   const handleAdoptCharacters = async () => {
     if (!result || adoptedSections.has('characters')) return
     setAdopting(true)
@@ -300,7 +302,7 @@ export default function InspirationPanel({ project }: Props) {
           roleWeight: c.roleWeight,
           moralAxis: c.moralAxis,
           orderAxis: c.orderAxis,
-          // 维度字段从 CHARACTER_DIMENSIONS 单源派生（同上：不硬编码字段表）
+          // Dimension fields derived from CHARACTER_DIMENSIONS single source (same as above: no hardcoded field list)
           ...Object.fromEntries(
             CHARACTER_DIMENSIONS
               .map(d => [d.key, (c as unknown as Record<string, unknown>)[d.key]])
@@ -313,7 +315,7 @@ export default function InspirationPanel({ project }: Props) {
     setAdopting(false)
   }
 
-  // ── 一键全部采纳 ─────────────────────────────────
+  // ── Adopt all at once ──────────────────────────────
   const handleAdoptAll = async () => {
     if (!result) return
     setAdopting(true)
@@ -325,35 +327,33 @@ export default function InspirationPanel({ project }: Props) {
 
   return (
     <div className="h-full flex flex-col overflow-hidden">
-      {/* 顶部标题 */}
+      {/* Top title */}
       <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-bg-surface">
         <Lightbulb className="w-5 h-5 text-yellow-500" />
-        <h2 className="text-lg font-semibold text-text-primary">灵感反推</h2>
-        <span className="text-xs text-text-muted ml-2">从碎片想法反推完整故事框架</span>
+        <h2 className="text-lg font-semibold text-text-primary">{t('inspiration.panelTitle')}</h2>
+        <span className="text-xs text-text-muted ml-2">{t('inspiration.panelSubtitle')}</span>
         {(result || mwResult) && (
           <button
             onClick={handleExportResult}
             className="ml-auto flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg bg-bg-elevated text-text-secondary border border-border hover:text-accent hover:border-accent/50 transition-colors"
           >
-            <Download className="w-3.5 h-3.5" /> 导出结果
+            <Download className="w-3.5 h-3.5" /> {t('inspiration.exportResult')}
           </button>
         )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
-        {/* ── 灵感输入 ────────────────────────────── */}
+        {/* ── Inspiration input ────────────────────────── */}
         <section>
           <label className="block text-sm font-medium text-text-primary mb-1">
-            写下你的灵感
+            {t('inspiration.inputLabel')}
           </label>
-          {/* CF-5: 明确适用边界，避免用户误把长篇正文粘进来 */}
-          <p className="text-xs text-text-muted mb-2">
-            适合<strong>短灵感 / 梗概 / 片段想法</strong>（几句到一两段）。要从<strong>整章 / 整本正文</strong>提取设定，请用「文档解析 / 项目参考导入」，效果更完整。
-          </p>
+          {/* CF-5: clarify scope so users don't paste full-length prose */}
+          <p className="text-xs text-text-muted mb-2" dangerouslySetInnerHTML={{ __html: t('inspiration.inputScope') }} />
           <AutoResizeTextarea
             value={inspiration}
             onChange={e => setInspiration(e.target.value)}
-            placeholder={"随便写点什么...\n\n例如：\n- 一个在末世废墟中寻找失踪妹妹的退役军人\n- 古代宫廷里，一个替身公主发现了皇帝的秘密\n- 赛博朋克 + 修仙，用代码修炼的程序员\n- 甚至只是几个关键词：深海、孤岛、失忆、怪物"}
+            placeholder={t('inspiration.inputPlaceholder')}
             className="w-full text-sm bg-bg-base border border-border rounded-lg px-4 py-3 text-text-primary placeholder:text-text-muted resize-none"
             minRows={5}
           />
@@ -362,18 +362,18 @@ export default function InspirationPanel({ project }: Props) {
               value={sourceKind}
               onChange={event => setSourceKind(event.target.value as InspirationSourceKind)}
               className="rounded border border-border bg-bg-elevated px-2 py-1.5 text-xs text-text-secondary"
-              aria-label="灵感来源"
+              aria-label={t('inspiration.sourceAriaLabel')}
             >
-              <option value="author">本人灵感</option>
-              <option value="reference">参考启发</option>
-              <option value="research">研究资料</option>
-              <option value="other">其他</option>
+              <option value="author">{t('inspiration.sourceAuthor')}</option>
+              <option value="reference">{t('inspiration.sourceReference')}</option>
+              <option value="research">{t('inspiration.sourceResearch')}</option>
+              <option value="other">{t('inspiration.sourceOther')}</option>
             </select>
             <input
               value={fragmentLabel}
               onChange={event => setFragmentLabel(event.target.value)}
               maxLength={80}
-              placeholder="碎片标题（可选）"
+              placeholder={t('inspiration.fragmentLabelPlaceholder')}
               className="min-w-44 flex-1 rounded border border-border bg-bg-elevated px-2.5 py-1.5 text-xs text-text-primary placeholder:text-text-muted"
             />
             <button
@@ -381,17 +381,17 @@ export default function InspirationPanel({ project }: Props) {
               disabled={!inspiration.trim() || inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS}
               className="flex items-center gap-1 rounded border border-accent/40 px-3 py-1.5 text-xs text-accent hover:bg-accent/10 disabled:opacity-40"
             >
-              <Plus className="h-3.5 w-3.5" /> 加入素材库
+              <Plus className="h-3.5 w-3.5" /> {t('inspiration.addToLibrary')}
             </button>
           </div>
-          {/* CF-5: 超长非阻断提示——不静默截断，明确告知只适合短文本 */}
+          {/* CF-5: non-blocking overlength warning — never silently truncate */}
           {inspiration.trim().length > 1500 && (
             <p className={`mt-1.5 text-xs ${
               inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS ? 'text-red-400' : 'text-warning'
             }`}>
               {inspiration.trim().length > MAX_INSPIRATION_FRAGMENT_CHARS
-                ? `当前输入 ${inspiration.trim().length} 字，超过单碎片 ${MAX_INSPIRATION_FRAGMENT_CHARS} 字上限。请拆成多个碎片；系统不会静默截断。`
-                : `⚠️ 当前输入约 ${inspiration.trim().length} 字，偏长。灵感反推面向短灵感设计；长篇正文请改用「文档解析 / 项目参考导入」。`}
+                ? t('inspiration.overLimitWarning', { length: inspiration.trim().length, limit: MAX_INSPIRATION_FRAGMENT_CHARS })
+                : t('inspiration.longInputWarning', { length: inspiration.trim().length })}
             </p>
           )}
         </section>
@@ -422,19 +422,19 @@ export default function InspirationPanel({ project }: Props) {
           onDiscard={handleDiscardFusion}
         />
 
-        {/* ── 补充说明 ────────────────────────────── */}
+        {/* ── Additional notes ─────────────────────────── */}
         <section>
-          <label className="block text-xs text-text-muted mb-1">补充说明（可选）</label>
+          <label className="block text-xs text-text-muted mb-1">{t('inspiration.hintLabel')}</label>
           <AutoResizeTextarea
             value={userHint}
             onChange={e => setUserHint(e.target.value)}
-            placeholder="例如：偏黑暗风格、需要感情线、主角要有反转..."
+            placeholder={t('inspiration.hintPlaceholder')}
             className="w-full text-sm bg-bg-base border border-border rounded px-3 py-2 text-text-primary placeholder:text-text-muted resize-none"
             minRows={2}
           />
         </section>
 
-        {/* ── 生成按钮 ────────────────────────────── */}
+        {/* ── Generate button ──────────────────────────── */}
         <div className="flex items-center gap-3">
           <button
             onClick={handleGenerate}
@@ -450,16 +450,16 @@ export default function InspirationPanel({ project }: Props) {
             ) : (
               <Sparkles className="w-4 h-4" />
             )}
-            {ai.isStreaming ? '融合中...' : inspirationWorkspace.versions.some(version => version.mode === mode) ? '融合并更新' : '开始反推'}
+            {ai.isStreaming ? t('inspiration.fusing') : inspirationWorkspace.versions.some(version => version.mode === mode) ? t('inspiration.fuseAndUpdate') : t('inspiration.startReverse')}
           </button>
           {ai.isStreaming && (
             <button onClick={ai.stop} className="text-xs text-text-muted hover:text-red-500 transition-colors">
-              停止
+              {t('inspiration.stop')}
             </button>
           )}
         </div>
 
-        {/* ── AI 流式输出 ────────────────────────── */}
+        {/* ── AI streaming output ──────────────────────── */}
         {(ai.output || ai.isStreaming || ai.error) && (
           <AIStreamOutput
             output={ai.output}
@@ -468,12 +468,12 @@ export default function InspirationPanel({ project }: Props) {
             tokenUsage={ai.tokenUsage}
             onStop={ai.stop}
             onRetry={handleGenerate}
-            placeholder="等待 AI 反推故事框架..."
+            placeholder={t('inspiration.streamPlaceholder')}
             moduleKey={isMW ? 'inspiration.reverse.multiworld' : 'inspiration.reverse'}
           />
         )}
 
-        {/* ── 多世界反推结果预览 ─────────────────────── */}
+        {/* ── Multi-world reverse result preview ───────── */}
         {isMW && mwResult && !ai.isStreaming && (
           <InspirationMultiWorldResult
             result={mwResult}
@@ -484,7 +484,7 @@ export default function InspirationPanel({ project }: Props) {
           />
         )}
 
-        {/* ── 结构化结果预览 ─────────────────────── */}
+        {/* ── Structured result preview ────────────────── */}
         {result && !ai.isStreaming && (
           <InspirationSingleResult
             result={result}

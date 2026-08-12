@@ -1,7 +1,7 @@
-import { FICTION_DIMENSIONS, FICTION_DIMENSION_LABELS } from './import-session-data'
+import { FICTION_DIMENSIONS, FICTION_DIMENSION_LABELS, FICTION_DIMENSION_LABEL_KEYS } from './import-session-data'
 import type { RagDocumentMetadata } from './rag-library'
 export type { FictionDimension } from './import-session-data'
-export { FICTION_DIMENSIONS, FICTION_DIMENSION_LABELS } from './import-session-data'
+export { FICTION_DIMENSIONS, FICTION_DIMENSION_LABELS, FICTION_DIMENSION_LABEL_KEYS } from './import-session-data'
 
 /** 参考书目类型 */
 export type ReferenceType = 'story' | 'style' | 'historical'
@@ -241,7 +241,7 @@ export const ANALYSIS_DIMENSIONS = [
 
 export type AnalysisDimension = (typeof ANALYSIS_DIMENSIONS)[number]
 
-/** 维度中文标签（13 小说 + 5 历史） */
+/** 维度中文标签（13 小说 + 5 历史）— LEAVE for AI context-builder.ts prompt usage */
 export const DIMENSION_LABELS: Record<AnalysisDimension, string> = {
   ...FICTION_DIMENSION_LABELS,
   historicalContext: '历史背景与时代特征',
@@ -249,4 +249,14 @@ export const DIMENSION_LABELS: Record<AnalysisDimension, string> = {
   dailyLife: '日常生活细节',
   materialCulture: '物质文化（器物/科技）',
   languageCustoms: '语言习惯与称谓',
+}
+
+/** i18n keys for UI display (resolved at render time; DIMENSION_LABELS remains for AI context building) */
+export const DIMENSION_LABEL_KEYS: Record<AnalysisDimension, string> = {
+  ...FICTION_DIMENSION_LABEL_KEYS,
+  historicalContext: 'editor:dimensionLabels.historicalContext',
+  socialInstitutions: 'editor:dimensionLabels.socialInstitutions',
+  dailyLife: 'editor:dimensionLabels.dailyLife',
+  materialCulture: 'editor:dimensionLabels.materialCulture',
+  languageCustoms: 'editor:dimensionLabels.languageCustoms',
 }

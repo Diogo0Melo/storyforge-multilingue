@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import type {
   NodeFlowEdge,
   NodeFlowGraph,
@@ -23,43 +24,43 @@ export interface NodeKindDefinition {
 export const NODE_KIND_DEFINITIONS: readonly NodeKindDefinition[] = [
   {
     kind: 'input.text',
-    label: '自由文本',
-    description: '作者要求、临时设定、禁写事项或任意文字。',
+    label: getT()('node-flow:graph.kinds.inputText.label'),
+    description: getT()('node-flow:graph.kinds.inputText.description'),
     outputType: 'text',
     acceptsInput: false,
   },
   {
     kind: 'source.context',
-    label: '项目元素',
-    description: '从登记上下文中选择设定、角色、前文、物品或事实。',
+    label: getT()('node-flow:graph.kinds.sourceContext.label'),
+    description: getT()('node-flow:graph.kinds.sourceContext.description'),
     outputType: 'context',
     acceptsInput: false,
   },
   {
     kind: 'transform.compose',
-    label: '整理与合并',
-    description: '按动态输入槽、优先级与模板组合上游内容。',
+    label: getT()('node-flow:graph.kinds.transformCompose.label'),
+    description: getT()('node-flow:graph.kinds.transformCompose.description'),
     outputType: 'text',
     acceptsInput: true,
   },
   {
     kind: 'generation.freeform',
-    label: '自由创作',
-    description: '用作者自定指令和任意上游内容生成文本或 JSON。',
+    label: getT()('node-flow:graph.kinds.generationFreeform.label'),
+    description: getT()('node-flow:graph.kinds.generationFreeform.description'),
     outputType: 'candidate',
     acceptsInput: true,
   },
   {
     kind: 'validation.required',
-    label: '内容校验',
-    description: '检查必含词、禁用词和空输出；不调用模型。',
+    label: getT()('node-flow:graph.kinds.validationRequired.label'),
+    description: getT()('node-flow:graph.kinds.validationRequired.description'),
     outputType: 'candidate',
     acceptsInput: true,
   },
   {
     kind: 'output.preview',
-    label: '内容输出',
-    description: '保存、查看、编辑并按明确目标确认写入项目。',
+    label: getT()('node-flow:graph.kinds.outputPreview.label'),
+    description: getT()('node-flow:graph.kinds.outputPreview.description'),
     outputType: 'candidate',
     acceptsInput: true,
   },
@@ -79,26 +80,26 @@ function canConnect(source: NodeValueType, target: NodeValueType): boolean {
 
 export function validateNodeFlowGraph(graph: NodeFlowGraph): NodeFlowIssue[] {
   const issues: NodeFlowIssue[] = []
-  if (graph.version !== 1) issues.push({ code: 'version', message: '节点图版本不受支持。' })
+  if (graph.version !== 1) issues.push({ code: 'version', message: getT()('node-flow:graph.versionUnsupported') })
   const nodes = new Map<string, NodeFlowNode>()
   for (const node of graph.nodes) {
     if (!node.id.trim()) {
-      issues.push({ code: 'empty-node-id', message: '节点 ID 不能为空。' })
+      issues.push({ code: 'empty-node-id', message: getT()('node-flow:graph.emptyNodeId') })
       continue
     }
     if (nodes.has(node.id)) {
-      issues.push({ code: 'duplicate-node', nodeId: node.id, message: `节点 ID 重复：${node.id}` })
+      issues.push({ code: 'duplicate-node', nodeId: node.id, message: getT()('node-flow:graph.duplicateNodeId', { id: node.id }) })
     }
     if (!NODE_KIND_BY_ID.has(node.kind)) {
-      issues.push({ code: 'unknown-kind', nodeId: node.id, message: `未知节点类型：${node.kind}` })
+      issues.push({ code: 'unknown-kind', nodeId: node.id, message: getT()('node-flow:graph.unknownKind', { kind: node.kind }) })
     }
     if (!Number.isFinite(node.x) || !Number.isFinite(node.y)) {
-      issues.push({ code: 'position', nodeId: node.id, message: `节点坐标无效：${node.title}` })
+      issues.push({ code: 'position', nodeId: node.id, message: getT()('node-flow:graph.invalidPosition', { title: node.title }) })
     }
     const slotIds = new Set<string>()
     for (const slot of node.inputSlots) {
       if (!slot.id.trim() || slotIds.has(slot.id)) {
-        issues.push({ code: 'slot', nodeId: node.id, message: `节点“${node.title}”包含无效或重复输入槽。` })
+        issues.push({ code: 'slot', nodeId: node.id, message: getT()('node-flow:graph.invalidOrDuplicateSlot', { title: node.title }) })
       }
       slotIds.add(slot.id)
     }
@@ -110,17 +111,17 @@ export function validateNodeFlowGraph(graph: NodeFlowGraph): NodeFlowIssue[] {
   const adjacency = new Map(graph.nodes.map(node => [node.id, [] as string[]]))
   for (const edge of graph.edges) {
     if (!edge.id.trim() || edgeIds.has(edge.id)) {
-      issues.push({ code: 'edge-id', edgeId: edge.id, message: '连线 ID 为空或重复。' })
+      issues.push({ code: 'edge-id', edgeId: edge.id, message: getT()('node-flow:graph.edgeIdEmptyOrDuplicate') })
     }
     edgeIds.add(edge.id)
     const source = nodes.get(edge.sourceNodeId)
     const target = nodes.get(edge.targetNodeId)
     if (!source || !target) {
-      issues.push({ code: 'dangling-edge', edgeId: edge.id, message: '连线引用了不存在的节点。' })
+      issues.push({ code: 'dangling-edge', edgeId: edge.id, message: getT()('node-flow:graph.danglingEdge') })
       continue
     }
     if (source.id === target.id) {
-      issues.push({ code: 'self-edge', edgeId: edge.id, message: '节点不能连接自己。' })
+      issues.push({ code: 'self-edge', edgeId: edge.id, message: getT()('node-flow:graph.selfEdge') })
       continue
     }
     const slot = target.inputSlots.find(item => item.id === edge.targetSlotId)
@@ -128,7 +129,7 @@ export function validateNodeFlowGraph(graph: NodeFlowGraph): NodeFlowIssue[] {
       issues.push({
         code: 'unknown-slot',
         edgeId: edge.id,
-        message: `连线目标槽不存在：${target.title}.${edge.targetSlotId}`,
+        message: getT()('node-flow:graph.unknownTargetSlot', { nodeTitle: target.title, slotId: edge.targetSlotId }),
       })
       continue
     }
@@ -137,12 +138,12 @@ export function validateNodeFlowGraph(graph: NodeFlowGraph): NodeFlowIssue[] {
       issues.push({
         code: 'type-mismatch',
         edgeId: edge.id,
-        message: `${source.title}(${outputType}) 不能接入 ${target.title}.${slot.label}(${slot.type})。`,
+        message: getT()('node-flow:graph.typeMismatch', { sourceTitle: source.title, sourceType: outputType, targetTitle: target.title, slotLabel: slot.label, slotType: slot.type }),
       })
     }
     const key = `${source.id}\u0000${target.id}\u0000${slot.id}`
     if (edgeKeys.has(key)) {
-      issues.push({ code: 'duplicate-edge', edgeId: edge.id, message: '存在重复连线。' })
+      issues.push({ code: 'duplicate-edge', edgeId: edge.id, message: getT()('node-flow:graph.duplicateEdge') })
     }
     edgeKeys.add(key)
     adjacency.get(source.id)?.push(target.id)
@@ -163,7 +164,7 @@ export function validateNodeFlowGraph(graph: NodeFlowGraph): NodeFlowIssue[] {
     state.set(nodeId, 2)
   }
   graph.nodes.forEach(node => visit(node.id))
-  if (cycle) issues.push({ code: 'cycle', message: '节点图包含循环，已阻止运行。' })
+  if (cycle) issues.push({ code: 'cycle', message: getT()('node-flow:graph.cycleDetected') })
 
   for (const node of graph.nodes) {
     for (const slot of node.inputSlots.filter(item => item.required)) {
@@ -171,7 +172,7 @@ export function validateNodeFlowGraph(graph: NodeFlowGraph): NodeFlowIssue[] {
         issues.push({
           code: 'required-slot',
           nodeId: node.id,
-          message: `节点“${node.title}”缺少必需输入“${slot.label}”。`,
+          message: getT()('node-flow:graph.requiredSlotMissing', { title: node.title, slotLabel: slot.label }),
         })
       }
     }
@@ -188,7 +189,7 @@ export function topologicalNodeOrder(
 
   let included = new Set(graph.nodes.map(node => node.id))
   if (targetNodeId) {
-    if (!included.has(targetNodeId)) throw new Error('要运行的节点不存在。')
+    if (!included.has(targetNodeId)) throw new Error(getT()('node-flow:graph.targetNodeMissing'))
     const incoming = new Map<string, string[]>()
     graph.edges.forEach(edge => {
       const values = incoming.get(edge.targetNodeId) ?? []

@@ -8,6 +8,7 @@ import {
   ZoomIn,
   ZoomOut,
 } from 'lucide-react'
+import { useDomainT } from '../../../i18n'
 import type {
   PromptWorkflow,
   PromptWorkflowGraph,
@@ -67,6 +68,7 @@ export default function WorkflowCanvas({
   onRemoveStep,
   onViewportChange,
 }: Props) {
+  const { t } = useDomainT('settings')
   const graph = useMemo(() => workflowGraphFor(workflow), [workflow])
   const stepById = useMemo(
     () => new Map(workflow.steps.map(step => [step.stepId, step])),
@@ -98,12 +100,12 @@ export default function WorkflowCanvas({
             onClick={onAddStep}
             className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs text-white hover:bg-accent-hover"
           >
-            <Plus className="h-3.5 w-3.5" /> 添加节点
+            <Plus className="h-3.5 w-3.5" /> {t('workflow.canvasAddNode')}
           </button>
           <span className="text-xs text-text-muted">
             {connectionSource
-              ? `正在连接「${stepById.get(connectionSource)?.label ?? connectionSource}」：请选择目标节点左侧输入端口`
-              : '拖动节点调整布局；点击右侧输出端口，再点目标输入端口建立连线'}
+              ? t('workflow.connectingHint', { label: stepById.get(connectionSource)?.label ?? connectionSource })
+              : t('workflow.dragHint')}
           </span>
           {connectionSource && (
             <button
@@ -111,14 +113,14 @@ export default function WorkflowCanvas({
               onClick={() => setConnectionSource(null)}
               className="rounded px-2 py-1 text-xs text-warning hover:bg-warning/10"
             >
-              取消连线
+              {t('workflow.cancelConnection')}
             </button>
           )}
         </div>
         <div className="flex items-center gap-1">
           <button
             type="button"
-            aria-label="缩小画布"
+            aria-label={t('workflow.zoomOutAria')}
             onClick={() => updateZoom(zoom - 0.1)}
             className="rounded p-1.5 text-text-muted hover:bg-bg-hover hover:text-text-primary"
           >
@@ -129,7 +131,7 @@ export default function WorkflowCanvas({
           </span>
           <button
             type="button"
-            aria-label="放大画布"
+            aria-label={t('workflow.zoomInAria')}
             onClick={() => updateZoom(zoom + 0.1)}
             className="rounded p-1.5 text-text-muted hover:bg-bg-hover hover:text-text-primary"
           >
@@ -137,7 +139,7 @@ export default function WorkflowCanvas({
           </button>
           <button
             type="button"
-            aria-label="重置画布缩放"
+            aria-label={t('workflow.resetZoomAria')}
             onClick={() => onViewportChange({ x: 0, y: 0, zoom: 1 })}
             className="rounded p-1.5 text-text-muted hover:bg-bg-hover hover:text-text-primary"
           >
@@ -203,8 +205,8 @@ export default function WorkflowCanvas({
               >
                 <button
                   type="button"
-                  aria-label={`连接到 ${step.label}`}
-                  title="输入端口"
+                  aria-label={t('workflow.connectToAria', { label: step.label })}
+                  title={t('workflow.inputPortTitle')}
                   onClick={event => {
                     event.stopPropagation()
                     handleInputPort(step.stepId)
@@ -220,8 +222,8 @@ export default function WorkflowCanvas({
 
                 <button
                   type="button"
-                  aria-label={`从 ${step.label} 输出`}
-                  title="输出端口"
+                  aria-label={t('workflow.outputFromAria', { label: step.label })}
+                  title={t('workflow.outputPortTitle')}
                   onClick={event => {
                     event.stopPropagation()
                     setConnectionSource(step.stepId)
@@ -266,7 +268,7 @@ export default function WorkflowCanvas({
                   <span className="truncate text-xs font-semibold text-text-primary">{step.label}</span>
                   <button
                     type="button"
-                    aria-label={`删除节点 ${step.label}`}
+                    aria-label={t('workflow.deleteNodeAria', { label: step.label })}
                     onPointerDown={event => event.stopPropagation()}
                     onClick={event => {
                       event.stopPropagation()
@@ -283,13 +285,13 @@ export default function WorkflowCanvas({
                     {step.promptModuleKey}
                   </div>
                   <div className="flex items-center justify-between text-[10px] text-text-muted">
-                    <span>输入 {incoming.length}</span>
-                    <span>输出 {outgoing.length}</span>
-                    <span>{step.userConfirmRequired ? '需确认' : '自动推进'}</span>
+                    <span>{t('workflow.inputsCount', { count: incoming.length })}</span>
+                    <span>{t('workflow.outputsCount', { count: outgoing.length })}</span>
+                    <span>{step.userConfirmRequired ? t('workflow.needsConfirmation') : t('workflow.autoAdvance')}</span>
                   </div>
                   {step.saveTarget && (
                     <div className="truncate text-[10px] text-success">
-                      可确认写入：{step.saveTarget.type}
+                      {t('workflow.confirmWriteTarget', { type: step.saveTarget.type })}
                     </div>
                   )}
                 </div>
@@ -299,7 +301,7 @@ export default function WorkflowCanvas({
 
           {graph.edges.length > 0 && (
             <div className="absolute bottom-4 left-4 max-w-sm rounded-lg border border-border bg-bg-surface/95 p-2 shadow">
-              <p className="mb-1 text-[10px] font-medium text-text-secondary">连线</p>
+              <p className="mb-1 text-[10px] font-medium text-text-secondary">{t('workflow.edgesPanelTitle')}</p>
               <div className="max-h-28 space-y-1 overflow-y-auto">
                 {graph.edges.map(edge => (
                   <div key={edge.edgeId} className="flex items-center gap-2 text-[10px] text-text-muted">
@@ -311,7 +313,7 @@ export default function WorkflowCanvas({
                     </span>
                     <button
                       type="button"
-                      aria-label={`删除连线 ${edge.edgeId}`}
+                      aria-label={t('workflow.deleteEdgeAria', { id: edge.edgeId })}
                       onClick={() => onRemoveEdge(edge.edgeId)}
                       className="rounded p-0.5 hover:bg-error/10 hover:text-error"
                     >

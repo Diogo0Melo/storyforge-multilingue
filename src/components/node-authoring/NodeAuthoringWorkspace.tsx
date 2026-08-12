@@ -26,6 +26,7 @@ import {
   Workflow,
   X,
 } from 'lucide-react'
+import { useDomainT, type DomainTFunction } from '../../i18n'
 import { nanoid } from 'nanoid'
 import type { Project, NodeFlow, NodeRunRecord } from '../../lib/types'
 import {
@@ -107,7 +108,7 @@ function portPosition(node: AuthoringNodeInstance, direction: 'input' | 'output'
   }
 }
 
-function nodeFromTemplate(template: AuthoringNodeTemplate, index: number): AuthoringNodeInstance {
+function nodeFromTemplate(template: AuthoringNodeTemplate, index: number, t: DomainTFunction): AuthoringNodeInstance {
   const config = defaultConfigForTemplate(template)
   if (template.id === 'source.project-context') {
     config.sourceKeys = ['worldview', 'storyCore']
@@ -115,9 +116,13 @@ function nodeFromTemplate(template: AuthoringNodeTemplate, index: number): Autho
     config.contextBudget = 12_000
   }
   if (template.id === 'input.manual-text') config.text = ''
+  // I18N-F5 · 新建节点默认名在创建期经 labelKey 解析（A4 translate-at-creation），
+  // 与画布/库面板渲染同一 node-authoring ns；zh label 仅作兜底并保留给 prompt payload。
+  const catalogTemplate = AUTHORING_NODE_BY_ID.get(template.id)
+  const title = catalogTemplate ? t(catalogTemplate.labelKey, { defaultValue: template.label }) : template.label
   return {
     id: nanoid(), templateId: template.id, templateVersion: template.version,
-    title: template.label, x: 80 + (index % 3) * 330, y: 80 + Math.floor(index / 3) * 240,
+    title, x: 80 + (index % 3) * 330, y: 80 + Math.floor(index / 3) * 240,
     config, inputs: structuredClone(template.inputs), outputs: structuredClone(template.outputs),
   }
 }
@@ -139,7 +144,15 @@ function NodeLibrary(props: {
   onAdd: (template: AuthoringNodeTemplate) => void
   onSelectNode?: (id: string) => void
 }) {
-  const categories = useMemo(() => Array.from(new Set(AUTHORING_NODE_CATALOG.map(template => template.category))), [])
+  const { t } = useDomainT('node-authoring')
+  const categories = useMemo(() => {
+    const seen: Array<[string, string]> = []
+    const keys = new Set<string>()
+    for (const template of AUTHORING_NODE_CATALOG) {
+      if (!keys.has(template.category)) { keys.add(template.category); seen.push([template.category, template.categoryKey]) }
+    }
+    return seen
+  }, [])
   const graph = props.graph ?? emptyAuthoringGraph()
   const favorites = graph.nodes.filter(node => node.favorite)
   const recent = [...graph.nodes]
@@ -150,21 +163,21 @@ function NodeLibrary(props: {
     <aside className="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-bg-surface p-3">
       <div className="mb-3 flex items-center gap-2">
         <Workflow className="h-4 w-4 text-accent" />
-        <div><p className="text-xs font-semibold text-text-primary">领域节点库</p><p className="text-[10px] text-text-muted">拖入或点击添加</p></div>
+        <div><p className="text-xs font-semibold text-text-primary">{t('library.title')}</p><p className="text-[10px] text-text-muted">{t('library.hint')}</p></div>
       </div>
       {(favorites.length > 0 || recent.length > 0) && <div className="mb-3 space-y-2 border-b border-border pb-3">
-        {favorites.length > 0 && <section><h3 className="mb-1 flex items-center gap-1 px-1 text-[10px] font-semibold text-amber-700"><Star className="h-3 w-3" />收藏节点</h3>{favorites.map(node => <button key={node.id} type="button" onClick={() => props.onSelectNode?.(node.id)} className="block w-full truncate rounded px-2 py-1 text-left text-[10px] text-text-secondary hover:bg-bg-hover">{node.title}</button>)}</section>}
-        {recent.length > 0 && <section><h3 className="mb-1 flex items-center gap-1 px-1 text-[10px] font-semibold text-text-muted"><History className="h-3 w-3" />最近节点</h3>{recent.map(node => <button key={node.id} type="button" onClick={() => props.onSelectNode?.(node.id)} className="block w-full truncate rounded px-2 py-1 text-left text-[10px] text-text-secondary hover:bg-bg-hover">{node.title}</button>)}</section>}
+        {favorites.length > 0 && <section><h3 className="mb-1 flex items-center gap-1 px-1 text-[10px] font-semibold text-amber-700"><Star className="h-3 w-3" />{t('library.favorites')}</h3>{favorites.map(node => <button key={node.id} type="button" onClick={() => props.onSelectNode?.(node.id)} className="block w-full truncate rounded px-2 py-1 text-left text-[10px] text-text-secondary hover:bg-bg-hover">{node.title}</button>)}</section>}
+        {recent.length > 0 && <section><h3 className="mb-1 flex items-center gap-1 px-1 text-[10px] font-semibold text-text-muted"><History className="h-3 w-3" />{t('library.recent')}</h3>{recent.map(node => <button key={node.id} type="button" onClick={() => props.onSelectNode?.(node.id)} className="block w-full truncate rounded px-2 py-1 text-left text-[10px] text-text-secondary hover:bg-bg-hover">{node.title}</button>)}</section>}
       </div>}
       <div className="space-y-3">
-        {categories.map(category => (
+        {categories.map(([category, categoryKey]) => (
           <section key={category}>
-            <h3 className="mb-1 px-1 text-[10px] font-semibold tracking-wide text-text-muted">{category}</h3>
+            <h3 className="mb-1 px-1 text-[10px] font-semibold tracking-wide text-text-muted">{t(categoryKey, { defaultValue: category })}</h3>
             <div className="space-y-1">
               {authoringTemplatesForCategory(category).map(template => (
                 <button key={template.id} type="button" onClick={() => props.onAdd(template)} className="group flex w-full items-start gap-2 rounded border border-transparent px-2 py-1.5 text-left hover:border-accent/40 hover:bg-bg-hover">
                   <GripVertical className="mt-0.5 h-3 w-3 shrink-0 text-text-muted group-hover:text-accent" />
-                  <span className="min-w-0"><span className="block truncate text-[11px] font-medium text-text-primary">{template.label}</span><span className="mt-0.5 block text-[9px] leading-3 text-text-muted">{template.description}</span></span>
+                  <span className="min-w-0"><span className="block truncate text-[11px] font-medium text-text-primary">{t(template.labelKey, { defaultValue: template.label })}</span><span className="mt-0.5 block text-[9px] leading-3 text-text-muted">{t(template.descriptionKey, { defaultValue: template.description })}</span></span>
                 </button>
               ))}
             </div>
@@ -189,6 +202,7 @@ function AuthoringCanvas(props: {
   onCanvasConnection: (x: number, y: number) => void
   onRemoveNode: (id: string) => void
 }) {
+  const { t } = useDomainT('node-authoring')
   const dragRef = useRef<{ nodeId: string; startX: number; startY: number; nodeX: number; nodeY: number } | null>(null)
   const selectionRef = useRef<{ x: number; y: number } | null>(null)
   const selectionMovedRef = useRef(false)
@@ -294,28 +308,28 @@ function AuthoringCanvas(props: {
           const result = props.candidates[node.id]
           const freshness = props.freshness[node.id]
           const freshnessLabel = freshness?.status === 'stale'
-            ? freshness.reasons.includes('source-missing') ? '来源缺失' : '需要重跑'
-            : freshness?.status === 'fresh' ? '输入未变化' : undefined
+            ? freshness.reasons.includes('source-missing') ? t('canvas.freshnessSourceMissing') : t('canvas.freshnessStale')
+            : freshness?.status === 'fresh' ? t('canvas.freshnessFresh') : undefined
           return (
-            <div key={node.id} data-authoring-node-template={node.templateId} role="button" tabIndex={0} aria-label={`节点 ${node.title}`} className={`absolute rounded-md border shadow-sm ${templateColor(template)} ${props.selectedNodeIds.has(node.id) ? 'ring-2 ring-accent ring-offset-1' : ''}`} style={{ left: node.x, top: node.y, width: NODE_WIDTH }} onClick={event => { event.stopPropagation(); props.onSelectNode(node.id) }} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); props.onSelectNode(node.id) } }}>
+            <div key={node.id} data-authoring-node-template={node.templateId} role="button" tabIndex={0} aria-label={t('canvas.ariaNode', { title: node.title })} className={`absolute rounded-md border shadow-sm ${templateColor(template)} ${props.selectedNodeIds.has(node.id) ? 'ring-2 ring-accent ring-offset-1' : ''}`} style={{ left: node.x, top: node.y, width: NODE_WIDTH }} onClick={event => { event.stopPropagation(); props.onSelectNode(node.id) }} onKeyDown={event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); props.onSelectNode(node.id) } }}>
               <div
                 className="flex h-[38px] cursor-grab items-center gap-2 rounded-t-md border-b border-black/10 px-2 active:cursor-grabbing"
                 onPointerDown={event => { event.stopPropagation(); dragRef.current = { nodeId: node.id, startX: event.clientX, startY: event.clientY, nodeX: node.x, nodeY: node.y }; event.currentTarget.setPointerCapture(event.pointerId) }}
               >
-                <GripVertical className="h-3.5 w-3.5 text-text-muted" /><span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-text-primary">{node.title}</span><button type="button" title={node.favorite ? '取消收藏节点' : '收藏节点'} aria-label={node.favorite ? '取消收藏节点' : '收藏节点'} onClick={event => { event.stopPropagation(); props.onToggleFavorite(node.id) }} className={`rounded p-0.5 ${node.favorite ? 'text-amber-600' : 'text-text-muted'} hover:bg-amber-100`}><Star className="h-3 w-3" fill={node.favorite ? 'currentColor' : 'none'} /></button><button type="button" title="删除节点" onClick={event => { event.stopPropagation(); props.onRemoveNode(node.id) }} className="rounded p-0.5 text-text-muted hover:bg-error/10 hover:text-error"><X className="h-3 w-3" /></button>
+                <GripVertical className="h-3.5 w-3.5 text-text-muted" /><span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-text-primary">{node.title}</span><button type="button" title={node.favorite ? t('canvas.toggleFavoriteOn') : t('canvas.toggleFavoriteOff')} aria-label={node.favorite ? t('canvas.toggleFavoriteOn') : t('canvas.toggleFavoriteOff')} onClick={event => { event.stopPropagation(); props.onToggleFavorite(node.id) }} className={`rounded p-0.5 ${node.favorite ? 'text-amber-600' : 'text-text-muted'} hover:bg-amber-100`}><Star className="h-3 w-3" fill={node.favorite ? 'currentColor' : 'none'} /></button><button type="button" title={t('canvas.removeNode')} onClick={event => { event.stopPropagation(); props.onRemoveNode(node.id) }} className="rounded p-0.5 text-text-muted hover:bg-error/10 hover:text-error"><X className="h-3 w-3" /></button>
               </div>
               <div className="grid grid-cols-2 gap-2 px-1 py-1.5">
-                <div className="space-y-1">{node.inputs.map(port => <button key={port.id} type="button" onClick={event => { event.stopPropagation(); props.onBeginConnection(node.id, port.id, 'input') }} className="flex w-full items-center gap-1 text-left text-[9px] text-text-secondary hover:text-accent"><span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-accent bg-white" /><span className="truncate">{port.label}{port.required ? ' *' : ''}</span></button>)}</div>
-                <div className="space-y-1">{node.outputs.map(port => <button key={port.id} type="button" onClick={event => { event.stopPropagation(); props.onBeginConnection(node.id, port.id, 'output') }} className="flex w-full items-center justify-end gap-1 text-right text-[9px] text-text-secondary hover:text-accent"><span className="truncate">{port.label}</span><span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-accent bg-white" /></button>)}</div>
+                <div className="space-y-1">{node.inputs.map(port => { const tp = template.inputs.find(p => p.id === port.id); return <button key={port.id} type="button" onClick={event => { event.stopPropagation(); props.onBeginConnection(node.id, port.id, 'input') }} className="flex w-full items-center gap-1 text-left text-[9px] text-text-secondary hover:text-accent"><span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-accent bg-white" /><span className="truncate">{tp ? t(tp.labelKey, { defaultValue: tp.label }) : port.label}{port.required ? ' *' : ''}</span></button> })}</div>
+                <div className="space-y-1">{node.outputs.map(port => { const tp = template.outputs.find(p => p.id === port.id); return <button key={port.id} type="button" onClick={event => { event.stopPropagation(); props.onBeginConnection(node.id, port.id, 'output') }} className="flex w-full items-center justify-end gap-1 text-right text-[9px] text-text-secondary hover:text-accent"><span className="truncate">{tp ? t(tp.labelKey, { defaultValue: tp.label }) : port.label}</span><span className="h-2.5 w-2.5 shrink-0 rounded-full border-2 border-accent bg-white" /></button> })}</div>
               </div>
-              <div className={`border-t border-black/10 px-2 py-1 text-[9px] ${freshness?.status === 'stale' ? 'text-error' : 'text-text-muted'}`}>{result ? (result.status === 'blocked' ? '运行阻塞' : `${result.output.length.toLocaleString()} 字候选${freshnessLabel ? ` · ${freshnessLabel}` : ''}`) : `${template.category} · ${template.capability}`}</div>
+              <div className={`border-t border-black/10 px-2 py-1 text-[9px] ${freshness?.status === 'stale' ? 'text-error' : 'text-text-muted'}`}>{result ? (result.status === 'blocked' ? t('canvas.runBlocked') : `${t('canvas.charsCandidate', { count: result.output.length.toLocaleString() })}${freshnessLabel ? ` · ${freshnessLabel}` : ''}`) : `${t(template.categoryKey, { defaultValue: template.category })} · ${template.capability}`}</div>
             </div>
           )
         })}
       </div>
       {selectionBox && <div className="pointer-events-none absolute border border-accent bg-accent/10" style={{ left: selectionBox.x * zoom + props.graph.viewport.x, top: selectionBox.y * zoom + props.graph.viewport.y, width: selectionBox.width * zoom, height: selectionBox.height * zoom }} />}
-      <div className="pointer-events-none absolute right-3 top-3 z-10 w-40 rounded border border-border bg-bg-surface/90 p-2 shadow-sm"><div className="mb-1 flex items-center gap-1 text-[9px] font-semibold text-text-muted"><Map className="h-3 w-3" />小地图 · {props.graph.nodes.length} 节点</div><div className="relative h-20 overflow-hidden rounded bg-bg-base"><div className="absolute inset-1" style={{ transform: `scale(${Math.min(1, 150 / Math.max(150, bounds.width))}, ${Math.min(1, 72 / Math.max(72, bounds.height))})`, transformOrigin: 'top left' }}>{props.graph.nodes.map(node => <span key={node.id} className={`absolute h-1.5 w-3 rounded-sm ${props.selectedNodeIds.has(node.id) ? 'bg-accent' : 'bg-text-muted/50'}`} style={{ left: node.x - bounds.minX, top: node.y - bounds.minY }} />)}</div></div></div>
-      {!props.graph.nodes.length && <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center"><div><Workflow className="mx-auto h-9 w-9 text-accent/50" /><p className="mt-2 text-sm font-medium text-text-secondary">从左侧添加第一个领域节点</p><p className="mt-1 text-xs text-text-muted">从世界观、故事、角色或控制节点开始编排。</p></div></div>}
+      <div className="pointer-events-none absolute right-3 top-3 z-10 w-40 rounded border border-border bg-bg-surface/90 p-2 shadow-sm"><div className="mb-1 flex items-center gap-1 text-[9px] font-semibold text-text-muted"><Map className="h-3 w-3" />{t('canvas.minimap', { count: props.graph.nodes.length })}</div><div className="relative h-20 overflow-hidden rounded bg-bg-base"><div className="absolute inset-1" style={{ transform: `scale(${Math.min(1, 150 / Math.max(150, bounds.width))}, ${Math.min(1, 72 / Math.max(72, bounds.height))})`, transformOrigin: 'top left' }}>{props.graph.nodes.map(node => <span key={node.id} className={`absolute h-1.5 w-3 rounded-sm ${props.selectedNodeIds.has(node.id) ? 'bg-accent' : 'bg-text-muted/50'}`} style={{ left: node.x - bounds.minX, top: node.y - bounds.minY }} />)}</div></div></div>
+      {!props.graph.nodes.length && <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-center"><div><Workflow className="mx-auto h-9 w-9 text-accent/50" /><p className="mt-2 text-sm font-medium text-text-secondary">{t('canvas.emptyTitle')}</p><p className="mt-1 text-xs text-text-muted">{t('canvas.emptySubtitle')}</p></div></div>}
     </div>
   )
 }
@@ -327,6 +341,7 @@ function CharacterBindingSelector(props: {
   fieldKey: string
   onChange: (binding: AuthoringNodeInstance['binding'] | undefined) => void
 }) {
+  const { t } = useDomainT('node-authoring')
   const [entries, setEntries] = useState<RagLibraryEntry[]>([])
   const [loading, setLoading] = useState(true)
   const selectedDocumentId = props.node.binding?.ref?.documentId ?? ''
@@ -358,10 +373,10 @@ function CharacterBindingSelector(props: {
 
   return (
     <section className="mb-4 rounded border border-amber-300/70 bg-amber-50/60 p-2">
-      <p className="text-[10px] font-semibold text-amber-900">目标角色</p>
-      <p className="mt-1 text-[9px] leading-4 text-amber-800/80">角色维度必须绑定明确的角色记录，采纳时只更新这个角色。</p>
+      <p className="text-[10px] font-semibold text-amber-900">{t('binding.targetCharacterLabel')}</p>
+      <p className="mt-1 text-[9px] leading-4 text-amber-800/80">{t('binding.targetCharacterHint')}</p>
       <select
-        aria-label="绑定目标角色"
+        aria-label={t('binding.bindTargetCharacter')}
         value={selectedDocumentId}
         onChange={event => {
           const documentId = event.target.value
@@ -372,7 +387,7 @@ function CharacterBindingSelector(props: {
         className="mt-2 w-full rounded border border-amber-300 bg-bg-base px-2 py-1.5 text-[11px] text-text-primary"
         disabled={loading}
       >
-        <option value="">{loading ? '正在读取角色…' : characters.length ? '请选择角色' : '暂无可绑定角色'}</option>
+        <option value="">{loading ? t('binding.loadingCharacters') : characters.length ? t('binding.selectCharacter') : t('binding.noBindableCharacter')}</option>
         {characters.map(entry => <option key={entry.documentId} value={entry.documentId}>{entry.title}</option>)}
       </select>
     </section>
@@ -380,8 +395,11 @@ function CharacterBindingSelector(props: {
 }
 
 function NodeInspector(props: { node: AuthoringNodeInstance | null; graph: AuthoringNodeGraph; projectId: number; worldGroupId: number | null; onChange: (graph: AuthoringNodeGraph) => void; onRemove: () => void; onRun: (nodeId: string) => void }) {
+  const { t } = useDomainT('node-authoring')
+  // 来源名走 outline 域的 labelKey 翻译；注册表中文 label 只作兜底。
+  const { t: tOutline } = useDomainT('outline')
   const presets = useAIConfigStore(state => state.presets)
-  if (!props.node) return <aside className="flex w-80 shrink-0 items-center justify-center border-l border-border bg-bg-surface p-6 text-center text-xs text-text-muted">选择节点后编辑参数、上下文来源和端口。</aside>
+  if (!props.node) return <aside className="flex w-80 shrink-0 items-center justify-center border-l border-border bg-bg-surface p-6 text-center text-xs text-text-muted">{t('inspector.empty')}</aside>
   const node = props.node
   const template = AUTHORING_NODE_BY_ID.get(node.templateId)!
   const updateNode = (patch: Partial<AuthoringNodeInstance>) => props.onChange({ ...props.graph, nodes: props.graph.nodes.map(item => item.id === node.id ? { ...item, ...patch } : item) })
@@ -391,42 +409,44 @@ function NodeInspector(props: { node: AuthoringNodeInstance | null; graph: Autho
   const selectionMode = node.config.selectionMode === 'exact' || (node.config.selectionMode == null && sourceKeys.includes('ragSelection')) ? 'exact' : 'registered'
   return (
     <aside className="w-80 shrink-0 overflow-y-auto border-l border-border bg-bg-surface p-4">
-      <div className="mb-4 flex items-start justify-between gap-2"><div><p className="text-[10px] font-semibold tracking-wide text-accent">{template.category}</p><h3 className="mt-1 text-sm font-semibold text-text-primary">{template.label}</h3></div><div className="flex items-center gap-1"><button type="button" title="收藏节点" aria-label="收藏节点" onClick={() => updateNode({ favorite: !node.favorite })} className={`rounded p-1 ${node.favorite ? 'text-amber-600' : 'text-text-muted'} hover:bg-amber-100`}><Star className="h-3.5 w-3.5" fill={node.favorite ? 'currentColor' : 'none'} /></button><button type="button" title="运行到此节点" aria-label="运行到此节点" onClick={() => props.onRun(node.id)} className="rounded p-1 text-accent hover:bg-accent/10"><Play className="h-3.5 w-3.5" /></button><button type="button" title="删除节点" onClick={props.onRemove} className="rounded p-1 text-text-muted hover:bg-error/10 hover:text-error"><Trash2 className="h-3.5 w-3.5" /></button></div></div>
-      <label className="mb-4 block"><span className="mb-1 block text-[10px] text-text-secondary">节点名称</span><input value={node.title} onChange={event => updateNode({ title: event.target.value })} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent" /></label>
-      <p className="mb-3 text-[10px] leading-4 text-text-muted">{template.description}</p>
+      <div className="mb-4 flex items-start justify-between gap-2"><div><p className="text-[10px] font-semibold tracking-wide text-accent">{t(template.categoryKey, { defaultValue: template.category })}</p><h3 className="mt-1 text-sm font-semibold text-text-primary">{t(template.labelKey, { defaultValue: template.label })}</h3></div><div className="flex items-center gap-1"><button type="button" title={t('inspector.favoriteNode')} aria-label={t('inspector.favoriteNode')} onClick={() => updateNode({ favorite: !node.favorite })} className={`rounded p-1 ${node.favorite ? 'text-amber-600' : 'text-text-muted'} hover:bg-amber-100`}><Star className="h-3.5 w-3.5" fill={node.favorite ? 'currentColor' : 'none'} /></button><button type="button" title={t('inspector.runToNode')} aria-label={t('inspector.runToNode')} onClick={() => props.onRun(node.id)} className="rounded p-1 text-accent hover:bg-accent/10"><Play className="h-3.5 w-3.5" /></button><button type="button" title={t('inspector.deleteNode')} onClick={props.onRemove} className="rounded p-1 text-text-muted hover:bg-error/10 hover:text-error"><Trash2 className="h-3.5 w-3.5" /></button></div></div>
+      <label className="mb-4 block"><span className="mb-1 block text-[10px] text-text-secondary">{t('inspector.nodeName')}</span><input value={node.title} onChange={event => updateNode({ title: event.target.value })} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent" /></label>
+      <p className="mb-3 text-[10px] leading-4 text-text-muted">{t(template.descriptionKey, { defaultValue: template.description })}</p>
       {template.writes?.target === 'characters' && template.writes.fields?.length === 1 && <CharacterBindingSelector node={node} projectId={props.projectId} worldGroupId={props.worldGroupId} fieldKey={template.writes.fields[0]} onChange={binding => updateNode({ binding })} />}
       {template.id === 'source.project-context' && <section className="mb-4 rounded border border-border bg-bg-base p-2">
         <div className="mb-2 grid grid-cols-2 rounded border border-border bg-bg-surface p-0.5 text-[10px]">
-          <button type="button" onClick={() => updateNode({ config: { ...node.config, selectionMode: 'exact', sourceKeys: ['ragSelection'] } })} className={`rounded px-2 py-1 ${selectionMode === 'exact' ? 'bg-accent text-white' : 'text-text-muted hover:bg-bg-hover'}`}>精确资料</button>
-          <button type="button" onClick={() => updateNode({ config: { ...node.config, selectionMode: 'registered', sourceKeys: sourceKeys.includes('ragSelection') ? ['worldview', 'storyCore'] : sourceKeys } })} className={`rounded px-2 py-1 ${selectionMode === 'registered' ? 'bg-accent text-white' : 'text-text-muted hover:bg-bg-hover'}`}>注册来源</button>
+          <button type="button" onClick={() => updateNode({ config: { ...node.config, selectionMode: 'exact', sourceKeys: ['ragSelection'] } })} className={`rounded px-2 py-1 ${selectionMode === 'exact' ? 'bg-accent text-white' : 'text-text-muted hover:bg-bg-hover'}`}>{t('inspector.exactSources')}</button>
+          <button type="button" onClick={() => updateNode({ config: { ...node.config, selectionMode: 'registered', sourceKeys: sourceKeys.includes('ragSelection') ? ['worldview', 'storyCore'] : sourceKeys } })} className={`rounded px-2 py-1 ${selectionMode === 'registered' ? 'bg-accent text-white' : 'text-text-muted hover:bg-bg-hover'}`}>{t('inspector.registeredSources')}</button>
         </div>
         {selectionMode === 'exact' ? <RagEntrySelector projectId={props.projectId} worldGroupId={props.worldGroupId} selectedKeys={ragEntryKeys} onChange={keys => updateNode({ config: { ...node.config, selectionMode: 'exact', sourceKeys: ['ragSelection'], ragEntryKeys: keys } })} /> : <section>
-          <p className="mb-2 text-[10px] font-medium text-text-secondary">读取哪些登记来源</p>
-          <div className="max-h-48 space-y-1 overflow-y-auto">{CONTEXT_SOURCES.filter(source => source.key !== 'ragSelection').map(source => <label key={source.key} className="flex items-start gap-2 text-[10px] text-text-secondary"><input type="checkbox" checked={sourceKeys.includes(source.key)} onChange={() => updateConfig('sourceKeys', sourceKeys.includes(source.key) ? sourceKeys.filter(item => item !== source.key) : [...sourceKeys, source.key])} className="mt-0.5 accent-[var(--color-accent)]" /><span><span className="block">{source.label}</span><span className="block text-[9px] text-text-muted">{source.key}</span></span></label>)}</div>
+          <p className="mb-2 text-[10px] font-medium text-text-secondary">{t('inspector.readRegisteredSources')}</p>
+          <div className="max-h-48 space-y-1 overflow-y-auto">{CONTEXT_SOURCES.filter(source => source.key !== 'ragSelection').map(source => <label key={source.key} className="flex items-start gap-2 text-[10px] text-text-secondary"><input type="checkbox" checked={sourceKeys.includes(source.key)} onChange={() => updateConfig('sourceKeys', sourceKeys.includes(source.key) ? sourceKeys.filter(item => item !== source.key) : [...sourceKeys, source.key])} className="mt-0.5 accent-[var(--color-accent)]" /><span><span className="block">{tOutline(source.labelKey, { defaultValue: source.label })}</span><span className="block text-[9px] text-text-muted">{source.key}</span></span></label>)}</div>
         </section>}
       </section>}
       <div className="space-y-3">{(template.parameters ?? []).map(parameter => {
         const value = node.config[parameter.key] ?? parameter.defaultValue ?? ''
-        if (parameter.key === 'presetId') return <label key={parameter.key} className="block"><span className="mb-1 block text-[10px] text-text-secondary">{parameter.label}</span><select value={String(value)} onChange={event => updateConfig(parameter.key, event.target.value)} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-[11px] text-text-primary"><option value="">使用全局配置</option>{presets.map(preset => <option key={preset.id} value={preset.id}>{preset.name}</option>)}</select></label>
-        if (parameter.type === 'text') return <label key={parameter.key} className="block"><span className="mb-1 block text-[10px] text-text-secondary">{parameter.label}</span><textarea rows={parameter.key === 'text' || parameter.key === 'instruction' || parameter.key === 'template' ? 6 : 3} value={String(value)} onChange={event => updateConfig(parameter.key, event.target.value)} className="w-full resize-y rounded border border-border bg-bg-base px-2 py-1.5 text-[11px] leading-4 text-text-primary outline-none focus:border-accent" /></label>
-        if (parameter.type === 'boolean') return <label key={parameter.key} className="flex items-center gap-2 text-[11px] text-text-secondary"><input type="checkbox" checked={Boolean(value)} onChange={event => updateConfig(parameter.key, event.target.checked)} className="accent-[var(--color-accent)]" />{parameter.label}</label>
-        return <label key={parameter.key} className="block"><span className="mb-1 flex justify-between text-[10px] text-text-secondary"><span>{parameter.label}</span><span className="text-text-muted">{String(value)}</span></span><input type="number" min={parameter.min} max={parameter.max} step={parameter.step} value={Number(value)} onChange={event => updateConfig(parameter.key, Number(event.target.value))} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-[11px] text-text-primary outline-none focus:border-accent" /></label>
+        if (parameter.key === 'presetId') return <label key={parameter.key} className="block"><span className="mb-1 block text-[10px] text-text-secondary">{t(parameter.labelKey, { defaultValue: parameter.label })}</span><select value={String(value)} onChange={event => updateConfig(parameter.key, event.target.value)} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-[11px] text-text-primary"><option value="">{t('inspector.useGlobalConfig')}</option>{presets.map(preset => <option key={preset.id} value={preset.id}>{preset.name}</option>)}</select></label>
+        if (parameter.type === 'text') return <label key={parameter.key} className="block"><span className="mb-1 block text-[10px] text-text-secondary">{t(parameter.labelKey, { defaultValue: parameter.label })}</span><textarea rows={parameter.key === 'text' || parameter.key === 'instruction' || parameter.key === 'template' ? 6 : 3} value={String(value)} onChange={event => updateConfig(parameter.key, event.target.value)} className="w-full resize-y rounded border border-border bg-bg-base px-2 py-1.5 text-[11px] leading-4 text-text-primary outline-none focus:border-accent" /></label>
+        if (parameter.type === 'boolean') return <label key={parameter.key} className="flex items-center gap-2 text-[11px] text-text-secondary"><input type="checkbox" checked={Boolean(value)} onChange={event => updateConfig(parameter.key, event.target.checked)} className="accent-[var(--color-accent)]" />{t(parameter.labelKey, { defaultValue: parameter.label })}</label>
+        return <label key={parameter.key} className="block"><span className="mb-1 flex justify-between text-[10px] text-text-secondary"><span>{t(parameter.labelKey, { defaultValue: parameter.label })}</span><span className="text-text-muted">{String(value)}</span></span><input type="number" min={parameter.min} max={parameter.max} step={parameter.step} value={Number(value)} onChange={event => updateConfig(parameter.key, Number(event.target.value))} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-[11px] text-text-primary outline-none focus:border-accent" /></label>
       })}</div>
-      <div className="mt-5 border-t border-border pt-3"><p className="mb-2 text-[10px] font-semibold text-text-secondary">输入端口</p>{node.inputs.length ? node.inputs.map(port => <div key={port.id} className="flex items-center justify-between border-b border-border/60 py-1.5 text-[10px]"><span className="text-text-secondary">{port.label}{port.required ? ' *' : ''}</span><span className="text-text-muted">{port.semantic}</span></div>) : <p className="text-[10px] text-text-muted">无输入</p>}<p className="mb-2 mt-3 text-[10px] font-semibold text-text-secondary">输出端口</p>{node.outputs.map(port => <div key={port.id} className="flex items-center justify-between border-b border-border/60 py-1.5 text-[10px]"><span className="text-text-secondary">{port.label}</span><span className="text-text-muted">{port.semantic}</span></div>)}</div>
+      <div className="mt-5 border-t border-border pt-3"><p className="mb-2 text-[10px] font-semibold text-text-secondary">{t('inspector.inputPorts')}</p>{node.inputs.length ? node.inputs.map(port => { const tp = template.inputs.find(p => p.id === port.id); return <div key={port.id} className="flex items-center justify-between border-b border-border/60 py-1.5 text-[10px]"><span className="text-text-secondary">{tp ? t(tp.labelKey, { defaultValue: tp.label }) : port.label}{port.required ? ' *' : ''}</span><span className="text-text-muted">{port.semantic}</span></div> }) : <p className="text-[10px] text-text-muted">{t('inspector.noInputPorts')}</p>}<p className="mb-2 mt-3 text-[10px] font-semibold text-text-secondary">{t('inspector.outputPorts')}</p>{node.outputs.map(port => { const tp = template.outputs.find(p => p.id === port.id); return <div key={port.id} className="flex items-center justify-between border-b border-border/60 py-1.5 text-[10px]"><span className="text-text-secondary">{tp ? t(tp.labelKey, { defaultValue: tp.label }) : port.label}</span><span className="text-text-muted">{port.semantic}</span></div> })}</div>
     </aside>
   )
 }
 
 function SmartConnectionMenu(props: { anchor: { nodeId: string; portId: string; direction: 'input' | 'output'; x: number; y: number }; graph: AuthoringNodeGraph; onPick: (template: AuthoringNodeTemplate) => void; onClose: () => void }) {
+  const { t } = useDomainT('node-authoring')
   const node = props.graph.nodes.find(item => item.id === props.anchor.nodeId)
   const template = node ? AUTHORING_NODE_BY_ID.get(node.templateId) : undefined
   const port = node ? [...node.inputs, ...node.outputs].find(item => item.id === props.anchor.portId) : undefined
   if (!node || !template || !port) return null
   const suggestions = suggestAuthoringConnections({ catalog: AUTHORING_NODE_CATALOG, anchorTemplate: template, anchorPort: port, direction: props.anchor.direction === 'output' ? 'after' : 'before' }).slice(0, 10)
-  return <div className="absolute z-20 w-64 rounded-md border border-border bg-bg-surface p-2 shadow-xl" style={{ left: props.anchor.x, top: props.anchor.y }}><div className="mb-1 flex items-center justify-between"><p className="text-[10px] font-semibold text-text-secondary">{props.anchor.direction === 'output' ? '添加后置节点' : '添加前置节点'}</p><button type="button" onClick={props.onClose} className="text-text-muted hover:text-text-primary"><X className="h-3 w-3" /></button></div>{suggestions.length ? suggestions.map(item => <button key={`${item.template.id}:${item.port.id}`} type="button" onClick={() => props.onPick(item.template)} className="flex w-full items-start gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-hover"><ChevronRight className="mt-0.5 h-3 w-3 text-accent" /><span><span className="block text-[10px] text-text-primary">{item.template.label}</span><span className="block text-[9px] text-text-muted">{item.reason === 'recommended' ? '推荐连接' : '语义兼容'} · {item.port.label}</span></span></button>) : <p className="p-2 text-[10px] text-text-muted">没有找到兼容节点</p>}</div>
+  return <div className="absolute z-20 w-64 rounded-md border border-border bg-bg-surface p-2 shadow-xl" style={{ left: props.anchor.x, top: props.anchor.y }}><div className="mb-1 flex items-center justify-between"><p className="text-[10px] font-semibold text-text-secondary">{props.anchor.direction === 'output' ? t('connectionMenu.addAfter') : t('connectionMenu.addBefore')}</p><button type="button" onClick={props.onClose} className="text-text-muted hover:text-text-primary"><X className="h-3 w-3" /></button></div>{suggestions.length ? suggestions.map(item => { const i18nTemplate = AUTHORING_NODE_BY_ID.get(item.template.id); const i18nPort = i18nTemplate ? [...i18nTemplate.inputs, ...i18nTemplate.outputs].find(p => p.id === item.port.id) : undefined; return <button key={`${item.template.id}:${item.port.id}`} type="button" onClick={() => props.onPick(item.template)} className="flex w-full items-start gap-2 rounded px-2 py-1.5 text-left hover:bg-bg-hover"><ChevronRight className="mt-0.5 h-3 w-3 text-accent" /><span><span className="block text-[10px] text-text-primary">{i18nTemplate ? t(i18nTemplate.labelKey, { defaultValue: item.template.label }) : item.template.label}</span><span className="block text-[9px] text-text-muted">{item.reason === 'recommended' ? t('connectionMenu.recommended') : t('connectionMenu.semanticCompatible')} · {i18nPort ? t(i18nPort.labelKey, { defaultValue: item.port.label }) : item.port.label}</span></span></button> }) : <p className="p-2 text-[10px] text-text-muted">{t('connectionMenu.noCompatible')}</p>}</div>
 }
 
 export default function NodeAuthoringWorkspace(props: { project: Project; worldGroupId: number | null }) {
+  const { t } = useDomainT('node-authoring')
   const projectId = props.project.id!
   const dialog = useDialog()
   const toast = useToast()
@@ -459,7 +479,7 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
     if (selectedFlowId == null) { setDraft(null); setGraph(emptyAuthoringGraph()); setSavedGraph(emptyAuthoringGraph()); setLegacySourceVersion(null); return }
     const flow = flows.find(item => item.id === selectedFlowId)
     if (!flow) return
-    try { const parsed = parseAuthoringGraph(flow.graphJson); setDraft(flow); setGraph(parsed.graph); setSavedGraph(structuredClone(parsed.graph)); setLegacySourceVersion(parsed.migrated ? parsed.sourceVersion : null); setSelectedNodeId(null); setSelectedNodeIds([]); setDirty(false); void useNodeFlowStore.getState().loadRuns(projectId, selectedFlowId) } catch (error) { setLegacySourceVersion(null); toast.error(`旧节点图无法转换：${error instanceof Error ? error.message : String(error)}。原图未被修改。`) }
+    try { const parsed = parseAuthoringGraph(flow.graphJson); setDraft(flow); setGraph(parsed.graph); setSavedGraph(structuredClone(parsed.graph)); setLegacySourceVersion(parsed.migrated ? parsed.sourceVersion : null); setSelectedNodeId(null); setSelectedNodeIds([]); setDirty(false); void useNodeFlowStore.getState().loadRuns(projectId, selectedFlowId) } catch (error) { setLegacySourceVersion(null); toast.error(t('toast.legacyConvertFailed', { message: error instanceof Error ? error.message : String(error) })) }
   // A store refresh must not replace an in-progress local graph edit.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedFlowId, projectId])
@@ -475,7 +495,7 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
   const save = async (notify = false): Promise<NodeFlow | null> => {
     if (!draft) return null
     setSaving(true)
-    try { const next = { ...draft, graphJson: JSON.stringify(graph), updatedAt: Date.now() }; const id = await useNodeFlowStore.getState().saveFlow(next); const saved = { ...next, id }; setDraft(saved); setSavedGraph(structuredClone(graph)); setLegacySourceVersion(null); setDirty(false); if (notify) toast.success('节点图已保存。'); return saved } catch (error) { toast.error(`保存失败：${error instanceof Error ? error.message : String(error)}；原图未被修改。`); return null } finally { setSaving(false) }
+    try { const next = { ...draft, graphJson: JSON.stringify(graph), updatedAt: Date.now() }; const id = await useNodeFlowStore.getState().saveFlow(next); const saved = { ...next, id }; setDraft(saved); setSavedGraph(structuredClone(graph)); setLegacySourceVersion(null); setDirty(false); if (notify) toast.success(t('toast.saveSuccess')); return saved } catch (error) { toast.error(t('toast.saveFailed', { message: error instanceof Error ? error.message : String(error) })); return null } finally { setSaving(false) }
   }
   // Autosave intentionally captures the current draft and graph snapshot; including the
   // recreated save callback would schedule a second save on every render.
@@ -488,50 +508,50 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
     if (!template) return
     try {
       const id = await useNodeFlowStore.getState().createFlow(projectId, props.worldGroupId, {
-        name: template.name,
-        description: template.description,
+        name: t(template.nameKey),
+        description: t(template.descriptionKey),
         graph: buildOfficialAuthoringTemplate(templateId),
       })
       setSelectedFlowId(id)
-      toast.success(`${template.name}已创建。`)
+      toast.success(t('toast.templateCreated', { name: t(template.nameKey) }))
     } catch (error) {
-      toast.error(`模板创建失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('toast.templateCreateFailed', { message: error instanceof Error ? error.message : String(error) }))
     }
   }
   const createOverview = async () => {
     try {
       const overview = await buildAuthoringOverviewGraph({ projectId, worldGroupId: props.worldGroupId })
       const id = await useNodeFlowStore.getState().createFlow(projectId, props.worldGroupId, {
-        name: '项目资料概览',
-        description: `从当前项目生成的实时绑定概览：${overview.entryCount} 个资料字段。`,
+        name: t('common:defaults.authoringOverviewFlowName'),
+        description: t('common:defaults.authoringOverviewFlowDescription', { count: overview.entryCount }),
         graph: overview.graph,
       })
       setSelectedFlowId(id)
-      toast.success(`已生成项目资料概览：${overview.entryCount} 个实时绑定节点。`)
+      toast.success(t('toast.overviewGenerated', { count: overview.entryCount }))
     } catch (error) {
-      toast.error(`概览生成失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('toast.overviewGenerateFailed', { message: error instanceof Error ? error.message : String(error) }))
     }
   }
   const createCreationChain = async () => {
     try {
       const { graph } = buildAuthoringCreationChainGraph()
       const id = await useNodeFlowStore.getState().createFlow(projectId, props.worldGroupId, {
-        name: '完整创作链',
-        description: '世界与故事 → 角色 → 卷纲 → 章纲 → 细纲 → 正文；每一步都需作者确认后写回。',
+        name: t('common:defaults.creationChainFlowName'),
+        description: t('common:defaults.creationChainFlowDescription'),
         graph,
       })
       setSelectedFlowId(id)
-      toast.success('完整创作链已创建，请按上游到下游逐步运行并确认采纳。')
+      toast.success(t('toast.chainCreated'))
     } catch (error) {
-      toast.error(`完整创作链创建失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('toast.chainCreateFailed', { message: error instanceof Error ? error.message : String(error) }))
     }
   }
   const removeFlow = async () => {
     if (!draft?.id) return
     const confirmed = await dialog.confirm({
-      title: `删除节点图“${draft.name}”？`,
-      message: '节点图及其所有运行输入、输出记录将一并删除，且不可恢复。',
-      confirmText: '删除',
+      title: t('toast.deleteConfirmTitle', { name: draft.name }),
+      message: t('toast.deleteConfirmMessage'),
+      confirmText: t('toast.deleteConfirmButton'),
       tone: 'danger',
     })
     if (!confirmed) return
@@ -546,9 +566,9 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
       setCandidates({})
       setSnapshots({})
       setRun(null)
-      toast.success('节点图及其运行记录已删除。')
+      toast.success(t('toast.deleteSuccess'))
     } catch (error) {
-      toast.error(`删除失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('toast.deleteFailed', { message: error instanceof Error ? error.message : String(error) }))
     }
   }
   const selectedNodeSet = useMemo(() => new Set(selectedNodeIds), [selectedNodeIds])
@@ -557,7 +577,7 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
     setSelectedNodeIds([id])
     changeGraph({ ...graph, nodes: graph.nodes.map(node => node.id === id ? { ...node, lastOpenedAt: Date.now() } : node) })
   }
-  const addTemplate = (template: AuthoringNodeTemplate, position?: { x: number; y: number }) => { const node = nodeFromTemplate(template, graph.nodes.length); if (position) { node.x = position.x; node.y = position.y } changeGraph({ ...graph, nodes: [...graph.nodes, node] }); setSelectedNodeId(node.id); setSelectedNodeIds([node.id]); return node }
+  const addTemplate = (template: AuthoringNodeTemplate, position?: { x: number; y: number }) => { const node = nodeFromTemplate(template, graph.nodes.length, t); if (position) { node.x = position.x; node.y = position.y } changeGraph({ ...graph, nodes: [...graph.nodes, node] }); setSelectedNodeId(node.id); setSelectedNodeIds([node.id]); return node }
   const removeNode = (id: string) => { changeGraph({ ...graph, nodes: graph.nodes.filter(node => node.id !== id), edges: graph.edges.filter(edge => edge.sourceNodeId !== id && edge.targetNodeId !== id) }); if (selectedNodeId === id) setSelectedNodeId(null); setSelectedNodeIds(current => current.filter(item => item !== id)) }
   const toggleFavorite = (id: string) => changeGraph({ ...graph, nodes: graph.nodes.map(node => node.id === id ? { ...node, favorite: !node.favorite } : node) })
   const applyOfficialTemplate = (templateId: Parameters<typeof buildOfficialAuthoringTemplate>[0]) => {
@@ -566,7 +586,7 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
     changeGraph(nextGraph)
     setSelectedNodeId(nextGraph.nodes[0]?.id ?? null)
     setSelectedNodeIds(nextGraph.nodes[0] ? [nextGraph.nodes[0].id] : [])
-    if (draft) setDraft({ ...draft, name: template.name, description: template.description })
+    if (draft) setDraft({ ...draft, name: t(template.nameKey), description: t(template.descriptionKey) })
     setShowTemplates(false)
   }
   const beginConnection = (nodeId: string, portId: string, direction: 'input' | 'output') => { if (connection && connection.direction === 'output' && direction === 'input' && connection.nodeId !== nodeId) { const next = addEdge(graph, connection.nodeId, connection.portId, nodeId, portId); const issue = validateAuthoringGraph(next).find(item => item.code === 'cycle' || item.code === 'type-mismatch' || item.code === 'duplicate-edge'); if (issue) toast.error(issue.message); else changeGraph(next); setConnection(null); setMenu(null); return } setConnection({ nodeId, portId, direction }); setMenu(null) }
@@ -575,7 +595,7 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
     if (!connection) return
     const anchorNode = graph.nodes.find(node => node.id === connection.nodeId)
     if (!anchorNode) return
-    const node = nodeFromTemplate(template, graph.nodes.length)
+    const node = nodeFromTemplate(template, graph.nodes.length, t)
     node.x = Math.max(30, anchorNode.x + (connection.direction === 'output' ? 330 : -330))
     node.y = anchorNode.y
     const anchorPort = [...anchorNode.inputs, ...anchorNode.outputs].find(port => port.id === connection.portId)
@@ -601,7 +621,7 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
   const runGraph = async (targetNodeId?: string, mode: 'normal' | 'stale' | 'resume' = 'normal') => {
     if (!draft || abortRef.current) return
     const issues = validateAuthoringGraph(graph)
-    if (issues.length) { toast.error(issues[0].message); return }
+    if (issues.length) { toast.error(t('toast.validationIssue', { message: issues[0].message })); return }
     const saved = await save()
     if (!saved?.id) return
     const controller = new AbortController()
@@ -620,10 +640,10 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
       setSnapshots(result.snapshots)
       setCandidates(result.candidates)
       await useNodeFlowStore.getState().loadRuns(projectId, saved.id)
-      if (result.run.status === 'completed') toast.success(mode === 'stale' ? '过期下游已批量重跑。' : '节点图运行完成，候选已保存。')
-      if (result.run.status === 'paused') toast.success('运行已暂停，可从运行记录继续。')
+      if (result.run.status === 'completed') toast.success(mode === 'stale' ? t('toast.staleRerunCompleted') : t('toast.runCompleted'))
+      if (result.run.status === 'paused') toast.success(t('toast.runPaused'))
     } catch (error) {
-      toast.error(`运行失败：${error instanceof Error ? error.message : String(error)}`)
+      toast.error(t('toast.runFailed', { message: error instanceof Error ? error.message : String(error) }))
     } finally {
       abortRef.current = null
       setIsRunning(false)
@@ -641,54 +661,54 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
   }
   const copySelection = () => {
     const copied = copyAuthoringSubgraph(graph, selectedNodeSet)
-    if (!copied.copiedNodeIds.length) { toast.error('请先框选要复制的节点。'); return }
+    if (!copied.copiedNodeIds.length) { toast.error(t('toast.copySelectFirst')); return }
     changeGraph(copied.graph)
     selectMany(copied.copiedNodeIds)
-    toast.success(`已复制 ${copied.copiedNodeIds.length} 个节点及内部连线。`)
+    toast.success(t('toast.copySuccess', { count: copied.copiedNodeIds.length }))
   }
   const groupSelection = () => {
-    if (!selectedNodeSet.size) { toast.error('请先框选要分组的节点。'); return }
+    if (!selectedNodeSet.size) { toast.error(t('toast.groupSelectFirst')); return }
     changeGraph(groupAuthoringNodes(graph, selectedNodeSet))
   }
   const alignSelection = (axis: 'x' | 'y') => {
-    if (selectedNodeSet.size < 2) { toast.error('对齐至少需要两个节点。'); return }
+    if (selectedNodeSet.size < 2) { toast.error(t('toast.alignNeedTwo')); return }
     changeGraph(alignAuthoringNodes(graph, selectedNodeSet, axis))
   }
-  const adoptCandidate = async (nodeId: string) => { if (!draft || !candidates[nodeId]) return; try { const result = await adoptAuthoringCandidate({ flow: draft, nodeId, output: candidates[nodeId].output }); setCandidates(current => ({ ...current, [nodeId]: { ...current[nodeId], status: 'adopted' } })); toast.success(`已采纳：写入 ${result.written.length} 条记录。`) } catch (error) { toast.error(`采纳失败：${error instanceof Error ? error.message : String(error)}`) } }
+  const adoptCandidate = async (nodeId: string) => { if (!draft || !candidates[nodeId]) return; try { const result = await adoptAuthoringCandidate({ flow: draft, nodeId, output: candidates[nodeId].output }); setCandidates(current => ({ ...current, [nodeId]: { ...current[nodeId], status: 'adopted' } })); toast.success(t('toast.adoptSuccess', { count: result.written.length })) } catch (error) { toast.error(t('toast.adoptFailed', { message: error instanceof Error ? error.message : String(error) })) } }
 
-  if (loading && !flows.length) return <div className="flex min-h-[720px] items-center justify-center text-sm text-text-muted"><Loader2 className="mr-2 h-4 w-4 animate-spin" />加载节点图…</div>
-  if (!draft) return <div className="flex min-h-[720px] items-center justify-center overflow-y-auto bg-[#f7f7f5] p-6"><div className="w-full max-w-4xl rounded-lg border border-border bg-bg-surface p-8 text-center shadow-sm"><Workflow className="mx-auto h-10 w-10 text-accent" /><h2 className="mt-3 text-lg font-semibold text-text-primary">领域节点创作</h2><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-text-secondary">把世界观、故事、角色和执行参数编排成一张可观察、可回放的创作图。每个结果先作为候选保存，确认后才写入项目。</p><div className="mt-5 grid gap-2 sm:grid-cols-3"><button type="button" onClick={() => void createCreationChain()} className="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"><GitBranch className="h-4 w-4" />创建完整创作链</button><button type="button" onClick={() => void createOverview()} className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover"><LayoutTemplate className="h-4 w-4" />从项目生成概览</button><button type="button" onClick={() => void createFlow()} className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover"><Plus className="h-4 w-4" />创建空白节点图</button></div><div className="mt-7 border-t border-border pt-5 text-left"><div className="mb-3 flex items-center gap-2"><LayoutTemplate className="h-4 w-4 text-accent" /><h3 className="text-xs font-semibold text-text-primary">官方起始模板</h3><span className="text-[10px] text-text-muted">直接创建后即可编辑</span></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{AUTHORING_OFFICIAL_TEMPLATES.map(template => <button key={template.id} type="button" onClick={() => void createOfficialTemplate(template.id)} className="rounded-md border border-border p-3 text-left transition-colors hover:border-accent/50 hover:bg-bg-hover"><span className="block text-[11px] font-semibold text-text-primary">{template.name}</span><span className="mt-1 block text-[10px] leading-4 text-text-muted">{template.description}</span></button>)}</div></div><p className="mt-4 text-[11px] leading-5 text-text-muted">运行节点后先确认采纳，再继续运行下游节点；模板不会自动写入项目资料。</p></div></div>
+  if (loading && !flows.length) return <div className="flex min-h-[720px] items-center justify-center text-sm text-text-muted"><Loader2 className="mr-2 h-4 w-4 animate-spin" />{t('workspace.loadingGraphs')}</div>
+  if (!draft) return <div className="flex min-h-[720px] items-center justify-center overflow-y-auto bg-[#f7f7f5] p-6"><div className="w-full max-w-4xl rounded-lg border border-border bg-bg-surface p-8 text-center shadow-sm"><Workflow className="mx-auto h-10 w-10 text-accent" /><h2 className="mt-3 text-lg font-semibold text-text-primary">{t('workspace.heroTitle')}</h2><p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-text-secondary">{t('workspace.heroDescription')}</p><div className="mt-5 grid gap-2 sm:grid-cols-3"><button type="button" onClick={() => void createCreationChain()} className="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent-hover"><GitBranch className="h-4 w-4" />{t('workspace.createChainButton')}</button><button type="button" onClick={() => void createOverview()} className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover"><LayoutTemplate className="h-4 w-4" />{t('workspace.generateOverviewButton')}</button><button type="button" onClick={() => void createFlow()} className="inline-flex items-center justify-center gap-2 rounded-md border border-border px-4 py-2 text-sm font-medium text-text-secondary hover:bg-bg-hover"><Plus className="h-4 w-4" />{t('workspace.createBlankButton')}</button></div><div className="mt-7 border-t border-border pt-5 text-left"><div className="mb-3 flex items-center gap-2"><LayoutTemplate className="h-4 w-4 text-accent" /><h3 className="text-xs font-semibold text-text-primary">{t('workspace.officialTemplatesTitle')}</h3><span className="text-[10px] text-text-muted">{t('workspace.officialTemplatesHint')}</span></div><div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">{AUTHORING_OFFICIAL_TEMPLATES.map(template => <button key={template.id} type="button" onClick={() => void createOfficialTemplate(template.id)} className="rounded-md border border-border p-3 text-left transition-colors hover:border-accent/50 hover:bg-bg-hover"><span className="block text-[11px] font-semibold text-text-primary">{t(template.nameKey)}</span><span className="mt-1 block text-[10px] leading-4 text-text-muted">{t(template.descriptionKey)}</span></button>)}</div></div><p className="mt-4 text-[11px] leading-5 text-text-muted">{t('workspace.heroFooter')}</p></div></div>
 
   const selectedSnapshot = selectedNodeId ? snapshots[selectedNodeId] : undefined
   const selectedCandidate = selectedNodeId ? candidates[selectedNodeId] : undefined
   return <div className="flex h-[760px] min-h-[560px] max-h-[calc(100vh-180px)] flex-col overflow-hidden bg-bg-base">
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-bg-surface px-3"><Workflow className="h-4 w-4 text-accent" /><input aria-label="节点图名称" value={draft.name} onChange={event => { setDraft({ ...draft, name: event.target.value }); setDirty(true) }} className="w-56 rounded border border-transparent bg-transparent px-2 py-1 text-sm font-medium text-text-primary hover:border-border focus:border-accent focus:outline-none" /><span className="text-[10px] text-text-muted">{saving ? '保存中…' : dirty ? '待保存' : '已保存'}</span><div className="ml-auto flex items-center gap-2"><button type="button" onClick={() => void save(true)} className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-xs text-text-secondary hover:bg-bg-hover"><Save className="h-3.5 w-3.5" />保存</button>{isRunning ? <><button type="button" onClick={pauseRun} title="暂停运行" aria-label="暂停运行" className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-1.5 text-xs text-amber-800"><Pause className="h-3.5 w-3.5" />暂停</button><button type="button" onClick={cancelRun} title="取消运行" aria-label="取消运行" className="inline-flex items-center gap-1 rounded bg-error/10 px-2 py-1.5 text-xs text-error"><CircleStop className="h-3.5 w-3.5" />取消</button></> : run?.status === 'paused' || run?.status === 'failed' ? <button type="button" onClick={() => void runGraph(undefined, 'resume')} className="inline-flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"><RotateCcw className="h-3.5 w-3.5" />继续运行</button> : <button type="button" onClick={() => void runGraph()} className="inline-flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"><Play className="h-3.5 w-3.5" />运行全部</button>}</div></header>
-    {legacySourceVersion != null && <div className="flex shrink-0 items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[11px] text-amber-900"><span className="min-w-0 flex-1">这张图来自 FLOW-{legacySourceVersion}。当前画布已按兼容规则读取；转换保存后会升级为领域节点图，原项目 Canon 不会被改写。</span><button type="button" onClick={() => void save(true)} className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-300 bg-white px-2 py-1 font-medium text-amber-900 hover:bg-amber-100"><Save className="h-3 w-3" />转换并保存</button></div>}
-    <section className="flex flex-wrap items-center gap-1 border-b border-border bg-bg-surface px-3 py-1.5 text-[10px] text-text-muted"><button type="button" title="选择官方模板" aria-label="选择官方模板" onClick={() => setShowTemplates(value => !value)} className="inline-flex items-center gap-1 rounded px-2 py-1 text-text-secondary hover:bg-bg-hover"><LayoutTemplate className="h-3 w-3" />模板</button><button type="button" title="自动布局" aria-label="自动布局" onClick={() => changeGraph(autoLayoutAuthoringGraph(graph))} className="inline-flex items-center gap-1 rounded px-2 py-1 text-text-secondary hover:bg-bg-hover"><LayoutDashboard className="h-3 w-3" />自动布局</button><button type="button" title="复制选区" aria-label="复制选区" onClick={copySelection} className="inline-flex items-center gap-1 rounded px-2 py-1 text-text-secondary hover:bg-bg-hover"><Copy className="h-3 w-3" />复制</button><button type="button" title="水平对齐" aria-label="水平对齐" onClick={() => alignSelection('y')} className="rounded p-1 text-text-secondary hover:bg-bg-hover"><AlignCenterHorizontal className="h-3 w-3" /></button><button type="button" title="垂直对齐" aria-label="垂直对齐" onClick={() => alignSelection('x')} className="rounded p-1 text-text-secondary hover:bg-bg-hover"><AlignCenterVertical className="h-3 w-3" /></button><button type="button" title="分组" aria-label="分组" onClick={groupSelection} className="inline-flex items-center gap-1 rounded px-2 py-1 text-text-secondary hover:bg-bg-hover"><Users className="h-3 w-3" />分组</button><span className="ml-auto">选中 {selectedNodeIds.length} · 节点 {graph.nodes.length} · 连线 {graph.edges.length} · 变更 {graphDiff.nodesChanged + graphDiff.nodesAdded + graphDiff.nodesRemoved + graphDiff.edgesAdded + graphDiff.edgesRemoved}</span>{showTemplates && <div className="absolute z-30 mt-32 grid w-80 gap-1 rounded border border-border bg-bg-surface p-2 shadow-xl sm:grid-cols-2">{AUTHORING_OFFICIAL_TEMPLATES.map(template => <button key={template.id} type="button" onClick={() => applyOfficialTemplate(template.id)} className="rounded p-2 text-left hover:bg-bg-hover"><span className="block text-[10px] font-semibold text-text-primary">{template.name}</span><span className="mt-0.5 block text-[9px] text-text-muted">{template.description}</span></button>)}</div>}</section>
-    <div className="flex min-h-0 flex-1"><div className="flex w-60 shrink-0 flex-col border-r border-border bg-bg-surface"><div className="border-b border-border p-3"><div className="mb-2 flex items-center justify-between"><span className="text-[10px] font-semibold tracking-wide text-text-muted">我的节点图</span><div className="flex items-center gap-1"><button type="button" title="删除当前节点图" aria-label="删除当前节点图" onClick={() => void removeFlow()} className="rounded p-1 text-text-muted hover:bg-error/10 hover:text-error"><Trash2 className="h-3.5 w-3.5" /></button><button type="button" title="从项目生成概览" aria-label="从项目生成概览" onClick={() => void createOverview()} className="rounded p-1 text-text-muted hover:bg-bg-hover"><LayoutTemplate className="h-3.5 w-3.5" /></button><button type="button" title="新建节点图" aria-label="新建节点图" onClick={() => void createFlow()} className="rounded p-1 text-accent hover:bg-accent/10"><Plus className="h-3.5 w-3.5" /></button></div></div>{flows.map(flow => <button key={flow.id} type="button" onClick={() => setSelectedFlowId(flow.id!)} className={`mb-1 w-full truncate rounded px-2 py-1.5 text-left text-[11px] ${flow.id === selectedFlowId ? 'bg-accent/15 text-accent' : 'text-text-secondary hover:bg-bg-hover'}`}>{flow.name}</button>)}</div><NodeLibrary graph={graph} onAdd={template => addTemplate(template)} onSelectNode={selectNode} /></div><div className="relative flex min-w-0 flex-1"><AuthoringCanvas graph={graph} selectedNodeId={selectedNodeId} selectedNodeIds={selectedNodeSet} candidates={candidates} freshness={freshness} onSelectNode={selectNode} onSelectionChange={selectMany} onToggleFavorite={toggleFavorite} onChange={changeGraph} onBeginConnection={beginConnection} onCanvasConnection={openConnectionMenu} onRemoveNode={removeNode} />{connection && menu && <SmartConnectionMenu anchor={{ ...connection, x: menu.x, y: menu.y }} graph={graph} onPick={pickConnectionTemplate} onClose={() => { setConnection(null); setMenu(null) }} />}</div><NodeInspector node={selectedNode} graph={graph} projectId={projectId} worldGroupId={props.worldGroupId} onChange={changeGraph} onRemove={() => selectedNode && removeNode(selectedNode.id)} onRun={nodeId => void runGraph(nodeId)} /></div>
+    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-bg-surface px-3"><Workflow className="h-4 w-4 text-accent" /><input aria-label={t('workspace.graphNameAria')} value={draft.name} onChange={event => { setDraft({ ...draft, name: event.target.value }); setDirty(true) }} className="w-56 rounded border border-transparent bg-transparent px-2 py-1 text-sm font-medium text-text-primary hover:border-border focus:border-accent focus:outline-none" /><span className="text-[10px] text-text-muted">{saving ? t('workspace.savingStatus') : dirty ? t('workspace.dirtyStatus') : t('workspace.savedStatus')}</span><div className="ml-auto flex items-center gap-2"><button type="button" onClick={() => void save(true)} className="inline-flex items-center gap-1 rounded px-2 py-1.5 text-xs text-text-secondary hover:bg-bg-hover"><Save className="h-3.5 w-3.5" />{t('workspace.saveButton')}</button>{isRunning ? <><button type="button" onClick={pauseRun} title={t('workspace.pauseRun')} aria-label={t('workspace.pauseRun')} className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-1.5 text-xs text-amber-800"><Pause className="h-3.5 w-3.5" />{t('workspace.pauseRun')}</button><button type="button" onClick={cancelRun} title={t('workspace.cancelRun')} aria-label={t('workspace.cancelRun')} className="inline-flex items-center gap-1 rounded bg-error/10 px-2 py-1.5 text-xs text-error"><CircleStop className="h-3.5 w-3.5" />{t('workspace.cancelRun')}</button></> : run?.status === 'paused' || run?.status === 'failed' ? <button type="button" onClick={() => void runGraph(undefined, 'resume')} className="inline-flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"><RotateCcw className="h-3.5 w-3.5" />{t('workspace.resumeRun')}</button> : <button type="button" onClick={() => void runGraph()} className="inline-flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover"><Play className="h-3.5 w-3.5" />{t('workspace.runAll')}</button>}</div></header>
+    {legacySourceVersion != null && <div className="flex shrink-0 items-center gap-3 border-b border-amber-200 bg-amber-50 px-4 py-2 text-[11px] text-amber-900"><span className="min-w-0 flex-1">{t('workspace.legacyBanner', { version: legacySourceVersion })}</span><button type="button" onClick={() => void save(true)} className="inline-flex shrink-0 items-center gap-1 rounded border border-amber-300 bg-white px-2 py-1 font-medium text-amber-900 hover:bg-amber-100"><Save className="h-3 w-3" />{t('workspace.convertAndSave')}</button></div>}
+    <section className="flex flex-wrap items-center gap-1 border-b border-border bg-bg-surface px-3 py-1.5 text-[10px] text-text-muted"><button type="button" title={t('workspace.templateToggle')} aria-label={t('workspace.templateToggle')} onClick={() => setShowTemplates(value => !value)} className="inline-flex items-center gap-1 rounded px-2 py-1 text-text-secondary hover:bg-bg-hover"><LayoutTemplate className="h-3 w-3" />{t('workspace.templateToggle')}</button><button type="button" title={t('workspace.autoLayout')} aria-label={t('workspace.autoLayout')} onClick={() => changeGraph(autoLayoutAuthoringGraph(graph))} className="inline-flex items-center gap-1 rounded px-2 py-1 text-text-secondary hover:bg-bg-hover"><LayoutDashboard className="h-3 w-3" />{t('workspace.autoLayout')}</button><button type="button" title={t('workspace.copySelection')} aria-label={t('workspace.copySelection')} onClick={copySelection} className="inline-flex items-center gap-1 rounded px-2 py-1 text-text-secondary hover:bg-bg-hover"><Copy className="h-3 w-3" />{t('workspace.copySelection')}</button><button type="button" title={t('workspace.alignHorizontal')} aria-label={t('workspace.alignHorizontal')} onClick={() => alignSelection('y')} className="rounded p-1 text-text-secondary hover:bg-bg-hover"><AlignCenterHorizontal className="h-3 w-3" /></button><button type="button" title={t('workspace.alignVertical')} aria-label={t('workspace.alignVertical')} onClick={() => alignSelection('x')} className="rounded p-1 text-text-secondary hover:bg-bg-hover"><AlignCenterVertical className="h-3 w-3" /></button><button type="button" title={t('workspace.groupSelection')} aria-label={t('workspace.groupSelection')} onClick={groupSelection} className="inline-flex items-center gap-1 rounded px-2 py-1 text-text-secondary hover:bg-bg-hover"><Users className="h-3 w-3" />{t('workspace.groupSelection')}</button><span className="ml-auto">{t('workspace.statsBar', { selected: selectedNodeIds.length, nodes: graph.nodes.length, edges: graph.edges.length, changes: graphDiff.nodesChanged + graphDiff.nodesAdded + graphDiff.nodesRemoved + graphDiff.edgesAdded + graphDiff.edgesRemoved })}</span>{showTemplates && <div className="absolute z-30 mt-32 grid w-80 gap-1 rounded border border-border bg-bg-surface p-2 shadow-xl sm:grid-cols-2">{AUTHORING_OFFICIAL_TEMPLATES.map(template => <button key={template.id} type="button" onClick={() => applyOfficialTemplate(template.id)} className="rounded p-2 text-left hover:bg-bg-hover"><span className="block text-[10px] font-semibold text-text-primary">{t(template.nameKey)}</span><span className="mt-0.5 block text-[9px] text-text-muted">{t(template.descriptionKey)}</span></button>)}</div>}</section>
+    <div className="flex min-h-0 flex-1"><div className="flex w-60 shrink-0 flex-col border-r border-border bg-bg-surface"><div className="border-b border-border p-3"><div className="mb-2 flex items-center justify-between"><span className="text-[10px] font-semibold tracking-wide text-text-muted">{t('workspace.myGraphs')}</span><div className="flex items-center gap-1"><button type="button" title={t('workspace.deleteCurrentGraph')} aria-label={t('workspace.deleteCurrentGraph')} onClick={() => void removeFlow()} className="rounded p-1 text-text-muted hover:bg-error/10 hover:text-error"><Trash2 className="h-3.5 w-3.5" /></button><button type="button" title={t('workspace.generateOverviewFromProject')} aria-label={t('workspace.generateOverviewFromProject')} onClick={() => void createOverview()} className="rounded p-1 text-text-muted hover:bg-bg-hover"><LayoutTemplate className="h-3.5 w-3.5" /></button><button type="button" title={t('workspace.newGraph')} aria-label={t('workspace.newGraph')} onClick={() => void createFlow()} className="rounded p-1 text-accent hover:bg-accent/10"><Plus className="h-3.5 w-3.5" /></button></div></div>{flows.map(flow => <button key={flow.id} type="button" onClick={() => setSelectedFlowId(flow.id!)} className={`mb-1 w-full truncate rounded px-2 py-1.5 text-left text-[11px] ${flow.id === selectedFlowId ? 'bg-accent/15 text-accent' : 'text-text-secondary hover:bg-bg-hover'}`}>{flow.name}</button>)}</div><NodeLibrary graph={graph} onAdd={template => addTemplate(template)} onSelectNode={selectNode} /></div><div className="relative flex min-w-0 flex-1"><AuthoringCanvas graph={graph} selectedNodeId={selectedNodeId} selectedNodeIds={selectedNodeSet} candidates={candidates} freshness={freshness} onSelectNode={selectNode} onSelectionChange={selectMany} onToggleFavorite={toggleFavorite} onChange={changeGraph} onBeginConnection={beginConnection} onCanvasConnection={openConnectionMenu} onRemoveNode={removeNode} />{connection && menu && <SmartConnectionMenu anchor={{ ...connection, x: menu.x, y: menu.y }} graph={graph} onPick={pickConnectionTemplate} onClose={() => { setConnection(null); setMenu(null) }} />}</div><NodeInspector node={selectedNode} graph={graph} projectId={projectId} worldGroupId={props.worldGroupId} onChange={changeGraph} onRemove={() => selectedNode && removeNode(selectedNode.id)} onRun={nodeId => void runGraph(nodeId)} /></div>
     <section className="shrink-0 border-t border-border bg-bg-surface">
       <button type="button" onClick={() => setShowRuns(value => !value)} className="flex h-9 w-full items-center gap-2 px-4 text-left text-[11px] text-text-secondary hover:bg-bg-hover">
         <History className="h-3.5 w-3.5" />
-        <span>运行记录</span>
-        <span className="text-text-muted">{run ? `${run.status} · ${new Date(run.startedAt).toLocaleString()}` : '尚未运行'}</span>
+        <span>{t('workspace.runsToggle')}</span>
+        <span className="text-text-muted">{run ? `${run.status} · ${new Date(run.startedAt).toLocaleString()}` : t('workspace.notYetRun')}</span>
         <span className="ml-auto">{showRuns ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}</span>
       </button>
-      <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-2 text-[10px] text-text-muted"><span>本次计划：{selectedPlan?.estimatedAiCalls ?? executionEstimate?.estimatedAiCalls ?? '—'} 次模型调用 · 最多 {(selectedPlan?.estimatedMaxOutputTokens ?? executionEstimate?.estimatedMaxOutputTokens ?? 0).toLocaleString()} 输出 tokens</span>{run && staleNodeIds.size > 0 && !isRunning && <button type="button" onClick={() => void runGraph(undefined, 'stale')} className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-1 text-amber-800 hover:bg-amber-200"><RotateCcw className="h-3 w-3" />重跑 {staleNodeIds.size} 个过期节点</button>}<span className="ml-auto">保存差异：+{graphDiff.nodesAdded}/-{graphDiff.nodesRemoved} 节点 · +{graphDiff.edgesAdded}/-{graphDiff.edgesRemoved} 连线</span></div>
+      <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-2 text-[10px] text-text-muted"><span>{t('workspace.planEstimate', { calls: selectedPlan?.estimatedAiCalls ?? executionEstimate?.estimatedAiCalls ?? '—', tokens: (selectedPlan?.estimatedMaxOutputTokens ?? executionEstimate?.estimatedMaxOutputTokens ?? 0).toLocaleString() })}</span>{run && staleNodeIds.size > 0 && !isRunning && <button type="button" onClick={() => void runGraph(undefined, 'stale')} className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-1 text-amber-800 hover:bg-amber-200"><RotateCcw className="h-3 w-3" />{t('workspace.rerunStale', { count: staleNodeIds.size })}</button>}<span className="ml-auto">{t('workspace.diffSummary', { addedNodes: graphDiff.nodesAdded, removedNodes: graphDiff.nodesRemoved, addedEdges: graphDiff.edgesAdded, removedEdges: graphDiff.edgesRemoved })}</span></div>
       {showRuns && (
         <div className="grid max-h-72 grid-cols-2 gap-0 overflow-y-auto border-t border-border">
           <div className="border-r border-border p-3">
-            <div className="mb-2 flex items-center gap-1 text-[10px] font-semibold text-text-secondary"><Database className="h-3 w-3" />实际输入快照</div>
-            {selectedSnapshot ? <><p className="text-[10px] text-text-muted">估算输入：{selectedSnapshot.totalTokens.toLocaleString()} tokens</p>{selectedSnapshot.inputs.map(input => <details key={`${input.sourceNodeId}:${input.targetPortId}`} className="mt-2 rounded border border-border bg-bg-base p-2"><summary className="cursor-pointer text-[10px]">{input.targetPortId} ← {input.sourceNodeId} · {input.tokens} tokens</summary><pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap text-[9px] text-text-muted">{input.content}</pre></details>)}</> : <p className="text-[10px] text-text-muted">选择已运行节点查看它实际收到的输入。</p>}
+            <div className="mb-2 flex items-center gap-1 text-[10px] font-semibold text-text-secondary"><Database className="h-3 w-3" />{t('workspace.actualInputSnapshot')}</div>
+            {selectedSnapshot ? <><p className="text-[10px] text-text-muted">{t('workspace.estimatedInputTokens', { count: selectedSnapshot.totalTokens.toLocaleString() })}</p>{selectedSnapshot.inputs.map(input => <details key={`${input.sourceNodeId}:${input.targetPortId}`} className="mt-2 rounded border border-border bg-bg-base p-2"><summary className="cursor-pointer text-[10px]">{input.targetPortId} ← {input.sourceNodeId} · {input.tokens} tokens</summary><pre className="mt-2 max-h-24 overflow-auto whitespace-pre-wrap text-[9px] text-text-muted">{input.content}</pre></details>)}</> : <p className="text-[10px] text-text-muted">{t('workspace.snapshotEmpty')}</p>}
           </div>
           <div className="p-3">
             <div className="mb-2 flex items-center justify-between">
-              <span className="text-[10px] font-semibold text-text-secondary">候选输出</span>
+              <span className="text-[10px] font-semibold text-text-secondary">{t('workspace.candidateOutput')}</span>
               <div className="flex items-center gap-2">
                 {selectedCandidate?.variants && selectedCandidate.variants.length > 1 && (
                   <label className="flex items-center gap-1 text-[10px] text-text-muted">
-                    <span>候选</span>
+                    <span>{t('workspace.variantSelectorLabel')}</span>
                     <select
-                      aria-label="选择候选版本"
+                      aria-label={t('workspace.chooseVariantAria')}
                       value={Math.max(0, selectedCandidate.variants.findIndex(item => item === selectedCandidate.output))}
                       onChange={event => {
                         const index = Number(event.target.value)
@@ -701,32 +721,32 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
                       }}
                       className="rounded border border-border bg-bg-base px-1 py-0.5 text-[10px] text-text-secondary"
                     >
-                      {selectedCandidate.variants.map((_, index) => <option key={index} value={index}>版本 {index + 1}</option>)}
+                      {selectedCandidate.variants.map((_, index) => <option key={index} value={index}>{t('workspace.variantOption', { index: index + 1 })}</option>)}
                     </select>
                   </label>
                 )}
-                {selectedCandidate && !selectedNode?.binding?.ref && <button type="button" onClick={() => void adoptCandidate(selectedNodeId!)} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[10px] font-medium text-white hover:bg-accent-hover"><Check className="h-3 w-3" />{selectedCandidate.status === 'adopted' ? '已采纳' : '确认采纳'}</button>}
+                {selectedCandidate && !selectedNode?.binding?.ref && <button type="button" onClick={() => void adoptCandidate(selectedNodeId!)} className="inline-flex items-center gap-1 rounded bg-accent px-2 py-1 text-[10px] font-medium text-white hover:bg-accent-hover"><Check className="h-3 w-3" />{selectedCandidate.status === 'adopted' ? t('workspace.adopted') : t('workspace.confirmAdopt')}</button>}
               </div>
             </div>
             {selectedCandidate ? <>
-              <textarea aria-label="候选输出" value={selectedCandidate.output} onChange={event => setCandidates(current => ({ ...current, [selectedCandidate.nodeId]: { ...selectedCandidate, output: event.target.value, status: 'candidate' } }))} className="h-40 w-full resize-y rounded border border-border bg-bg-base p-2 text-[10px] leading-4 text-text-primary outline-none focus:border-accent" />
+              <textarea aria-label={t('workspace.candidateOutputAria')} value={selectedCandidate.output} onChange={event => setCandidates(current => ({ ...current, [selectedCandidate.nodeId]: { ...selectedCandidate, output: event.target.value, status: 'candidate' } }))} className="h-40 w-full resize-y rounded border border-border bg-bg-base p-2 text-[10px] leading-4 text-text-primary outline-none focus:border-accent" />
               {selectedCandidate.variants && selectedCandidate.variants.length > 1 && (
                 <details className="mt-2 rounded border border-border bg-bg-base">
-                  <summary className="cursor-pointer px-2 py-1.5 text-[10px] font-medium text-text-secondary">展开原始候选对照（{selectedCandidate.variants.length} 个版本）</summary>
+                  <summary className="cursor-pointer px-2 py-1.5 text-[10px] font-medium text-text-secondary">{t('workspace.expandVariants', { count: selectedCandidate.variants.length })}</summary>
                   <div className="border-t border-border px-2 py-1.5 text-[9px] text-text-muted">
-                    {compareCandidateVariants(selectedCandidate.output, selectedCandidate.variants).filter(diff => selectedCandidate.variants?.[diff.variantIndex] !== selectedCandidate.output).map(diff => <span key={diff.variantIndex} className="mr-3">版本 {diff.variantIndex + 1}：{diff.changedLines} 行变化（+{diff.addedLines}/-{diff.removedLines}）</span>)}
+                    {compareCandidateVariants(selectedCandidate.output, selectedCandidate.variants).filter(diff => selectedCandidate.variants?.[diff.variantIndex] !== selectedCandidate.output).map(diff => <span key={diff.variantIndex} className="mr-3">{t('workspace.variantDiff', { index: diff.variantIndex + 1, changedLines: diff.changedLines, addedLines: diff.addedLines, removedLines: diff.removedLines })}</span>)}
                   </div>
                   <div className="grid max-h-52 grid-cols-2 gap-2 overflow-y-auto border-t border-border p-2">
                     {selectedCandidate.variants.map((variant, index) => (
                       <article key={`${selectedCandidate.nodeId}:variant:${index}`} className="min-w-0 rounded border border-border/70 bg-bg-surface p-2">
-                        <p className="mb-1 text-[9px] font-semibold text-accent">版本 {index + 1}</p>
+                        <p className="mb-1 text-[9px] font-semibold text-accent">{t('workspace.variantTitle', { index: index + 1 })}</p>
                         <pre className="max-h-36 overflow-auto whitespace-pre-wrap text-[9px] leading-4 text-text-secondary">{variant}</pre>
                       </article>
                     ))}
                   </div>
                 </details>
               )}
-            </> : <p className="text-[10px] text-text-muted">选择已运行节点查看候选输出。</p>}
+            </> : <p className="text-[10px] text-text-muted">{t('workspace.candidateEmpty')}</p>}
           </div>
         </div>
       )}

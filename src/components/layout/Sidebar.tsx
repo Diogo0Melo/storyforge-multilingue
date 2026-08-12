@@ -1,11 +1,13 @@
-import { useState, type ComponentType, type ReactElement } from 'react'
+import { useMemo, useState, type ComponentType, type ReactElement } from 'react'
 import { ArrowLeft, ChevronLeft, ChevronRight, ChevronDown, Settings } from 'lucide-react'
 import { APP_BUILD_ID } from '../../lib/version'
 import {
-  MODULE_CONTENT_TYPE_DEFINITIONS, NAV_TREE, getBranchChain,
-  type SidebarModule, type TreeLeaf, type TreeNode,
+  buildModuleContentTypeDefinitions, buildNavTree, getBranchChain,
+  type ModuleContentTypeDefinition, type ModuleContentType,
+  type SidebarModule, type TreeLeaf, type TreeNode, type TreeSection,
 } from './sidebar-tree'
 import ContentTypeBadge from './ContentTypeBadge'
+import { useDomainT } from '../../i18n'
 
 // 重导出供其他组件用（保留旧 import 路径）
 export type { SidebarModule }
@@ -38,12 +40,22 @@ export default function Sidebar({
   active, onSelect, onBack, projectName, collapsed, onToggleCollapse, hiddenModules,
 }: SidebarProps) {
   const normActive = normalize(active)
+  const { t, lang } = useDomainT('layout')
+
+  // 语言切换时重建导航树与内容类型定义，避免模块级常量在 i18n 初始化前求值。
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- lang 是响应式触发器，重建依赖语言变化
+  const navTree = useMemo<TreeSection[]>(() => buildNavTree(), [lang])
+  const contentTypeDefinitions = useMemo<Record<ModuleContentType, ModuleContentTypeDefinition>>(
+    () => buildModuleContentTypeDefinitions(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- 同上
+    [lang],
+  )
 
   // 默认展开 active 所在的 branch + 全部 branch（首次打开）
   const [expanded, setExpanded] = useState<Set<string>>(() => {
-    const init = new Set<string>(getBranchChain(normActive))
+    const init = new Set<string>(getBranchChain(normActive, navTree))
     // 默认全部 branch 展开（避免用户找不到）
-    for (const sec of NAV_TREE) {
+    for (const sec of navTree) {
       if (sec.children) collectBranchIds(sec.children, init)
     }
     return init
@@ -66,11 +78,11 @@ export default function Sidebar({
       <div className={`border-b border-border ${collapsed ? 'p-2' : 'p-3'}`}>
         <button
           onClick={onBack}
-          title="返回首页"
+          title={t('sidebar.backHome')}
           className={`flex items-center gap-1.5 text-text-secondary hover:text-text-primary text-sm transition-colors ${collapsed ? 'justify-center w-full' : 'mb-2'}`}
         >
           <ArrowLeft className="w-4 h-4 shrink-0" />
-          {!collapsed && <span>返回首页</span>}
+          {!collapsed && <span>{t('sidebar.backHome')}</span>}
         </button>
         {!collapsed && (
           <h2 className="text-text-primary font-semibold text-sm truncate px-1 mt-1" title={projectName}>
@@ -81,7 +93,7 @@ export default function Sidebar({
 
       {/* 导航 */}
       <nav className="flex-1 py-1.5 overflow-y-auto overflow-x-hidden">
-        {NAV_TREE.map(section => (
+        {navTree.map(section => (
           <div key={section.sectionId} className="mb-1">
             {/* section 标题 — 当 section 本身就是个单叶子（如「提示词库」），用按钮代替标题，避免重复 */}
             {!collapsed && !section.rootLeaf ? (
@@ -102,6 +114,7 @@ export default function Sidebar({
                 collapsed={collapsed}
                 depth={0}
                 onSelect={onSelect}
+                contentTypeDefinitions={contentTypeDefinitions}
               />
             )}
 
@@ -115,6 +128,7 @@ export default function Sidebar({
               onSelect,
               onToggle: toggle,
               hiddenModules,
+              contentTypeDefinitions,
             }))}
           </div>
         ))}
@@ -124,7 +138,7 @@ export default function Sidebar({
       <div className="border-t border-border p-2 flex items-center justify-between">
         <button
           onClick={() => onSelect('settings')}
-          title="设置"
+          title={t('sidebar.settingsTitle')}
           className={`p-1.5 rounded transition-colors ${
             normActive === 'settings'
               ? 'text-accent bg-accent/10'
@@ -134,13 +148,13 @@ export default function Sidebar({
           <Settings className="w-4 h-4" />
         </button>
         {!collapsed && (
-          <span className="text-[10px] text-text-muted font-mono" title="当前版本号">
+          <span className="text-[10px] text-text-muted font-mono" title={t('sidebar.versionTitle')}>
             {APP_BUILD_ID}
           </span>
         )}
         <button
           onClick={onToggleCollapse}
-          title={collapsed ? '展开侧边栏' : '折叠侧边栏'}
+          title={collapsed ? t('sidebar.expand') : t('sidebar.collapse')}
           className="p-1.5 rounded text-text-muted hover:text-text-primary hover:bg-bg-hover transition-colors"
         >
           {collapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
@@ -161,6 +175,7 @@ interface RenderArgs {
   onSelect: (m: SidebarModule) => void
   onToggle: (branchId: string) => void
   hiddenModules?: Set<SidebarModule>
+  contentTypeDefinitions: Record<ModuleContentType, ModuleContentTypeDefinition>
 }
 
 function renderNode(args: RenderArgs): ReactElement | null {
@@ -175,6 +190,7 @@ function renderNode(args: RenderArgs): ReactElement | null {
         collapsed={collapsed}
         depth={depth}
         onSelect={onSelect}
+        contentTypeDefinitions={args.contentTypeDefinitions}
       />
     )
   }
@@ -209,20 +225,22 @@ function renderNode(args: RenderArgs): ReactElement | null {
 // ── 叶子按钮 ──────────────────────────────────────────────────────────
 
 function NavLeafButton({
-  leaf, active, collapsed, depth, onSelect,
+  leaf, active, collapsed, depth, onSelect, contentTypeDefinitions,
 }: {
   leaf: TreeLeaf
   active: boolean
   collapsed: boolean
   depth: number
   onSelect: (id: SidebarModule) => void
+  contentTypeDefinitions: Record<ModuleContentType, ModuleContentTypeDefinition>
 }) {
   const Icon: ComponentType<{ className?: string }> = leaf.icon
-  const contentTypeDefinition = MODULE_CONTENT_TYPE_DEFINITIONS[leaf.contentType]
+  const contentTypeDefinition = contentTypeDefinitions[leaf.contentType]
+  const { t } = useDomainT('layout')
   return (
     <button
       onClick={() => onSelect(leaf.id)}
-      title={collapsed ? `${leaf.label} · ${contentTypeDefinition.label}：${contentTypeDefinition.description}` : undefined}
+      title={collapsed ? t('sidebar.leafTooltipCollapsed', { label: leaf.label, type: contentTypeDefinition.label, description: contentTypeDefinition.description }) : undefined}
       className={`
         w-full flex items-center gap-2 text-sm transition-colors
         ${collapsed ? 'justify-center px-0 py-2.5' : 'pr-3 py-1.5'}

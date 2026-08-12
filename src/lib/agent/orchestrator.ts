@@ -1,4 +1,5 @@
 import JSON5 from 'json5'
+import { getT } from '../../i18n'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { AGENT_ROLE_CATEGORIES } from '../ai/task-routing'
 import { useChapterStore } from '../../stores/chapter'
@@ -129,10 +130,10 @@ function extractJsonObject(text: string): Record<string, unknown> {
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text)?.[1] ?? text
   const start = fenced.indexOf('{')
   const end = fenced.lastIndexOf('}')
-  if (start < 0 || end < start) throw new Error('主 Agent 没有返回任务计划 JSON。')
+  if (start < 0 || end < start) throw new Error(getT()('agent:orchestrator.planNoJson'))
   const parsed = JSON5.parse(fenced.slice(start, end + 1)) as unknown
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error('主 Agent 任务计划必须是对象。')
+    throw new Error(getT()('agent:orchestrator.planMustBeObject'))
   }
   return parsed as Record<string, unknown>
 }
@@ -223,8 +224,8 @@ function fallbackPlan(request: string): MasterAgentPlan {
   })
   return {
     summary: hasProse && hasOutline
-      ? '先生成并确认章节大纲；确认进入正式数据后，再继续生成正文。'
-      : '根据用户要求调度相关创作领域。',
+      ? getT()('agent:orchestrator.summaryStagedProse')
+      : getT()('agent:orchestrator.summaryFallback'),
     tasks,
   }
 }
@@ -293,10 +294,10 @@ function sanitizePlan(raw: Record<string, unknown>, request: string): MasterAgen
   }
   return {
     summary: stagedProse
-      ? '先生成并确认章节大纲；确认进入正式数据后，再继续生成正文。'
+      ? getT()('agent:orchestrator.summaryStagedProse')
       : typeof raw.summary === 'string' && raw.summary.trim()
       ? raw.summary.trim().slice(0, 500)
-      : '主 Agent 已拆分本轮创作任务。',
+      : getT()('agent:orchestrator.summarySplit'),
     tasks,
   }
 }
@@ -309,7 +310,7 @@ export async function createMasterAgentPlan(input: {
   signal?: AbortSignal
 }, dependencies: PlannerDependencies = {}): Promise<MasterAgentPlan> {
   const request = input.request.trim()
-  if (request.length < 2) throw new Error('请至少输入 2 个字符的创作要求。')
+  if (request.length < 2) throw new Error(getT()('agent:orchestrator.requestTooShort'))
   const config = resolveRequestConfig(
     useAIConfigStore.getState().config,
     { category: AGENT_ROLE_CATEGORIES.orchestrator },
@@ -344,7 +345,7 @@ export async function createMasterAgentPlan(input: {
   let settled = false
   try {
     reservation = input.budget?.reserveCall({
-      label: '主 Agent 编排',
+      label: getT()('agent:orchestrator.callLabelMaster'),
       messages,
       maxOutputTokens: 1_800,
     }) ?? null
@@ -378,7 +379,7 @@ function topologicalTasks(plan: MasterAgentPlan): MasterAgentTask[] {
     const available = plan.tasks.filter(task => (
       !done.has(task.id) && task.dependsOn.every(id => done.has(id) || !byId.has(id))
     ))
-    if (!available.length) throw new Error('主 Agent 任务计划包含循环依赖。')
+    if (!available.length) throw new Error(getT()('agent:orchestrator.planCyclicDependency'))
     available.forEach(task => {
       result.push(task)
       done.add(task.id)
@@ -422,7 +423,7 @@ export async function executeMasterAgentPlan(input: {
           node: prepared.node,
           prepared: prepared.prepared,
           budget,
-          callLabel: '世界领域 Agent',
+          callLabel: getT()('agent:orchestrator.callLabelWorldOrigin'),
           maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
         })
         const draft = result.output
@@ -431,7 +432,7 @@ export async function executeMasterAgentPlan(input: {
             version: 1,
             taskId: task.id,
             agentId: task.agentId,
-            label: '世界来源',
+            label: getT()('agent:copilot.worldOrigin.labelWorldOrigin'),
             contextSources: prepared.contextSources,
             contextEvidence: prepared.contextEvidence,
             baseSnapshot: prepared.snapshot,
@@ -456,7 +457,7 @@ export async function executeMasterAgentPlan(input: {
           node: prepared.node,
           prepared: prepared.prepared,
           budget,
-          callLabel: '角色领域 Agent',
+          callLabel: getT()('agent:orchestrator.callLabelCharacter'),
           maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
         })
         const draft = JSON.stringify(result.output, null, 2)
@@ -465,7 +466,7 @@ export async function executeMasterAgentPlan(input: {
             version: 1,
             taskId: task.id,
             agentId: task.agentId,
-            label: '新角色',
+            label: getT()('agent:copilot.character.labelNewCharacter'),
             contextSources: prepared.contextSources,
             contextEvidence: prepared.contextEvidence,
             baseSnapshot: prepared.snapshot,
@@ -481,7 +482,7 @@ export async function executeMasterAgentPlan(input: {
         const selectedFragmentIds = parseInspirationFragments(workspace?.fragments)
           .slice(0, MAX_INSPIRATION_FRAGMENTS)
           .map(fragment => fragment.id)
-        if (!selectedFragmentIds.length) throw new Error('项目尚无已保存的灵感碎片。')
+        if (!selectedFragmentIds.length) throw new Error(getT()('agent:copilot.inspiration.noSavedFragments'))
         const prepared = await prepareInspirationCopilot({
           projectId: input.projectId,
           selectedFragmentIds,
@@ -494,7 +495,7 @@ export async function executeMasterAgentPlan(input: {
           node: prepared.node,
           prepared: prepared.prepared,
           budget,
-          callLabel: '灵感领域 Agent',
+          callLabel: getT()('agent:orchestrator.callLabelInspiration'),
           maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
         })
         const draft = JSON.stringify(result.output, null, 2)
@@ -503,7 +504,7 @@ export async function executeMasterAgentPlan(input: {
             version: 1,
             taskId: task.id,
             agentId: task.agentId,
-            label: '灵感反推版本',
+            label: getT()('agent:copilot.inspiration.labelVersion'),
             contextSources: prepared.contextSources,
             contextEvidence: prepared.contextEvidence,
             baseSnapshot: prepared.snapshot,
@@ -530,7 +531,7 @@ export async function executeMasterAgentPlan(input: {
           node: prepared.node,
           prepared: prepared.prepared,
           budget,
-          callLabel: '大纲领域 Agent',
+          callLabel: getT()('agent:orchestrator.callLabelOutline'),
           maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
           validate: output => validateDomainCandidateCanon({
             agentId: task.agentId,
@@ -573,7 +574,7 @@ export async function executeMasterAgentPlan(input: {
           node: prepared.node,
           prepared: prepared.prepared,
           budget,
-          callLabel: '正文领域 Agent',
+          callLabel: getT()('agent:orchestrator.callLabelProse'),
           maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
           validate: output => validateDomainCandidateCanon({
             agentId: task.agentId,
@@ -691,7 +692,7 @@ async function assertCandidateDependenciesAdopted(
     return candidateId == null || !adoptedCandidateIds.has(candidateId)
   })
   if (missing.length) {
-    throw new Error(`请先采纳本候选依赖的上游结果：${missing.join('、')}。`)
+    throw new Error(getT()('agent:orchestrator.dependencyNotAdopted', { ids: missing.join('、') }))
   }
 }
 
@@ -716,15 +717,15 @@ export async function adoptMasterCandidate(input: {
             : parseProseCandidateDraft(input.draft)
     const result = await adoptGenerationNodeOutput(input.runtime.runtimeNode, output)
     if (!result.adopted) {
-      throw new Error(result.gate?.issues.map(issue => issue.message).join('；') || '候选没有通过确认闸门。')
+      throw new Error(result.gate?.issues.map(issue => issue.message).join('；') || getT()('agent:orchestrator.gateRejected'))
     }
   } else if (input.payload.agentId === 'world-origin') {
     const base = input.payload.baseSnapshot as WorldOriginSnapshot
     if (!sameWorldSnapshot(base, await currentWorldSnapshot(input.projectId, input.worldGroupId))) {
-      throw new Error('世界来源已在候选生成后发生变化，请重新生成。')
+      throw new Error(getT()('agent:orchestrator.worldOriginStale'))
     }
     const draft = input.draft.trim()
-    if (draft.length < 4 || draft.length > 12_000) throw new Error('世界来源候选长度无效。')
+    if (draft.length < 4 || draft.length > 12_000) throw new Error(getT()('agent:orchestrator.worldOriginLengthInvalid'))
     await adopt({
       projectId: input.projectId,
       worldGroupId: input.worldGroupId,
@@ -735,10 +736,10 @@ export async function adoptMasterCandidate(input: {
   } else if (input.payload.agentId === 'character') {
     const base = input.payload.baseSnapshot as CharacterRosterSnapshot
     const current = await currentRosterSnapshot(input.projectId, input.worldGroupId)
-    if (base.serialized !== current.serialized) throw new Error('角色主档已变化，请重新生成。')
+    if (base.serialized !== current.serialized) throw new Error(getT()('agent:orchestrator.characterRosterChanged'))
     const candidate = parseCharacterCandidateDraft(input.draft)
     const normalized = candidate.name.normalize('NFKC').trim().toLocaleLowerCase('zh-CN')
-    if (current.visibleNames.includes(normalized)) throw new Error(`当前世界已存在角色“${candidate.name}”。`)
+    if (current.visibleNames.includes(normalized)) throw new Error(getT()('agent:orchestrator.characterDuplicate', { name: candidate.name }))
     await adopt({
       projectId: input.projectId,
       worldGroupId: input.worldGroupId,
@@ -749,7 +750,7 @@ export async function adoptMasterCandidate(input: {
   } else if (input.payload.agentId === 'inspiration') {
     const base = input.payload.baseSnapshot as InspirationWorkspaceSnapshot
     const current = await currentInspirationSnapshot(input.projectId)
-    if (JSON.stringify(base) !== JSON.stringify(current)) throw new Error('灵感工作区已变化，请重新生成。')
+    if (JSON.stringify(base) !== JSON.stringify(current)) throw new Error(getT()('agent:orchestrator.inspirationWorkspaceChanged'))
     const mode = input.payload.mode ?? 'single'
     const result = parseInspirationCandidateDraft(input.draft, mode)
     await useInspirationWorkspaceStore.getState().load(input.projectId)
@@ -761,7 +762,7 @@ export async function adoptMasterCandidate(input: {
     })
   } else if (input.payload.agentId === 'outline') {
     const mode = input.payload.outlineMode
-    if (!mode) throw new Error('大纲候选缺少写回模式，请重新生成。')
+    if (!mode) throw new Error(getT()('agent:orchestrator.outlineMissingMode'))
     await adoptRestoredOutlineCandidate({
       projectId: input.projectId,
       worldGroupId: input.worldGroupId,
@@ -772,7 +773,7 @@ export async function adoptMasterCandidate(input: {
     })
   } else {
     if (!input.payload.proseOperation || input.payload.proseOutlineNodeId == null) {
-      throw new Error('正文候选缺少目标章节或写回模式，请重新生成。')
+      throw new Error(getT()('agent:orchestrator.proseMissingTarget'))
     }
     await adoptRestoredProseCandidate({
       projectId: input.projectId,
@@ -791,16 +792,16 @@ export async function adoptMasterCandidate(input: {
     useChapterStore.getState().loadAll(input.projectId),
   ])
   return input.payload.agentId === 'world-origin'
-    ? '世界来源已写入项目。'
+    ? getT()('agent:orchestrator.adoptSuccessWorldOrigin')
     : input.payload.agentId === 'character'
-      ? `角色“${(parseCharacterCandidateDraft(input.draft) as CharacterCopilotCandidate).name}”已加入项目。`
+      ? getT()('agent:orchestrator.adoptSuccessCharacter', { name: (parseCharacterCandidateDraft(input.draft) as CharacterCopilotCandidate).name })
       : input.payload.agentId === 'inspiration'
-        ? `已保存新的${input.payload.mode === 'multiworld' ? '多世界' : '单世界'}灵感版本。`
+        ? input.payload.mode === 'multiworld' ? getT()('agent:orchestrator.adoptSuccessInspirationMulti') : getT()('agent:orchestrator.adoptSuccessInspirationSingle')
         : input.payload.agentId === 'outline'
           ? input.payload.outlineMode === 'volumes'
-            ? '卷级大纲已写入项目。'
-            : '章节大纲已写入目标卷。'
+            ? getT()('agent:orchestrator.adoptSuccessVolumeOutline')
+            : getT()('agent:orchestrator.adoptSuccessChapterOutline')
           : input.payload.proseOperation === 'continue'
-            ? '续写内容已追加到目标章节。'
-            : '正文已写入目标章节。'
+            ? getT()('agent:orchestrator.adoptSuccessProseContinue')
+            : getT()('agent:orchestrator.adoptSuccessProseGenerate')
 }

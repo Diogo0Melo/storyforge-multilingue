@@ -2,6 +2,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import { resolveRequestConfig, streamChat, type StreamResult, type AICallMeta } from '../lib/ai/client'
 import { getAIConfigRequiredMessage, isAIConfigReady } from '../lib/ai/config-readiness'
 import { useAIConfigStore } from '../stores/ai-config'
+import { getT } from '../i18n'
 import {
   type AIGenerationSession,
   selectAIGenerationSession,
@@ -154,7 +155,7 @@ export function useAIStream(sessionKey?: string): UseAIStreamReturn {
       if ((err as Error).name === 'AbortError') {
         // 用户主动停止，不算错误
       } else {
-        const errMsg = err instanceof Error ? err.message : '未知错误'
+        const errMsg = err instanceof Error ? err.message : getT()('errors-lib:ai.unknownError')
         if (sessionKey) patchShared({ error: errMsg })
         else setError(errMsg)
       }

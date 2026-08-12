@@ -7,6 +7,7 @@ import {
 } from '../ai/adapters/outline-adapter'
 import type { AssembleContextResult } from '../registry/types'
 import type { OutlineGenerationRequest } from './generation-request'
+import { getT } from '../../i18n'
 
 export type OutlineGenerationPlan = {
   status: 'ready'
@@ -52,9 +53,10 @@ export function outlineGenerationTargetError(
 ): string | null {
   if (request.kind === 'volumes') return null
   if (findGenerationTargetVolume(request, nodes, volumes)) return null
+  const t = getT()
   return request.kind === 'single-volume'
-    ? '要补全的卷不存在，请重新选择。'
-    : '要生成章纲的卷不存在，请重新选择。'
+    ? t('errors-lib:outline.targetVolumeMissingForCompletion')
+    : t('errors-lib:outline.targetVolumeMissingForChapter')
 }
 
 export function buildOutlineGenerationPlan(input: {
@@ -82,7 +84,10 @@ export function buildOutlineGenerationPlan(input: {
     ) {
       return {
         status: 'skip',
-        reason: `当前已有 ${volumes.length} 卷，已达到你设定的 ${Math.floor(explicitCount)} 卷，无需继续生成。`,
+        reason: getT()('errors-lib:outline.volumeCountReached', {
+          current: volumes.length,
+          target: Math.floor(explicitCount),
+        }),
       }
     }
     const targetVolume = request.kind === 'single-volume'
@@ -113,7 +118,7 @@ export function buildOutlineGenerationPlan(input: {
   const volume = request.kind === 'chapters'
     ? volumes.find(item => item.id === request.volumeId) ?? null
     : findVolumeForOutlineChapter(nodes, request.chapterId)
-  if (!volume) return { status: 'skip', reason: '要生成章纲的卷不存在，请重新选择。' }
+  if (!volume) return { status: 'skip', reason: getT()('errors-lib:outline.targetVolumeMissingForChapter') }
 
   const volumeIndex = volumes.findIndex(item => item.id === volume.id)
   const previousSummary = volumeIndex > 0 ? volumes[volumeIndex - 1].summary : ''
@@ -121,7 +126,7 @@ export function buildOutlineGenerationPlan(input: {
   const worldRulesContext = contextPart(assembled, 'worldRules')
   if (request.kind === 'single-chapter') {
     const chapter = nodes.find(node => node.id === request.chapterId && node.type === 'chapter')
-    if (!chapter) return { status: 'skip', reason: '要生成章纲的章节不存在，请重新选择。' }
+    if (!chapter) return { status: 'skip', reason: getT()('errors-lib:outline.targetChapterMissing') }
     const siblings = nodes
       .filter(node => node.type === 'chapter' && node.parentId === chapter.parentId && node.id !== chapter.id)
       .sort((a, b) => a.order - b.order)

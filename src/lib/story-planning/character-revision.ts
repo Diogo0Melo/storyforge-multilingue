@@ -1,3 +1,4 @@
+import { getT } from '../../i18n'
 import { db } from '../db/schema'
 import { normalizeChapterText } from '../ai/chapter-memory/text-normalization'
 import { walkOutlineChaptersInCanonicalOrder } from '../outline/canonical-outline-walk'
@@ -264,7 +265,7 @@ function parseAffected(value: unknown): CharacterRevisionAffectedChapter[] {
     if (!row || ordinal == null || ordinal < 1) return []
     return [{
       ordinal,
-      title: text(row.title) || `第${ordinal}章`,
+      title: text(row.title) || getT()('outline:revision.chapterFallbackTitle', { ordinal }),
       severity: severity(row.severity),
       reason: text(row.reason),
       evidenceQuotes: array(row.evidenceQuotes).map(text).filter(Boolean),
@@ -295,8 +296,8 @@ function parseConflicts(value: unknown): CharacterRevisionConflict[] {
     if (!row || !text(row.reason)) return []
     return [{
       severity: severity(row.severity),
-      source: text(row.source) || '未标注来源',
-      title: text(row.title) || '未命名冲突',
+      source: text(row.source) || getT()('outline:revision.unmarkedSource'),
+      title: text(row.title) || getT()('outline:revision.untitledConflict'),
       reason: text(row.reason),
       evidenceQuote: text(row.evidenceQuote),
     }]
@@ -310,7 +311,7 @@ function parseForeshadows(value: unknown, protectedThrough: number): CharacterRe
     if (!row || ordinal == null || ordinal < 1 || !text(row.suggestion)) return []
     return [{
       chapterOrdinal: ordinal,
-      title: text(row.title) || `第${ordinal}章`,
+      title: text(row.title) || getT()('outline:revision.chapterFallbackTitle', { ordinal }),
       suggestion: text(row.suggestion),
       writtenRegion: ordinal <= protectedThrough,
     }]
@@ -331,22 +332,22 @@ function parsePatches(
     const nodeId = finiteInteger(row?.outlineNodeId)
     const chapter = nodeId == null ? null : chaptersByNode.get(nodeId)
     if (!row || nodeId == null || !chapter) {
-      warnings.push(`已拒绝未知大纲节点 patch：${nodeId ?? '?'}`)
+      warnings.push(getT()('outline:revision.warnUnknownNodePatch', { nodeId: nodeId ?? '?' }))
       return []
     }
     if (seen.has(nodeId)) {
-      warnings.push(`已拒绝重复大纲节点 patch：#${nodeId}`)
+      warnings.push(getT()('outline:revision.warnDuplicatePatch', { nodeId }))
       return []
     }
     if (chapter.written || chapter.ordinal <= protectedThrough) {
-      warnings.push(`已拒绝第 ${chapter.ordinal} 章 patch：属于已写保护区`)
+      warnings.push(getT()('outline:revision.warnProtectedChapterPatch', { ordinal: chapter.ordinal }))
       return []
     }
     const proposedTitle = text(row.proposedTitle) || chapter.title
     const proposedSummary = text(row.proposedSummary) || chapter.summary
     const anchorProtected = anchorIds.has(nodeId)
     if (anchorProtected && proposedTitle !== chapter.title) {
-      warnings.push(`已拒绝锚点「${chapter.title}」改名：锚点标题必须保留`)
+      warnings.push(getT()('outline:revision.warnAnchorRename', { title: chapter.title }))
       return []
     }
     if (proposedTitle === chapter.title && proposedSummary === chapter.summary) return []
@@ -394,15 +395,15 @@ export function parseCharacterRevisionOutput(
     return [{
       id: text(row.id) || intensity,
       intensity,
-      label: text(row.label) || ({ light: '轻量融入', balanced: '中度改线', deep: '深度重构' }[intensity]),
+      label: text(row.label) || getT()(`outline:revision.intensityLabels.${intensity}`),
       summary: text(row.summary),
       risks: array(row.risks).map(text).filter(Boolean),
       patches: parsePatches(row.patches, snapshot, protectedThrough, anchorIds, warnings),
     }]
   }).slice(0, 3)
-  if (options.length < 3) warnings.push(`AI 只返回 ${options.length} 档方案；应返回轻量、中度、深度三档`)
+  if (options.length < 3) warnings.push(getT()('outline:revision.warnOptionsIncomplete', { count: options.length }))
   if (!snapshot.hasChapterMemory) {
-    warnings.push('缺少可用章节记忆：本次只能做大纲级重规划，正文影响结论需人工复核')
+    warnings.push(getT()('outline:revision.warnNoChapterMemory'))
   }
   return {
     changeSummary: text(root.changeSummary),
@@ -436,19 +437,19 @@ export async function applyCharacterRevisionPatches(input: {
   for (const patch of input.patches) {
     const current = currentByNode.get(patch.outlineNodeId)
     if (!current) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: '节点已删除或不属于当前项目' })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipNodeMissing') })
       continue
     }
     if (current.written || current.ordinal <= protectedThrough) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: '节点已进入正文保护区' })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipNodeProtected') })
       continue
     }
     if (current.title !== patch.currentTitle || current.summary !== patch.currentSummary) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: '分析后大纲已变化，请重新分析' })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipOutlineChanged') })
       continue
     }
     if (anchors.has(patch.outlineNodeId) && patch.proposedTitle !== current.title) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: '锚点标题受保护' })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipAnchorTitleProtected') })
       continue
     }
 
@@ -464,7 +465,7 @@ export async function applyCharacterRevisionPatches(input: {
       },
     })
     if (!outlineWrite.written.length) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: '统一写回层拒绝了该 patch' })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipAdoptRejected') })
       continue
     }
 

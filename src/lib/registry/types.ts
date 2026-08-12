@@ -318,7 +318,14 @@ export interface AssembleContextInput {
 
 export interface ContextSource {
   key: string
+  /** AI 侧中文标签；assembleContext() 原样发进 AI payload，禁止翻译。 */
   label: string
+  /**
+   * UI 侧 i18n 字面量 key（outline 命名空间 contextSources.<key>）。
+   * 仅供 UI 渲染用 t(labelKey, { defaultValue: label }) 解析翻译；
+   * AI 装配永远读上方中文 label。
+   */
+  labelKey: string
   scope: ContextSourceScope
   layer: ContextLayer
   /** Approximate per-source soft cap. Adapters can still return less. */

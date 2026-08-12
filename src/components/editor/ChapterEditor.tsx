@@ -1,5 +1,6 @@
-import { lazy, Suspense, useState, useEffect, useCallback, useRef, useMemo } from 'react'
+﻿import { lazy, Suspense, useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { FileText, ClipboardList } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import { useChapterStore } from '../../stores/chapter'
 import { useOutlineStore } from '../../stores/outline'
 import { useStateCardStore } from '../../stores/state-card'
@@ -85,8 +86,8 @@ const NotePanel = lazy(() => import('./NotePanel'))
 const ComparePolishPanel = lazy(() => import('./ComparePolishPanel'))
 const ChapterOrganizationModal = lazy(() => import('./ChapterOrganizationModal'))
 
-function LazyPanelFallback() {
-  return <div className="rounded-lg border border-border bg-bg-surface p-4 text-sm text-text-muted">面板加载中...</div>
+function LazyPanelFallback({ t }: { t: (...args: any[]) => string }) {
+  return <div className="rounded-lg border border-border bg-bg-surface p-4 text-sm text-text-muted">{t('chapterEditor.lazyPanelLoading')}</div>
 }
 
 /** 生成任务类型(原 memory-builder 三层记忆已被 assembleContext 取代,此类型仅用于调试日志标签) */
@@ -105,6 +106,9 @@ interface Props {
 }
 
 export default function ChapterEditor({ project, outlineNodeId }: Props) {
+  const { t, lang } = useDomainT('editor')
+  // 语言感知的列表连接（zh-CN → "；"风格由 Intl 决定，en/pt-BR → "a, b and c"）
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const {
     chapters,
     currentChapter,
@@ -206,10 +210,10 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setOrganizationRun(run)
       setOrganizationCurrent(current)
     })().catch(error => {
-      if (active) setOrganizationError(error instanceof Error ? error.message : '读取整理记录失败')
+      if (active) setOrganizationError(error instanceof Error ? error.message : t('chapterEditor.organizationReadFailed'))
     })
     return () => { active = false }
-  }, [currentChapter?.id, project.id])
+  }, [currentChapter?.id, project.id, t])
   useEffect(() => {
     let active = true
     setConsistencyRun(null)
@@ -361,7 +365,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         const candidate = await runBackgroundConsistencyAgent({
           projectId: project.id!,
           chapterId,
-          chapterTitle: outlineNode?.title || currentChapter.title || '未知章节',
+          chapterTitle: outlineNode?.title || currentChapter.title || t('chapterEditor.unknownChapter'),
           worldGroupId: chapterWorldGroupId ?? null,
           chapterContent: savedContent,
           budget,
@@ -376,7 +380,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
           toConsistencyAuditResult(candidate),
         )
       })().catch(error => {
-        console.error('[ConsistencyAgent] 后台确定性检查失败:', error)
+        console.error('[ConsistencyAgent] Background consistency check failed:', error)
       })
     }, 350)
     return () => {
@@ -390,6 +394,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     outlineNode?.title,
     project.id,
     savedContent,
+    t,
   ])
   const entityReferences = useMemo(() => buildEditorEntityReferences({
     characters,
@@ -448,7 +453,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleOpenComparePolish = async () => {
     const saved = await persistCurrentEditorContent()
     if (!saved?.plain.trim()) {
-      await dialog.alert({ title: '暂无正文可供对照', message: '请先写入或生成本章正文，再打开对照润色。' })
+      await dialog.alert({ title: t('chapterEditor.alertNoContentForCompareTitle'), message: t('chapterEditor.alertNoContentForCompareMessage') })
       return
     }
     setCompareSourceHtml(saved.html)
@@ -682,7 +687,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     // Phase 21.3: 计算上下文预算
     const segments = analyzeContextSegments([
       { label: 'System Prompt', content: messages.find(m => m.role === 'system')?.content || '', layer: 'L0' },
-      { label: '章节大纲', content: outlineNode.summary || '', layer: 'L1' },
+      { label: t('contextBudget.segmentOutline'), content: outlineNode.summary || '', layer: 'L1' },
       ...assembledSegments,
       { label: 'User Prompt', content: messages.find(m => m.role === 'user')?.content || '', layer: 'L1' },
     ])
@@ -720,7 +725,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handlePolish = () => {
     const selected = editorRef.current?.getSelectedText() || plainText.slice(-1000)
     if (!selected) return
-    const messages = buildPolishPrompt(selected, customInstruction || '优化文笔，使表达更生动')
+    const messages = buildPolishPrompt(selected, customInstruction || t('floatingToolbar.promptPolish'))
     ai.setOperation('polish')
     ai.start(messages, undefined, { category: 'chapter.polish', projectId: project.id! })
   }
@@ -741,11 +746,11 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     if (!target) return
     // G1：点击先确认，避免误触烧 token
     const ok = await dialog.confirm({
-      title: '去 AI 味改写？',
+      title: t('chapterEditor.deaiConfirmTitle'),
       message: isFull
-        ? `将对整章正文（约 ${countWords(target)} 字）做去 AI 味改写，篇幅与原文保持相近。改写结果会先预览，确认后才替换原文。`
-        : '将对选中的文字做去 AI 味改写。改写结果会先预览，确认后才替换。',
-      confirmText: '开始改写',
+        ? t('chapterEditor.deaiConfirmFullMessage', { count: countWords(target) })
+        : t('chapterEditor.deaiConfirmSelectionMessage'),
+      confirmText: t('chapterEditor.deaiConfirmBtn'),
     })
     if (!ok) return
     const messages = buildDeAIPrompt(target)
@@ -757,9 +762,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleReviseByReport = async (report: ReviewResult) => {
     if (!plainText.trim()) return
     const ok = await dialog.confirm({
-      title: '按审校报告让 AI 改全文？',
-      message: `将依据本章审校报告修改整章正文（约 ${countWords(plainText)} 字），篇幅与原文保持相近。改写结果会先预览，确认后才替换原文。`,
-      confirmText: '开始修改',
+      title: t('chapterEditor.reviseConfirmTitle'),
+      message: t('chapterEditor.reviseConfirmMessage', { count: countWords(plainText) }),
+      confirmText: t('chapterEditor.reviseConfirmBtn'),
     })
     if (!ok) return
     reviseReportRef.current = report
@@ -790,7 +795,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     if (!isAIConfigReady(effectiveConfig)) {
       const message = getAIConfigRequiredMessage(effectiveConfig)
       setOrganizationError(message)
-      await dialog.alert({ title: '无法整理本章', message })
+      await dialog.alert({ title: t('chapterEditor.organizeCannotTitle'), message })
       return
     }
     const persisted = await persistCurrentEditorContent()
@@ -819,7 +824,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         scopedCharacterIds.has(relation.fromCharacterId)
         && scopedCharacterIds.has(relation.toCharacterId)
       ))
-      const chapterTitle = outlineNode?.title || currentChapter.title || '未知章节'
+      const chapterTitle = outlineNode?.title || currentChapter.title || t('chapterEditor.unknownChapter')
       const budget = new AgentTeamBudgetTracker(useAIConfigStore.getState().agentTeamBudgetProfile)
       const candidate = await runChapterOrganization({
         projectId: project.id!,
@@ -846,9 +851,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setShowOrganization(true)
     } catch (error) {
       if (!controller.signal.aborted) {
-        const message = error instanceof Error ? error.message : '整理本章失败'
+        const message = error instanceof Error ? error.message : t('chapterEditor.organizeFailedDefault')
         setOrganizationError(message)
-        await dialog.alert({ title: '整理本章失败', message })
+        await dialog.alert({ title: t('chapterEditor.organizeFailedDefault'), message })
       }
     } finally {
       if (organizationAbortRef.current === controller) organizationAbortRef.current = null
@@ -866,10 +871,10 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setOrganizationCurrent(true)
       const failed = Object.entries(result.run.candidate.domainErrors)
       if (failed.length) {
-        setOrganizationError(failed.map(([domain, message]) => `${domain}: ${message}`).join('；'))
+        setOrganizationError(listFormat.format(failed.map(([domain, message]) => `${domain}: ${message}`)))
       }
     } catch (error) {
-      setOrganizationError(error instanceof Error ? error.message : '写入整理结果失败')
+      setOrganizationError(error instanceof Error ? error.message : t('chapterEditor.organizationWriteFailed'))
       if (organizationRun) {
         setOrganizationCurrent(await isChapterOrganizationCurrent(organizationRun.candidate))
       }
@@ -889,14 +894,14 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       const { demotedFacts } = await propagateChapterEditStale(project.id, currentChapter.id)
       const { factsFromChapter, downstreamChapterIds } = await analyzeEditImpact(project.id, currentChapter.id)
       const parts = [
-        `源自本章事实 ${factsFromChapter.length} 条`,
-        demotedFacts > 0 ? `其中 ${demotedFacts} 条证据已失效→标记 stale 待复核` : '证据均仍成立',
-        `建议复核后续 ${downstreamChapterIds.length} 章`,
+        t('chapterEditor.impactFactsFromChapter', { count: factsFromChapter.length }),
+        demotedFacts > 0 ? t('chapterEditor.impactDemoted', { count: demotedFacts }) : t('chapterEditor.impactEvidenceValid'),
+        t('chapterEditor.impactDownstream', { count: downstreamChapterIds.length }),
       ]
-      setImpactInfo(parts.join('；'))
+      setImpactInfo(listFormat.format(parts))
     } catch (err) {
-      console.error('[EditImpact] 失败:', err)
-      setImpactInfo('影响分析失败，请重试')
+      console.error('[EditImpact] Failed:', err)
+      setImpactInfo(t('chapterEditor.impactAnalysisFailed'))
     } finally {
       setAnalyzingImpact(false)
     }
@@ -949,7 +954,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleManualMemory = async () => {
     if (!currentChapter?.id || !plainText.trim() || autoProcessing === 'memory') return
     const chapterId = currentChapter.id
-    const chapterTitle = outlineNode?.title || currentChapter.title || '未知章节'
+    const chapterTitle = outlineNode?.title || currentChapter.title || t('chapterEditor.unknownChapter')
     const persisted = await persistCurrentEditorContent()
     if (!persisted) return
     await handleChapterMemory({ chapterId, chapterTitle, chapterContent: persisted.html })
@@ -958,6 +963,8 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleConfirmActualProgress = async () => {
     if (!currentChapter?.id || !currentChapter.planReconciliation) return
     const reconciliation = currentChapter.planReconciliation
+    // 持久化文本：按创建时的中文形态落盘（供后续 AI 上下文消费），
+    // 不做 UI 语言转换，避免同一字段在不同会话出现混合形态。
     const confirmedActualProgress = [
       ...reconciliation.completedGoals.map(item => `已完成：${item.text}`),
       ...reconciliation.deviations.map(item => `实际偏移：${item.text}`),
@@ -1046,15 +1053,15 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleAcceptAI = async (text: string) => {
     if (!editorRef.current || !currentChapter?.id) return
     const acceptedChapterId = currentChapter.id
-    const acceptedChapterTitle = outlineNode?.title || currentChapter.title || '未知章节'
+    const acceptedChapterTitle = outlineNode?.title || currentChapter.title || t('chapterEditor.unknownChapter')
     const aiAction = ai.operation
     if (
       (aiAction === 'polish' || aiAction === 'expand' || aiAction === 'deai')
       && !editorRef.current.getSelectedText()
     ) {
       await dialog.alert({
-        title: '请重新选中原文',
-        message: '切换页面后原选区无法安全恢复。请在正文中重新选中要替换的文字，再点击“采纳”。生成结果会继续保留。',
+        title: t('chapterEditor.acceptSelectionAlertTitle'),
+        message: t('chapterEditor.acceptSelectionAlertMessage'),
       })
       return
     }
@@ -1105,27 +1112,27 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       const node = nodes.find(n => n.id === outlineNodeId)
       return (
         <div className="max-w-4xl flex flex-col items-center justify-center h-64 gap-3">
-          <p className="text-text-muted text-sm">章节「{node?.title}」还没有正文</p>
+          <p className="text-text-muted text-sm">{t('chapterEditor.noChapterForOutline', { title: node?.title ?? '' })}</p>
           <button onClick={handleCreateFromOutline}
             className="px-4 py-2 bg-accent text-white text-sm rounded-md hover:bg-accent-hover transition-colors">
-            创建章节并开始写作
+            {t('chapterEditor.createChapterBtn')}
           </button>
         </div>
       )
     }
     return (
       <div className="max-w-4xl">
-        <h2 className="text-xl font-bold text-text-primary mb-4">✍️ 写作</h2>
+        <h2 className="text-xl font-bold text-text-primary mb-4">{t('chapterEditor.writingSectionTitle')}</h2>
         <div className="space-y-1">
           {chapters.map(ch => (
             <button key={ch.id} onClick={() => selectChapter(ch.id!)}
               className="w-full text-left px-3 py-2 rounded-md text-sm bg-bg-surface hover:bg-bg-hover text-text-secondary transition-colors">
               <span className="text-text-primary">{ch.title}</span>
-              <span className="ml-2 text-text-muted text-xs">{ch.wordCount} 字</span>
+              <span className="ml-2 text-text-muted text-xs">{t('chapterEditor.wordCountSuffix', { count: ch.wordCount })}</span>
             </button>
           ))}
           {chapters.length === 0 && (
-            <p className="text-text-muted text-sm text-center py-12">请先在「大纲」中创建章节，然后点击写作图标进入编辑</p>
+            <p className="text-text-muted text-sm text-center py-12">{t('chapterEditor.emptyStateHint')}</p>
           )}
         </div>
       </div>
@@ -1219,9 +1226,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
           <div className="flex items-start gap-3">
             <span className="mt-1 text-accent">☰</span>
             <div>
-              <p className="text-xs font-semibold text-text-secondary">本章目标 · {outlineNode.title}</p>
+              <p className="text-xs font-semibold text-text-secondary">{t('chapterEditor.chapterGoalLabel', { title: outlineNode.title })}</p>
               <p className="mt-1 text-sm leading-7 text-text-secondary">
-                {outlineNode.summary || '暂无章纲摘要。'}
+                {outlineNode.summary || t('chapterEditor.chapterGoalEmpty')}
               </p>
             </div>
           </div>
@@ -1231,7 +1238,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       {/* D3: 大纲预览 */}
       {showOutlinePreview && outlineNodeId && (
         <div className="mb-3">
-          <Suspense fallback={<LazyPanelFallback />}>
+          <Suspense fallback={<LazyPanelFallback t={t} />}>
             <OutlinePreview outlineNodeId={outlineNodeId} onClose={() => setShowOutlinePreview(false)} />
           </Suspense>
         </div>
@@ -1240,7 +1247,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       {/* F: 质量审校面板 */}
       {showReviewPanel && (
         <div className="mb-3">
-          <Suspense fallback={<LazyPanelFallback />}>
+          <Suspense fallback={<LazyPanelFallback t={t} />}>
             <ReviewPanel
               projectId={project.id!}
               chapterId={currentChapter.id!}
@@ -1279,7 +1286,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       {/* H3: 便签面板 */}
       {showNotePanel && (
         <div className="mb-3">
-          <Suspense fallback={<LazyPanelFallback />}>
+          <Suspense fallback={<LazyPanelFallback t={t} />}>
             <NotePanel projectId={project.id!} chapterId={currentChapter?.id} onClose={() => setShowNotePanel(false)} />
           </Suspense>
         </div>
@@ -1305,8 +1312,8 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       {/* Phase 21.3: 上下文预算条 */}
       <details className="mb-2 rounded-lg border border-border bg-bg-surface/60 px-3 py-2 text-xs">
         <summary className="cursor-pointer text-text-secondary hover:text-text-primary">
-          AI 生成高级选项
-          {transparentMode && <span className="ml-2 text-accent">透明模式已开启</span>}
+          {t('chapterEditor.advancedOptionsSummary')}
+          {transparentMode && <span className="ml-2 text-accent">{t('chapterEditor.transparentModeOn')}</span>}
         </summary>
         <label className="mt-2 flex cursor-pointer items-start gap-2 border-t border-border pt-2">
           <input
@@ -1319,9 +1326,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
             className="mt-0.5 accent-accent"
           />
           <span>
-            <span className="font-medium text-text-secondary">发送前预览最终提示词</span>
+            <span className="font-medium text-text-secondary">{t('chapterEditor.transparentModeLabel')}</span>
             <span className="ml-2 text-[10px] text-text-muted">
-              默认关闭；开启后可临时编辑拼接后的真实消息，不写回模板或作品资料。
+              {t('chapterEditor.transparentModeHint')}
             </span>
           </span>
         </label>
@@ -1337,7 +1344,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         <div className="mb-3 rounded-lg border border-accent/30 bg-accent/5 p-3">
           <PromptPreviewGate
             messages={pendingGeneration.prepared.messages}
-            backLabel="取消本次预览"
+            backLabel=          {t('chapterEditor.promptPreviewBackLabel')}
             onBack={() => setPendingGeneration(null)}
             onConfirm={messages => {
               const pending = pendingGeneration
@@ -1381,8 +1388,8 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         <div className="mb-3 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
           <div className="flex items-center gap-2 text-sm text-emerald-400">
             <ClipboardList className="w-3.5 h-3.5 animate-pulse" />
-            {autoProcessing === 'extracting' && '正在自动提取状态变更...'}
-            {autoProcessing === 'memory' && '正在生成章节记忆与计划对账...'}
+            {autoProcessing === 'extracting' && t('chapterEditor.autoExtracting')}
+            {autoProcessing === 'memory' && t('chapterEditor.autoMemory')}
           </div>
         </div>
       )}
@@ -1400,7 +1407,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
 
       {/* TipTap 富文本编辑器 / 对照润色模式 */}
       {compareSourceHtml != null ? (
-        <Suspense fallback={<LazyPanelFallback />}>
+        <Suspense fallback={<LazyPanelFallback t={t} />}>
           <ComparePolishPanel
             key={currentChapter.id}
             projectId={project.id!}
@@ -1427,14 +1434,14 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
             setPlainText(plain)
             setManualSaveError('')
           }}
-          placeholder="开始写作..."
+          placeholder={t('richEditor.defaultPlaceholder')}
           minHeight={560}
           className="sf-manuscript-editor border-0 bg-transparent shadow-none"
           entityReferences={entityReferences}
           contentHeader={
             <div className="mb-8 mt-8 text-center">
               <p className="text-[11px] uppercase tracking-[0.28em] text-text-muted">
-                {chapterDisplay?.ordinal != null ? `第 ${chapterDisplay.ordinal} 章` : '正文'}
+                {chapterDisplay?.ordinal != null ? t('chapterEditor.ordinalChapterLabel', { ordinal: chapterDisplay.ordinal }) : t('chapterEditor.bodyLabel')}
               </p>
               <h1 className="mt-4 font-serif text-3xl font-semibold tracking-wide text-text-primary">
                 {chapterDisplay?.title ?? currentChapter.title}
@@ -1463,12 +1470,12 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       {/* 作者笔记 */}
       <div className="mt-3">
         <label className="block text-xs text-text-muted mb-1">
-          <FileText className="w-3 h-3 inline mr-1" />作者笔记
+          <FileText className="w-3 h-3 inline mr-1" />{t('chapterEditor.authorNotesLabel')}
         </label>
         <textarea
           value={currentChapter.notes || ''}
           onChange={e => currentChapter.id && updateChapter(currentChapter.id, { notes: e.target.value })}
-          placeholder="写给自己的备忘..."
+          placeholder={t('chapterEditor.authorNotesPlaceholder')}
           rows={2}
           className="w-full p-2 bg-bg-elevated border border-border rounded text-xs text-text-muted resize-y focus:outline-none focus:border-accent"
         />

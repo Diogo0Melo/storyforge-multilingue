@@ -5,9 +5,20 @@
 import { useState, useRef, useEffect } from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useWorldGroupStore } from '../../stores/world-group'
-import { WORLD_GROUP_TYPE_LABELS } from '../../lib/types/world-group'
+import { useDomainT } from '../../i18n'
+import type { WorldGroupType } from '../../lib/types'
+
+const TYPE_KEY = {
+  primary: 'type.primary',
+  traversal: 'type.traversal',
+  instance: 'type.instance',
+  parallel: 'type.parallel',
+  ascension: 'type.ascension',
+  custom: 'type.custom',
+} as const satisfies Record<WorldGroupType, string>
 
 export default function WorldGroupSwitcher() {
+  const { t } = useDomainT('world-group')
   const { groups, activeGroupId, setActiveGroup } = useWorldGroupStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -33,7 +44,7 @@ export default function WorldGroupSwitcher() {
         className="flex items-center gap-1.5 px-2.5 py-1 text-xs rounded-lg border border-border bg-bg-base text-text-secondary hover:border-accent/50 hover:text-text-primary transition-colors"
       >
         <span>{active?.icon || '🌐'}</span>
-        <span className="max-w-[120px] truncate">{active?.name || '选择世界'}</span>
+        <span className="max-w-[120px] truncate">{active?.name || t('switcher.selectWorld')}</span>
         <ChevronDown className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
@@ -52,7 +63,7 @@ export default function WorldGroupSwitcher() {
               <span className="text-base shrink-0">{g.icon || '🌐'}</span>
               <div className="flex-1 min-w-0">
                 <div className="truncate font-medium">{g.name}</div>
-                <div className="text-[10px] text-text-muted">{WORLD_GROUP_TYPE_LABELS[g.type]}</div>
+                <div className="text-[10px] text-text-muted">{t(TYPE_KEY[g.type])}</div>
               </div>
               {g.id === activeGroupId && (
                 <span className="w-1.5 h-1.5 rounded-full bg-accent shrink-0" />
