@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router'
+import { useDomainT } from './i18n'
 
 const HomePage = lazy(() => import('./pages/HomePage'))
 const ProductHubPage = lazy(() => import('./pages/ProductHubPage'))
@@ -7,7 +8,8 @@ const WorkspacePage = lazy(() => import('./pages/WorkspacePage'))
 const SettingsRoutePage = lazy(() => import('./pages/SettingsRoutePage'))
 
 function RouteFallback() {
-  return <div className="min-h-screen bg-bg-base flex items-center justify-center text-sm text-text-muted">加载中…</div>
+  const { t } = useDomainT('pages')
+  return <div className="min-h-screen bg-bg-base flex items-center justify-center text-sm text-text-muted">{t('app.routeLoading')}</div>
 }
 
 export default function App() {

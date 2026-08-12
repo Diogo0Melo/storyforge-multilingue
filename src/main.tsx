@@ -14,6 +14,7 @@ import { finalizeCharacterAxesMigrationSnapshots } from './lib/migrations/finali
 import { applyStoryForgeTheme, resolveStoryForgeTheme } from './lib/theme'
 import { registerStoryForgeServiceWorker } from './lib/pwa/register-service-worker'
 import { installRuntimeDiagnostics } from './lib/diagnostics/local-diagnostic-report'
+import { initI18n } from './i18n'
 import './index.css'
 
 // 从 localStorage 恢复主题（兼容旧主题名迁移）
@@ -45,6 +46,12 @@ async function bootstrap() {
   // 0. FB-11: 尽早申请持久化存储,降低 IndexedDB 被浏览器驱逐("重置")的概率。
   void requestPersistentStorage()
 
+  // 0. i18n:与 db.open 并行启动,但在 store seeding / render 前必须完成。
+  //    失败时降级为 key/zh-CN fallback,不白屏。
+  const i18nReady = initI18n().catch(e => {
+    console.error('[bootstrap] i18n init failed (degraded to keys/zh fallback):', e)
+  })
+
   // 0. Phase 1.1b: 注册表完整性校验。开发环境 throw(立刻发现漏登记),生产环境只告警。
   try {
     validateRegistry({ throwOnError: import.meta.env.DEV })
@@ -60,6 +67,9 @@ async function bootstrap() {
   } catch (e) {
     console.error('[bootstrap] schema check failed:', e)
   }
+
+  // i18n 必须在 store seeding 之前完成(stores 可能用 t() 生成持久化默认名)。
+  await i18nReady
 
   // 2. Phase 1：初始化提示词模板（必要时 seed 系统模板）
   try {

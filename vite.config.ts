@@ -25,15 +25,15 @@ export default defineConfig({
       base: '/storyforge/',
       scope: '/storyforge/',
       manifest: {
-        name: '故事熔炉 StoryForge',
-        short_name: '故事熔炉',
-        description: 'AI 驱动的小说创作工坊',
+        name: 'StoryForge',
+        short_name: 'StoryForge',
+        description: 'AI-powered novel creation workspace',
         theme_color: '#6366f1',
         background_color: '#0a0a0f',
         display: 'standalone',
         start_url: '/storyforge/',
         scope: '/storyforge/',
-        lang: 'zh-CN',
+        lang: 'en',
         icons: [
           {
             src: '/storyforge/icon-192.png',
@@ -172,6 +172,14 @@ export default defineConfig({
           'vendor-editor': ['@tiptap/react', '@tiptap/starter-kit', '@tiptap/extension-placeholder'],
           'vendor-db': ['dexie'],
           'vendor-d3': ['d3-hierarchy'],
+          // i18n 基础库在 main.tsx 启动时 eager 引用;独立缓存,避免把入口包推过预算。
+          // locale JSON 仍走 import.meta.glob 懒加载,不进此 chunk。
+          'vendor-i18n': [
+            'i18next',
+            'react-i18next',
+            'i18next-browser-languagedetector',
+            'i18next-resources-to-backend',
+          ],
           // 侧栏与工作区共享大量图标；独立缓存，避免每次功能加一个图标都把入口包推过预算。
           'vendor-icons': ['lucide-react'],
           // 上下文装配被首页、写作与多个懒加载面板共同引用；单独缓存可避免
