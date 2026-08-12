@@ -190,82 +190,82 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 | category | 触发文件 |
 |---|---|
-| `agent.orchestrator` | `src/lib/agent/orchestrator.ts:353` |
+| `agent.orchestrator` | `src/lib/agent/orchestrator.ts:354` |
 | `agent.readonly` | `src/lib/agent/client-adapter.ts:23` |
 | `ai.restructure` | `src/lib/ai/restructure.ts:54` |
-| `canon.setting.extract` | `src/components/facts/WorldConstitutionPanel.tsx:79` |
+| `canon.setting.extract` | `src/components/facts/WorldConstitutionPanel.tsx:82` |
 | `chapter.content` | `src/lib/generation/chapter-generation-node.ts:22` |
 | `chapter.content.batch` | `src/lib/ai/batch-detail-runner.ts:256` |
 | `chapter.continue` | `src/lib/generation/chapter-generation-node.ts:23` |
-| `chapter.continuity` | `src/lib/node-authoring/domain-execution.ts:431`<br/>`src/lib/node-authoring/domain-execution.ts:494` |
-| `chapter.deai` | `src/components/editor/ChapterEditor.tsx:753` |
-| `chapter.expand` | `src/components/editor/ChapterEditor.tsx:733` |
-| `chapter.memory` | `src/components/editor/ChapterEditor.tsx:471` |
-| `chapter.organize` | `src/components/editor/ChapterEditor.tsx:836` |
-| `chapter.polish` | `src/components/editor/ChapterEditor.tsx:725` |
-| `chapter.toolbar` | `src/components/editor/FloatingToolbar.tsx:105` |
-| `character.generate` | `src/components/character/CharacterPanel.tsx:160` |
+| `chapter.continuity` | `src/lib/node-authoring/domain-execution.ts:432`<br/>`src/lib/node-authoring/domain-execution.ts:495` |
+| `chapter.deai` | `src/components/editor/ChapterEditor.tsx:758` |
+| `chapter.expand` | `src/components/editor/ChapterEditor.tsx:738` |
+| `chapter.memory` | `src/components/editor/ChapterEditor.tsx:476` |
+| `chapter.organize` | `src/components/editor/ChapterEditor.tsx:841` |
+| `chapter.polish` | `src/components/editor/ChapterEditor.tsx:730` |
+| `chapter.toolbar` | `src/components/editor/FloatingToolbar.tsx:110` |
+| `character.generate` | `src/components/character/CharacterPanel.tsx:163` |
 | `character.structure` | `src/lib/ai/parse-character-output.ts:80` |
-| `character.supplement` | `src/components/character/CharacterSupplementAction.tsx:80` |
-| `codex.extract` | `src/components/codex/CodexPanel.tsx:226` |
-| `cultivation.progress` | `src/components/cultivation/CultivationProgressPanel.tsx:143` |
-| `detail.chapter-planning` | `src/lib/node-authoring/domain-execution.ts:292` |
-| `detail.scene` | `src/components/outline/DetailedOutlinePanel.tsx:151`<br/>`src/components/outline/ScenePanel.tsx:126`<br/>`src/lib/ai/batch-detail-runner.ts:109` |
-| `emotion.beat` | `src/components/editor/EmotionBeatCard.tsx:66` |
-| `foreshadow.structure` | `src/components/foreshadow/ForeshadowPanel.tsx:67` |
-| `foreshadow.suggest` | `src/components/foreshadow/ForeshadowPanel.tsx:216` |
-| `geography.concept-map` | `src/components/geography/GeographyPanel.tsx:127` |
-| `geography.world-map` | `src/components/geography/WorldMapPanel.tsx:107` |
-| `history.consult` | `src/components/history/useHistoryAI.ts:118` |
-| `history.storm` | `src/components/history/useHistoryAI.ts:120` |
-| `inspiration.reverse` | `src/hooks/useIncrementalInspiration.ts:212` |
-| `inventory.extract` | `src/components/items/InventoryPanel.tsx:150` |
-| `location.extract` | `src/components/location/LocationPanel.tsx:106` |
-| `node.creation` | `src/lib/node-authoring/executor.ts:315`<br/>`src/lib/node-flow/executor.ts:203` |
+| `character.supplement` | `src/components/character/CharacterSupplementAction.tsx:82` |
+| `codex.extract` | `src/components/codex/CodexPanel.tsx:231` |
+| `cultivation.progress` | `src/components/cultivation/CultivationProgressPanel.tsx:145` |
+| `detail.chapter-planning` | `src/lib/node-authoring/domain-execution.ts:293` |
+| `detail.scene` | `src/components/outline/DetailedOutlinePanel.tsx:156`<br/>`src/components/outline/ScenePanel.tsx:128`<br/>`src/lib/ai/batch-detail-runner.ts:109` |
+| `emotion.beat` | `src/components/editor/EmotionBeatCard.tsx:68` |
+| `foreshadow.structure` | `src/components/foreshadow/ForeshadowPanel.tsx:83` |
+| `foreshadow.suggest` | `src/components/foreshadow/ForeshadowPanel.tsx:239` |
+| `geography.concept-map` | `src/components/geography/GeographyPanel.tsx:134` |
+| `geography.world-map` | `src/components/geography/WorldMapPanel.tsx:109` |
+| `history.consult` | `src/components/history/useHistoryAI.ts:119` |
+| `history.storm` | `src/components/history/useHistoryAI.ts:121` |
+| `inspiration.reverse` | `src/hooks/useIncrementalInspiration.ts:214` |
+| `inventory.extract` | `src/components/items/InventoryPanel.tsx:152` |
+| `location.extract` | `src/components/location/LocationPanel.tsx:109` |
+| `node.creation` | `src/lib/node-authoring/executor.ts:316`<br/>`src/lib/node-flow/executor.ts:204` |
 | `outline.chapter` | `src/lib/ai/batch-outline-runner.ts:123`<br/>`src/lib/outline/generation-node.ts:55` |
-| `outline.character-driven` | `src/components/outline/CharacterDrivenPlotPanel.tsx:198` |
-| `outline.character-revision` | `src/components/outline/CharacterRevisionPanel.tsx:169` |
+| `outline.character-driven` | `src/components/outline/CharacterDrivenPlotPanel.tsx:200` |
+| `outline.character-revision` | `src/components/outline/CharacterRevisionPanel.tsx:177` |
 | `outline.volume` | `src/lib/outline/generation-node.ts:51` |
-| `outline.workshop.collision` | `src/lib/outline/workshop.ts:448` |
-| `outline.workshop.motivation` | `src/lib/outline/workshop.ts:445` |
-| `outline.workshop.scan` | `src/lib/outline/workshop.ts:442` |
-| `outline.workshop.scenes` | `src/lib/outline/workshop.ts:453` |
-| `prompt.examples` | `src/components/settings/prompt/PromptExamplesEditor.tsx:108` |
-| `reference.characters` | `src/components/project/AnalysisReportViewer.tsx:151` |
-| `reference.summary` | `src/components/project/AnalysisReportViewer.tsx:119` |
-| `relation.extract` | `src/components/relations/CharacterRelationPanel.tsx:98` |
-| `review.anti-ai` | `src/components/editor/ReviewPanel.tsx:106` |
-| `review.outline-workshop` | `src/lib/outline/workshop.ts:451` |
-| `review.quality` | `src/components/editor/ReviewPanel.tsx:98` |
-| `review.readability` | `src/components/editor/ReviewPanel.tsx:115` |
-| `review.revise` | `src/components/editor/ChapterEditor.tsx:768` |
-| `rules.generate` | `src/components/rules/CreativeRulesPanel.tsx:80` |
-| `scene.verify` | `src/components/scene/SceneVerifyPanel.tsx:81` |
-| `simulation.chatgame` | `src/components/simulation/ChatGamePanel.tsx:178`<br/>`src/components/simulation/ChatGamePanel.tsx:194` |
-| `story-arc.generate` | `src/components/outline/StoryArcPanel.tsx:85` |
-| `story.generate` | `src/components/worldview/StoryCorePanel.tsx:200` |
-| `story.timeline` | `src/components/timeline/StoryTimelinePanel.tsx:85` |
-| `storyline-progress.map` | `src/components/outline/StorylineProgressPanel.tsx:76` |
-| `style.calibrate` | `src/components/style/StyleCalibrationPanel.tsx:63` |
-| `style.learn` | `src/components/style/StyleLearningPanel.tsx:125` |
-| `world-group.expand` | `src/components/world-group/WorldGroupDetail.tsx:98` |
-| `world-group.suggest` | `src/components/world-group/WorldGroupOverview.tsx:57` |
-| `worldview.dimension` | `src/components/worldview/WorldviewHumanityPanel.tsx:352`<br/>`src/components/worldview/WorldviewNaturalPanel.tsx:284`<br/>`src/components/worldview/WorldviewOriginPanel.tsx:262` |
-| `worldview.divine` | `src/components/worldview/WorldviewOriginPanel.tsx:361` |
-| `worldview.divine.split` | `src/components/worldview/WorldviewOriginPanel.tsx:385` |
+| `outline.workshop.collision` | `src/lib/outline/workshop.ts:476` |
+| `outline.workshop.motivation` | `src/lib/outline/workshop.ts:473` |
+| `outline.workshop.scan` | `src/lib/outline/workshop.ts:470` |
+| `outline.workshop.scenes` | `src/lib/outline/workshop.ts:481` |
+| `prompt.examples` | `src/components/settings/prompt/PromptExamplesEditor.tsx:100` |
+| `reference.characters` | `src/components/project/AnalysisReportViewer.tsx:153` |
+| `reference.summary` | `src/components/project/AnalysisReportViewer.tsx:121` |
+| `relation.extract` | `src/components/relations/CharacterRelationPanel.tsx:100` |
+| `review.anti-ai` | `src/components/editor/ReviewPanel.tsx:111` |
+| `review.outline-workshop` | `src/lib/outline/workshop.ts:479` |
+| `review.quality` | `src/components/editor/ReviewPanel.tsx:103` |
+| `review.readability` | `src/components/editor/ReviewPanel.tsx:120` |
+| `review.revise` | `src/components/editor/ChapterEditor.tsx:773` |
+| `rules.generate` | `src/components/rules/CreativeRulesPanel.tsx:83` |
+| `scene.verify` | `src/components/scene/SceneVerifyPanel.tsx:83` |
+| `simulation.chatgame` | `src/components/simulation/ChatGamePanel.tsx:181`<br/>`src/components/simulation/ChatGamePanel.tsx:197` |
+| `story-arc.generate` | `src/components/outline/StoryArcPanel.tsx:87` |
+| `story.generate` | `src/components/worldview/StoryCorePanel.tsx:221` |
+| `story.timeline` | `src/components/timeline/StoryTimelinePanel.tsx:92` |
+| `storyline-progress.map` | `src/components/outline/StorylineProgressPanel.tsx:82` |
+| `style.calibrate` | `src/components/style/StyleCalibrationPanel.tsx:65` |
+| `style.learn` | `src/components/style/StyleLearningPanel.tsx:132` |
+| `world-group.expand` | `src/components/world-group/WorldGroupDetail.tsx:108` |
+| `world-group.suggest` | `src/components/world-group/WorldGroupOverview.tsx:76` |
+| `worldview.dimension` | `src/components/worldview/WorldviewHumanityPanel.tsx:399`<br/>`src/components/worldview/WorldviewNaturalPanel.tsx:317`<br/>`src/components/worldview/WorldviewOriginPanel.tsx:277` |
+| `worldview.divine` | `src/components/worldview/WorldviewOriginPanel.tsx:381` |
+| `worldview.divine.split` | `src/components/worldview/WorldviewOriginPanel.tsx:406` |
 
 ### 动态 category 调用
 
-- `src/components/editor/ReviewPanel.tsx:139 · ai.start`
-- `src/components/settings/NS0EvalPanel.tsx:50 · chat`
-- `src/lib/agent/character-copilot.ts:409 · chat`
-- `src/lib/agent/inspiration-copilot.ts:261 · chat`
-- `src/lib/agent/outline-copilot.ts:450 · chat`
-- `src/lib/agent/prose-copilot.ts:500 · chat`
-- `src/lib/agent/world-origin-copilot.ts:186 · chat`
+- `src/components/editor/ReviewPanel.tsx:144 · ai.start`
+- `src/components/settings/NS0EvalPanel.tsx:51 · chat`
+- `src/lib/agent/character-copilot.ts:411 · chat`
+- `src/lib/agent/inspiration-copilot.ts:262 · chat`
+- `src/lib/agent/outline-copilot.ts:451 · chat`
+- `src/lib/agent/prose-copilot.ts:501 · chat`
+- `src/lib/agent/world-origin-copilot.ts:187 · chat`
 - `src/lib/generation/workflow-generation-node.ts:23 · ai.start`
-- `src/lib/node-authoring/executor.ts:361 · chat`
+- `src/lib/node-authoring/executor.ts:362 · chat`
 
 ---
 
-生成时间基准:commit `35dde9c`
+生成时间基准:commit `b0a6a79`
