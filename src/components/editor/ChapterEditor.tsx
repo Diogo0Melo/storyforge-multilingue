@@ -727,7 +727,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     if (!selected) return
     const messages = buildPolishPrompt(selected, customInstruction || t('floatingToolbar.promptPolish'))
     ai.setOperation('polish')
-    ai.start(messages, undefined, { category: 'chapter.polish', projectId: project.id! })
+    ai.start(messages, undefined, { category: 'chapter.polish', projectId: project.id!, outputKind: 'creative' })
   }
 
   const handleExpand = () => {
@@ -735,7 +735,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     if (!selected) return
     const messages = buildExpandPrompt(selected, customInstruction.trim() || undefined)
     ai.setOperation('expand')
-    ai.start(messages, undefined, { category: 'chapter.expand', projectId: project.id! })
+    ai.start(messages, undefined, { category: 'chapter.expand', projectId: project.id!, outputKind: 'creative' })
   }
 
   const handleDeAI = async () => {
@@ -755,7 +755,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     if (!ok) return
     const messages = buildDeAIPrompt(target)
     ai.setOperation(isFull ? 'deai-full' : 'deai')
-    ai.start(messages, undefined, { category: 'chapter.deai', projectId: project.id! })
+    ai.start(messages, undefined, { category: 'chapter.deai', projectId: project.id!, outputKind: 'creative' })
   }
 
   // G8：按审校报告让 AI 改全文 —— 走和「生成正文」相同的预览→采纳/关闭流程

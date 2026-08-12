@@ -25,6 +25,8 @@ describe('PIPELINE-1 · 正文生成节点', () => {
     expect(start).toHaveBeenCalledWith(messages, undefined, {
       category: 'chapter.content',
       projectId: 17,
+      // WS-3A：正文创作声明输出语义，gate 注入项目 contentLanguage 约束
+      outputKind: 'creative',
     })
   })
 

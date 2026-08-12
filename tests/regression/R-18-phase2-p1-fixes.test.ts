@@ -48,7 +48,9 @@ describe('R-18: request trimming and abort signal', () => {
       temperature: 0.7,
       maxTokens: 1024,
     }
-    await expect(chat([{ role: 'user', content: 'ping' }], config, undefined, ac.signal)).resolves.toBe('ok')
+    // WS-3A：client gate 要求调用声明语义；本用例只验证 signal 传递，
+    // 用显式 language-neutral 让 gate 零注入、不触碰 db。
+    await expect(chat([{ role: 'user', content: 'ping' }], config, { outputKind: 'language-neutral' }, ac.signal)).resolves.toBe('ok')
     expect(fetchMock).toHaveBeenCalledOnce()
   })
 })

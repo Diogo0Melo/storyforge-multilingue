@@ -18,8 +18,9 @@ export function createChapterGenerationNode(input: {
     kind: category,
     editableInput: true,
     assembleInput: messages => messages.map(message => ({ ...message })),
+    // WS-3A：正文创作 → gate 注入项目 contentLanguage 约束
     run: messages => category === 'chapter.content'
-      ? ai.start(messages, undefined, { category: 'chapter.content', projectId })
-      : ai.start(messages, undefined, { category: 'chapter.continue', projectId }),
+      ? ai.start(messages, undefined, { category: 'chapter.content', projectId, outputKind: 'creative' })
+      : ai.start(messages, undefined, { category: 'chapter.continue', projectId, outputKind: 'creative' }),
   }
 }

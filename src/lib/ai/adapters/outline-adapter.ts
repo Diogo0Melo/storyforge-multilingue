@@ -1,10 +1,7 @@
 import type { ChatMessage } from '../../types'
 import { usePromptStore } from '../../../stores/prompt'
 import { renderPrompt } from '../prompt-engine'
-import {
-  appendSimplifiedChineseOutputConstraint,
-  appendUserConstraint,
-} from './prompt-guards'
+import { appendUserConstraint } from './prompt-guards'
 
 export interface RunOptions {
   parameterValues?: Record<string, unknown>
@@ -94,9 +91,8 @@ export function buildVolumeOutlinePrompt(
   if (typeof pace === 'string' && pace.trim()) {
     constraints.push(`用户设定整体节奏为「${pace.trim()}」，卷纲设计必须体现这个信息密度与冲突推进速度。`)
   }
-  return appendSimplifiedChineseOutputConstraint(
-    appendUserConstraint(messages, constraints.join('\n')),
-  )
+  // WS-3A：输出语言约束改由 client gate 按 outputKind 注入（调用方声明 mixed）
+  return appendUserConstraint(messages, constraints.join('\n'))
 }
 
 /** 将卷展开为章节大纲 */
@@ -126,11 +122,10 @@ export function buildChapterOutlinePrompt(
   if (worldContext.includes('【本卷已写正文进度')) {
     constraints.push('【已写正文优先·硬约束】上文「本卷已写正文进度」来自用户已保存正文，是本次章纲生成的事实边界。已写章节不得被重写、否认或重排；只为未写/目标章节补后续章纲，并承接已写正文的结尾状态、角色状态和实际剧情进展。')
   }
-  return appendSimplifiedChineseOutputConstraint(
-    appendUserConstraint(
-      messages,
-      constraints.join('\n'),
-    ),
+  // WS-3A：输出语言约束改由 client gate 按 outputKind 注入（调用方声明 mixed）
+  return appendUserConstraint(
+    messages,
+    constraints.join('\n'),
   )
 }
 
@@ -163,8 +158,9 @@ export function buildSingleChapterOutlinePrompt(
     characterContext,
     worldRulesContext,
   )
-  return appendSimplifiedChineseOutputConstraint(appendUserConstraint(messages, `【本次单章补全硬约束】
+  // WS-3A：输出语言约束改由 client gate 按 outputKind 注入（调用方声明 mixed）
+  return appendUserConstraint(messages, `【本次单章补全硬约束】
 本次不是重建整卷，只补全现有空章节《${chapterTitle}》的章纲。
 ${siblingChaptersContext || '本卷暂无其他章节可供衔接。'}
-只输出 1 个 JSON 元素；title 必须保持为“${chapterTitle}”，summary 用 1-3 句写清本章事件、冲突、推进作用与结尾衔接，不得生成其他章节。`))
+只输出 1 个 JSON 元素；title 必须保持为“${chapterTitle}”，summary 用 1-3 句写清本章事件、冲突、推进作用与结尾衔接，不得生成其他章节。`)
 }

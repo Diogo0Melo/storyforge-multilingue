@@ -24,6 +24,9 @@ const EMBED_TIMEOUT_MS = 60_000
 /**
  * 批量把文本嵌成向量。返回与 input 等长、同序的向量数组。
  * 任一失败抛错（调用方据此降级到纯关键词）。
+ *
+ * WS-3A 豁免：embedding 绕过 client.ts gate（自带 recordUsage）；向量语言中立，
+ * 不参与输出语言约束注入。
  */
 export async function embedTexts(
   texts: string[],

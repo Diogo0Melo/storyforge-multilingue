@@ -177,6 +177,7 @@ export default function CharacterRevisionPanel({
       await ai.start(prepared.messages, undefined, {
         category: 'outline.character-revision',
         projectId: project.id!,
+        outputKind: 'mixed',
       })
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : t('revision.prepareFailed'))

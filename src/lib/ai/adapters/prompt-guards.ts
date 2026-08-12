@@ -1,5 +1,10 @@
 import type { ChatMessage } from '../../types'
 
+/**
+ * WS-3A：该常量由 src/lib/ai/output-language.ts 的 gate 构造器复用（zh-CN 分支
+ * 字节级一致）。旧适配器散点注入（appendSimplifiedChineseOutputConstraint）已收口到
+ * client gate；本常量待 WS-4 完成迁移后移除。
+ */
 export const SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT = [
   '【语言输出硬约束】',
   '除用户原文明确要求保留的专名、术语、代码、JSON key 外，所有面向读者的标题、summary、目标、说明和正文内容必须使用自然流畅的简体中文。',
@@ -12,8 +17,4 @@ export function appendUserConstraint(messages: ChatMessage[], constraint: string
   const user = [...next].reverse().find(message => message.role === 'user')
   if (user) user.content = `${user.content}\n\n${constraint}`
   return next
-}
-
-export function appendSimplifiedChineseOutputConstraint(messages: ChatMessage[]): ChatMessage[] {
-  return appendUserConstraint(messages, SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)
 }

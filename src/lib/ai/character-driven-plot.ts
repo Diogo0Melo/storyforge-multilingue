@@ -17,10 +17,7 @@ import { renderPrompt } from './prompt-engine'
 import { useOutlineStore } from '../../stores/outline'
 import { db } from '../db/schema'
 import { assembleContext } from '../registry/assemble-context'
-import {
-  appendSimplifiedChineseOutputConstraint,
-  appendUserConstraint,
-} from './adapters/prompt-guards'
+import { appendUserConstraint } from './adapters/prompt-guards'
 
 // ── 类型 ────────────────────────────────────────────────────────────────
 
@@ -141,7 +138,8 @@ export async function buildCharacterDrivenPlotPrompt(
     '如果角色目标与故事主线存在冲突，不要静默改写主线；请在对应 summary 或 characterArcs 中标注冲突点与调整建议。',
   ].join('\n'))
 
-  return appendSimplifiedChineseOutputConstraint(aligned)
+  // WS-3A：输出语言约束改由 client gate 按 outputKind 注入（调用方声明 mixed）
+  return aligned
 }
 
 // ── 解析输出 ─────────────────────────────────────────────────────────────

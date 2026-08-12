@@ -47,14 +47,17 @@ export function createOutlineGenerationNode(input: {
       if (plan.status === 'skip') throw new OutlineGenerationSkipError(plan.reason)
       return plan.messages
     },
+    // WS-3A：大纲生成（JSON 骨架 + 自然语言 summary）→ mixed，gate 注入项目 contentLanguage 约束
     run: messages => category === 'outline.volume'
       ? ai.start(messages, undefined, {
         category: 'outline.volume',
         projectId: project.id!,
+        outputKind: 'mixed',
       })
       : ai.start(messages, undefined, {
         category: 'outline.chapter',
         projectId: project.id!,
+        outputKind: 'mixed',
       }),
   }
 }

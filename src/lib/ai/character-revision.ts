@@ -10,7 +10,6 @@ import {
 } from '../story-planning/character-revision'
 import { usePromptStore } from '../../stores/prompt'
 import { renderPrompt } from './prompt-engine'
-import { appendSimplifiedChineseOutputConstraint } from './adapters/prompt-guards'
 
 export interface PreparedCharacterRevisionRequest {
   messages: ChatMessage[]
@@ -101,7 +100,8 @@ export async function buildCharacterRevisionPrompt(input: {
   const template = usePromptStore.getState().getActive('plot.character-revision')
   const { messages } = renderPrompt(template, { revisionContext: context.text })
   return {
-    messages: appendSimplifiedChineseOutputConstraint(messages),
+    // WS-3A：输出语言约束改由 client gate 按 outputKind 注入（调用方声明 mixed）
+    messages,
     snapshot,
     includedSources: context.included,
     omittedSources: context.omitted,

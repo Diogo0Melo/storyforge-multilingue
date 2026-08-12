@@ -260,15 +260,32 @@ export interface TrimmedMessagesResult {
   totalInputTokens: number
   inputBudget: number
   protectedEnvelopePreserved: boolean
+  /**
+   * G2A：仅在调用方传入 protectedConstraint 时有意义。
+   * false 表示预留的输出语言约束无法字节级保留（窗口连约束本身都放不下，
+   * 或裁剪后仍无法在预算内容纳约束）——调用方必须拒绝请求，绝不能发送
+   * 缺失约束的请求。未请求约束时为 undefined（既有调用方行为不变）。
+   */
+  constraintPreserved?: boolean
 }
 
-/** True request-side trimming used before fetch, not only for the UI budget preview. */
+/**
+ * True request-side trimming used before fetch, not only for the UI budget preview.
+ *
+ * G2A：传入 `protectedConstraint`（网络边界 gate 注入的输出语言约束精确文本）时：
+ * 1. 先从输入预算中预留约束的估算 token；
+ * 2. 在削减后的预算下裁剪基础消息；
+ * 3. 把精确约束按原样（字节级一致）重新追加到最后一条 user 消息末尾；
+ * 4. 约束本身超出预算或最终无法容纳时报告 constraintPreserved=false，
+ *    由调用方拒绝请求而不是发送缺失约束的请求。
+ */
 export function trimMessagesToFit(
   messages: ChatMessage[],
   provider: AIProvider,
   model: string,
   maxOutput?: number,
   contextWindowOverride?: number,
+  protectedConstraint?: string,
 ): TrimmedMessagesResult {
   const preset = getModelPreset(provider, model)
   const maxContext = (contextWindowOverride && contextWindowOverride > 0)
@@ -278,16 +295,45 @@ export function trimMessagesToFit(
   const safetyMargin = Math.round(maxContext * 0.05)
   const inputBudget = maxContext - outputBudget - safetyMargin
   const copy = messages.map(message => ({ ...message }))
+
+  // G2A：把受保护约束从基础消息中剥离，使其不参与裁剪、只参与预算预留
+  let constraint: string | undefined
+  if (protectedConstraint) {
+    const lastUser = [...copy].reverse().find(message => message.role === 'user')
+    if (lastUser && lastUser.content.endsWith(protectedConstraint)) {
+      lastUser.content = lastUser.content.slice(0, lastUser.content.length - protectedConstraint.length)
+      if (lastUser.content.endsWith('\n\n')) {
+        lastUser.content = lastUser.content.slice(0, -2)
+      }
+      constraint = protectedConstraint
+    }
+  }
+  const constraintTokens = constraint ? estimateTokens(constraint) : 0
+  const baseBudget = inputBudget - constraintTokens
+
+  // 约束本身超出输入预算 → 拒绝；绝不发送缺失约束的请求
+  // （totalInputTokens 直接按含约束的原始消息计算，保持与最终重算口径一致）
+  if (constraint && baseBudget < 0) {
+    return {
+      messages: messages.map(message => ({ ...message })),
+      trimmed: false,
+      totalInputTokens: messages.reduce((sum, message) => sum + estimateTokens(message.content), 0),
+      inputBudget,
+      protectedEnvelopePreserved: false,
+      constraintPreserved: false,
+    }
+  }
+
   let total = copy.reduce((sum, message) => sum + estimateTokens(message.content), 0)
   let trimmed = false
 
   let guard = 0
-  while (total > inputBudget && guard++ < copy.length * 3) {
+  while (total > baseBudget && guard++ < copy.length * 3) {
     const index = copy.findIndex(message =>
       message.role !== 'system' && message.content !== '（此段因上下文窗口限制已裁剪）')
     if (index < 0) break
     const tokens = estimateTokens(copy[index].content)
-    const overflow = total - inputBudget
+    const overflow = total - baseBudget
     if (tokens <= overflow + 128) {
       copy[index].content = '（此段因上下文窗口限制已裁剪）'
     } else {
@@ -298,11 +344,35 @@ export function trimMessagesToFit(
     trimmed = true
   }
 
+  // G2A：裁剪后把精确约束按原样重新追加到最后一条 user 消息末尾（字节级一致）
+  if (constraint) {
+    const lastUser = [...copy].reverse().find(message => message.role === 'user')
+    if (lastUser) lastUser.content = `${lastUser.content}\n\n${constraint}`
+  }
+
+  // G2A：最终 token 用量必须按重追加后的最终内容重新计算——estimateTokens 对
+  // 拼接不严格可加（四舍五入 + '\n\n' 分隔符），旧的 `total + constraintTokens`
+  // 会在精确边界处少算 ~1 token，把实际超窗的请求误判为 fit 而发出。
+  // 无约束时该值与原 `total` 恒等，既有行为不变。
+  const totalInputTokens = copy.reduce((sum, message) => sum + estimateTokens(message.content), 0)
   const protectedBlocks = messages.flatMap(message => extractContinuityBlocks(message.content))
-  const protectedEnvelopePreserved = total <= inputBudget && protectedBlocks.every(block =>
+  const protectedEnvelopePreserved = totalInputTokens <= inputBudget && protectedBlocks.every(block =>
     copy.some(message => message.content.includes(block))
   )
-  return { messages: copy, trimmed, totalInputTokens: total, inputBudget, protectedEnvelopePreserved }
+  const result: TrimmedMessagesResult = {
+    messages: copy,
+    trimmed,
+    totalInputTokens,
+    inputBudget,
+    protectedEnvelopePreserved,
+  }
+  if (constraint) {
+    const lastUser = [...copy].reverse().find(message => message.role === 'user')
+    result.constraintPreserved = totalInputTokens <= inputBudget
+      && !!lastUser
+      && lastUser.content.endsWith(constraint)
+  }
+  return result
 }
 
 function extractContinuityBlocks(text: string): string[] {

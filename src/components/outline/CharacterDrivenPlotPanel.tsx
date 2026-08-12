@@ -197,7 +197,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
       userHint || undefined,
     )
 
-    await ai.start(messages, undefined, { category: 'outline.character-driven', projectId: project.id! })
+    await ai.start(messages, undefined, { category: 'outline.character-driven', projectId: project.id!, outputKind: 'mixed' })
   }
 
   // 解析 AI 输出

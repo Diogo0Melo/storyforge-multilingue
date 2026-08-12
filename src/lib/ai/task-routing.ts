@@ -45,6 +45,11 @@ const EXTRACTION_PREFIXES = [
   'foreshadow.structure',
   'ai.restructure',
   'import.',
+  // WS-3A（fail-safe 前置）：此前未分类的结构化抽取类 category。
+  // 缺省推导 extraction → outputKind functional-structured（不注入文本语言约束）。
+  'canon.setting.extract',
+  'storyline-progress.map',
+  'cultivation.progress',
 ]
 
 const ANALYSIS_PREFIXES = [
@@ -53,9 +58,16 @@ const ANALYSIS_PREFIXES = [
   'style.learn',
   'prompt.examples',
   'retrieval.',
+  // WS-3A（fail-safe 前置）：eval harness 调用（'eval.ns1.judge' 以点分后代命中；
+  // 'eval.ns10' 等相似名不再误匹配）。
+  // 缺省推导 analysis → outputKind functional-structured。
+  'eval.ns0',
+  'eval.ns1',
 ]
 
 const REVIEW_PREFIXES = [
+  // 注意：'agent.readonly'（agent/client-adapter）经该前缀落入 review 桶——
+  // 已知误分类，保留（无害：只读摘要；WS-3B 复审 agent 类别时一并处理）。
   'agent.',
   'review.',
   'scene.verify',
@@ -94,8 +106,17 @@ const AGENT_ROLE_CATEGORY_ENTRIES = [
   [AGENT_ROLE_CATEGORIES.prose, 'agent-prose'],
 ] as const
 
+/**
+ * 以 '.' 结尾的条目是开放命名空间（如 'import.'、'retrieval.'），匹配其下任意后代；
+ * 其余条目只匹配精确 category 或其点分后代（`prefix.`），
+ * 避免 'eval.ns10' / 'cultivation.progressive' 这类相似前缀误命中。
+ */
 function matchesPrefix(category: string, prefixes: readonly string[]): boolean {
-  return prefixes.some(prefix => category === prefix || category.startsWith(prefix))
+  return prefixes.some(prefix => (
+    prefix.endsWith('.')
+      ? category.startsWith(prefix)
+      : category === prefix || category.startsWith(`${prefix}.`)
+  ))
 }
 
 /** Unknown categories deliberately stay on the global model until explicitly classified. */

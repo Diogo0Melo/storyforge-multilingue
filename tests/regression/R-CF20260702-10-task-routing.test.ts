@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../src/lib/db/schema'
 import type { AIConfig, AIConfigPreset } from '../../src/lib/types'
@@ -40,7 +42,11 @@ describe('R-CF20260702-10 · task classification and resolution', () => {
     ['foreshadow.structure', 'extraction'],
     ['ai.restructure', 'extraction'],
     ['import.parse-chunk', 'extraction'],
+    ['canon.setting.extract.batch', 'extraction'],
+    ['cultivation.progress.realm', 'extraction'],
     ['reference.analysis', 'analysis'],
+    ['retrieval.query', 'analysis'],
+    ['eval.ns1.judge', 'analysis'],
     ['style.learn', 'analysis'],
     ['style.calibrate', 'creation'],
     ['review.quality', 'review'],
@@ -56,6 +62,27 @@ describe('R-CF20260702-10 · task classification and resolution', () => {
     ['node.creation', 'creation'],
   ] as const)('classifies %s as %s', (category, taskKind) => {
     expect(classifyAITask(category)).toBe(taskKind)
+  })
+
+  it.each([
+    ['eval.ns10'],
+    ['eval.ns1judge'],
+    ['cultivation.progressive'],
+    ['canon.setting.extractor'],
+  ] as const)('does not classify lookalike category %s (dot-boundary prefix matching)', category => {
+    expect(classifyAITask(category)).toBeNull()
+  })
+
+  it('declares outline.character-revision with outputKind mixed at the call site', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'src/components/outline/CharacterRevisionPanel.tsx'),
+      'utf8',
+    )
+    const index = source.indexOf("category: 'outline.character-revision'")
+    expect(index).toBeGreaterThanOrEqual(0)
+    const callSite = source.slice(index, index + 200)
+    expect(callSite).toContain("outputKind: 'mixed'")
+    expect(callSite).not.toContain("outputKind: 'creative'")
   })
 
   it('leaves unknown categories on the global model', () => {

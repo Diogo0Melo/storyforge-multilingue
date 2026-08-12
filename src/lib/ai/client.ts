@@ -7,6 +7,13 @@ import { buildOpenAIEndpoint } from './openai-endpoint'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { resolveAIConfigForTask, type AITaskKind } from './task-routing'
 import { getT } from '../../i18n'
+import {
+  applyOutputLanguageGate,
+  ENGLISH_OUTPUT_CONSTRAINT,
+  PORTUGUESE_OUTPUT_CONSTRAINT,
+  type OutputKind,
+} from './output-language'
+import { SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT } from './adapters/prompt-guards'
 
 /** 调用元信息（用于消耗统计分类） */
 export interface AICallMeta {
@@ -20,6 +27,14 @@ export interface AICallMeta {
    * 避免系统指令、用户目标或工具证据被静默移除后继续执行。
    */
   contextOverflowPolicy?: 'trim' | 'reject'
+  /**
+   * WS-3A (D12)：调用方声明的输出语义意图，client gate 据此决定输出语言约束：
+   * - creative / mixed → 注入项目 resolved contentLanguage 约束
+   * - functional-prose → 注入当前 UI 语言约束
+   * - functional-structured / language-neutral → 不注入文本语言约束
+   * 缺省时由 classifyAITask 过渡期推导（WS-3B 改为显式声明并收紧）。
+   */
+  outputKind?: OutputKind
 }
 
 export function resolveRequestConfig(config: AIConfig, meta?: AICallMeta) {
@@ -38,6 +53,24 @@ function warnRouteFallback(resolved: ReturnType<typeof resolveRequestConfig>, me
   if (resolved.fallbackReason) {
     console.warn(`[AI] task route fallback (${resolved.fallbackReason}): ${meta?.category ?? 'uncategorized'}`)
   }
+}
+
+/**
+ * G2A：输出语言 gate 可能注入的三种约束精确文本（各自直接派生自
+ * output-language.ts / prompt-guards.ts 的字节级常量）。用于在 gate 之后
+ * 识别需要受保护裁剪的精确约束。
+ */
+const OUTPUT_LANGUAGE_CONSTRAINTS: readonly string[] = [
+  SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT,
+  PORTUGUESE_OUTPUT_CONSTRAINT,
+  ENGLISH_OUTPUT_CONSTRAINT,
+]
+
+/** G2A：识别 gate 注入到最后一条 user 消息末尾的精确输出语言约束；无注入时返回 undefined。 */
+function detectInjectedOutputConstraint(messages: ChatMessage[]): string | undefined {
+  const user = [...messages].reverse().find(message => message.role === 'user')
+  if (!user) return undefined
+  return OUTPUT_LANGUAGE_CONSTRAINTS.find(constraint => user.content.endsWith(constraint))
 }
 
 function usageEntry(
@@ -143,7 +176,19 @@ export async function* streamChat(
   const resolved = resolveRequestConfig(config, meta)
   warnRouteFallback(resolved, meta)
   config = resolved.config
-  const trimmed = trimMessagesToFit(messages, config.provider, config.model, config.maxTokens, config.contextWindow)
+  // WS-3A：唯一网络边界的输出语言注入点（先于裁剪，约束计入上下文预算）
+  messages = await applyOutputLanguageGate(messages, meta)
+  // G2A：识别 gate 注入的精确约束 → 预留其 token 预算 → 在削减后的预算下裁剪
+  // 基础消息 → 约束按原样重新追加到末尾；约束无法保留时拒绝请求。
+  const protectedConstraint = detectInjectedOutputConstraint(messages)
+  const trimmed = trimMessagesToFit(
+    messages, config.provider, config.model, config.maxTokens, config.contextWindow, protectedConstraint,
+  )
+  if (protectedConstraint && trimmed.constraintPreserved !== true) {
+    throw new Error(
+      getT()('errors-lib:ai.contextWindowInsufficient', { inputTokens: trimmed.totalInputTokens, budgetTokens: trimmed.inputBudget }),
+    )
+  }
   if (trimmed.trimmed && meta?.contextOverflowPolicy === 'reject') {
     throw new Error(
       getT()('errors-lib:ai.contextWindowInsufficient', { inputTokens: trimmed.totalInputTokens, budgetTokens: trimmed.inputBudget }),
@@ -268,7 +313,19 @@ export async function chat(
   const resolved = resolveRequestConfig(config, meta)
   warnRouteFallback(resolved, meta)
   config = resolved.config
-  const trimmed = trimMessagesToFit(messages, config.provider, config.model, config.maxTokens, config.contextWindow)
+  // WS-3A：唯一网络边界的输出语言注入点（先于裁剪，约束计入上下文预算）
+  messages = await applyOutputLanguageGate(messages, meta)
+  // G2A：识别 gate 注入的精确约束 → 预留其 token 预算 → 在削减后的预算下裁剪
+  // 基础消息 → 约束按原样重新追加到末尾；约束无法保留时拒绝请求。
+  const protectedConstraint = detectInjectedOutputConstraint(messages)
+  const trimmed = trimMessagesToFit(
+    messages, config.provider, config.model, config.maxTokens, config.contextWindow, protectedConstraint,
+  )
+  if (protectedConstraint && trimmed.constraintPreserved !== true) {
+    throw new Error(
+      getT()('errors-lib:ai.contextWindowInsufficient', { inputTokens: trimmed.totalInputTokens, budgetTokens: trimmed.inputBudget }),
+    )
+  }
   if (trimmed.trimmed && meta?.contextOverflowPolicy === 'reject') {
     throw new Error(
       getT()('errors-lib:ai.contextWindowInsufficient', { inputTokens: trimmed.totalInputTokens, budgetTokens: trimmed.inputBudget }),

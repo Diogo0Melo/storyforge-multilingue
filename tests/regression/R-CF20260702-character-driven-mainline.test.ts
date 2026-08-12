@@ -48,6 +48,7 @@ describe('R-CF20260702-character-driven-mainline', () => {
     expect(text).toContain('角色驱动与故事主线对齐硬约束')
     expect(text).toContain('不得另起一套主线')
     expect(text).toContain('每一章的 arcProgress')
-    expect(text).toContain('简体中文')
+    // WS-3A seam transfer：语言约束改由 client gate 注入，适配器不再内嵌
+    expect(text).not.toContain('语言输出硬约束')
   })
 })

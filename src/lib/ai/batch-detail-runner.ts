@@ -253,7 +253,7 @@ export async function batchGenerateChapters(
         prevEnding,
       )
 
-      const content = await chat(messages, config, { category: 'chapter.content.batch', projectId: opts.projectId ?? null })
+      const content = await chat(messages, config, { category: 'chapter.content.batch', projectId: opts.projectId ?? null, outputKind: 'creative' })
       if (signal?.aborted) {
         return { generated, skipped: chapters.length - todo.length, failed, cancelled: true, elapsed: Date.now() - start }
       }
