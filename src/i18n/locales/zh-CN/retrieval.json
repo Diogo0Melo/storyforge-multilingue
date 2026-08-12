@@ -1,0 +1,176 @@
+{
+  "library": {
+    "title": "资料与检索库",
+    "subtitle": "这里实时投影项目 Canon，不复制第二份真相。你可以查看每条输入、控制字段是否参与创作、调整优先权与预算，并检查节点运行时真正召回了什么。",
+    "rebuildButton": "重建派生索引",
+    "clearButton": "删除派生索引",
+    "statVisibleRecords": "可见记录",
+    "statVisibleFields": "可见字段",
+    "statEnabledTokens": "启用内容估算",
+    "statChunks": "章节检索块",
+    "inputSectionTitle": "输入资料",
+    "inputSectionHint": "修改只影响检索策略，不改写作品正文或设定内容。",
+    "searchPlaceholder": "搜索来源、记录、字段或正文",
+    "searchAria": "搜索资料库",
+    "loadingEntries": "正在读取项目资料…",
+    "emptyWorld": "当前世界没有匹配的可见资料。",
+    "fieldCount": "{{count}} 字段",
+    "chunkCount": "{{count}} 块",
+    "updatedAt": "更新 {{date}}",
+    "updatedAtUnknown": "未知",
+    "enableDocumentAria": "启用资料 {{title}}",
+    "defaultWeightLabel": "默认权重",
+    "fieldCapLabel": "字段上限",
+    "enableFieldAria": "启用字段 {{label}}",
+    "fieldMeta": "{{tokens}} tokens · 权重 {{weight}} · 上限 {{cap}}",
+    "recallSectionTitle": "最近实际召回",
+    "recallSectionHint": "来自已保存的节点运行快照，不会因资料后来变化而重算。",
+    "recallEmpty": "尚无精确资料节点运行记录。",
+    "recallSummary": "纳入 {{included}} / 省略 {{omitted}} / 裁剪 {{trimmed}}",
+    "recallIncluded": "已纳入",
+    "recallOmitted": "已省略",
+    "recallTrimmed": "已裁剪",
+    "recallNone": "无",
+    "toastRebuildSuccess": "索引已重建：{{chunks}} 个正文块，{{summaries}} 个叙事摘要。",
+    "toastRebuildFailed": "重建失败：{{message}}",
+    "confirmClearTitle": "删除可重建检索缓存？",
+    "confirmClearMessage": "只会删除章节切块、向量和叙事摘要缓存；章节正文、角色、设定和资料策略不会删除。",
+    "confirmClearConfirmText": "删除派生缓存",
+    "toastClearSuccess": "已删除 {{chunks}} 个检索块和 {{summaries}} 个派生摘要；Canon 未改动。",
+    "toastClearFailed": "删除失败：{{message}}"
+  },
+  "vectorState": {
+    "none": "未建章节索引",
+    "keyword": "本地关键词",
+    "partial": "部分向量",
+    "ready": "向量就绪"
+  },
+  "selector": {
+    "title": "精确资料字段",
+    "hint": "已选 {{count}} 项；执行时按资料库权重和预算冻结真实召回。",
+    "refreshTitle": "刷新资料",
+    "searchPlaceholder": "搜索角色、章节、设定或字段",
+    "searchAria": "搜索资料字段",
+    "loadingProjection": "正在建立可见资料投影…",
+    "emptyWorld": "当前世界没有匹配的资料字段。",
+    "disabledTooltip": "该字段已在资料库停用",
+    "enabledMeta": "{{tokens}} tokens · 权重 {{weight}} · 上限 {{cap}}",
+    "stateReady": "向量就绪",
+    "stateKeyword": "本地关键词",
+    "stateNone": "未建索引"
+  },
+  "sourceLabels": {
+    "worldview": "世界观",
+    "storyCore": "故事核心",
+    "characters": "角色档案",
+    "characterRelations": "角色关系",
+    "chapterContent": "章节与前文",
+    "codex": "设定词条",
+    "locations": "重要地点",
+    "historical": "历史",
+    "foreshadows": "伏笔",
+    "references": "项目参考",
+    "itemLedger": "角色物品流水"
+  },
+  "fieldLabels": {
+    "worldview": {
+      "summary": "世界观摘要",
+      "worldOrigin": "世界来源",
+      "powerHierarchy": "力量层级",
+      "worldStructure": "世界结构",
+      "worldDimensions": "世界尺寸",
+      "continentLayout": "大陆分布",
+      "mountainsRivers": "山川河流",
+      "climateByRegion": "分区气候",
+      "naturalResourceOverview": "自然资源全貌",
+      "historyLine": "历史线",
+      "worldEvents": "世界大事记",
+      "races": "种族设定",
+      "factionLayout": "势力分布",
+      "politicsOverview": "政治制度",
+      "economyOverview": "经济体系",
+      "cultureOverview": "文化风俗",
+      "internalConflicts": "矛盾冲突",
+      "itemDesign": "道具设计",
+      "rules": "世界规则（旧字段）"
+    },
+    "storyCore": {
+      "logline": "一句话故事",
+      "concept": "故事概念",
+      "theme": "主题",
+      "centralConflict": "核心冲突",
+      "plotPattern": "情节模式",
+      "mainPlot": "故事主线",
+      "subPlots": "故事复线"
+    },
+    "characters": {
+      "shortDescription": "一句话简介",
+      "identity": "身份",
+      "profile": "基础档案",
+      "appearance": "外貌",
+      "personality": "性格",
+      "background": "背景",
+      "motivation": "动机",
+      "values": "价值观",
+      "strengths": "长处",
+      "weaknesses": "弱点",
+      "fears": "恐惧",
+      "goals": "目标",
+      "innerConflict": "内心冲突",
+      "abilities": "能力",
+      "powerLevel": "实力定位",
+      "relationships": "关系描述",
+      "arc": "角色弧光",
+      "keyEvents": "关键经历",
+      "speechStyle": "语言风格",
+      "habits": "习惯",
+      "signatureItem": "标志性物品"
+    },
+    "characterRelations": {
+      "relationType": "关系类型",
+      "label": "关系标签",
+      "description": "关系说明",
+      "isBidirectional": "是否双向"
+    },
+    "chapterContent": {
+      "content": "正文",
+      "summary": "章节摘要",
+      "notes": "作者笔记"
+    },
+    "codex": {
+      "summary": "简介",
+      "description": "详细描述",
+      "tags": "标签"
+    },
+    "locations": {
+      "description": "地点描述",
+      "significance": "剧情作用",
+      "tags": "地点标签"
+    },
+    "historical": {
+      "overview": "历史总述",
+      "eraSystem": "纪年体系",
+      "events": "历史事件"
+    },
+    "foreshadows": {
+      "description": "伏笔描述",
+      "notes": "作者备注",
+      "status": "当前状态"
+    },
+    "references": {
+      "note": "作者备注",
+      "analysisSummary": "分析摘要",
+      "importedData": "结构化参考"
+    },
+    "itemLedger": {
+      "event": "物品事件",
+      "note": "物品备注"
+    }
+  },
+  "titles": {
+    "worldviewPrimary": "主世界观",
+    "worldviewCurrent": "当前世界观",
+    "historicalPrimary": "主世界历史",
+    "historicalCurrent": "当前世界历史"
+  }
+}

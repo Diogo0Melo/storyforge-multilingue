@@ -1,0 +1,75 @@
+{
+  "license": {
+    "ccBy4": "CC BY 4.0 · Attribution",
+    "ccBySa4": "CC BY-SA 4.0 · Attribution-ShareAlike",
+    "ccByNc4": "CC BY-NC 4.0 · Attribution-NonCommercial",
+    "allRightsReserved": "All rights reserved · View-only license"
+  },
+  "use": {
+    "writing": "Step-by-step writing",
+    "ttrpg": "TTRPG session",
+    "characterChat": "Character chat",
+    "textGame": "Text game"
+  },
+  "publish": {
+    "successMessage": "World sharing package generated; the file contains only registered world data, not story text or runtime logs.",
+    "generateFailed": "Failed to generate the sharing package."
+  },
+  "inspect": {
+    "readFailed": "Could not read the sharing package: {{message}}",
+    "jsonFormatError": "Invalid JSON format"
+  },
+  "import": {
+    "successMessage": "Imported as a new local world copy; existing projects were not overwritten.",
+    "failed": "Failed to import the world sharing package."
+  },
+  "panel": {
+    "ariaLabel": "Publish and import worlds",
+    "title": "Publish & import worlds",
+    "statusChip": "No upload · Local file package",
+    "exportTitle": "Generate a world sharing package",
+    "exportDesc": "Exports world settings, characters, rules, and source IDs; story text, notes, Agent conversations, API configuration, and runtime archives are excluded.",
+    "authorLabel": "Author credit",
+    "authorPlaceholder": "e.g. Lin Lan",
+    "licenseLabel": "License",
+    "allowedUsesLegend": "Allowed derivative uses",
+    "warningsLabel": "Content warnings (optional)",
+    "warningsPlaceholder": "Comma-separated, e.g. war, disaster",
+    "downloadButton": "Download world package",
+    "importTitle": "Import a local world package",
+    "importDesc": "Reads the publish info, license, allowed uses, and integrity first; you then confirm importing it as a new local world copy.",
+    "chooseButton": "Choose world package",
+    "chooseFileAria": "Choose world sharing package"
+  },
+  "preview": {
+    "passed": "Package pre-check passed",
+    "failed": "Package pre-check failed",
+    "author": "Author: {{name}} · {{license}}",
+    "uses": "Uses: {{uses}}",
+    "warnings": "Warnings: {{warnings}}",
+    "confirmImport": "Confirm import as local copy"
+  },
+  "wp": {
+    "noCryptoSupport": "This environment does not support package integrity verification.",
+    "noWorldCode": "This project has no publishable world code yet. Please return to the World Engine page first.",
+    "authorRequired": "Please enter an author credit.",
+    "invalidLicense": "Invalid license option.",
+    "noAllowedUses": "Select at least one allowed use.",
+    "notJsonObject": "The sharing package must be a JSON object.",
+    "notStoryForgePackage": "This is not a StoryForge world sharing package.",
+    "unsupportedVersion": "Unsupported world package version: {{version}}.",
+    "missingManifest": "The package is missing publish info.",
+    "manifestMissingIdOrName": "Publish info is missing world code or name.",
+    "invalidWorldVersion": "Invalid world version.",
+    "manifestMissingAuthor": "The package is missing an author credit.",
+    "manifestInvalidLicense": "Invalid package license.",
+    "manifestNoValidUses": "The package has no valid derivative-use declaration.",
+    "invalidContentWarnings": "Invalid content warnings format.",
+    "missingPortableProject": "The package is missing importable world data.",
+    "missingWorldTable": "The package is missing world table \"{{table}}\".",
+    "unauthorizedPrivateTable": "The package contains unauthorized private table \"{{table}}\"; import rejected.",
+    "missingIntegrity": "The package is missing integrity verification.",
+    "integrityCheckFailed": "Package integrity check failed; the file may have been modified.",
+    "precheckFailed": "World package pre-check failed: {{errors}}"
+  }
+}

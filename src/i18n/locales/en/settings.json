@@ -1,0 +1,1882 @@
+{
+  "page": {
+    "title": "Settings",
+    "otherSection": "Other",
+    "guideTitle": "Onboarding guide",
+    "guideDescription": "Show the first-run onboarding tutorial again",
+    "guideResetDone": "Reset (refresh to apply)",
+    "guideResetAction": "Restart guide"
+  },
+  "aiConfig": {
+    "sectionTitle": "AI model configuration",
+    "apiKeyNotice": "The API Key is kept in this browser session by default; check \"Remember on this device\" to persist it in localStorage. When you generate with AI, test the connection, or use a custom baseUrl, prompts and context are sent to your configured model provider.",
+    "providerLabel": "Provider",
+    "apiKeyLabel": "API Key",
+    "apiKeyPlaceholder": "Enter API Key...",
+    "ollamaNoKeyPlaceholder": "No key required",
+    "rememberApiKey": "Remember API Key on this device (stored in localStorage). Unchecked keeps it for this browser session only.",
+    "baseUrlLabel": "Base URL",
+    "lmStudioButton": "LM Studio",
+    "localOllamaButton": "Local Ollama",
+    "localModelHint": "For local models, pick an OpenAI-compatible endpoint and set Base URL up to /v1; Ollama usually runs on :11434/v1 and LM Studio on :1234/v1. Do not include /v1/models or /chat/completions — common mistakes are auto-corrected during testing.",
+    "switchToProxy": "🔄 Switch to local proxy",
+    "restoreDirect": "🔗 Restore direct connection",
+    "modelLabel": "Model",
+    "refreshModelsTitle": "Refresh model list from current service",
+    "refreshing": "Refreshing",
+    "refreshModels": "Refresh models",
+    "fetchedModelsAria": "Models returned by the service",
+    "selectFetchedModel": "Select a fetched model ({{count}})",
+    "manualModelPlaceholder": "Or type a model name manually (not in the list)",
+    "manualModelFallbackPlaceholder": "Type a model name",
+    "emptyModelListError": "Service returned an empty model list; you can still enter a model name manually",
+    "refreshModelError": "Failed to refresh model list",
+    "ollamaPullHint": "Pull missing models in Ollama first, then come back here and refresh.",
+    "maxTokensUnlimited": "Unlimited (model max)",
+    "maxTokensApprox": "≈{{count}} chars",
+    "maxTokensUnlimitedToggle": "Unlimited",
+    "contextWindowLabel": "Context window",
+    "contextWindowAdvanced": "Advanced · Optional",
+    "contextWindowPreset": "Use model preset",
+    "contextWindowPlaceholder": "For local/custom models enter the real value, e.g. 131072; leave blank = built-in preset",
+    "contextWindowResetTitle": "Reset to model preset",
+    "contextWindowResetAria": "Reset context window to model preset",
+    "autoSavedCurrent": "Auto-saved to current configuration",
+    "autoSavedPendingPreset": "Auto-saved to current configuration, not yet written back to \"{{name}}\"",
+    "contextWindowHint": "Unknown models default to 8K and may falsely report \"context exceeds window\". For local models (LM Studio / Ollama) enter the real window size here, e.g. 128000 / 262144.",
+    "renamePresetTitle": "Rename preset",
+    "renamePresetPlaceholder": "Enter new preset name",
+    "deletePresetTitle": "Delete preset \"{{name}}\"?",
+    "deletePresetMessage": "This cannot be undone.",
+    "modelDesc": {
+      "deepseekV4Flash": "Fast, great value",
+      "deepseekV4Pro": "Strongest, supports deep thinking",
+      "gemini25Flash": "Recommended, stable with high free tier",
+      "gemini25FlashLite": "Lightweight stable version",
+      "gemini25Pro": "Strongest stable, supports thinking",
+      "gemini3FlashPreview": "⚠️ Preview, may 503 during peak",
+      "gemini31FlashLite": "⚠️ Preview",
+      "gemini3ProPreview": "⚠️ Preview, may be unstable",
+      "gemini31ProPreview": "⚠️ Preview, may be unstable",
+      "gemini20Flash": "Legacy",
+      "llama33_70b": "Latest Llama, recommended",
+      "llama31_405b": "Strongest open-source model",
+      "llama31_70b": "High performance",
+      "deepseekR1": "Reasoning model",
+      "qwen25_72b": "Qwen (Tongyi Qianwen)",
+      "gemma2_27b": "Google open-source",
+      "mistralLarge2": "Mistral flagship",
+      "qwen3_235b": "Strongest MoE model",
+      "qwen3_32b": "High-performance dense model",
+      "qwen3_30b": "Light MoE, great value",
+      "qwen3_14b": "Mid-size dense model",
+      "qwen3_8b": "Lightweight dense model",
+      "qwen3_4b": "Ultra-lightweight",
+      "agnes15Flash": "Tsinghua-series free · Stable · Recommended",
+      "agnes20Flash": "1M context · Maintenance during some hours",
+      "longcat20": "Meituan LongCat · OpenAI compatible · 1M context"
+    }
+  },
+  "providerHints": {
+    "deepseek": "Get key: platform.deepseek.com → API Keys (click \"Switch to local proxy\" below)",
+    "qwen": "Get key: dashscope.console.aliyun.com → API-KEY Management",
+    "doubao": "Get key: console.volcengine.com → Model Inference → API Key (Volcengine does not support browser-direct; click \"Switch to local proxy\" below)",
+    "minimax": "Get key: platform.minimaxi.com → API Keys",
+    "glm": "Get key: open.bigmodel.cn → API Keys",
+    "wenxin": "Get key: console.bce.baidu.com → Qianfan → API Key",
+    "gemini": "Get key: aistudio.google.com → API Keys",
+    "poe": "Get key: poe.com → Settings → API → API Key",
+    "openai": "Get key: platform.openai.com → API Keys (click \"Switch to local proxy\" below)",
+    "kimi": "Get key: platform.moonshot.cn → API Key Management (click \"Switch to local proxy\" below)",
+    "claude": "Get key: console.anthropic.com → API Keys (click \"Switch to local proxy\" below)",
+    "nvidia": "Get key: build.nvidia.com → sign in to get API Key (click \"Switch to local proxy\" below)",
+    "modelscope": "Get key: modelscope.cn → Profile → Access Token",
+    "agnes": "Tsinghua-backed free multimodal · Get key: platform.agnes-ai.com (try \"Switch to local proxy\" if unreachable)",
+    "longcat": "Get key: longcat.chat console; OpenAI-compatible (switch to local proxy if browser-direct CORS fails)",
+    "opencode": "Get key: opencode.ai → Zen → Go API Key (click \"Switch to local proxy\" below)",
+    "ollama": "Local OpenAI-compatible /v1 endpoint; Ollama typically http://localhost:11434/v1, LM Studio typically http://localhost:1234/v1; usually no API key needed.",
+    "custom": "Any OpenAI-compatible API"
+  },
+  "connectionTest": {
+    "testing": "Testing...",
+    "testConnection": "Test connection",
+    "logs": "Logs",
+    "duration": "Duration {{ms}}ms",
+    "corsHintDev": "💡 When running locally, click \"Switch to local proxy\" to fix this",
+    "corsHintProd": "💡 Try Gemini (supports browser-direct) or run this tool locally"
+  },
+  "connectionLog": {
+    "title": "Connection logs",
+    "clear": "Clear",
+    "empty": "No logs yet. Click \"Test connection\" to generate some."
+  },
+  "preset": {
+    "label": "Configuration presets",
+    "saveChangesTo": "Save changes to \"{{name}}\"",
+    "saveChangesTitle": "Overwrite \"{{name}}\" with current form values",
+    "saveAsNew": "Save as new preset",
+    "namePlaceholder": "Preset name, e.g. \"DeepSeek primary\"",
+    "saveCurrent": "+ Save current as preset",
+    "empty": "No presets yet. Configure an API setup and click \"Save current as preset\" to switch quickly later.",
+    "updateTitle": "Overwrite this preset with current configuration",
+    "renameAria": "Rename preset {{name}}",
+    "deleteAria": "Delete preset {{name}}",
+    "hint": "Clicking a preset applies the whole configuration, including context window; after editing the form, use the buttons above to write changes back."
+  },
+  "taskRouting": {
+    "title": "Task model routing",
+    "description": "Automatically use saved presets per task; when unbound, when the preset was deleted, or when a dedicated preset lacks an API Key, fall back to the current global model. Cloud presets receive the matching task prompts and context.",
+    "useGlobalModel": "Use current global model",
+    "routeAria": "{{label}} model preset",
+    "agentTeamTitle": "Lead Agent team roles",
+    "agentTeamDescription": "Only affects behind-the-scenes Lead Agent execution; manual panels still use the four routes above. Unbound roles fall back to the current global model. Each of the five domains can also narrow its registered-source budget independently; \"Full\" keeps the original context cap.",
+    "teamBudgetLabel": "Per-round team budget",
+    "teamBudgetDescription": "Covers the Lead Agent, domain generation, and one controlled Canon rejection; once the cap is hit, calls stop before the next invocation.",
+    "teamBudgetAria": "Lead Agent team budget",
+    "contextTierLabel": "Context input tier",
+    "contextTierAria": "{{label}} context input tier",
+    "noPresetsWarning": "Save at least one configuration preset before binding tasks to dedicated models.",
+    "tasks": {
+      "creation": {
+        "label": "Creative generation",
+        "description": "Prose, outline, scene outline, worldview and character generation"
+      },
+      "extraction": {
+        "label": "Structured extraction",
+        "description": "State, facts, items, relations, codex entries and import parsing"
+      },
+      "analysis": {
+        "label": "Analysis & summary",
+        "description": "References, summaries, style learning and retrieval analysis"
+      },
+      "review": {
+        "label": "Review & QA",
+        "description": "Chapter review, consistency checks, scene and historical validation"
+      },
+      "agentOrchestrator": {
+        "label": "Lead Agent orchestration",
+        "description": "Understand goals, break down tasks and schedule dependencies; does not generate content directly"
+      },
+      "agentWorldOrigin": {
+        "label": "World domain Agent",
+        "description": "Behind-the-scenes world origins and civilization seeds for the Lead Agent"
+      },
+      "agentCharacter": {
+        "label": "Character domain Agent",
+        "description": "Behind-the-scenes new character design for the Lead Agent"
+      },
+      "agentInspiration": {
+        "label": "Inspiration domain Agent",
+        "description": "Behind-the-scenes project inspiration reverse-engineering for the Lead Agent"
+      },
+      "agentOutline": {
+        "label": "Outline domain Agent",
+        "description": "Behind-the-scenes volume and chapter outline generation for the Lead Agent"
+      },
+      "agentProse": {
+        "label": "Prose domain Agent",
+        "description": "Behind-the-scenes blank-chapter generation and explicit continuation for the Lead Agent"
+      }
+    },
+    "contextProfiles": {
+      "lean": {
+        "label": "Lean",
+        "description": "~45% of registered-source budget, favors lower input cost"
+      },
+      "balanced": {
+        "label": "Balanced (recommended)",
+        "description": "~72% of registered-source budget, balances quality and cost"
+      },
+      "full": {
+        "label": "Full",
+        "description": "Uses the full registered-source budget, best for high-risk long-context tasks"
+      }
+    },
+    "teamBudgets": {
+      "economy": {
+        "label": "Economy",
+        "description": "Up to ~80K tokens per round"
+      },
+      "balanced": {
+        "label": "Balanced (recommended)",
+        "description": "Up to ~160K tokens per round"
+      },
+      "expanded": {
+        "label": "Expanded",
+        "description": "Up to ~240K tokens per round"
+      }
+    }
+  },
+  "embedding": {
+    "title": "Semantic retrieval (embedding)",
+    "enable": "Enable",
+    "description": "When off, long-range retrieval uses only the <strong>keyword channel</strong> (fully local, zero cost). When on, it layers <strong>semantic vectors</strong> on top — better at finding foreshadowing from hundreds of chapters ago via near-synonyms/semantics, blended with keyword scoring; failures gracefully fall back to keywords without blocking generation. <strong>Cloud models send prose to that provider; choosing local Ollama keeps every word on-device.</strong>",
+    "buildIndex": "Build retrieval index for current project's past chapters",
+    "building": "Building… {{progress}}",
+    "noProjectHint": "Open a project to batch-build its chapter index here.",
+    "indexExplanation": "First rebuilds keyword chunks and chapter→volume→book summary trees from chapter text; if embedding is enabled and configured, only chunks missing vectors or affected by a model change are embedded. Without embedding, long-range recall still uses hierarchical summaries + pure keyword search.",
+    "proxyNote": "Domestic presets default to a <strong>local proxy</strong> (bypasses browser CORS when running the tool locally); for deployed builds, change Base URL to the provider's direct endpoint. No GPU? Pick <strong>SiliconFlow/Qwen/GLM</strong> — cloud compute, just add your key.",
+    "baseUrlLabel": "Base URL",
+    "switchToDirect": "🔗 Switch to direct (for deployed builds)",
+    "switchToProxy": "🔄 Switch to local proxy (for local runs)",
+    "modelLabel": "Embedding model",
+    "apiKeyLabel": "API Key",
+    "apiKeyHint": "(leave blank for local Ollama)",
+    "idempotentNote": "Semantic vectors are idempotent and resumable; newly accepted chapters are indexed automatically. Roughly ¥0.2 per million characters in the cloud, free locally.",
+    "presets": {
+      "siliconflow": {
+        "label": "SiliconFlow · bge-m3",
+        "note": "No GPU · available in China · free tier (recommended)"
+      },
+      "qwen": {
+        "label": "Qwen · v3",
+        "note": "Alibaba-backed · affordable & stable · strong in Chinese"
+      },
+      "glm": {
+        "label": "GLM · embedding-3",
+        "note": "Major CN provider · OpenAI-compatible"
+      },
+      "ollama": {
+        "label": "Local Ollama · bge-m3",
+        "note": "Free offline · manuscripts never leave device · requires GPU"
+      },
+      "openai": {
+        "label": "OpenAI · 3-small",
+        "note": "Requires external network · 1536-dim"
+      }
+    },
+    "progress": {
+      "preparing": "Preparing…",
+      "chunking": "Chunking {{done}}/{{total}} chapters",
+      "summarizing": "Summarizing {{done}}/{{total}} chapters",
+      "embedding": "Embedding {{done}}/{{total}} chunks"
+    },
+    "messages": {
+      "readyWithoutEmbedding": "Retrieval index ready: scanned {{chapters}} chapters, rebuilt {{rebuiltChapters}} chapters / {{chunks}} chunks; summary tree {{summaryChapters}} chapters, {{summaryVolumes}} volumes, {{summaryBooks}} books. No embedding configured — using hierarchical summaries + keyword search.",
+      "readyWithEmbedding": "Retrieval index ready: scanned {{chapters}} chapters, currently {{chunks}} chunks; summary tree {{summaryChapters}} chapters, {{summaryVolumes}} volumes, {{summaryBooks}} books; semantic vectors fully ready.",
+      "completed": "Done: scanned {{chapters}} chapters, rebuilt {{rebuiltChapters}} chapters / {{chunks}} chunks; summary tree {{summaryChapters}} chapters, {{summaryVolumes}} volumes, {{summaryBooks}} books; embedded {{embedded}} chunks this run, skipped {{skipped}} already-ready chunks",
+      "failed": "Index build failed: {{error}} (existing indexes remain usable; embedding failures fall back to keyword search automatically)"
+    }
+  },
+  "modelList": {
+    "fetchFailed": "Model list request failed (HTTP {{status}})",
+    "invalidResponse": "Invalid model list response format; service must be compatible with OpenAI /v1/models",
+    "timeout": "Timed out refreshing the model list. Please make sure the local model service is running.",
+    "connectionFailed": "Unable to connect to the model service. Check the Base URL, service status, or CORS settings."
+  },
+  "theme": {
+    "title": "Theme",
+    "currentAria": "Current theme",
+    "themes": {
+      "warm": {
+        "label": "Warm White Studio",
+        "desc": "Long-form writing · Clear hierarchy · Default recommendation"
+      },
+      "jade": {
+        "label": "Ink Jade",
+        "desc": "Dark immersive · Green study · White text body"
+      },
+      "slate": {
+        "label": "Cool Slate Blue",
+        "desc": "Productivity management · Calm and clear · Best for settings library"
+      },
+      "forge": {
+        "label": "Forge",
+        "desc": "Night amber · Fire embers"
+      },
+      "scroll": {
+        "label": "Ancient Scroll",
+        "desc": "Yellowed paper · Iron gall ink"
+      },
+      "paper": {
+        "label": "Paper & Ink",
+        "desc": "Snow-white paper · Crisp ink strokes"
+      }
+    }
+  },
+  "usageStats": {
+    "title": "Usage statistics",
+    "callsCount": "({{count}} calls)",
+    "exchangeRate": "Rate 1$ =",
+    "currentProjectOnly": "Current project only",
+    "refresh": "Refresh",
+    "clear": "Clear",
+    "clearTitle": "Clear usage records?",
+    "clearMessage": "This cannot be undone.",
+    "totalInputTokens": "Total input tokens",
+    "totalOutputTokens": "Total output tokens",
+    "totalCost": "Total cost",
+    "timeColumn": "Time",
+    "categoryColumn": "Category",
+    "modelColumn": "Model",
+    "inputColumn": "Input",
+    "outputColumn": "Output",
+    "costColumn": "Cost",
+    "loading": "Loading…",
+    "empty": "No usage records yet. They appear here automatically after any AI generation.",
+    "footer": "Note: costs are estimated from model unit prices × tokens (actual prices vary by relay/proxy; adjust the USD→CNY rate above). Categories come from each AI action tag; unlabeled ones fall under \"Other\" (to be filled as the unified execution layer lands).",
+    "taskKindLabels": {
+      "creation": "Creation",
+      "extraction": "Extraction",
+      "analysis": "Analysis",
+      "review": "Review",
+      "agentOrchestrator": "Lead Agent",
+      "agentWorldOrigin": "World Agent",
+      "agentCharacter": "Character Agent",
+      "agentInspiration": "Inspiration Agent",
+      "agentOutline": "Outline Agent",
+      "agentProse": "Prose Agent"
+    }
+  },
+  "ns0Eval": {
+    "title": "NS-0 long-term consistency baseline (dev only)",
+    "description": "The regular button runs development fixtures; the NS-1 final button runs the frozen held-out set and scores with an independent semantic judge. The final blind test shows only aggregates, not per-case outputs.",
+    "runDevelopment": "Run development set",
+    "running": "Running {{progress}}",
+    "ns1FinalLocked": "NS-1 final blind test locked",
+    "ns1PairedAB": "NS-1 final paired A/B",
+    "factRecall": "Fact recall: {{value}}%",
+    "constraintRecall": "Constraint recall: {{value}}%",
+    "futureLeakage": "Future leakage: {{value}}%",
+    "wrongWorldLeakage": "Wrong-world leakage: {{value}}%",
+    "estimatedInput": "Estimated input: {{value}} tokens",
+    "estimatedOutput": "Estimated output: {{value}} tokens",
+    "tableBudget": "Budget",
+    "tableVariant": "Variant",
+    "tableFact": "Fact",
+    "tableConstraint": "Constraint",
+    "tableFuture": "Future",
+    "tableWrongWorld": "Wrong world",
+    "tableInOut": "In/Out",
+    "fixedGate": "fixed hard gate: {{result}}",
+    "naturalGate": "natural hard gate: {{result}}",
+    "perCaseSummary": "{{budgetMode}} · {{variant}} per-case results",
+    "caseScore": "{{fixtureId}} · fact {{fact}}% · constraint {{constraint}}%",
+    "matchedConstraints": "Matched constraints: {{list}}",
+    "matchedConstraintsEmpty": "none",
+    "groupsUnit": "groups",
+    "casesUnit": "cases",
+    "progressPaired": "{{completed}}/{{total}} groups",
+    "progressCase": "{{completedRuns}}/{{totalRuns}} groups · {{completedCases}}/{{totalCases}} cases",
+    "judgeParseError": "Semantic judge returned unparseable verdict: {{id}}"
+  },
+  "promptManager": {
+    "tabTemplates": "Templates",
+    "tabWorkflows": "Workflows",
+    "genrePackLabel": "Genre pack",
+    "scopeLabel": "Scope",
+    "scopeAll": "All",
+    "scopeSystem": "Built-in",
+    "scopeUser": "Mine",
+    "countSuffix": "{{count}} total",
+    "newTemplate": "New",
+    "import": "Import",
+    "exportAll": "Export all",
+    "importSuccess": "Successfully imported {{count}} templates",
+    "importError": "Import failed: {{error}}",
+    "untitledTemplate": "Untitled template",
+    "importedTemplateName": "Imported template",
+    "emptyFilter": "No templates match the current filter"
+  },
+  "promptEditor": {
+    "selectPrompt": "Pick a template on the left to view / edit",
+    "systemBadge": "System",
+    "userBadge": "Mine",
+    "defaultBadge": "★ Default",
+    "activeBadge": "Active",
+    "descriptionPlaceholder": "Template description...",
+    "moduleLabel": "Module",
+    "continuityLabel": "Continuity context",
+    "continuityInherit": "Inherit default injection",
+    "continuityRequired": "Force injection",
+    "continuityOff": "Disable injection",
+    "setActive": "Set as active",
+    "clone": "Clone",
+    "export": "Export",
+    "cloneSuccess": "Cloned as a \"Mine\" template (id={{id}}); find it in the list on the left.",
+    "deleteTitle": "Delete template \"{{name}}\"?",
+    "deleteMessage": "This cannot be undone.",
+    "variablesTitle": "Declared variables (self-documentation only; does not affect rendering)",
+    "addVariable": "Add",
+    "noVariables": "(none)",
+    "variableBindingsTitle": "Variable field bindings",
+    "bindingRequired": "required",
+    "bindingManual": "can be filled manually",
+    "bindingProjectField": "Project field: {{field}}",
+    "bindingSourceKey": "Context: {{key}}",
+    "bindingManualInput": "Manual input",
+    "previewTitle": "Live preview (rendered with sample variable dictionary)",
+    "previewHint": "Updates as you edit the template",
+    "renderError": "Render error: {{error}}",
+    "exampleVarPlaceholder": "(example: {{label}})",
+    "newVariableTitle": "Add variable",
+    "newVariableMessage": "Variable names may only contain letters, digits and underscores.",
+    "userPromptTemplateLabel": "User Prompt template",
+    "templateSyntaxHint": "Supports <code>{{var}}</code> and <code>{{#if var}}...{{/if}}</code>"
+  },
+  "promptParameters": {
+    "title": "Tunable parameters",
+    "add": "Add parameter",
+    "empty": "No parameters yet. Declare parameters to reference them in templates with <code>{{key}}</code>; optional ones can be wrapped with <code>{{#if usesKey}}...{{/if}}</code>.",
+    "keyPlaceholder": "key (used as {{key}})",
+    "labelPlaceholder": "UI display name",
+    "defaultPlaceholder": "Default value",
+    "optionalToggle": "Allow disabling",
+    "selectOptionsPlaceholder": "Options, comma-separated (e.g. serious,light,humorous)",
+    "descriptionPlaceholder": "Description (shown on hover)",
+    "newParameterLabel": "New parameter",
+    "typeLabels": {
+      "select": "Dropdown",
+      "slider": "Slider",
+      "number": "Number",
+      "text": "Text",
+      "boolean": "Toggle"
+    }
+  },
+  "promptExamples": {
+    "title": "Examples / counter-examples",
+    "titleHint": "few-shot, appended to the user prompt automatically",
+    "sourceLegend": "🤖 AI-generated · 👤 User-marked · ✍️ Manual",
+    "goodLabel": "Good examples",
+    "badLabel": "Counter-examples",
+    "manualAdd": "Manual",
+    "aiGenerate": "AI generate",
+    "manualAddTitle": "Add one manually",
+    "aiGenerateTitle": "Let AI generate a few from the template",
+    "emptyGood": "No good examples yet.",
+    "emptyBad": "No counter-examples yet.",
+    "emptyEditableSuffix": "Click \"Manual\" or \"AI generate\" in the top-right to add.",
+    "addGoodTitle": "Add good example",
+    "addBadTitle": "Add counter-example",
+    "addMessage": "Paste a complete example text.",
+    "addPlaceholder": "Paste example content",
+    "noExamplesError": "No examples found in AI output; retry or add manually",
+    "generateError": "Generation failed: {{error}}",
+    "tip": "Tip: up to 3 good examples and 2 counter-examples are appended to the prompt (to avoid wasting tokens)."
+  },
+  "promptModuleKeys": {
+    "worldviewDimension": "Worldview · Dimension generation",
+    "worldviewGenerate": "Worldview · Full generation (pending)",
+    "worldviewWorldbuilding": "Worldview · Phase tasks",
+    "characterGenerate": "Character · Full design",
+    "characterDimension": "Character · Dimension completion",
+    "characterDesign": "Character · Creation phase",
+    "storyGenerate": "Story · Overall generation (pending)",
+    "storyBrief": "Story · Project brief",
+    "storyIdeation": "Story · Ideation",
+    "storyPositioning": "Story · Positioning",
+    "storyCore": "Story · Story core",
+    "storyPackaging": "Story · Packaging",
+    "rulesGenerate": "Creative rules · Generation (pending)",
+    "researchMethod": "Research · Methodology",
+    "promptOperations": "Prompt · Management & evaluation",
+    "outlineVolume": "Outline · Volume level",
+    "outlineChapter": "Outline · Chapter level",
+    "outlinePlot": "Outline · Plot design",
+    "outlineStructure": "Outline · Structure design",
+    "outlineLongForm": "Outline · Long-form architecture",
+    "outlineShortStory": "Outline · Short-story architecture",
+    "outlineSerialization": "Outline · Serialization architecture",
+    "detailScene": "Scene outline · Scene (pending)",
+    "detailChapterPlanning": "Scene outline · Chapter planning",
+    "chapterContent": "Chapter · Prose generation",
+    "chapterContinue": "Chapter · Continuation",
+    "chapterDrafting": "Chapter · Prose drafting",
+    "chapterContinuity": "Chapter · Continuity",
+    "chapterLineEditing": "Chapter · Line editing",
+    "chapterMemory": "Chapter · Continuity memory extraction",
+    "chapterPolish": "Chapter · Polish",
+    "chapterExpand": "Chapter · Expansion",
+    "chapterDeAi": "Chapter · De-AI tone",
+    "reviewDevelopmental": "Review · Developmental edit",
+    "reviewLineEditing": "Review · Line edit",
+    "reviewReaderValidation": "Review · Reader validation",
+    "foreshadowGenerate": "Foreshadowing · Suggestions",
+    "geographyConceptMap": "Geography · Concept map SVG",
+    "geographyImageMapPrompt": "Geography · Image prompt",
+    "importParseAll": "Import · Smart unified parse",
+    "importParseCharacter": "Import · Character parse (legacy)",
+    "importParseWorldview": "Import · Worldview parse (legacy)",
+    "importParseOutline": "Import · Outline parse (legacy)",
+    "styleLearn": "Style · Profile learning",
+    "styleCalibrate": "Style · Interactive calibration"
+  },
+  "promptGroupLabels": {
+    "worldview": "Worldview",
+    "research": "Research",
+    "character": "Characters",
+    "outline": "Outline",
+    "chapter": "Chapters",
+    "detail": "Scene outline",
+    "review": "Review",
+    "foreshadow": "Foreshadowing",
+    "geography": "Geography",
+    "story": "Story",
+    "rules": "Creative rules",
+    "prompt": "Prompt management",
+    "import": "Import parsing"
+  },
+  "promptSubLabels": {
+    "dimension": "Dimension generation",
+    "generate": "Full generation",
+    "volume": "Volume level",
+    "chapter": "Chapter level",
+    "content": "Prose generation",
+    "continue": "Continuation",
+    "polish": "Polish",
+    "expand": "Expansion",
+    "deAi": "De-AI tone",
+    "conceptMap": "Concept map SVG",
+    "imageMapPrompt": "Image prompt",
+    "parseCharacter": "Character parse",
+    "parseWorldview": "Worldview parse",
+    "parseOutline": "Outline parse",
+    "parseAll": "Parse all",
+    "scene": "Scene",
+    "brief": "Project brief",
+    "ideation": "Ideation",
+    "positioning": "Positioning",
+    "core": "Story core",
+    "packaging": "Packaging",
+    "method": "Research methodology",
+    "operations": "Prompt management",
+    "worldbuilding": "Worldbuilding phase",
+    "design": "Character design",
+    "plot": "Plot",
+    "structure": "Structure",
+    "longForm": "Long-form architecture",
+    "shortStory": "Short-story architecture",
+    "serialization": "Serialization architecture",
+    "drafting": "Prose drafting",
+    "continuity": "Continuity",
+    "chapterPlanning": "Chapter planning",
+    "lineEditing": "Line editing",
+    "developmental": "Developmental edit",
+    "readerValidation": "Reader validation"
+  },
+  "workflow": {
+    "panelTitle": "Node mode",
+    "panelDescription": "ComfyUI-style creation: connect nodes into a flow; each step can still pause, be edited and confirmed.",
+    "newWorkflow": "New",
+    "newWorkflowName": "New workflow",
+    "import": "Import",
+    "exportAll": "Export all",
+    "importSuccess": "Successfully imported {{count}} workflows",
+    "importError": "Import failed: {{error}}",
+    "deleteTitle": "Delete workflow \"{{name}}\"?",
+    "deleteMessage": "This cannot be undone.",
+    "systemBadge": "System",
+    "userBadge": "Mine",
+    "defaultBadge": "★ Default",
+    "run": "Run",
+    "edit": "Edit",
+    "clone": "Clone",
+    "runAria": "Run workflow {{name}}",
+    "editAria": "Edit workflow {{name}}",
+    "cloneAria": "Clone workflow {{name}}",
+    "deleteAria": "Delete workflow {{name}}",
+    "stepsSummary": "{{total}} steps · {{confirm}} require user confirmation",
+    "loading": "Loading...",
+    "editorTitle": "Node mode · {{name}}",
+    "editorSubtitle": "FLOW-1 phase 1 · DAG orchestration reuses existing GenerationNode and author confirm-writeback",
+    "canvasTab": "Canvas",
+    "sequenceTab": "Sequence",
+    "back": "Back",
+    "graphIssuesPrefix": "Fix workflow graph errors first.",
+    "savedToast": "Node mode saved",
+    "discardTitle": "Discard unsaved changes?",
+    "discardMessage": "Nodes, connections or parameters have unsaved edits and will be lost if you go back.",
+    "discardConfirm": "Discard and go back",
+    "deleteFullMessage": "Node layout and connections will also be deleted. This cannot be undone.",
+    "authorOrderTitle": "Author order",
+    "authorOrderHint": "Used when topological sort yields ties; real dependencies still follow canvas connections.",
+    "addNode": "Add node",
+    "moveUpAria": "Move node {{label}} up",
+    "moveDownAria": "Move node {{label}} down",
+    "deleteNodeAria": "Delete node {{label}}",
+    "inspectorTitle": "Node inspector",
+    "workflowNameLabel": "Workflow name",
+    "descriptionLabel": "Description",
+    "nodeLabel": "Node name",
+    "promptModuleLabel": "Prompt module",
+    "userHintLabel": "Hint for AI",
+    "saveTargetLabel": "Save target after author confirmation",
+    "pauseForConfirmation": "Pause after this node and wait for author confirmation",
+    "inputPortsTitle": "Input ports",
+    "fromPrefix": "From: {{label}}",
+    "edgeVariableAria": "Connection variable {{label}}",
+    "templateFieldsHint": "Template fields read registered project data first; these are author supplements and do not overwrite graph incoming edges.",
+    "selectNodeHint": "Add or select a node to edit its parameters.",
+    "deleteEntireWorkflow": "Delete entire workflow",
+    "newNodeLabel": "Node {{index}}",
+    "canvasAddNode": "Add node",
+    "connectingHint": "Connecting \"{{label}}\": pick an input port on the left of the target node",
+    "dragHint": "Drag nodes to rearrange; click an output port on the right, then a target input port to connect",
+    "cancelConnection": "Cancel connection",
+    "zoomOutAria": "Zoom out",
+    "zoomInAria": "Zoom in",
+    "resetZoomAria": "Reset zoom",
+    "connectToAria": "Connect to {{label}}",
+    "inputPortTitle": "Input port",
+    "outputFromAria": "Output from {{label}}",
+    "outputPortTitle": "Output port",
+    "inputsCount": "Inputs {{count}}",
+    "outputsCount": "Outputs {{count}}",
+    "needsConfirmation": "Needs confirmation",
+    "autoAdvance": "Auto-advance",
+    "confirmWriteTarget": "Confirmable write target: {{type}}",
+    "edgesPanelTitle": "Connections",
+    "removeEdgeAria": "Remove connection {{edgeId}}",
+    "executionGraphTitle": "Execution graph",
+    "executionGraphHint": "Connections define data dependencies; actual calls execute one by one in stable topological order.",
+    "executionGraphStats": "{{nodes}} nodes · {{edges}} connections",
+    "statusPending": "Waiting",
+    "statusRunning": "Running",
+    "statusDone": "Candidate ready",
+    "statusFailed": "Failed",
+    "statusSkipped": "Skipped",
+    "noCandidateYet": "No candidate generated yet",
+    "runnerTitle": "▶ Running: {{name}}",
+    "start": "Start",
+    "abort": "Abort",
+    "continue": "Continue",
+    "backToList": "Back to list",
+    "graphExecutionError": "Workflow graph cannot execute: {{error}}",
+    "runningProgress": "▶ Running step {{current}} / {{total}}...",
+    "pausedStatus": "⏸ Paused (step {{current}} awaits your review)",
+    "completedStatus": "✓ Workflow complete",
+    "abortedStatus": "✗ Aborted",
+    "allCompletedTitle": "✓ All done",
+    "allCompletedBody": "You can copy each step's output into the matching module (characters / outline / chapter prose, etc.). One-click write-back automation can land in a future phase.",
+    "noProjectError": "No project linked; cannot auto-save. Enter a project before running.",
+    "invalidJsonArrayError": "AI output is not a JSON array",
+    "charactersWritten": "Wrote {{written}} characters",
+    "charactersWrittenWithSkipped": "Wrote {{written}} characters, skipped {{skipped}}",
+    "outlineNodesWritten": "Wrote {{count}} outline nodes",
+    "foreshadowsWritten": "Wrote {{written}} foreshadowing items",
+    "foreshadowsWrittenWithSkipped": "Wrote {{written}} foreshadowing items, skipped {{skipped}}",
+    "saveFailed": "Save failed: {{error}}. Character/outline/foreshadow targets require JSON output from AI. Use an import.parse-* prompt to shape it first.",
+    "missingScopesError": "This template needs the {{scopes}} scope(s); please select the matching project/chapter first",
+    "missingVariablesError": "Please fill required fields: {{variables}}",
+    "title": "Execution Graph",
+    "subtitle": "Workflow node execution status",
+    "stats": "{{nodes}} nodes · {{edges}} edges",
+    "deleteEdgeAria": "Delete edge {{id}}"
+  },
+  "workflowStep": {
+    "needsConfirmBadge": "⏸ Needs confirmation",
+    "charsCount": "{{count}} chars",
+    "failed": "Failed",
+    "skipped": "Skipped",
+    "userInputPlaceholder": "Your input (optional): write this step's content here; AI will build on it",
+    "pending": "Pending",
+    "generating": "Generating...",
+    "editableOutputHint": "AI output is editable; save/copy uses the edited content.",
+    "regenerate": "Regenerate",
+    "copy": "Copy",
+    "saveTo": "Save to {{target}}",
+    "savedTo": "Saved to {{target}}",
+    "saveTitle": "Auto-write to {{target}}",
+    "needProjectTitle": "Enter a project first",
+    "skip": "Skip this step"
+  },
+  "saveTargets": {
+    "none": "Do not auto-save (copy only)",
+    "worldviewField": "Worldview.{{field}}",
+    "storyCoreField": "Story.{{field}}",
+    "creativeRulesField": "Creative rules.{{field}}",
+    "createCharacters": "Characters (batch create)",
+    "createOutlineNodes": "Outline (batch create)",
+    "createForeshadows": "Foreshadowing (batch create)",
+    "fields": {
+      "worldOrigin": "World origin",
+      "powerHierarchy": "Power hierarchy",
+      "historyLine": "World history line",
+      "summary": "Worldview summary",
+      "logline": "Logline",
+      "concept": "Story concept",
+      "theme": "Theme",
+      "centralConflict": "Central conflict",
+      "mainPlot": "Main plot",
+      "writingStyle": "Writing style",
+      "toneAndMood": "Tone & mood"
+    }
+  },
+  "providerLabels": {
+    "deepseek": "DeepSeek",
+    "qwen": "Qwen",
+    "doubao": "Doubao",
+    "minimax": "MiniMax",
+    "glm": "Zhipu GLM",
+    "wenxin": "ERNIE Bot",
+    "gemini": "Gemini",
+    "poe": "Poe",
+    "openai": "OpenAI",
+    "kimi": "Kimi",
+    "claude": "Claude",
+    "nvidia": "NVIDIA NIM",
+    "modelscope": "ModelScope",
+    "agnes": "Agnes AI (free)",
+    "longcat": "LongCat (Meituan)",
+    "opencode": "OpenCode Go (monthly)",
+    "ollama": "Local model (Ollama / LM Studio etc.)",
+    "custom": "Custom"
+  },
+  "promptParams": {
+    "pace": {
+      "label": "Overall Pace",
+      "chapterLabel": "Pace",
+      "description": "Affects information density per volume",
+      "chapterDescription": "Fast = more action, less buildup; Slow = more psychology and environment",
+      "options": {
+        "slow": "Slow",
+        "medium": "Medium",
+        "fast": "Fast",
+        "veryFast": "Very Fast"
+      }
+    },
+    "volumeCount": {
+      "label": "Suggested Volume Count",
+      "description": "If not specified, automatically estimated by target word count"
+    },
+    "tone": {
+      "label": "Tone",
+      "worldviewDescription": "Affects worldview narrative style",
+      "styleDescription": "Affects overall language style",
+      "options": {
+        "serious": "Serious",
+        "epic": "Epic",
+        "lyrical": "Lyrical",
+        "hardcore": "Hardcore",
+        "lightFantasy": "Light Fantasy",
+        "relaxed": "Relaxed",
+        "humorous": "Humorous",
+        "heavy": "Heavy",
+        "tense": "Tense",
+        "passionate": "Passionate",
+        "dark": "Dark",
+        "warm": "Warm",
+        "fateful": "Fateful",
+        "ethereal": "Ethereal",
+        "frigid": "Frigid",
+        "vast": "Vast",
+        "zen": "Zen",
+        "archaic": "Archaic",
+        "sweet": "Sweet",
+        "angst": "Angst",
+        "bittersweet": "Bittersweet",
+        "healing": "Healing",
+        "restrained": "Restrained",
+        "burning": "Burning",
+        "bleak": "Bleak",
+        "absurd": "Absurd",
+        "detached": "Detached",
+        "nostalgic": "Nostalgic",
+        "grim": "Grim",
+        "eerie": "Eerie",
+        "taut": "Taut",
+        "gloomy": "Gloomy",
+        "repartee": "Repartee",
+        "weighty": "Weighty",
+        "intrigue": "Intrigue",
+        "mournful": "Mournful",
+        "classical": "Classical",
+        "rousing": "Rousing",
+        "domineering": "Domineering",
+        "mysterious": "Mysterious",
+        "comedic": "Comedic",
+        "heroic": "Heroic",
+        "tragic": "Tragic",
+        "dashing": "Dashing",
+        "scheming": "Scheming",
+        "tender": "Tender",
+        "corporate": "Corporate",
+        "darkGritty": "Dark Gritty",
+        "solemn": "Solemn",
+        "witty": "Witty",
+        "somber": "Somber",
+        "cyber": "Cyber",
+        "spaceOpera": "Space Opera",
+        "apocalyptic": "Apocalyptic",
+        "philosophical": "Philosophical",
+        "oppressive": "Oppressive",
+        "heartwarming": "Heartwarming",
+        "horrific": "Horrific",
+        "satirical": "Satirical",
+        "farming": "Farming Life",
+        "vengeful": "Vengeful",
+        "cozy": "Cozy",
+        "campus": "Campus",
+        "longGame": "Long Game",
+        "cathartic": "Cathartic",
+        "strategic": "Strategic",
+        "mindBending": "Mind-bending",
+        "filmNoir": "Film Noir",
+        "dystopian": "Dystopian",
+        "uncanny": "Uncanny",
+        "frenzied": "Frenzied",
+        "desperate": "Desperate",
+        "grotesque": "Grotesque",
+        "pastoral": "Pastoral",
+        "commercial": "Commercial",
+        "grand": "Grand",
+        "cunning": "Cunning",
+        "romantic": "Romantic",
+        "whimsical": "Whimsical",
+        "competitive": "Competitive",
+        "adventurous": "Adventurous"
+      }
+    },
+    "pov": {
+      "label": "Point of View",
+      "options": {
+        "femalePov": "Female Lead POV",
+        "malePov": "Male Lead POV",
+        "dualPov": "Dual POV",
+        "omniscient": "Omniscient"
+      }
+    },
+    "sceneCount": {
+      "label": "Scene Count",
+      "description": "Number of scenes to split the chapter into"
+    },
+    "detailLevel": {
+      "label": "Detail Level",
+      "lengthDescription": "Affects output length",
+      "options": {
+        "oneLiner": "One-liner",
+        "brief": "Brief",
+        "medium": "Medium",
+        "detailed": "Detailed"
+      }
+    },
+    "archetype": {
+      "label": "Archetype",
+      "description": "Character personality baseline type",
+      "options": {
+        "ordinary": "Ordinary Person",
+        "genius": "Genius",
+        "antiHero": "Anti-hero",
+        "underdog": "Underdog Rise",
+        "patient": "Patient & Resilient",
+        "noble": "Noble Heir",
+        "reborn": "Reborn from Ashes",
+        "mysterious": "Mysterious Master"
+      }
+    },
+    "chapterLength": {
+      "label": "Target Word Count",
+      "description": "⚠ Limit = selected model's max output. More words = slower/costlier and risk of padding; unchecked = AI decides by content."
+    },
+    "style": {
+      "label": "Style",
+      "options": {
+        "colloquial": "Colloquial",
+        "literary": "Literary",
+        "concise": "Concise",
+        "ornate": "Ornate",
+        "cold": "Cold",
+        "gentle": "Gentle"
+      }
+    },
+    "expandRatio": {
+      "label": "Expansion Ratio",
+      "description": "Word count multiplier relative to original"
+    },
+    "addType": {
+      "label": "Mainly Add",
+      "options": {
+        "psychology": "Psychological Description",
+        "atmosphere": "Environment & Atmosphere",
+        "dialogue": "Dialogue",
+        "action": "Action Details",
+        "sensory": "Sensory Description"
+      }
+    },
+    "aggressiveness": {
+      "label": "Rewrite Intensity",
+      "description": "Aggressive = may alter sentence structure; Light = only word swaps",
+      "options": {
+        "light": "Light",
+        "moderate": "Moderate",
+        "aggressive": "Aggressive"
+      }
+    },
+    "density": {
+      "label": "Density",
+      "description": "Sparse = core only; Dense = every thread echoes",
+      "options": {
+        "sparse": "Sparse",
+        "medium": "Medium",
+        "dense": "Dense"
+      }
+    },
+    "count": {
+      "label": "Suggested Count",
+      "description": "If not specified, defaults to 3-5"
+    },
+    "strictness": {
+      "label": "Constraint Strictness",
+      "description": "Strict = more taboos / Lenient = mostly suggestions",
+      "options": {
+        "lenient": "Lenient",
+        "medium": "Medium",
+        "strict": "Strict"
+      }
+    }
+  },
+  "workflowSeeds": {
+    "fastStart": {
+      "name": "Fast Start · General",
+      "description": "From zero to chapter one: story core → worldview → main character → volume outline → first chapter text. Each step can be paused for review.",
+      "steps": {
+        "logline": "Logline",
+        "worldOrigin": "World Origin",
+        "mainCharacter": "Main Character",
+        "volumeOutline": "Volume Outline",
+        "firstChapter": "First Chapter"
+      },
+      "hints": {
+        "logline": "Summarize in one sentence what this novel is about",
+        "worldOrigin": "Based on the story core, conceive the world's origin and power system",
+        "mainCharacter": "Design a protagonist that fits this worldview",
+        "volumeOutline": "Generate a 3-5 volume outline based on the settings above",
+        "firstChapter": "Write the text of the first chapter of volume one, approx. 2500 words"
+      }
+    },
+    "deepChapter": {
+      "name": "Deep Chapter Generation",
+      "description": "Expands a chapter outline into detailed scenes → writes prose → polishes → removes AI traces. Ideal for refining a single chapter.",
+      "steps": {
+        "sceneBreakdown": "Scene Breakdown",
+        "writeProse": "Write Prose",
+        "polish": "Polish",
+        "deAi": "Remove AI Traces"
+      },
+      "hints": {
+        "sceneBreakdown": "Break the chapter outline into 4-5 scene beats",
+        "polish": "Tighten the pacing, remove redundant descriptions"
+      }
+    },
+    "foreshadowSystem": {
+      "name": "Foreshadowing System",
+      "description": "Based on existing worldview and characters, suggests a carefully designed set of foreshadowing elements.",
+      "steps": {
+        "worldSummary": "World Summary",
+        "foreshadowSuggest": "Foreshadow Suggestion"
+      },
+      "hints": {
+        "worldSummary": "Generate a 200-400 word essential world summary for future AI context",
+        "foreshadowSuggest": "Based on worldview and characters, suggest 5-8 well-layered foreshadowing elements"
+      }
+    }
+  },
+  "promptTemplates": {
+    "worldviewDimension": {
+      "name": "Built-in - Worldview Dimension Generation",
+      "description": "Generates content for a single worldview dimension (geography/history/society/culture/economy/rules/summary)."
+    },
+    "characterGenerate": {
+      "name": "Built-in - Complete Character Design",
+      "description": "Based on worldview and existing characters, designs a complete new character profile."
+    },
+    "characterDimension": {
+      "name": "Built-in - Character Dimension Supplement",
+      "description": "Adds 200-400 words of detail to a specific dimension (background/personality/abilities etc.) of a character."
+    },
+    "outlineVolume": {
+      "name": "Built-in - Volume Outline Generation",
+      "description": "Generates the full-book volume outline based on worldview and story core."
+    },
+    "outlineChapter": {
+      "name": "Built-in - Chapter Outline Expansion",
+      "description": "Expands a single volume into 15-25 chapters."
+    },
+    "chapterContent": {
+      "name": "Built-in - Long Serialization (Default)",
+      "description": "General male-oriented web novel style chapter text generation, with adjustable tone/pace/word count parameters."
+    },
+    "chapterContinue": {
+      "name": "Built-in - Chapter Continuation",
+      "description": "Continues writing from the end of existing text, approx. 1000-2000 words."
+    },
+    "chapterMemory": {
+      "name": "Built-in - Chapter Continuity Memory",
+      "description": "Simultaneously extracts chapter summary, next-chapter handoff, and plan reconciliation; quote offsets are verified by the system."
+    },
+    "chapterPolish": {
+      "name": "Built-in - Text Polishing",
+      "description": "Polishes text according to user instructions while preserving original meaning."
+    },
+    "chapterExpand": {
+      "name": "Built-in - Text Expansion",
+      "description": "Expands and enriches text, adding details, psychology, and environment without altering the plot."
+    },
+    "chapterDeAi": {
+      "name": "Built-in - De-AI Rewrite",
+      "description": "Rewrites heavily AI-sounding text to read more human."
+    },
+    "foreshadowGenerate": {
+      "name": "Built-in - Foreshadow Suggestion",
+      "description": "Based on worldview, characters, and existing foreshadows, suggests 3-5 new foreshadowing elements."
+    },
+    "relationExtract": {
+      "name": "Built-in - Relationship Extraction",
+      "description": "Automatically extracts relationships between characters from outline summaries and chapter texts."
+    },
+    "geographyConceptMap": {
+      "name": "Built-in - Concept Map SVG",
+      "description": "Generates a fantasy-style SVG concept map based on location list."
+    },
+    "geographyImageMapPrompt": {
+      "name": "Built-in - Map Image Prompt",
+      "description": "Generates a world map drawing prompt for Midjourney/DALL-E/SD."
+    },
+    "storyGenerate": {
+      "name": "Built-in - Story Core Generation",
+      "description": "Based on existing worldview and user hints, generates a story dimension (logline/concept/theme/core conflict etc.)."
+    },
+    "rulesGenerate": {
+      "name": "Built-in - Creative Rules Generation",
+      "description": "Based on project type and worldview, suggests suitable creative rules (style/perspective/tone/taboo etc.)."
+    },
+    "importParseCharacter": {
+      "name": "Built-in - Character Document Parse",
+      "description": "Extracts structured character data (JSON) from an uploaded character-setting document."
+    },
+    "importParseWorldview": {
+      "name": "Built-in - Worldview Document Parse",
+      "description": "Extracts structured fields (JSON) from a worldview-setting document."
+    },
+    "importParseOutline": {
+      "name": "Built-in - Outline Document Parse",
+      "description": "Extracts a structured volume/chapter tree (JSON array) from an outline document."
+    },
+    "importParseAll": {
+      "name": "Built-in - Smart Unified Parse",
+      "description": "Extracts worldview / character / outline structured data in one pass from any document (setting docs or finished novels)."
+    },
+    "importParseChunk": {
+      "name": "Built-in - Chunked Parse (Large-Document Pipeline)",
+      "description": "For million-word novels: splits the source into chunks and extracts worldview / characters / outline chunk by chunk, carrying recognized context forward."
+    },
+    "importMergeCharacters": {
+      "name": "Built-in - Cross-Chunk Character Merge",
+      "description": "Reviews the chunk-exported character list and decides which entries are the same person (aliases / titles / nicknames) and should be merged."
+    },
+    "detailScene": {
+      "name": "Built-in - Scene Outline Generation",
+      "description": "Expands a single-chapter outline into scenes (each with characters / location / conflict / pacing)."
+    },
+    "plotCharacterDriven": {
+      "name": "Built-in - Character-Driven Plot",
+      "description": "From a character's initial and target states, AI derives the plot progression in between (volume/chapter outline structure)."
+    },
+    "plotCharacterRevision": {
+      "name": "Built-in - Character Revision Impact Analysis",
+      "description": "Analyzes mid-creation character changes, separates written, transitional and unwritten zones, and outputs a reviewable outline patch."
+    },
+    "inspirationReverse": {
+      "name": "Built-in - Inspiration Reverse-Engineering",
+      "description": "User writes fragment ideas; AI reverse-engineers a worldview draft, story core and initial character cards."
+    },
+    "inspirationReverseMultiworld": {
+      "name": "Built-in - Multi-World Inspiration Reverse",
+      "description": "Multi-world themes: from an inspiration carrying multiple world intents, AI reverse-engineers the main plot + multiple worlds + characters."
+    },
+    "worldGroupSuggest": {
+      "name": "Built-in - AI World Suggestions",
+      "description": "For multi-world themes (infinite-flow and similar), suggests new world groups based on the story concept and existing worlds."
+    },
+    "worldGroupExpand": {
+      "name": "Built-in - AI World Expansion",
+      "description": "Expands a world's draft description into a full worldview setting."
+    },
+    "codexExtract": {
+      "name": "Built-in - Codex Entry Extraction",
+      "description": "Splits a block of worldview content into structured codex entries that can be confirmed and written under the current category."
+    },
+    "locationExtract": {
+      "name": "Built-in - Key Location Extraction",
+      "description": "Extracts recurring or plot-driving important locations from written chapters as candidates."
+    },
+    "inventoryExtract": {
+      "name": "Built-in - Inventory Extraction",
+      "description": "Extracts item gain/loss events per character from chapter text and builds per-character inventories."
+    },
+    "storyTimelineExtract": {
+      "name": "Built-in - Story Timeline Extraction",
+      "description": "Extracts major plot events from chapters to build the story-progression timeline (distinct from world background history)."
+    },
+    "sceneVerify": {
+      "name": "Built-in - Scene Authenticity Check",
+      "description": "User describes the current scene; AI uses worldview / history timeline / world rules to provide setting-consistent details, anachronism warnings and plot ideas."
+    },
+    "styleLearn": {
+      "name": "Built-in - Style Profile Learning",
+      "description": "Summarizes the author's personal writing-style profile from finalized/polished chapters as reference for future chapter generation."
+    },
+    "styleCalibrate": {
+      "name": "Built-in - Interactive Style Calibration",
+      "description": "Rewrites a short passage against the current style profile and the author-approved revision, for comparison, feedback and new sample collection."
+    },
+    "historyConsult": {
+      "name": "Built-in - Historical Research Agent",
+      "description": "Research agent for history-timeline entries. Critical yet cooperative: never invents details to fit the author's wrong assumptions; respects the author's declared artistic/alternate-history scope."
+    },
+    "historyStorm": {
+      "name": "Built-in - Brainstorming Agent",
+      "description": "Brainstorming agent for history-timeline entries. Diverges writable material around the author's established direction, respecting the declared artistic scope."
+    },
+    "xianxiaChapterContent": {
+      "name": "Xianxia Pack - Chapter Prose",
+      "description": "Ascension systems, mortal morality, good-vs-evil trials. Classical prose focused on inner cultivation."
+    },
+    "xianxiaVolumeOutline": {
+      "name": "Xianxia Pack - Volume Outline",
+      "description": "Cultivation realms as milestones; one mental transformation per volume."
+    },
+    "xianxiaCharacterDesign": {
+      "name": "Xianxia Pack - Character Design",
+      "description": "Focus on dao-heart, lineage and inner knots."
+    },
+    "xianxiaStoryCore": {
+      "name": "Xianxia Pack - Story Core",
+      "description": "Conflicts between dao and emotion, mortal and immortal, defying heaven and guarding the heart."
+    },
+    "xianxiaWorldviewDimension": {
+      "name": "Xianxia Pack - Worldview Dimensions",
+      "description": "Ascension systems, sect laws, blessed lands and grotto-heavens."
+    },
+    "xianxiaChapterContinue": {
+      "name": "Xianxia Pack - Chapter Continuation",
+      "description": "Continuation keeping classical prose and mind-first narration."
+    },
+    "yanqingChapterContent": {
+      "name": "Romance Pack - Chapter Prose",
+      "description": "Emotional tension, dual-POV psychology, high CP interaction density."
+    },
+    "yanqingVolumeOutline": {
+      "name": "Romance Pack - Volume Outline",
+      "description": "The romance line as skeleton; career/family/external conflicts as flesh."
+    },
+    "yanqingCharacterDesign": {
+      "name": "Romance Pack - Character Design",
+      "description": "CP tension first; avoid domineering-CEO/Mary-Sue stereotypes."
+    },
+    "yanqingStoryCore": {
+      "name": "Romance Pack - Story Core",
+      "description": "About how to love and how to be loved."
+    },
+    "yanqingWorldviewDimension": {
+      "name": "Romance Pack - Worldview Dimensions",
+      "description": "Authentic detail for modern / period / campus settings."
+    },
+    "yanqingChapterContinue": {
+      "name": "Romance Pack - Chapter Continuation",
+      "description": "Continuation keeping psychology scenes and CP tension."
+    },
+    "realismChapterContent": {
+      "name": "Realism Pack - Chapter Prose",
+      "description": "Everyday texture, inner life, restrained narration. Does not shy away from trivia."
+    },
+    "realismVolumeOutline": {
+      "name": "Realism Pack - Volume Outline",
+      "description": "Characters' fates as the thread; the changing era as the ground."
+    },
+    "realismCharacterDesign": {
+      "name": "Realism Pack - Character Design",
+      "description": "Complex, contradictory, imperfect — like living people."
+    },
+    "realismStoryCore": {
+      "name": "Realism Pack - Story Core",
+      "description": "A generation's fate, a group's condition, an era's footnote."
+    },
+    "realismWorldviewDimension": {
+      "name": "Realism Pack - Worldview Dimensions",
+      "description": "No worldbuilding needed — write the real world with solid detail."
+    },
+    "realismChapterContinue": {
+      "name": "Realism Pack - Chapter Continuation",
+      "description": "Continuation keeping everyday texture and restrained narration."
+    },
+    "suspenseChapterContent": {
+      "name": "Mystery Pack - Chapter Prose",
+      "description": "Information control + unreliable narration + progress in every chapter."
+    },
+    "suspenseVolumeOutline": {
+      "name": "Mystery Pack - Volume Outline",
+      "description": "The case deepens layer by layer; each volume peels one illusion."
+    },
+    "suspenseCharacterDesign": {
+      "name": "Mystery Pack - Character Design",
+      "description": "Everyone has secrets, motives and a suspicious side."
+    },
+    "suspenseStoryCore": {
+      "name": "Mystery Pack - Story Core",
+      "description": "Not just whodunit, but why."
+    },
+    "suspenseWorldviewDimension": {
+      "name": "Mystery Pack - Worldview Dimensions",
+      "description": "Information control, unreliable narration, high foreshadowing density."
+    },
+    "suspenseForeshadow": {
+      "name": "Mystery Pack - Foreshadowing Suggestions",
+      "description": "Denser, more complex, must be reversible in hindsight."
+    },
+    "suspenseChapterContinue": {
+      "name": "Mystery Pack - Chapter Continuation",
+      "description": "Continuation keeping information control and twist pacing."
+    },
+    "lishiChapterContent": {
+      "name": "Historical Pack - Chapter Prose",
+      "description": "Historical settings, court intrigue, alternate or researched history. Includes fact-annotation mechanism."
+    },
+    "lishiVolumeOutline": {
+      "name": "Historical Pack - Volume Outline",
+      "description": "Unfolds along historical tides, political struggles and social change."
+    },
+    "lishiCharacterDesign": {
+      "name": "Historical Pack - Character Design",
+      "description": "Emphasizes historical status, political stance, family background and era limitations."
+    },
+    "lishiStoryCore": {
+      "name": "Historical Pack - Story Core",
+      "description": "About the tide and the individual, power and principle, choices under history's gravity."
+    },
+    "lishiWorldviewDimension": {
+      "name": "Historical Pack - Worldview Dimensions",
+      "description": "Researched geography, officialdom, taxation, technology and productivity."
+    },
+    "lishiChapterContinue": {
+      "name": "Historical Pack - Chapter Continuation",
+      "description": "Continuation keeping historical weight and political tension."
+    },
+    "lishiVolumeOutlineExt": {
+      "name": "Historical Pack - Volume Outline (Fact-Risk)",
+      "description": "Volume-level outline for historical themes with fact-risk warnings."
+    },
+    "xuanhuanChapterContent": {
+      "name": "Xuanhuan Pack - Chapter Prose",
+      "description": "Grand worldviews, talent systems, hot-blooded leveling."
+    },
+    "xuanhuanVolumeOutline": {
+      "name": "Xuanhuan Pack - Volume Outline",
+      "description": "Volume structure driven by realm systems."
+    },
+    "wuxiaChapterContent": {
+      "name": "Wuxia Pack - Chapter Prose",
+      "description": "Jianghu grudges, chivalry, sect conflicts."
+    },
+    "dushiChapterContent": {
+      "name": "Urban Pack - Chapter Prose",
+      "description": "Modern city backdrop: workplace / business wars / life."
+    },
+    "scifiChapterContent": {
+      "name": "Sci-Fi Pack - Chapter Prose",
+      "description": "Scientific premises, future society, interstellar exploration."
+    },
+    "moshiChapterContent": {
+      "name": "Post-Apocalyptic Pack - Chapter Prose",
+      "description": "End-time survival, tests of humanity, wasteland exploration."
+    },
+    "chuanyueChapterContent": {
+      "name": "Time-Travel Pack - Chapter Prose",
+      "description": "Crossing time, foreknowledge advantage, changing fate."
+    },
+    "chongshengChapterContent": {
+      "name": "Rebirth Pack - Chapter Prose",
+      "description": "Returning to the past, mending regrets, reversing life."
+    },
+    "xitongChapterContent": {
+      "name": "System Pack - Chapter Prose",
+      "description": "System assistance, quest leveling, numeric growth."
+    },
+    "wuxianChapterContent": {
+      "name": "Infinite-Flow Pack - Chapter Prose",
+      "description": "Instance worlds, teamwork, survival challenges."
+    },
+    "cyberpunkChapterContent": {
+      "name": "Cyberpunk Pack - Chapter Prose",
+      "description": "High tech low life, cybernetic augmentation, corporate conspiracies."
+    },
+    "cthulhuChapterContent": {
+      "name": "Cthulhu Pack - Chapter Prose",
+      "description": "Fear of the unknown, collapsing sanity, things that cannot be named."
+    },
+    "zhongtianChapterContent": {
+      "name": "Farming Pack - Chapter Prose",
+      "description": "Management and building, growing stronger, slow-paced growth."
+    },
+    "zhengbaChapterContent": {
+      "name": "Hegemony Pack - Chapter Prose",
+      "description": "Power struggles, expanding influence, contending for the realm."
+    },
+    "xifanChapterContent": {
+      "name": "Western-Fantasy Pack - Chapter Prose",
+      "description": "Magic worlds, racial conflicts, epic adventure."
+    },
+    "youxiChapterContent": {
+      "name": "Gaming Pack - Chapter Prose",
+      "description": "Game worlds, dungeon challenges, competitive play."
+    },
+    "novelP00AProjectBrief": {
+      "name": "Novel Content-P00-A-Novel kickoff: creative task brief and gap diagnosis",
+      "description": "Kickoff · Novel kickoff: creative task brief and gap diagnosis. Use an existing template or workflow."
+    },
+    "novelP01AInspirationCards": {
+      "name": "Novel Content-P01-A-Inspiration phase: mixed-material purification and original inspiration cards",
+      "description": "Inspiration · Inspiration phase: mixed-material purification and original inspiration cards. Use an existing template or workflow."
+    },
+    "novelP02APositioning": {
+      "name": "Novel Content-P02-A-Positioning phase: genre, reader promise and differentiation",
+      "description": "Positioning · Positioning phase: genre, reader promise and differentiation. Use an existing template or workflow."
+    },
+    "novelP03AConceptSelection": {
+      "name": "Novel Content-P03-A-Story core: concept screening and premise stress test",
+      "description": "Story Core · Story core: concept screening and premise stress test. Use an existing template or workflow."
+    },
+    "novelP04AResearchPlan": {
+      "name": "Novel Content-P04-A-Research question tree and minimal verification plan",
+      "description": "Research & Verification · Research question tree and minimal verification plan. Use an existing template or workflow."
+    },
+    "novelP04BSourceConflict": {
+      "name": "Novel Content-P04-B-Source conflict and fact-boundary adjudication",
+      "description": "Research & Verification · Source conflict and fact-boundary adjudication. Use an existing template or workflow."
+    },
+    "novelP04CFactsToPlot": {
+      "name": "Novel Content-P04-C-Converting facts into plot conditions",
+      "description": "Research & Verification · Converting facts into plot conditions. Use an existing template or workflow."
+    },
+    "novelP05AMinimalWorld": {
+      "name": "Novel Content-P05-A-Minimal narrative world spec",
+      "description": "Worldview · Minimal narrative world spec. Use an existing template or workflow."
+    },
+    "novelP05BGeographyCausalChain": {
+      "name": "Novel Content-P05-B-Geography—resources—society—conflict causal chain",
+      "description": "Worldview · Geography—resources—society—conflict causal chain. Use an existing template or workflow."
+    },
+    "novelP05CCultureTexture": {
+      "name": "Novel Content-P05-C-Culture and daily-life texture",
+      "description": "Worldview · Culture and daily-life texture. Use an existing template or workflow."
+    },
+    "novelP05DWorldviewAudit": {
+      "name": "Novel Content-P05-D-Worldview contradiction and loophole audit",
+      "description": "Worldview · Worldview contradiction and loophole audit. Use an existing template or workflow."
+    },
+    "novelP06ACharacterPressure": {
+      "name": "Novel Content-P06-A-Core character pressure model",
+      "description": "Characters · Core character pressure model. Use an existing template or workflow."
+    },
+    "novelP06BAntagonist": {
+      "name": "Novel Content-P06-B-Opposition forces and antagonist legitimacy",
+      "description": "Characters · Opposition forces and antagonist legitimacy. Use an existing template or workflow."
+    },
+    "novelP06CSupportingNetwork": {
+      "name": "Novel Content-P06-C-Supporting-cast network and relationship dynamics",
+      "description": "Characters · Supporting-cast network and relationship dynamics. Use an existing template or workflow."
+    },
+    "novelP06DCharacterArc": {
+      "name": "Novel Content-P06-D-Character arc and stage states",
+      "description": "Characters · Character arc and stage states. Use an existing template or workflow."
+    },
+    "novelP07APlotEngine": {
+      "name": "Novel Content-P07-A-Goal—motivation—conflict engine",
+      "description": "Plot · Goal—motivation—conflict engine. Use an existing template or workflow."
+    },
+    "novelP07BEscalationLadder": {
+      "name": "Novel Content-P07-B-Escalation ladder and attempt—failure cycle",
+      "description": "Plot · Escalation ladder and attempt—failure cycle. Use an existing template or workflow."
+    },
+    "novelP07CInfoRelease": {
+      "name": "Novel Content-P07-C-Information release and suspense management",
+      "description": "Plot · Information release and suspense management. Use an existing template or workflow."
+    },
+    "novelP07DSubplotWeave": {
+      "name": "Novel Content-P07-D-Subplot weaving and collision",
+      "description": "Plot · Subplot weaving and collision. Use an existing template or workflow."
+    },
+    "novelP08AStructureModel": {
+      "name": "Novel Content-P08-A-Structure phase: structure model selection and whole-book turning points",
+      "description": "Structure · Structure phase: structure model selection and whole-book turning points. Use an existing template or workflow."
+    },
+    "novelP09LAVolumeArchitecture": {
+      "name": "Novel Content-P09L-A-Book stages and volume-level architecture",
+      "description": "Long-form Architecture · Book stages and volume-level architecture. Use an existing template or workflow."
+    },
+    "novelP09LBPromiseLedger": {
+      "name": "Novel Content-P09L-B-Volume promise—payoff ledger",
+      "description": "Long-form Architecture · Volume promise—payoff ledger. Use an existing template or workflow."
+    },
+    "novelP09LCMidsectionDiagnose": {
+      "name": "Novel Content-P09L-C-Long-form midsection sag diagnosis and restructure",
+      "description": "Long-form Architecture · Long-form midsection sag diagnosis and restructure. Use an existing template or workflow."
+    },
+    "novelP09LDClimaxLadder": {
+      "name": "Novel Content-P09L-D-Climax ladder and ending convergence",
+      "description": "Long-form Architecture · Climax ladder and ending convergence. Use an existing template or workflow."
+    },
+    "novelP09SACoreChange": {
+      "name": "Novel Content-P09S-A-Short-form core change design",
+      "description": "Short-form Architecture · Short-form core change design. Use an existing template or workflow."
+    },
+    "novelP09SBCompression": {
+      "name": "Novel Content-P09S-B-Short-form compression and character merging",
+      "description": "Short-form Architecture · Short-form compression and character merging. Use an existing template or workflow."
+    },
+    "novelP09SCOpening": {
+      "name": "Novel Content-P09S-C-Opening entry point and narrative scope",
+      "description": "Short-form Architecture · Opening entry point and narrative scope. Use an existing template or workflow."
+    },
+    "novelP09SDEnding": {
+      "name": "Novel Content-P09S-D-Short-form ending and aftermath",
+      "description": "Short-form Architecture · Short-form ending and aftermath. Use an existing template or workflow."
+    },
+    "novelP09RASerialPayoff": {
+      "name": "Novel Content-P09R-A-Stage reading payoff planning",
+      "description": "Serialization Architecture · Stage reading payoff planning. Use an existing template or workflow."
+    },
+    "novelP09RBChapterBreaks": {
+      "name": "Novel Content-P09R-B-Chapter break-point design",
+      "description": "Serialization Architecture · Chapter break-point design. Use an existing template or workflow."
+    },
+    "novelP09RCSerialSchedule": {
+      "name": "Novel Content-P09R-C-Serialization production buffer and volume scheduling",
+      "description": "Serialization Architecture · Serialization production buffer and volume scheduling. Use an existing template or workflow."
+    },
+    "novelP09RDFeedbackDenoise": {
+      "name": "Novel Content-P09R-D-Reader feedback denoising",
+      "description": "Serialization Architecture · Reader feedback denoising. Use an existing template or workflow."
+    },
+    "novelP10AChapterTask": {
+      "name": "Novel Content-P10-A-Chapter task brief",
+      "description": "Chapter-Scene Planning · Chapter task brief. Use an existing template or workflow."
+    },
+    "novelP10BSceneCard": {
+      "name": "Novel Content-P10-B-Scene card and change proof",
+      "description": "Chapter-Scene Planning · Scene card and change proof. Use an existing template or workflow."
+    },
+    "novelP10CSceneSequel": {
+      "name": "Novel Content-P10-C-Scene—reaction—decision pacing choices",
+      "description": "Chapter-Scene Planning · Scene—reaction—decision pacing choices. Use an existing template or workflow."
+    },
+    "novelP10DEmotionBeats": {
+      "name": "Novel Content-P10-D-Chapter emotional beats",
+      "description": "Chapter-Scene Planning · Chapter emotional beats. Use an existing template or workflow."
+    },
+    "novelP10EChapterTitle": {
+      "name": "Novel Content-P10-E-Chapter title generation and selection",
+      "description": "Chapter-Scene Planning · Chapter title generation and selection. Use an existing template or workflow."
+    },
+    "novelP11AFirstChapter": {
+      "name": "Novel Content-P11-A-First chapter draft",
+      "description": "Prose · First chapter draft. Use an existing template or workflow."
+    },
+    "novelP11BTaskDrafting": {
+      "name": "Novel Content-P11-B-Drafting prose from chapter-scene tasks",
+      "description": "Prose · Drafting prose from chapter-scene tasks. Use an existing template or workflow."
+    },
+    "novelP11CContinuousDraft": {
+      "name": "Novel Content-P11-C-Continuous continuation",
+      "description": "Prose · Continuous continuation. Use an existing template or workflow."
+    },
+    "novelP11DDialogue": {
+      "name": "Novel Content-P11-D-Dialogue and subtext",
+      "description": "Prose · Dialogue and subtext. Use an existing template or workflow."
+    },
+    "novelP11EActionSpace": {
+      "name": "Novel Content-P11-E-Action and spatial continuity",
+      "description": "Prose · Action and spatial continuity. Use an existing template or workflow."
+    },
+    "novelP11FProseBalance": {
+      "name": "Novel Content-P11-F-Description, interiority and transition balance",
+      "description": "Prose · Description, interiority and transition balance. Use an existing template or workflow."
+    },
+    "novelP12AChapterMemory": {
+      "name": "Novel Content-P12-A-Chapter memory and ending handoff",
+      "description": "Continuity · Chapter memory and ending handoff. Use an existing template or workflow."
+    },
+    "novelP12BCharacterStateDiff": {
+      "name": "Novel Content-P12-B-Character and relationship state diff",
+      "description": "Continuity · Character and relationship state diff. Use an existing template or workflow."
+    },
+    "novelP12CContinuityLedger": {
+      "name": "Novel Content-P12-C-Timeline, location and item ledger",
+      "description": "Continuity · Timeline, location and item ledger. Use an existing template or workflow."
+    },
+    "novelP12DForeshadowLifecycle": {
+      "name": "Novel Content-P12-D-Foreshadowing lifecycle update",
+      "description": "Continuity · Foreshadowing lifecycle update. Use an existing template or workflow."
+    },
+    "novelP12EPlanReconcile": {
+      "name": "Novel Content-P12-E-Plan—prose reconciliation",
+      "description": "Continuity · Plan—prose reconciliation. Use an existing template or workflow."
+    },
+    "novelP12FCrossChapterAudit": {
+      "name": "Novel Content-P12-F-Cross-chapter continuity audit",
+      "description": "Continuity · Cross-chapter continuity audit. Use an existing template or workflow."
+    },
+    "novelP13ADevelopmentalDiagnose": {
+      "name": "Novel Content-P13-A-Full-draft developmental diagnosis",
+      "description": "Macro Revision · Full-draft developmental diagnosis. Use an existing template or workflow."
+    },
+    "novelP13BPlotHoleAudit": {
+      "name": "Novel Content-P13-B-Causal chain and plot hole audit",
+      "description": "Macro Revision · Causal chain and plot hole audit. Use an existing template or workflow."
+    },
+    "novelP13CArcDrift": {
+      "name": "Novel Content-P13-C-Arc drift and character function rework",
+      "description": "Macro Revision · Arc drift and character function rework. Use an existing template or workflow."
+    },
+    "novelP13DRevisionRoadmap": {
+      "name": "Novel Content-P13-D-Cut/rewrite/move/patch revision roadmap",
+      "description": "Macro Revision · Cut/rewrite/move/patch revision roadmap. Use an existing template or workflow."
+    },
+    "novelP13EClimaxPayoffAudit": {
+      "name": "Novel Content-P13-E-Climax and ending payoff audit",
+      "description": "Macro Revision · Climax and ending payoff audit. Use an existing template or workflow."
+    },
+    "novelP14ASceneRevision": {
+      "name": "Novel Content-P14-A-Scene-level diagnosis and targeted revision",
+      "description": "Language Revision · Scene-level diagnosis and targeted revision. Use an existing template or workflow."
+    },
+    "novelP14BDialogueRevision": {
+      "name": "Novel Content-P14-B-Dialogue de-exposition and subtext revision",
+      "description": "Language Revision · Dialogue de-exposition and subtext revision. Use an existing template or workflow."
+    },
+    "novelP14CPovDistance": {
+      "name": "Novel Content-P14-C-POV, narrative distance and knowledge boundaries",
+      "description": "Language Revision · POV, narrative distance and knowledge boundaries. Use an existing template or workflow."
+    },
+    "novelP14DPacingDensity": {
+      "name": "Novel Content-P14-D-Pacing, sentence groups and information density",
+      "description": "Language Revision · Pacing, sentence groups and information density. Use an existing template or workflow."
+    },
+    "novelP14EShowTellBalance": {
+      "name": "Novel Content-P14-E-Show, summary, explanation and omission balance",
+      "description": "Language Revision · Show, summary, explanation and omission balance. Use an existing template or workflow."
+    },
+    "novelP14FFaithfulPolish": {
+      "name": "Novel Content-P14-F-Faithful polish, expansion and compression",
+      "description": "Language Revision · Faithful polish, expansion and compression. Use an existing template or workflow."
+    },
+    "novelP15ABlindRead": {
+      "name": "Novel Content-P15-A-First chapter blind-read trajectory",
+      "description": "Reader Verification · First chapter blind-read trajectory. Use an existing template or workflow."
+    },
+    "novelP15BGenrePromiseTest": {
+      "name": "Novel Content-P15-B-Genre expectation—payoff test",
+      "description": "Reader Verification · Genre expectation—payoff test. Use an existing template or workflow."
+    },
+    "novelP15CBetaSimulation": {
+      "name": "Novel Content-P15-C-Multi-perspective beta reader simulation",
+      "description": "Reader Verification · Multi-perspective beta reader simulation. Use an existing template or workflow."
+    },
+    "novelP15DSuspenseExperience": {
+      "name": "Novel Content-P15-D-Suspense and question-chain experience",
+      "description": "Reader Verification · Suspense and question-chain experience. Use an existing template or workflow."
+    },
+    "novelP15EAbComparison": {
+      "name": "Novel Content-P15-E-Post-revision A/B experience comparison",
+      "description": "Reader Verification · Post-revision A/B experience comparison. Use an existing template or workflow."
+    },
+    "novelP16ATitleBrainstorm": {
+      "name": "Novel Content-P16-A-Title brainstorm and selection",
+      "description": "Packaging · Title brainstorm and selection. Use an existing template or workflow."
+    },
+    "novelP16BSpoilerFreeBlurb": {
+      "name": "Novel Content-P16-B-Spoiler-free blurb",
+      "description": "Packaging · Spoiler-free blurb. Use an existing template or workflow."
+    },
+    "novelP16CFullSynopsis": {
+      "name": "Novel Content-P16-C-Full plot synopsis",
+      "description": "Packaging · Full plot synopsis. Use an existing template or workflow."
+    },
+    "novelP16DTagsKeywords": {
+      "name": "Novel Content-P16-D-Tags, keywords and content notes",
+      "description": "Packaging · Tags, keywords and content notes. Use an existing template or workflow."
+    },
+    "novelP16EQueryLetter": {
+      "name": "Novel Content-P16-E-Submission notes/query letter material",
+      "description": "Packaging · Submission notes/query letter material. Use an existing template or workflow."
+    },
+    "novelP17ARunReview": {
+      "name": "Novel Content-P17-A-Prompt run review and variance attribution",
+      "description": "Prompt Management · Prompt run review and variance attribution. Use an existing template or workflow."
+    },
+    "novelP17BAbEvaluation": {
+      "name": "Novel Content-P17-B-Prompt version A/B evaluation design",
+      "description": "Prompt Management · Prompt version A/B evaluation design. Use an existing template or workflow."
+    },
+    "novelP17CPromptGenerator": {
+      "name": "Novel Content-P17-C-Novel stage prompt generator",
+      "description": "Prompt Management · Novel stage prompt generator. Use an existing template or workflow."
+    },
+    "novelP17DLibraryDedup": {
+      "name": "Novel Content-P17-D-Whole-library semantic dedup and merge decisions",
+      "description": "Prompt Management · Whole-library semantic dedup and merge decisions. Use an existing template or workflow."
+    },
+    "novelP17EReleaseAcceptance": {
+      "name": "Novel Content-P17-E-Pre-release asset acceptance",
+      "description": "Prompt Management · Pre-release asset acceptance. Use an existing template or workflow."
+    },
+    "novelMysteryAReverseSolution": {
+      "name": "Novel Content-G-MYSTERY-A-Reverse-engineering full facts from the solution",
+      "description": "Plot · Reverse-engineering full facts from the solution. Use an existing template or workflow."
+    },
+    "novelMysteryBClueMatrix": {
+      "name": "Novel Content-G-MYSTERY-B-Fair clue matrix",
+      "description": "Plot · Fair clue matrix. Use an existing template or workflow."
+    },
+    "novelMysteryCSuspects": {
+      "name": "Novel Content-G-MYSTERY-C-Suspects and red herrings",
+      "description": "Plot · Suspects and red herrings. Use an existing template or workflow."
+    },
+    "novelMysteryDInvestigationBeats": {
+      "name": "Novel Content-G-MYSTERY-D-Investigation beats and reveal order",
+      "description": "Plot · Investigation beats and reveal order. Use an existing template or workflow."
+    },
+    "novelMysteryEFairnessAudit": {
+      "name": "Novel Content-G-MYSTERY-E-Mystery fairness audit",
+      "description": "Plot · Mystery fairness audit. Use an existing template or workflow."
+    },
+    "novelHistoryAFactAnchors": {
+      "name": "Novel Content-G-HISTORY-A-Historical fact anchors and fictional space",
+      "description": "Research & Verification · Historical fact anchors and fictional space. Use an existing template or workflow."
+    },
+    "novelHistoryBEraKnowledge": {
+      "name": "Novel Content-G-HISTORY-B-Era life and identity knowledge boundaries",
+      "description": "Research & Verification · Era life and identity knowledge boundaries. Use an existing template or workflow."
+    },
+    "novelHistoryCMixedCast": {
+      "name": "Novel Content-G-HISTORY-C-Historical and fictional characters sharing scenes",
+      "description": "Research & Verification · Historical and fictional characters sharing scenes. Use an existing template or workflow."
+    },
+    "novelHistoryDAnachronismAudit": {
+      "name": "Novel Content-G-HISTORY-D-Anachronism and modern-value projection audit",
+      "description": "Research & Verification · Anachronism and modern-value projection audit. Use an existing template or workflow."
+    },
+    "novelComedyAEngine": {
+      "name": "Novel Content-G-COMEDY-A-Comedy engine",
+      "description": "Plot · Comedy engine. Use an existing template or workflow."
+    },
+    "novelComedyBFairMisunderstanding": {
+      "name": "Novel Content-G-COMEDY-B-Fair information in misunderstanding comedy",
+      "description": "Plot · Fair information in misunderstanding comedy. Use an existing template or workflow."
+    },
+    "novelComedyCTimingCallbacks": {
+      "name": "Novel Content-G-COMEDY-C-Comedic timing and callbacks",
+      "description": "Plot · Comedic timing and callbacks. Use an existing template or workflow."
+    },
+    "novelComedyDDignityAudit": {
+      "name": "Novel Content-G-COMEDY-D-Comedy boundaries and character dignity audit",
+      "description": "Plot · Comedy boundaries and character dignity audit. Use an existing template or workflow."
+    },
+    "novelFantasyAMagicRules": {
+      "name": "Novel Content-G-FANTASY-A-Magic/supernatural rules and narrative boundaries",
+      "description": "Worldview · Magic/supernatural rules and narrative boundaries. Use an existing template or workflow."
+    },
+    "novelFantasyBMythFunction": {
+      "name": "Novel Content-G-FANTASY-B-Social function of myth, religion and ritual",
+      "description": "Worldview · Social function of myth, religion and ritual. Use an existing template or workflow."
+    },
+    "novelFantasyCSpectacle": {
+      "name": "Novel Content-G-FANTASY-C-Spectacle scenes and causal function",
+      "description": "Worldview · Spectacle scenes and causal function. Use an existing template or workflow."
+    },
+    "novelFantasyDMagicLoopholes": {
+      "name": "Novel Content-G-FANTASY-D-Magic loophole and deus-ex-machina audit",
+      "description": "Worldview · Magic loophole and deus-ex-machina audit. Use an existing template or workflow."
+    },
+    "novelHorrorAFearSource": {
+      "name": "Novel Content-G-HORROR-A-Horror source and boundaries",
+      "description": "Plot · Horror source and boundaries. Use an existing template or workflow."
+    },
+    "novelHorrorBThreatReveal": {
+      "name": "Novel Content-G-HORROR-B-Threat reveal and escalation",
+      "description": "Plot · Threat reveal and escalation. Use an existing template or workflow."
+    },
+    "novelHorrorCSubjectivePerception": {
+      "name": "Novel Content-G-HORROR-C-Subjective perception of horror scenes",
+      "description": "Plot · Subjective perception of horror scenes. Use an existing template or workflow."
+    },
+    "novelHorrorDRevealAftermath": {
+      "name": "Novel Content-G-HORROR-D-Reveal degree and lingering ending dread",
+      "description": "Plot · Reveal degree and lingering ending dread. Use an existing template or workflow."
+    },
+    "novelProgressionAGrowthSystem": {
+      "name": "Novel Content-G-PROGRESSION-A-Progression system and boundaries",
+      "description": "Plot · Progression system and boundaries. Use an existing template or workflow."
+    },
+    "novelProgressionBResourceEconomy": {
+      "name": "Novel Content-G-PROGRESSION-B-Resource economy and scarcity",
+      "description": "Plot · Resource economy and scarcity. Use an existing template or workflow."
+    },
+    "novelProgressionCChallengeLadder": {
+      "name": "Novel Content-G-PROGRESSION-C-Challenge ladder and ability proof",
+      "description": "Plot · Challenge ladder and ability proof. Use an existing template or workflow."
+    },
+    "novelProgressionDTrainingBeats": {
+      "name": "Novel Content-G-PROGRESSION-D-Training, breakthrough and reward beats",
+      "description": "Plot · Training, breakthrough and reward beats. Use an existing template or workflow."
+    },
+    "novelProgressionEPowerInflation": {
+      "name": "Novel Content-G-PROGRESSION-E-Power inflation and late-game loss-of-control audit",
+      "description": "Plot · Power inflation and late-game loss-of-control audit. Use an existing template or workflow."
+    },
+    "novelRomanceARelationshipEngine": {
+      "name": "Novel Content-G-ROMANCE-A-Dual-protagonist relationship engine",
+      "description": "Characters · Dual-protagonist relationship engine. Use an existing template or workflow."
+    },
+    "novelRomanceBRelationshipBeats": {
+      "name": "Novel Content-G-ROMANCE-B-Relationship beats and new balance",
+      "description": "Characters · Relationship beats and new balance. Use an existing template or workflow."
+    },
+    "novelRomanceCConflictRepair": {
+      "name": "Novel Content-G-ROMANCE-C-Believable resistance and conflict repair",
+      "description": "Characters · Believable resistance and conflict repair. Use an existing template or workflow."
+    },
+    "novelRomanceDIntimacy": {
+      "name": "Novel Content-G-ROMANCE-D-Consent, vulnerability and consequences in intimate scenes",
+      "description": "Characters · Consent, vulnerability and consequences in intimate scenes. Use an existing template or workflow."
+    },
+    "novelRomanceEHappilyEverAfter": {
+      "name": "Novel Content-G-ROMANCE-E-Relationship climax and optimistic ending payoff",
+      "description": "Characters · Relationship climax and optimistic ending payoff. Use an existing template or workflow."
+    },
+    "novelLiteraryAStructuralPressure": {
+      "name": "Novel Content-G-LITERARY-A-Structural pressure in everyday situations",
+      "description": "Story Core · Structural pressure in everyday situations. Use an existing template or workflow."
+    },
+    "novelLiteraryBPlotlessStructure": {
+      "name": "Novel Content-G-LITERARY-B-Weak-plot/internal-change structure",
+      "description": "Story Core · Weak-plot/internal-change structure. Use an existing template or workflow."
+    },
+    "novelLiteraryCDetailSelection": {
+      "name": "Novel Content-G-LITERARY-C-Detail selection and avoiding suffering exploitation",
+      "description": "Story Core · Detail selection and avoiding suffering exploitation. Use an existing template or workflow."
+    },
+    "novelLiteraryDOpenEnding": {
+      "name": "Novel Content-G-LITERARY-D-Open ending and thematic resonance",
+      "description": "Story Core · Open ending and thematic resonance. Use an existing template or workflow."
+    },
+    "novelScifiACoreNovum": {
+      "name": "Novel Content-G-SCIFI-A-Core novum and minimal change",
+      "description": "Worldview · Core novum and minimal change. Use an existing template or workflow."
+    },
+    "novelScifiBCascadeExtrapolation": {
+      "name": "Novel Content-G-SCIFI-B-Technology—institutions—daily-life cascade extrapolation",
+      "description": "Worldview · Technology—institutions—daily-life cascade extrapolation. Use an existing template or workflow."
+    },
+    "novelScifiCPlausibilityAudit": {
+      "name": "Novel Content-G-SCIFI-C-Scientific plausibility and uncertainty audit",
+      "description": "Worldview · Scientific plausibility and uncertainty audit. Use an existing template or workflow."
+    },
+    "novelScifiDTechToConflict": {
+      "name": "Novel Content-G-SCIFI-D-Converting technical problems into character conflict",
+      "description": "Worldview · Converting technical problems into character conflict. Use an existing template or workflow."
+    },
+    "novelEnsembleAWeighting": {
+      "name": "Novel Content-G-ENSEMBLE-A-Ensemble center and character weighting",
+      "description": "Characters · Ensemble center and character weighting. Use an existing template or workflow."
+    },
+    "novelEnsembleBPovAllocation": {
+      "name": "Novel Content-G-ENSEMBLE-B-Multi-POV allocation and switching",
+      "description": "Characters · Multi-POV allocation and switching. Use an existing template or workflow."
+    },
+    "novelEnsembleCInfoPuzzle": {
+      "name": "Novel Content-G-ENSEMBLE-C-Information puzzle and POV bias",
+      "description": "Characters · Information puzzle and POV bias. Use an existing template or workflow."
+    },
+    "novelEnsembleDConvergence": {
+      "name": "Novel Content-G-ENSEMBLE-D-Ensemble convergence and exit audit",
+      "description": "Characters · Ensemble convergence and exit audit. Use an existing template or workflow."
+    }
+  },
+  "genrePacks": {
+    "general": {
+      "label": "General / Xuanhuan Power-Fantasy (Default)",
+      "description": "Default pack: long-form serialization with a male-oriented xuanhuan power-fantasy base."
+    },
+    "lishi": {
+      "label": "Historical",
+      "description": "Historical settings, court intrigue, alternate or researched history."
+    },
+    "xianxia": {
+      "label": "Xianxia Cultivation",
+      "description": "Ascension systems, mortal morality, good-vs-evil trials. Elegant prose."
+    },
+    "yanqing": {
+      "label": "Romance",
+      "description": "Delicate emotion, dual-POV psychology, CP tension as the backbone."
+    },
+    "realism": {
+      "label": "Realism",
+      "description": "Everyday texture, unflinching trivia, inner life and era snapshots."
+    },
+    "suspense": {
+      "label": "Mystery & Thriller",
+      "description": "Information control, unreliable narration, high foreshadowing density."
+    },
+    "xuanhuan": {
+      "label": "Xuanhuan",
+      "description": "Grand worldviews, talent systems, hot-blooded leveling."
+    },
+    "wuxia": {
+      "label": "Wuxia",
+      "description": "Jianghu grudges, chivalry, sect conflicts."
+    },
+    "dushi": {
+      "label": "Urban",
+      "description": "Modern city backdrop: workplace / business wars / life."
+    },
+    "scifi": {
+      "label": "Sci-Fi",
+      "description": "Scientific premises, future society, interstellar exploration."
+    },
+    "moshi": {
+      "label": "Post-Apocalyptic",
+      "description": "End-time survival, tests of humanity, wasteland exploration."
+    },
+    "chuanyue": {
+      "label": "Time Travel",
+      "description": "Crossing time, leveraging foreknowledge, changing fate."
+    },
+    "chongsheng": {
+      "label": "Rebirth",
+      "description": "Returning to the past, mending regrets, reversing life."
+    },
+    "xitong": {
+      "label": "System",
+      "description": "System assistance, quest leveling, numeric growth."
+    },
+    "wuxian": {
+      "label": "Infinite Flow",
+      "description": "Crossing worlds/instances, teamwork, survival challenges."
+    },
+    "cyberpunk": {
+      "label": "Cyberpunk",
+      "description": "High tech low life, cybernetic augmentation, corporate conspiracies."
+    },
+    "cthulhu": {
+      "label": "Cthulhu",
+      "description": "Fear of the unknown, collapsing sanity, things that cannot be named."
+    },
+    "zhongtian": {
+      "label": "Farming Life",
+      "description": "Management and building, growing stronger, slow-paced growth."
+    },
+    "zhengba": {
+      "label": "Hegemony",
+      "description": "Power struggles, expanding influence, contending for the realm."
+    },
+    "xifan": {
+      "label": "Western Fantasy",
+      "description": "Magic worlds, racial conflicts, epic adventure."
+    },
+    "youxi": {
+      "label": "Gaming",
+      "description": "Game worlds, dungeon challenges, competitive play."
+    }
+  }
+}

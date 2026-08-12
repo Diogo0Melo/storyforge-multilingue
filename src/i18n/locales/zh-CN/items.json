@@ -1,0 +1,69 @@
+{
+  "panel": {
+    "title": "物品栏",
+    "subtitle": "AI 从已写正文中按角色提取物品获得/消耗，自动统计持有数量和历程。"
+  },
+  "roleWeight": {
+    "main": "主要角色",
+    "secondary": "次要角色",
+    "npc": "NPC",
+    "extra": "路人"
+  },
+  "controls": {
+    "manualAdd": "手动添加",
+    "manualAddTitleWithChar": "给{{name}}添加物品",
+    "manualAddTitleEmpty": "请先选择一个角色",
+    "extractButton": "从正文提取物品栏",
+    "extractingProgress": "提取中 {{done}}/{{total}}",
+    "viewCharacterLabel": "查看角色：",
+    "allCharacters": "全部角色",
+    "currentBackpack": "当前：{{name}} 的背包",
+    "mainTag": " · 主要",
+    "extractRangeLabel": "提取范围：",
+    "extractRangeAll": "全部已写章节",
+    "extractRangeCustom": "自定义起止章",
+    "rangeTo": "至",
+    "chapterOptionNoContent": "（无正文）",
+    "chapterOption": "第{{ordinal}}章 · {{title}}"
+  },
+  "stats": {
+    "activeKinds": "当前种类",
+    "totalHeld": "持有总量",
+    "movements": "流水记录"
+  },
+  "extracting": {
+    "progress": "正在逐章提取物品流水…（{{done}}/{{total}}）"
+  },
+  "list": {
+    "loading": "加载中...",
+    "emptyTitle": "物品栏空空如也",
+    "emptyHint": "写完一些章节后，点「从正文提取物品栏」让 AI 自动整理",
+    "cumulativeStats": "累计获得 {{gained}} · 消耗 {{consumed}}",
+    "statusHolding": "持有中",
+    "statusExhausted": "已耗尽",
+    "statusCheckNeeded": "需核对",
+    "timelineTitle": "获得 / 消耗时间线",
+    "editItemNameTitle": "修改物品名",
+    "editItemNameAria": "修改物品名",
+    "holderPlaceholder": "持有人",
+    "editHolderTitle": "修改持有人",
+    "editHolderAria": "修改持有人",
+    "editQuantityTitle": "修改数量",
+    "editQuantityAria": "修改数量",
+    "actionGain": "获得",
+    "actionConsume": "消耗",
+    "deleteEntryTitle": "删除流水",
+    "deleteEntryAria": "删除流水",
+    "notePlaceholder": "备注",
+    "editNoteTitle": "修改备注",
+    "editNoteAria": "修改备注"
+  },
+  "unclaimed": {
+    "hint": "未归属物品（历史数据）。可在这里选择角色认领，原始记录不会丢失。",
+    "claimAria": "认领{{name}}",
+    "selectCharacterToClaim": "选择角色认领…"
+  },
+  "error": {
+    "selectCharacterFirst": "请先选择一个角色，再手动添加其物品"
+  }
+}

@@ -1,0 +1,925 @@
+{
+  "origin": {
+    "title": "🌌 世界起源与核心设定",
+    "subtitle": "定义世界的起源、力量体系与信仰体系。如需声明真实与幻想的规则，请前往「⚖️ 真实与幻想」面板。",
+    "fields": {
+      "origin": {
+        "label": "世界来源",
+        "desc": "创世神话 / 历史时期 / 文明起源……世界从何而来？"
+      },
+      "power": {
+        "label": "力量体系",
+        "desc": "修真等级 / 社会等级 / 科技层级……力量如何分层、怎么晋升？"
+      },
+      "divine": {
+        "label": "神明与信仰",
+        "desc": "是否存在神明或宗教？神明 / 信仰的层级、名号、规则与限制。"
+      }
+    },
+    "streamingAriaLabel": "{{label}}生成中",
+    "powerCodexHeading": "📚 力量层级 · 具体词条",
+    "powerCodexHint": "在上面写完力量体系「全貌」后，这里把各等级/层级逐条登记，可自定义字段、打重要度星级，并进入 AI 生成上下文。",
+    "divineCodexHeading": "📚 神明信仰 · 具体词条",
+    "divineCodexHint": "在上面写完信仰体系「全貌」后，这里把各神明/信仰逐条登记，可自定义字段、打重要度星级，并进入 AI 生成上下文。",
+    "hintPlaceholder": "给 AI 的补充说明（可选）",
+    "aiGenerate": "AI 生成",
+    "divine": {
+      "hasDivinity": "存在神明或宗教信仰",
+      "rankLabel": "信仰层级",
+      "rankPlaceholder": "例：主神 / 次神 / 半神 / 国教 / 民间信仰 ...",
+      "namesLabel": "名号与职司",
+      "namesPlaceholder": "例：天帝 · 创世神；关帝信仰；妈祖信仰 ...",
+      "rulesLabel": "规则与禁忌",
+      "rulesPlaceholder": "例：不可直接干涉凡间 / 避讳字 / 祭祀风俗 ...",
+      "generateButton": "AI 生成信仰体系",
+      "splittingStatus": "AI 正在将信仰体系拆分到三个字段中..."
+    }
+  },
+  "natural": {
+    "title": "🏔️ 自然环境与地理",
+    "subtitle": "定义世界的地理、气候与自然资源。如需声明真实与幻想的规则，请前往「⚖️ 真实与幻想」面板。",
+    "fields": {
+      "worldStructure": {
+        "label": "世界结构",
+        "desc": "世界的物理层级——星球 / 大陆 / 行政区划 / 平行空间等"
+      },
+      "worldDimensions": {
+        "label": "疆域尺寸",
+        "desc": "世界整体大小、核心区域的疆域范围"
+      },
+      "continentLayout": {
+        "label": "地貌分布",
+        "desc": "主要大陆 / 山脉 / 平原 / 盆地的分布与地形特征"
+      },
+      "mountainsRivers": {
+        "label": "山川水系",
+        "desc": "重要山脉、河流、湖泊、运河与水路"
+      },
+      "climateByRegion": {
+        "label": "气候环境",
+        "desc": "不同区域的气候类型、季节特征与自然灾害"
+      },
+      "naturalResources": {
+        "label": "自然资源",
+        "desc": "矿产 / 灵材 / 动植物等自然产出的总体分布、丰饶程度与特点"
+      }
+    },
+    "codexHeading": "📚 {{label}} · 具体词条",
+    "codexHint": "在上面写完整体「全貌」后，这里把「{{label}}」逐条细化登记，可自定义字段、打重要度星级，并进入 AI 生成上下文。",
+    "resourcesCodexHeading": "📚 自然物产 · 具体词条",
+    "resourcesCodexHint": "矿物灵材 / 灵植草药 / 灵兽异兽——逐条登记,可自定义字段、互相关联、打星,并进入 AI 生成上下文。",
+    "legacyResourcesSummary": "旧版「自然资源」纯文本(兼容保留,可继续编辑)",
+    "resourcesTitle": "🌿 自然资源",
+    "resourcesSubtitle": "珍禽异兽 / 灵药草药 / 矿石宝石 / 其他特产",
+    "resourceRows": {
+      "rareCreatures": {
+        "label": "🦅 珍禽异兽 / 牲畜",
+        "placeholder": "例：玄龟 / 火凤 / 战马 / 耕牛 ..."
+      },
+      "herbs": {
+        "label": "🌿 灵药 / 粮食作物",
+        "placeholder": "例：千年雪莲 / 灵参 / 稻麦 ..."
+      },
+      "minerals": {
+        "label": "💎 矿石 / 金属",
+        "placeholder": "例：玄铁 / 灵石 / 盐铁矿 ..."
+      },
+      "others": {
+        "label": "✨ 其他特产",
+        "placeholder": "例：神木 / 蜀锦 / 茶叶 ..."
+      }
+    },
+    "hintPlaceholder": "给 AI 的补充说明（可选）",
+    "aiGenerate": "AI 生成"
+  },
+  "humanity": {
+    "title": "🏛️ 人文环境与社会",
+    "subtitle": "定义世界的历史、势力、政经文化与社会矛盾。如需声明真实与幻想的规则，请前往「⚖️ 真实与幻想」面板。",
+    "fields": {
+      "races": {
+        "label": "种族与民族",
+        "description": "不同种族 / 民族的特征、能力、历史与关系"
+      },
+      "factions": {
+        "label": "势力分布",
+        "description": "主要势力（门派 / 朝廷 / 商会 / 党派……）的格局和敌友关系"
+      },
+      "cities": {
+        "label": "城池重镇",
+        "description": "核心城市、军事重镇、商业都会的分布与格局"
+      },
+      "politics": {
+        "label": "政治制度",
+        "description": "政体、官制、法律、军事、外交、权力主体与阶层结构"
+      },
+      "economy": {
+        "label": "经济制度",
+        "description": "货币、税赋、贸易、产业、资源分配与主要经济参与者"
+      },
+      "culture": {
+        "label": "文化制度",
+        "description": "语言、宗教、教育、礼仪、节庆、艺术、习俗与禁忌"
+      },
+      "conflicts": {
+        "label": "矛盾冲突",
+        "description": "社会内在矛盾 / 阶级冲突 / 个体与集体冲突 / 与外部世界的张力"
+      },
+      "items": {
+        "label": "道具与器物",
+        "description": "武器 / 法器 / 工具 / 科技装备……物品的来源、品级、规则",
+        "hint": "这里写物品体系概述；具体道具在下方「📚 道具与器物 · 具体词条」逐条管理，主角实际获得与消耗的物品由创作区「🎒 物品栏」追踪。"
+      }
+    },
+    "historyNav": {
+      "label": "历史年表"
+    },
+    "historyTitle": "📜 历史年表",
+    "historyDescription": "历史总述、纪年体系、正式事件和时代关键词统一由历史年表维护，避免两套入口互相覆盖。",
+    "openHistoryTimeline": "打开正式历史年表",
+    "legacyHistorySummary": "旧版历史资料（保留兼容，不作为新历史主入口）",
+    "legacyHistoryLineLabel": "旧版世界历史线",
+    "legacyHistoryLinePlaceholder": "旧版历史资料",
+    "legacyEventsLabel": "旧版世界大事记",
+    "legacyEventsPlaceholder": "旧版大事记资料",
+    "codexHeading": "📚 {{label}} · 具体词条",
+    "codexHint": "在上面写完整体「全貌」后，这里把「{{label}}」逐条细化登记，可自定义字段、打重要度星级，并进入 AI 生成上下文。",
+    "legacySocietySummary": "旧版「政经文化」兼容资料",
+    "legacySocietyPlaceholder": "旧版政经文化原文",
+    "hintPlaceholder": "给 AI 的补充说明（可选）",
+    "aiGenerate": "AI 生成"
+  },
+  "storyCore": {
+    "fields": {
+      "logline": {
+        "label": "一句话故事",
+        "description": "用一句话讲清楚你的故事是什么。"
+      },
+      "concept": {
+        "label": "故事概念",
+        "description": "独特设定或反差点：'如果……会怎么样？'"
+      },
+      "theme": {
+        "label": "故事主题",
+        "description": "想探讨的人性/价值观主题。"
+      },
+      "centralConflict": {
+        "label": "核心冲突",
+        "description": "主角面对的最大矛盾（外在 + 内在）。"
+      },
+      "plotPattern": {
+        "label": "故事模式",
+        "description": "线性 / 莲花地图 / 多线并行 / 蒙太奇 等。"
+      },
+      "mainPlot": {
+        "label": "故事主线",
+        "description": "核心情节线 — 主角的目标与阻碍。"
+      },
+      "subPlots": {
+        "label": "故事复线",
+        "description": "副线情节（情感线 / 配角线 / 暗线 / 悬念线）。"
+      }
+    },
+    "placeholderFill": "点击填写{{label}}…",
+    "hintPlaceholder": "补充提示（可选）",
+    "aiGenerate": "AI 生成"
+  },
+  "worldRules": {
+    "title": "⚖️ 真实与幻想",
+    "subtitle": "按维度声明哪些设定取自真实历史、哪些是架空改造，AI 生成时会严格遵守这些约束。",
+    "filledCount": "{{count}} 个维度已设定",
+    "closePreview": "关闭预览",
+    "openPreview": "AI 清单预览",
+    "globalNoteLabel": "📝 全局补充说明（对 AI 的额外约束，适用于所有维度）",
+    "globalNotePlaceholder": "例如：本作以唐代为蓝本但加入仙侠元素，凡是涉及朝堂制度的一律遵循史实，力量体系完全虚构。",
+    "previewTitle": "AI 清单预览",
+    "previewStats": "约 {{tokens}} tokens（{{chars}} 字符）",
+    "previewEmpty": "暂无设定内容。填写上方维度后，这里会显示注入 AI 的结构化清单。",
+    "loading": "加载中...",
+    "deleteNodeConfirmTitle": "删除「{{label}}」及其设定？",
+    "deleteNodeConfirmMessage": "此操作不可恢复。",
+    "deleteNodeConfirmText": "删除",
+    "clearEntryConfirmTitle": "清空此节点的所有设定？",
+    "clearEntryConfirmMessage": "此操作不可恢复。",
+    "clearEntryConfirmText": "清空",
+    "navigation": {
+      "l1Header": "大类",
+      "l2Header": "子类",
+      "overview": "总览",
+      "addL1": "添加大类",
+      "addL2": "添加子类",
+      "newL1Placeholder": "新大类名称",
+      "newL2Placeholder": "新子类名称",
+      "confirmAddL1AriaLabel": "确认添加大类",
+      "confirmAddL2AriaLabel": "确认添加子类",
+      "cancelAddL1AriaLabel": "取消添加大类",
+      "cancelAddL2AriaLabel": "取消添加子类",
+      "deleteL2AriaLabel": "删除子类{{label}}"
+    },
+    "conflictPriority": {
+      "historical": "史实优先",
+      "balanced": "均衡",
+      "fictional": "架空优先"
+    },
+    "tree": {
+      "era": {
+        "label": "时代背景",
+        "period": {
+          "label": "历史时期",
+          "hint": {
+            "0": "朝代",
+            "1": "纪年",
+            "2": "年号"
+          }
+        },
+        "divergence": {
+          "label": "架空起点",
+          "hint": {
+            "0": "蝴蝶效应边界",
+            "1": "分岔点",
+            "2": "架空程度"
+          }
+        },
+        "calendar": {
+          "label": "历法时间",
+          "hint": {
+            "0": "历法",
+            "1": "节气",
+            "2": "时辰"
+          }
+        }
+      },
+      "events": {
+        "label": "重大事件",
+        "hint": {
+          "0": "与历史年表联动",
+          "1": "📜史实事件自动成为锚点",
+          "2": "✨虚构事件为作者规划"
+        }
+      },
+      "geography": {
+        "label": "地理疆域",
+        "admin": {
+          "label": "行政区划",
+          "hint": {
+            "0": "省/府/州/县",
+            "1": "边疆与内地"
+          }
+        },
+        "terrain": {
+          "label": "地形地貌",
+          "hint": {
+            "0": "山脉",
+            "1": "平原",
+            "2": "盆地",
+            "3": "沙漠",
+            "4": "高原"
+          }
+        },
+        "cities": {
+          "label": "城市重镇",
+          "hint": {
+            "0": "都城布局",
+            "1": "军事要塞",
+            "2": "商业都会",
+            "3": "城墙城门"
+          }
+        },
+        "water": {
+          "label": "水系",
+          "hint": {
+            "0": "河流",
+            "1": "湖泊",
+            "2": "运河",
+            "3": "漕运路线",
+            "4": "水利工程"
+          }
+        },
+        "roads": {
+          "label": "道路交通",
+          "hint": {
+            "0": "官道",
+            "1": "驿站",
+            "2": "栈道",
+            "3": "关隘",
+            "4": "海路"
+          }
+        }
+      },
+      "climate": {
+        "label": "气候环境",
+        "weather": {
+          "label": "气候特征",
+          "hint": {
+            "0": "季节",
+            "1": "温度",
+            "2": "降水"
+          }
+        },
+        "disaster": {
+          "label": "自然灾害",
+          "hint": {
+            "0": "旱涝",
+            "1": "地震",
+            "2": "瘟疫",
+            "3": "蝗灾"
+          }
+        },
+        "ecology": {
+          "label": "生态物种",
+          "hint": {
+            "0": "动物",
+            "1": "植物",
+            "2": "特殊物产"
+          }
+        }
+      },
+      "politics": {
+        "label": "政治制度",
+        "system": {
+          "label": "政体形态",
+          "hint": {
+            "0": "君主制/共和",
+            "1": "集权程度",
+            "2": "分权制衡"
+          }
+        },
+        "central": {
+          "label": "中央官制",
+          "hint": {
+            "0": "宰辅",
+            "1": "部院",
+            "2": "寺监",
+            "3": "内阁/军机"
+          }
+        },
+        "local": {
+          "label": "地方官制",
+          "hint": {
+            "0": "州牧/刺史/知府",
+            "1": "藩镇",
+            "2": "地方自治"
+          }
+        },
+        "selection": {
+          "label": "选官制度",
+          "hint": {
+            "0": "科举",
+            "1": "荐举",
+            "2": "九品中正",
+            "3": "世袭"
+          }
+        },
+        "nobility": {
+          "label": "爵位封号",
+          "hint": {
+            "0": "公侯伯子男",
+            "1": "封国",
+            "2": "食邑"
+          }
+        },
+        "law": {
+          "label": "法律刑罚",
+          "hint": {
+            "0": "律令格式",
+            "1": "刑罚种类",
+            "2": "审判流程",
+            "3": "监狱"
+          }
+        },
+        "diplomacy": {
+          "label": "外交",
+          "hint": {
+            "0": "朝贡",
+            "1": "邦交",
+            "2": "和亲",
+            "3": "质子",
+            "4": "国书"
+          }
+        }
+      },
+      "military": {
+        "label": "军事",
+        "organization": {
+          "label": "军制编制",
+          "hint": {
+            "0": "兵种",
+            "1": "军衔",
+            "2": "编制单位",
+            "3": "府兵/募兵"
+          }
+        },
+        "weapons": {
+          "label": "武器装备",
+          "hint": {
+            "0": "兵器",
+            "1": "铠甲",
+            "2": "攻城器械"
+          }
+        },
+        "tactics": {
+          "label": "战术战法",
+          "hint": {
+            "0": "阵法",
+            "1": "骑兵/步兵/水师",
+            "2": "攻城/守城"
+          }
+        },
+        "fortification": {
+          "label": "防御工事",
+          "hint": {
+            "0": "城池",
+            "1": "关隘",
+            "2": "长城",
+            "3": "烽燧",
+            "4": "堡寨"
+          }
+        }
+      },
+      "economy": {
+        "label": "经济",
+        "tax": {
+          "label": "赋税制度",
+          "hint": {
+            "0": "田赋",
+            "1": "徭役",
+            "2": "商税",
+            "3": "两税法/一条鞭法"
+          }
+        },
+        "currency": {
+          "label": "货币金融",
+          "hint": {
+            "0": "铜钱",
+            "1": "银两",
+            "2": "纸钞",
+            "3": "钱庄",
+            "4": "飞钱"
+          }
+        },
+        "trade": {
+          "label": "商业贸易",
+          "hint": {
+            "0": "坊市",
+            "1": "行商坐贾",
+            "2": "丝路/海贸",
+            "3": "行会"
+          }
+        },
+        "agriculture": {
+          "label": "农业",
+          "hint": {
+            "0": "耕作方式",
+            "1": "作物种类",
+            "2": "灌溉",
+            "3": "田制"
+          }
+        },
+        "crafts": {
+          "label": "手工业",
+          "hint": {
+            "0": "织造",
+            "1": "冶炼",
+            "2": "陶瓷",
+            "3": "造纸",
+            "4": "印刷"
+          }
+        },
+        "resources": {
+          "label": "资源物产",
+          "hint": {
+            "0": "盐铁茶马",
+            "1": "矿产",
+            "2": "地方特产",
+            "3": "战略物资"
+          }
+        }
+      },
+      "society": {
+        "label": "社会结构",
+        "hierarchy": {
+          "label": "阶层等级",
+          "hint": {
+            "0": "士农工商",
+            "1": "贵族/平民/贱民",
+            "2": "社会流动性"
+          }
+        },
+        "clan": {
+          "label": "宗族家族",
+          "hint": {
+            "0": "家谱",
+            "1": "祠堂",
+            "2": "嫡庶/长幼",
+            "3": "分家/继承"
+          }
+        },
+        "gender": {
+          "label": "性别秩序",
+          "hint": {
+            "0": "婚嫁制度",
+            "1": "贞操观",
+            "2": "女性地位"
+          }
+        },
+        "servitude": {
+          "label": "依附关系",
+          "hint": {
+            "0": "奴婢",
+            "1": "佃户",
+            "2": "家仆",
+            "3": "人身依附"
+          }
+        },
+        "organizations": {
+          "label": "民间组织",
+          "hint": {
+            "0": "帮会",
+            "1": "秘密社团",
+            "2": "商帮",
+            "3": "会馆"
+          }
+        }
+      },
+      "technology": {
+        "label": "科技生产力",
+        "engineering": {
+          "label": "工程建筑",
+          "hint": {
+            "0": "建筑",
+            "1": "桥梁",
+            "2": "水利",
+            "3": "营造法式"
+          }
+        },
+        "medicine": {
+          "label": "医药",
+          "hint": {
+            "0": "医学体系",
+            "1": "药材",
+            "2": "瘟疫防治",
+            "3": "巫医"
+          }
+        },
+        "astronomy": {
+          "label": "天文历算",
+          "hint": {
+            "0": "星象",
+            "1": "占卜",
+            "2": "数学",
+            "3": "历法编制"
+          }
+        },
+        "transport": {
+          "label": "交通工具",
+          "hint": {
+            "0": "车马",
+            "1": "船舶",
+            "2": "轿子",
+            "3": "造船技术"
+          }
+        },
+        "communication": {
+          "label": "通信",
+          "hint": {
+            "0": "驿传",
+            "1": "烽火",
+            "2": "飞鸽",
+            "3": "信使"
+          }
+        },
+        "tools": {
+          "label": "生产工具",
+          "hint": {
+            "0": "农具",
+            "1": "纺织机",
+            "2": "冶炼炉",
+            "3": "技术边界"
+          }
+        }
+      },
+      "culture": {
+        "label": "文化思想",
+        "philosophy": {
+          "label": "主流思想",
+          "hint": {
+            "0": "儒",
+            "1": "释",
+            "2": "道",
+            "3": "法",
+            "4": "墨",
+            "5": "理学/心学"
+          }
+        },
+        "arts": {
+          "label": "文学艺术",
+          "hint": {
+            "0": "诗词",
+            "1": "话本",
+            "2": "戏曲",
+            "3": "书画",
+            "4": "音乐"
+          }
+        },
+        "education": {
+          "label": "教育",
+          "hint": {
+            "0": "私塾",
+            "1": "官学",
+            "2": "书院",
+            "3": "太学",
+            "4": "典籍"
+          }
+        }
+      },
+      "religion": {
+        "label": "宗教信仰",
+        "official": {
+          "label": "官方宗教",
+          "hint": {
+            "0": "国教",
+            "1": "祭天",
+            "2": "宗庙",
+            "3": "宗教政策"
+          }
+        },
+        "folk": {
+          "label": "民间信仰",
+          "hint": {
+            "0": "土地",
+            "1": "灶神",
+            "2": "妈祖",
+            "3": "关帝",
+            "4": "祈福禳灾"
+          }
+        },
+        "funeral": {
+          "label": "丧葬祭祀",
+          "hint": {
+            "0": "葬制",
+            "1": "祭祖",
+            "2": "招魂",
+            "3": "忌日",
+            "4": "陵墓"
+          }
+        },
+        "taboo": {
+          "label": "禁忌避讳",
+          "hint": {
+            "0": "名讳",
+            "1": "字号",
+            "2": "文字狱",
+            "3": "吉凶观念"
+          }
+        }
+      },
+      "ethnicity": {
+        "label": "民族族群",
+        "main": {
+          "label": "主体民族",
+          "hint": {
+            "0": "民族特征",
+            "1": "文化认同"
+          }
+        },
+        "neighbors": {
+          "label": "周边民族",
+          "hint": {
+            "0": "游牧/渔猎",
+            "1": "华夷关系"
+          }
+        },
+        "interaction": {
+          "label": "民族互动",
+          "hint": {
+            "0": "战争",
+            "1": "融合",
+            "2": "同化",
+            "3": "边疆政策"
+          }
+        },
+        "foreign": {
+          "label": "外国势力",
+          "hint": {
+            "0": "外来文化",
+            "1": "传教士",
+            "2": "通商"
+          }
+        }
+      },
+      "language": {
+        "label": "语言称谓",
+        "spoken": {
+          "label": "口语风格",
+          "hint": {
+            "0": "时代语感",
+            "1": "方言",
+            "2": "雅俗分野"
+          }
+        },
+        "titles": {
+          "label": "称谓体系",
+          "hint": {
+            "0": "官职称呼",
+            "1": "亲属称谓",
+            "2": "自称/敬称/贱称"
+          }
+        },
+        "written": {
+          "label": "书面语",
+          "hint": {
+            "0": "文言/白话",
+            "1": "奏折/公文/信函格式"
+          }
+        },
+        "taboo": {
+          "label": "忌讳用语",
+          "hint": {
+            "0": "避讳字",
+            "1": "委婉语",
+            "2": "时代特有表达"
+          }
+        }
+      },
+      "daily": {
+        "label": "日常生活",
+        "food": {
+          "label": "饮食",
+          "hint": {
+            "0": "主食",
+            "1": "菜肴",
+            "2": "饮品",
+            "3": "烹饪方式",
+            "4": "饮食礼仪"
+          }
+        },
+        "clothing": {
+          "label": "服饰",
+          "hint": {
+            "0": "材质",
+            "1": "款式",
+            "2": "颜色",
+            "3": "等级标识"
+          }
+        },
+        "housing": {
+          "label": "居住",
+          "hint": {
+            "0": "民居",
+            "1": "府邸",
+            "2": "宫殿",
+            "3": "客栈",
+            "4": "家具"
+          }
+        },
+        "travel": {
+          "label": "出行",
+          "hint": {
+            "0": "日常交通",
+            "1": "出行礼仪",
+            "2": "路费盘缠"
+          }
+        },
+        "measures": {
+          "label": "度量衡",
+          "hint": {
+            "0": "长度",
+            "1": "重量",
+            "2": "容量",
+            "3": "货币换算"
+          }
+        },
+        "time": {
+          "label": "时间观念",
+          "hint": {
+            "0": "十二时辰",
+            "1": "更鼓",
+            "2": "日出而作"
+          }
+        },
+        "entertainment": {
+          "label": "娱乐",
+          "hint": {
+            "0": "棋牌",
+            "1": "蹴鞠",
+            "2": "斗鸡",
+            "3": "宴饮"
+          }
+        },
+        "festivals": {
+          "label": "节庆",
+          "hint": {
+            "0": "春节",
+            "1": "清明",
+            "2": "端午",
+            "3": "中秋",
+            "4": "重阳"
+          }
+        },
+        "etiquette": {
+          "label": "社交礼仪",
+          "hint": {
+            "0": "拜帖",
+            "1": "宴请",
+            "2": "送礼",
+            "3": "官场/民间礼仪"
+          }
+        }
+      },
+      "supernatural": {
+        "label": "力量与超自然",
+        "system": {
+          "label": "力量体系",
+          "hint": {
+            "0": "修炼等级",
+            "1": "规则限制",
+            "2": "晋升路径"
+          }
+        },
+        "beings": {
+          "label": "超自然存在",
+          "hint": {
+            "0": "神明",
+            "1": "妖魔",
+            "2": "鬼怪",
+            "3": "仙人"
+          }
+        },
+        "artifacts": {
+          "label": "灵材法器",
+          "hint": {
+            "0": "法宝",
+            "1": "丹药",
+            "2": "灵石",
+            "3": "阵法"
+          }
+        },
+        "impact": {
+          "label": "力量与社会",
+          "hint": {
+            "0": "修士vs凡人",
+            "1": "力量vs权力",
+            "2": "管理制度"
+          }
+        }
+      }
+    },
+    "entryEditor": {
+      "deleteNode": "删除节点",
+      "clearEntry": "清空",
+      "historicalAnchorsLabel": "📜 取自真实（历史考据 / 现实原型）",
+      "historicalAnchorsPlaceholder": "这个维度中有哪些内容是取自真实历史或现实的？例如：使用唐朝开元年间真实官制三省六部",
+      "fictionalAdaptationsLabel": "✨ 架空改造（虚构 / 改编 / 原创设定）",
+      "fictionalAdaptationsPlaceholder": "这个维度中有哪些内容是虚构或改编的？例如：在真实官制基础上增设灵修院，专管修士事务",
+      "priorityLabel": "⚖️ 当真实与架空冲突时",
+      "emptyStatePrimary": "选择左侧的子类开始设定",
+      "emptyStateSecondary": "或点击「总览」设定大类级别的规则"
+    }
+  },
+  "powerSystem": {
+    "title": "⚡ 力量体系",
+    "nameLabel": "体系名称",
+    "namePlaceholder": "如：灵气修炼体系、魔法等级...",
+    "descriptionLabel": "体系描述",
+    "descriptionPlaceholder": "简述力量体系的核心原理...",
+    "levelsLabel": "等级列表",
+    "levelsPlaceholder": "从低到高列出等级，每行一个...",
+    "rulesLabel": "体系规则",
+    "rulesPlaceholder": "修炼条件、突破瓶颈、禁忌..."
+  },
+  "cultivation": {
+    "title": "修炼体系",
+    "description": "这里定义「如何利用力量」的流派与境界路径；上面的力量体系只描述世界底层能量。境界支持分叉与合流。",
+    "addSystem": "新增体系",
+    "emptyState": "当前世界还没有修炼体系。可创建武夫、术士、剑修等多套独立路径。",
+    "stageCount": "{{count}} 个境界",
+    "promptTitle": "新增修炼体系",
+    "promptPlaceholder": "如：剑修、武夫、召唤师",
+    "deleteConfirmTitle": "删除修炼体系「{{name}}」？",
+    "deleteConfirmMessage": "角色和异兽对它的关联会被安全置空；此操作不可恢复。",
+    "deleteConfirmText": "删除",
+    "loadError": "世界数据尚未加载完成，请稍后再试。",
+    "editor": {
+      "descriptionPlaceholder": "点击说明这套体系的核心原理、适用者和代价…",
+      "deleteSystemAriaLabel": "删除修炼体系",
+      "dagHeading": "境界 DAG",
+      "addNextStage": "添加后续境界",
+      "addFirstStage": "添加第一个起始境界",
+      "tierLabel": "层级 {{tier}}",
+      "stageNameLabel": "境界名称",
+      "deleteStageAriaLabel": "删除境界",
+      "branchLabelLabel": "分支标签",
+      "branchLabelPlaceholder": "如：剑修 / 体修（可空）",
+      "featuresLabel": "境界特征 / 战力边界",
+      "featuresPlaceholder": "能做到什么、不能做到什么…",
+      "breakthroughLabel": "突破到此阶的条件",
+      "breakthroughPlaceholder": "资源、领悟、仪式、代价…",
+      "parentStagesLabel": "前置境界（可多选形成合流）",
+      "noParentNeeded": "起始境界无需前置",
+      "defaultStageName": "新境界"
+    }
+  },
+  "shared": {
+    "aiGenerate": "AI 生成",
+    "hintPlaceholder": "给 AI 的补充说明（可选）"
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "panel": {
+    "title": "Character state cards",
+    "subtitle": "Aggregates each character's current state, location, plot progress, inventory, and faction. The chapter editor's \"Extract state\" only updates registered characters.",
+    "exportButton": "Export",
+    "summaryTotalCharacters": "Total characters",
+    "summaryWithState": "With state",
+    "summaryMissingState": "Missing state",
+    "loading": "Loading…",
+    "emptyTitle": "No characters yet",
+    "emptyHint": "Register characters in \"Character design\" first, then extract dynamic state from chapter text."
+  },
+  "card": {
+    "pendingExtraction": "Pending extraction",
+    "noShortDescription": "No character summary yet",
+    "editStateTitle": "Edit state",
+    "fieldPlaceholder": "Field",
+    "valuePlaceholder": "Current value",
+    "addField": "+ Add field",
+    "save": "Save",
+    "labelLocation": "Location",
+    "labelFaction": "Faction",
+    "labelPlotProgress": "Plot progress",
+    "currentStateHeader": "Current state",
+    "fieldSuffix": "{{key}}: ",
+    "noDynamicState": "No dynamic state yet. Click \"Extract state\" in the chapter editor.",
+    "defaultFieldKey": "Current state",
+    "unrecorded": "Unrecorded"
+  },
+  "inventoryFact": {
+    "label": "Inventory",
+    "sourceInventory": "from inventory",
+    "sourceState": "from state field",
+    "goToInventoryTitle": "Go to inventory",
+    "goToInventoryAria": "Go to inventory"
+  },
+  "diffModal": {
+    "noChanges": "No state changes detected in this chapter",
+    "close": "Close",
+    "reviewTitle": "📋 State change review",
+    "reviewSubtitle": "Chapter «{{chapterTitle}}» produced {{count}} changes; check the ones to write into the state table.",
+    "selectedCount": "Selected {{selected}}/{{total}}",
+    "skipThisTime": "Skip this time",
+    "cancel": "Cancel",
+    "confirmWrite": "Write to state table ({{count}})",
+    "consoleConfirm": "[StateDiff] User confirmed: {{accepted}}/{{total}} changes"
+  },
+  "categoryLabels": {
+    "character": "Character",
+    "location": "Location",
+    "item": "Item",
+    "faction": "Faction",
+    "event": "Event"
+  }
+}

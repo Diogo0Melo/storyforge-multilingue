@@ -1,0 +1,54 @@
+{
+  "transition": {
+    "enter": "首次确认",
+    "advance": "突破",
+    "regress": "倒退",
+    "switch": "改道"
+  },
+  "analyze": {
+    "noLinkedCharacter": "本章世界没有已关联修炼体系的角色，请先在角色卡设置主修体系。",
+    "candidatesFound": "发现 {{count}} 条可靠候选，请逐条确认。",
+    "noCandidates": "没有发现可可靠确认的境界变化。",
+    "failed": "分析失败"
+  },
+  "accept": {
+    "success": "已确认并写入修炼历程。",
+    "failed": "确认失败"
+  },
+  "delete": {
+    "confirmTitle": "删除这条已确认修炼事件？",
+    "confirmMessage": "删除后当前境界和实际路径会按剩余事件重新投影。",
+    "confirmButton": "删除"
+  },
+  "panel": {
+    "title": "修炼进度",
+    "subtitle": "这里是正文确认后的下游历程；角色卡“当前设定境界”仍是上游预设，两者不会互相冒充。",
+    "feedbackToggle": "反哺后续写作（默认关闭）",
+    "selectChapterLabel": "选择已写章节",
+    "sourceChapterAria": "修炼进度来源章节",
+    "noWrittenChapters": "暂无已写章节",
+    "analyzing": "分析中",
+    "analyzeButton": "分析本章",
+    "confirmCandidateAria": "确认修炼候选",
+    "ignoreCandidateAria": "忽略修炼候选",
+    "noTrackableCharacters": "还没有关联主修体系的角色。请先到“角色生成”设置主修体系。",
+    "mainRoleSuffix": "主要",
+    "unlinkedSystem": "未关联体系",
+    "currentStage": "正文当前：{{stage}}",
+    "noConfirmedStage": "正文尚无已确认境界",
+    "characterCardSetting": "角色卡设定：{{stage}}",
+    "invalidStage": "已失效",
+    "tierLabel": "层级 {{tier}}",
+    "noConfirmedEvents": "暂无作者确认的正文修炼事件",
+    "deleteEventAria": "删除修炼事件"
+  },
+  "validation": {
+    "missingId": "存在缺少 ID 的境界",
+    "duplicateId": "境界 ID 重复：{{id}}",
+    "missingName": "境界 {{id}} 缺少名称",
+    "unnamed": "（未命名）",
+    "selfReference": "境界「{{name}}」不能以自身为前置",
+    "danglingParent": "境界「{{name}}」引用了不存在的前置 {{parentId}}",
+    "hasCycle": "境界关系中存在有向环，修炼路径必须是 DAG"
+  }
+}

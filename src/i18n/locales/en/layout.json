@@ -1,0 +1,190 @@
+{
+  "contentType": {
+    "upstream": {
+      "label": "Setting",
+      "description": "Content you fill in or plan; serves as upstream context for AI creation."
+    },
+    "writing": {
+      "label": "Writing",
+      "description": "The actual writing and editing area for the novel's main text."
+    },
+    "downstream": {
+      "label": "Derived",
+      "description": "Content extracted or organized from written text; can be corrected by the author."
+    },
+    "tool": {
+      "label": "AI Tool",
+      "description": "Auxiliary tools for generation, reverse-engineering, analysis, or verification."
+    },
+    "experience": {
+      "label": "Experience",
+      "description": "Area independent of the creative canon for interactive runtime, saves, and events."
+    },
+    "system": {
+      "label": "System",
+      "description": "Project import/export, versions, prompts, and application settings."
+    }
+  },
+  "nav": {
+    "sectionProject": "Project Info",
+    "sectionLib": "Settings Library",
+    "sectionCreate": "Creation Area",
+    "sectionExperience": "Experience Center",
+    "sectionPrompts": "Prompt Library",
+    "sectionSystem": "Settings",
+    "branchWorldview": "Worldview",
+    "branchCharacters": "Character Design",
+    "leafInfo": "Project Overview",
+    "leafInspiration": "Reverse Inspiration",
+    "leafReferences": "Project References",
+    "leafWorldOverview": "World Overview",
+    "leafWorldRules": "Reality & Fantasy",
+    "leafWorldviewOrigin": "World Origin",
+    "leafWorldviewNatural": "Natural Environment",
+    "leafWorldviewHumanity": "Human Environment",
+    "leafHistory": "History Timeline",
+    "leafWorldMap": "World Map",
+    "leafStoryDesign": "Story Design",
+    "leafCharacters": "Character Generation",
+    "leafCharactersMain": "Main Characters",
+    "leafCharactersMinor": "Minor Characters",
+    "leafCharactersNpc": "NPCs",
+    "leafCharactersExtra": "Extras",
+    "leafRelations": "Relation Network",
+    "leafRules": "Writing Rules",
+    "leafOutline": "Outline",
+    "leafCharacterDrivenPlot": "Character-Driven Plot",
+    "leafRagLibrary": "Knowledge Base & Retrieval",
+    "leafVisualWorkflows": "Node Mode",
+    "leafStoryArc": "Story Arc",
+    "leafChaptersList": "Chapters",
+    "leafForeshadow": "Foreshadowing",
+    "leafStyleLearning": "Style Learning",
+    "leafLocations": "Key Locations",
+    "leafStateTable": "State Table",
+    "leafInventory": "Inventory",
+    "leafFactLibrary": "Fact Library",
+    "leafStoryTimeline": "Story Timeline",
+    "leafCultivationProgress": "Cultivation Progress",
+    "leafSceneVerify": "Scene Verification",
+    "leafSimulationRuntime": "Interactive Runtime",
+    "leafPrompts": "Prompt Library",
+    "leafVersionHistory": "Version History",
+    "leafImportDoc": "Document Parsing",
+    "leafExport": "Data Management",
+    "leafUsageStats": "Usage Statistics",
+    "leafSettings": "Settings"
+  },
+  "sidebar": {
+    "backHome": "Back to home",
+    "settingsTitle": "Settings",
+    "versionTitle": "Current version",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "contentTypeTooltip": "{{label}}: {{description}}",
+    "leafTooltipCollapsed": "{{label}} · {{type}}: {{description}}"
+  },
+  "propertiesPanel": {
+    "title": "Properties",
+    "outlineStats": "Outline stats",
+    "volumeCount": "Volumes",
+    "arcCount": "Arcs",
+    "chapterCount": "Chapters",
+    "writtenChapters": "Written chapters",
+    "totalWords": "Total words",
+    "wordsUnit": "{{count}} words",
+    "currentChapter": "Current chapter",
+    "chapterTitle": "Title",
+    "chapterStatus": "Status",
+    "chapterWords": "Word count",
+    "chapterUpdatedAt": "Updated at",
+    "characterStats": "Character stats",
+    "totalCharacters": "Total characters",
+    "mainSecondary": "Main / Secondary",
+    "npcExtra": "NPC / Extra",
+    "moralAxis": "Good / Neutral / Evil",
+    "relationLines": "Relation lines",
+    "relationStats": "Relation stats",
+    "characterCount": "Characters",
+    "totalRelations": "Total relations",
+    "bidirectional": "Bidirectional",
+    "unidirectional": "Unidirectional",
+    "topRelationType": "Most common type",
+    "topRelationTypeValue": "{{type}} ({{count}} entries)",
+    "geographyStats": "Geography stats",
+    "locationTotal": "Total locations",
+    "foreshadowStats": "Foreshadowing stats",
+    "totalForeshadows": "Total foreshadowings",
+    "planned": "Planned",
+    "planted": "Planted",
+    "echoed": "Echoed",
+    "resolved": "Resolved",
+    "unresolved": "Unresolved",
+    "tips": {
+      "worldview": {
+        "title": "Worldview",
+        "items": [
+          "Worldview is the core context for AI writing",
+          "Fill in basic settings before you start writing",
+          "Power systems influence battle-scene quality"
+        ]
+      },
+      "storyCore": {
+        "title": "Story Core",
+        "items": [
+          "The story core defines the main conflict and theme",
+          "Clear protagonist motivation helps AI maintain character consistency"
+        ]
+      },
+      "powerSystem": {
+        "title": "Power System",
+        "items": [
+          "Clearer power tiers lead to more coherent battle scenes",
+          "List the protagonist's current tier and breakthrough conditions"
+        ]
+      },
+      "history": {
+        "title": "History Timeline",
+        "items": [
+          "Historical events provide timing references for foreshadowing",
+          "Highlight key nodes that affect the current plot"
+        ]
+      },
+      "rules": {
+        "title": "Writing Rules",
+        "items": [
+          "Writing rules are appended as system prompts to all AI requests",
+          "Keep rules concise for best results"
+        ]
+      },
+      "backup": {
+        "title": "Version History",
+        "items": [
+          "Auto-backup every 5 minutes",
+          "Create manual snapshots to save important versions"
+        ]
+      },
+      "export": {
+        "title": "Export",
+        "items": [
+          "Supports Markdown, TXT, and JSON formats",
+          "JSON preserves full project data for restoration"
+        ]
+      },
+      "settings": {
+        "title": "Settings",
+        "items": [
+          "DeepSeek is recommended for lower cost",
+          "API Key is session-only by default; enable \"remember on this device\" to persist in localStorage. AI requests go to the selected model provider."
+        ]
+      },
+      "info": {
+        "title": "Project Info",
+        "items": [
+          "Project info is included in AI context",
+          "Target word count tracks writing progress"
+        ]
+      }
+    }
+  }
+}

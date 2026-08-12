@@ -1,0 +1,55 @@
+{
+  "panel": {
+    "title": "📍 Important locations",
+    "subtitle": "Manage key story locations with tag combinations and a tree hierarchy"
+  },
+  "toolbar": {
+    "count": "{{count}} locations in total",
+    "viewTree": "Tree view",
+    "viewList": "List",
+    "addLocation": "Add location",
+    "extractAi": "AI extract from text",
+    "extracting": "Analyzing text…"
+  },
+  "extraction": {
+    "noWrittenChapters": "No chapters with written text yet",
+    "failed": "Location extraction failed",
+    "candidatesTitle": "Location candidates"
+  },
+  "list": {
+    "childCount": "{{count}} sub-locations",
+    "labelName": "Name",
+    "labelParent": "Parent location",
+    "parentTopLevel": "(top level)",
+    "labelTags": "Location tags (combine as needed)",
+    "labelDescription": "Description",
+    "placeholderDescription": "Detailed description, appearance, atmosphere…",
+    "labelSignificance": "Plot significance",
+    "placeholderSignificance": "Role in the story, key events, character ties…",
+    "addChild": "Add sub-location",
+    "confirmDeletePrompt": "Confirm deletion? Sub-locations will also be removed",
+    "confirmDelete": "Confirm",
+    "cancelDelete": "Cancel",
+    "deleteLocation": "Delete location",
+    "empty": "No locations yet",
+    "addFirst": "Add the first location",
+    "treeJumpHint": "Click a node to jump to list editing"
+  },
+  "tagPicker": {
+    "emptyHint": "Click below to add tags…",
+    "collapse": "Collapse tags",
+    "expand": "Expand tag picker"
+  },
+  "treeView": {
+    "rootName": "World",
+    "empty": "No location data yet; please add locations",
+    "invalidHierarchy": "Location hierarchy is invalid; check parent relationships"
+  },
+  "defaults": {
+    "newLocationName": "New location"
+  },
+  "tagCategories": {
+    "terrain": "Natural Terrain",
+    "place": "Cultural Sites"
+  }
+}

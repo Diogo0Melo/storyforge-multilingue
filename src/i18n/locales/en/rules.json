@@ -1,0 +1,53 @@
+{
+  "panel": {
+    "title": "📐 Creative Rules"
+  },
+  "pov": {
+    "label": "Narrative POV",
+    "firstPerson": "First Person",
+    "firstPersonDesc": "Narrated from the \"I\" perspective",
+    "thirdLimited": "Third Person Limited",
+    "thirdLimitedDesc": "Follows a single character's perspective",
+    "thirdOmniscient": "Third Person Omniscient",
+    "thirdOmniscientDesc": "God-like view into every character's thoughts",
+    "multiPov": "Multiple POVs",
+    "multiPovDesc": "Switches between several characters' perspectives"
+  },
+  "writingStyle": {
+    "label": "Writing Style",
+    "aiSuggest": "AI Suggestion",
+    "placeholder": "Describe your desired style, e.g. concise and sharp, lyrical, humorous, cold realism..."
+  },
+  "toneAndMood": {
+    "label": "Tone & Mood",
+    "aiSuggest": "AI Suggestion",
+    "placeholder": "Describe the overall tone and mood, e.g. dark and oppressive, passionate, warm and healing..."
+  },
+  "prohibitions": {
+    "title": "Prohibitions",
+    "placeholder": "e.g. No modern slang"
+  },
+  "consistencyRules": {
+    "title": "Consistency Rules",
+    "placeholder": "e.g. Cultivation system must follow the Five Elements"
+  },
+  "referenceWorks": {
+    "title": "Reference Works",
+    "placeholder": "e.g. A Record of a Mortal's Journey to Immortality"
+  },
+  "citedTechniques": {
+    "title": "Cited Techniques",
+    "desc": "When checked, AI writing will reference these works' analytical methodologies",
+    "noAnalyzedRefs": "No analyzed references yet. Upload files and complete analysis under Project References → Deep Analysis first.",
+    "wordCount": "{{count}}0k words"
+  },
+  "specialRequirements": {
+    "label": "Special Requirements",
+    "aiSuggest": "AI Suggestion",
+    "placeholder": "Any other special rules you want the AI to follow..."
+  },
+  "listActions": {
+    "add": "Add",
+    "empty": "No items yet"
+  }
+}

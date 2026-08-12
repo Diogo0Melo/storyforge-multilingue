@@ -1,0 +1,69 @@
+{
+  "panel": {
+    "title": "Inventário",
+    "subtitle": "A IA extrai ganhos e perdas de itens por personagem dos capítulos escritos, calculando automaticamente quantidades e histórico."
+  },
+  "roleWeight": {
+    "main": "Personagens principais",
+    "secondary": "Personagens secundários",
+    "npc": "NPCs",
+    "extra": "Figurantes"
+  },
+  "controls": {
+    "manualAdd": "Adicionar manualmente",
+    "manualAddTitleWithChar": "Adicionar item a {{name}}",
+    "manualAddTitleEmpty": "Selecione um personagem primeiro",
+    "extractButton": "Extrair inventário do texto",
+    "extractingProgress": "Extraindo {{done}}/{{total}}",
+    "viewCharacterLabel": "Ver personagem:",
+    "allCharacters": "Todos os personagens",
+    "currentBackpack": "Atual: mochila de {{name}}",
+    "mainTag": " · principal",
+    "extractRangeLabel": "Faixa de extração:",
+    "extractRangeAll": "Todos os capítulos escritos",
+    "extractRangeCustom": "Início/fim personalizado",
+    "rangeTo": "até",
+    "chapterOptionNoContent": "(sem texto)",
+    "chapterOption": "Capítulo {{ordinal}} · {{title}}"
+  },
+  "stats": {
+    "activeKinds": "Tipos ativos",
+    "totalHeld": "Total em posse",
+    "movements": "Registros de fluxo"
+  },
+  "extracting": {
+    "progress": "Extraindo fluxo de itens capítulo a capítulo… ({{done}}/{{total}})"
+  },
+  "list": {
+    "loading": "Carregando...",
+    "emptyTitle": "O inventário está vazio",
+    "emptyHint": "Após escrever alguns capítulos, clique em \"Extrair inventário do texto\" para a IA organizar",
+    "cumulativeStats": "Ganho {{gained}} · Consumido {{consumed}}",
+    "statusHolding": "Em posse",
+    "statusExhausted": "Esgotado",
+    "statusCheckNeeded": "Precisa revisar",
+    "timelineTitle": "Linha do tempo de ganho / consumo",
+    "editItemNameTitle": "Editar nome do item",
+    "editItemNameAria": "Editar nome do item",
+    "holderPlaceholder": "Portador",
+    "editHolderTitle": "Editar portador",
+    "editHolderAria": "Editar portador",
+    "editQuantityTitle": "Editar quantidade",
+    "editQuantityAria": "Editar quantidade",
+    "actionGain": "Ganho",
+    "actionConsume": "Consumo",
+    "deleteEntryTitle": "Excluir registro",
+    "deleteEntryAria": "Excluir registro",
+    "notePlaceholder": "Observação",
+    "editNoteTitle": "Editar observação",
+    "editNoteAria": "Editar observação"
+  },
+  "unclaimed": {
+    "hint": "Itens sem dono (dados legados). Reivindique-os para um personagem aqui; os registros originais são preservados.",
+    "claimAria": "Reivindicar {{name}}",
+    "selectCharacterToClaim": "Selecione um personagem para reivindicar…"
+  },
+  "error": {
+    "selectCharacterFirst": "Selecione um personagem antes de adicionar itens manualmente"
+  }
+}

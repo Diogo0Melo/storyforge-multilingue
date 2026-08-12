@@ -1,0 +1,1882 @@
+{
+  "page": {
+    "title": "Configurações",
+    "otherSection": "Outros",
+    "guideTitle": "Guia de introdução",
+    "guideDescription": "Mostrar novamente o tutorial de primeiros passos",
+    "guideResetDone": "Redefinido (atualize a página para aplicar)",
+    "guideResetAction": "Reiniciar guia"
+  },
+  "aiConfig": {
+    "sectionTitle": "Configuração do modelo de IA",
+    "apiKeyNotice": "A chave de API fica apenas nesta sessão do navegador por padrão; marque \"Lembrar neste dispositivo\" para gravá-la no localStorage. Ao gerar com IA, testar a conexão ou usar um baseUrl personalizado, prompts e contexto são enviados ao provedor configurado.",
+    "providerLabel": "Provedor",
+    "apiKeyLabel": "Chave de API",
+    "apiKeyPlaceholder": "Digite a chave de API...",
+    "ollamaNoKeyPlaceholder": "Não requer chave",
+    "rememberApiKey": "Lembrar chave de API neste dispositivo (salva no localStorage). Desmarcado mantém a chave só nesta sessão do navegador.",
+    "baseUrlLabel": "URL base",
+    "lmStudioButton": "LM Studio",
+    "localOllamaButton": "Ollama local",
+    "localModelHint": "Para modelos locais, use um endpoint compatível com OpenAI e defina a URL base até /v1; Ollama costuma rodar em :11434/v1 e LM Studio em :1234/v1. Não inclua /v1/models ou /chat/completions — erros comuns são corrigidos automaticamente nos testes.",
+    "switchToProxy": "🔄 Usar proxy local",
+    "restoreDirect": "🔗 Restaurar conexão direta",
+    "modelLabel": "Modelo",
+    "refreshModelsTitle": "Atualizar lista de modelos do serviço atual",
+    "refreshing": "Atualizando",
+    "refreshModels": "Atualizar modelos",
+    "fetchedModelsAria": "Modelos retornados pelo serviço",
+    "selectFetchedModel": "Escolha um modelo retornado ({{count}})",
+    "manualModelPlaceholder": "Ou digite manualmente o nome do modelo (não listado)",
+    "manualModelFallbackPlaceholder": "Digite o nome do modelo",
+    "emptyModelListError": "O serviço retornou uma lista vazia; você ainda pode digitar o modelo manualmente",
+    "refreshModelError": "Falha ao atualizar a lista de modelos",
+    "ollamaPullHint": "Baixe os modelos ausentes no Ollama antes e depois volte aqui para atualizar.",
+    "maxTokensUnlimited": "Ilimitado (máximo do modelo)",
+    "maxTokensApprox": "≈{{count}} caracteres",
+    "maxTokensUnlimitedToggle": "Ilimitado",
+    "contextWindowLabel": "Janela de contexto",
+    "contextWindowAdvanced": "Avançado · Opcional",
+    "contextWindowPreset": "Usar predefinição do modelo",
+    "contextWindowPlaceholder": "Para modelos locais/personalizados informe o valor real, ex. 131072; deixar vazio = predefinição interna",
+    "contextWindowResetTitle": "Restaurar predefinição do modelo",
+    "contextWindowResetAria": "Restaurar janela de contexto para a predefinição do modelo",
+    "autoSavedCurrent": "Salvo automaticamente na configuração atual",
+    "autoSavedPendingPreset": "Salvo automaticamente na configuração atual, ainda não aplicado a \"{{name}}\"",
+    "contextWindowHint": "Modelos desconhecidos usam 8K por padrão e podem avisar incorretamente que \"o contexto excede a janela\". Para modelos locais (LM Studio / Ollama) informe aqui o tamanho real da janela, ex. 128000 / 262144.",
+    "renamePresetTitle": "Renomear predefinição",
+    "renamePresetPlaceholder": "Digite o novo nome da predefinição",
+    "deletePresetTitle": "Excluir predefinição \"{{name}}\"?",
+    "deletePresetMessage": "Esta ação não pode ser desfeita.",
+    "modelDesc": {
+      "deepseekV4Flash": "Rápido, ótimo custo-benefício",
+      "deepseekV4Pro": "Mais forte, suporta pensamento profundo",
+      "gemini25Flash": "Recomendado, estável com cota gratuita alta",
+      "gemini25FlashLite": "Versão leve e estável",
+      "gemini25Pro": "Mais forte e estável, suporta raciocínio",
+      "gemini3FlashPreview": "⚠️ Prévia, pode dar 503 em picos",
+      "gemini31FlashLite": "⚠️ Prévia",
+      "gemini3ProPreview": "⚠️ Prévia, pode ser instável",
+      "gemini31ProPreview": "⚠️ Prévia, pode ser instável",
+      "gemini20Flash": "Legado",
+      "llama33_70b": "Llama mais recente, recomendado",
+      "llama31_405b": "Modelo open-source mais forte",
+      "llama31_70b": "Alto desempenho",
+      "deepseekR1": "Modelo de raciocínio",
+      "qwen25_72b": "Qwen (Tongyi Qianwen)",
+      "gemma2_27b": "Google open-source",
+      "mistralLarge2": "Flagship Mistral",
+      "qwen3_235b": "Modelo MoE mais forte",
+      "qwen3_32b": "Modelo denso de alto desempenho",
+      "qwen3_30b": "MoE leve, ótimo custo-benefício",
+      "qwen3_14b": "Modelo denso de porte médio",
+      "qwen3_8b": "Modelo denso leve",
+      "qwen3_4b": "Ultraleve",
+      "agnes15Flash": "Série Tsinghua gratuito · Estável · Recomendado",
+      "agnes20Flash": "1M de contexto · Manutenção em alguns horários",
+      "longcat20": "Meituan LongCat · Compatível OpenAI · 1M de contexto"
+    }
+  },
+  "providerHints": {
+    "deepseek": "Obter chave: platform.deepseek.com → API Keys (clique em \"Usar proxy local\" abaixo)",
+    "qwen": "Obter chave: dashscope.console.aliyun.com → Gerenciamento de API-KEY",
+    "doubao": "Obter chave: console.volcengine.com → Inferência de Modelos → API Key (Volcengine não aceita conexão direta do navegador; clique em \"Usar proxy local\" abaixo)",
+    "minimax": "Obter chave: platform.minimaxi.com → API Keys",
+    "glm": "Obter chave: open.bigmodel.cn → API Keys",
+    "wenxin": "Obter chave: console.bce.baidu.com → Qianfan → API Key",
+    "gemini": "Obter chave: aistudio.google.com → API Keys",
+    "poe": "Obter chave: poe.com → Settings → API → API Key",
+    "openai": "Obter chave: platform.openai.com → API Keys (clique em \"Usar proxy local\" abaixo)",
+    "kimi": "Obter chave: platform.moonshot.cn → Gerenciamento de API Key (clique em \"Usar proxy local\" abaixo)",
+    "claude": "Obter chave: console.anthropic.com → API Keys (clique em \"Usar proxy local\" abaixo)",
+    "nvidia": "Obter chave: build.nvidia.com → faça login para obter a API Key (clique em \"Usar proxy local\" abaixo)",
+    "modelscope": "Obter chave: modelscope.cn → Perfil → Access Token",
+    "agnes": "Multimodal gratuito apoiado pela Tsinghua · Obter chave: platform.agnes-ai.com (tente \"Usar proxy local\" se não conectar)",
+    "longcat": "Obter chave: console longcat.chat; compatível com OpenAI (use proxy local se CORS direto falhar)",
+    "opencode": "Obter chave: opencode.ai → Zen → Go API Key (clique em \"Usar proxy local\" abaixo)",
+    "ollama": "Endpoint local compatível com OpenAI /v1; Ollama geralmente em http://localhost:11434/v1, LM Studio em http://localhost:1234/v1; normalmente sem chave de API.",
+    "custom": "Qualquer API compatível com OpenAI"
+  },
+  "connectionTest": {
+    "testing": "Testando...",
+    "testConnection": "Testar conexão",
+    "logs": "Logs",
+    "duration": "Duração {{ms}}ms",
+    "corsHintDev": "💡 Ao rodar localmente, clique em \"Usar proxy local\" para resolver",
+    "corsHintProd": "💡 Experimente o Gemini (aceita chamadas diretas do navegador) ou rode esta ferramenta localmente"
+  },
+  "connectionLog": {
+    "title": "Logs de conexão",
+    "clear": "Limpar",
+    "empty": "Sem logs ainda. Clique em \"Testar conexão\" para gerar."
+  },
+  "preset": {
+    "label": "Predefinições de configuração",
+    "saveChangesTo": "Salvar alterações em \"{{name}}\"",
+    "saveChangesTitle": "Sobrescrever \"{{name}}\" com os valores atuais do formulário",
+    "saveAsNew": "Salvar como nova predefinição",
+    "namePlaceholder": "Nome da predefinição, ex. \"DeepSeek principal\"",
+    "saveCurrent": "+ Salvar atual como predefinição",
+    "empty": "Nenhuma predefinição ainda. Configure uma API e clique em \"Salvar atual como predefinição\" para trocar rapidamente depois.",
+    "updateTitle": "Sobrescrever esta predefinição com a configuração atual",
+    "renameAria": "Renomear predefinição {{name}}",
+    "deleteAria": "Excluir predefinição {{name}}",
+    "hint": "Clicar numa predefinição aplica toda a configuração, incluindo janela de contexto; após editar o formulário, use os botões acima para gravar as alterações."
+  },
+  "taskRouting": {
+    "title": "Roteamento de modelos por tarefa",
+    "description": "Usa automaticamente predefinições salvas por tarefa; quando não houver vínculo, a predefinição for excluída ou faltar chave de API na predefinição dedicada, volta ao modelo global atual. Predefinições na nuvem recebem os prompts e contexto da tarefa correspondente.",
+    "useGlobalModel": "Usar modelo global atual",
+    "routeAria": "Predefinição de modelo para {{label}}",
+    "agentTeamTitle": "Papéis da equipe do Agente Principal",
+    "agentTeamDescription": "Afeta apenas execuções internas do Agente Principal; painéis manuais continuam usando as quatro rotas acima. Papéis sem vínculo usam o modelo global atual. Cada um dos cinco domínios também pode reduzir independentemente o orçamento de fontes registradas; \"Completo\" mantém o limite original de contexto.",
+    "teamBudgetLabel": "Orçamento da equipe por rodada",
+    "teamBudgetDescription": "Cobre o Agente Principal, geração por domínio e uma rejeição controlada de Cânone; ao atingir o limite, chamadas param antes da próxima invocação.",
+    "teamBudgetAria": "Orçamento da equipe do Agente Principal",
+    "contextTierLabel": "Nível de entrada de contexto",
+    "contextTierAria": "Nível de entrada de contexto para {{label}}",
+    "noPresetsWarning": "Salve pelo menos uma predefinição antes de vincular tarefas a modelos dedicados.",
+    "tasks": {
+      "creation": {
+        "label": "Geração criativa",
+        "description": "Prosa, esboço, cenas, construção de mundo e personagens"
+      },
+      "extraction": {
+        "label": "Extração estruturada",
+        "description": "Estado, fatos, itens, relações, verbetes do códex e análise de importação"
+      },
+      "analysis": {
+        "label": "Análise e resumo",
+        "description": "Referências, resumos, aprendizado de estilo e análise de recuperação"
+      },
+      "review": {
+        "label": "Revisão e QA",
+        "description": "Revisão de capítulos, checagem de consistência, validação de cenas e contexto histórico"
+      },
+      "agentOrchestrator": {
+        "label": "Orquestração do Agente Principal",
+        "description": "Entende objetivos, divide tarefas e agenda dependências; não gera conteúdo diretamente"
+      },
+      "agentWorldOrigin": {
+        "label": "Agente do domínio Mundo",
+        "description": "Gera origens do mundo e sementes de civilização nos bastidores do Agente Principal"
+      },
+      "agentCharacter": {
+        "label": "Agente do domínio Personagem",
+        "description": "Cria novos personagens nos bastidores do Agente Principal"
+      },
+      "agentInspiration": {
+        "label": "Agente do domínio Inspiração",
+        "description": "Faz engenharia reversa de inspiração do projeto nos bastidores do Agente Principal"
+      },
+      "agentOutline": {
+        "label": "Agente do domínio Esboço",
+        "description": "Gera esboços de volumes e capítulos nos bastidores do Agente Principal"
+      },
+      "agentProse": {
+        "label": "Agente do domínio Prosa",
+        "description": "Gera capítulos em branco e continuações explícitas nos bastidores do Agente Principal"
+      }
+    },
+    "contextProfiles": {
+      "lean": {
+        "label": "Enxuto",
+        "description": "~45% do orçamento de fontes registradas, prioriza menor custo de entrada"
+      },
+      "balanced": {
+        "label": "Equilibrado (recomendado)",
+        "description": "~72% do orçamento de fontes registradas, equilibra qualidade e custo"
+      },
+      "full": {
+        "label": "Completo",
+        "description": "Usa todo o orçamento de fontes registradas, ideal para tarefas longas de alto risco"
+      }
+    },
+    "teamBudgets": {
+      "economy": {
+        "label": "Econômico",
+        "description": "Até ~80K tokens por rodada"
+      },
+      "balanced": {
+        "label": "Equilibrado (recomendado)",
+        "description": "Até ~160K tokens por rodada"
+      },
+      "expanded": {
+        "label": "Expandido",
+        "description": "Até ~240K tokens por rodada"
+      }
+    }
+  },
+  "embedding": {
+    "title": "Recuperação semântica (embedding)",
+    "enable": "Ativar",
+    "description": "Quando desligado, a recuperação de longo alcance usa apenas o <strong>canal de palavras-chave</strong> (totalmente local, custo zero). Quando ligado, adiciona <strong>vectores semânticos</strong> — melhores para encontrar prenúncios de centenas de capítulos atrás por sinônimos/semântica, combinados com pontuação de palavras-chave; falhas voltam automaticamente para palavras-chave sem bloquear a geração. <strong>Modelos na nuvem enviam prosa ao provedor; escolher Ollama local mantém cada palavra no dispositivo.</strong>",
+    "buildIndex": "Construir índice de recuperação para capítulos anteriores do projeto atual",
+    "building": "Construindo… {{progress}}",
+    "noProjectHint": "Abra um projeto para construir em lote o índice de capítulos aqui.",
+    "indexExplanation": "Primeiro reconstrói blocos de palavras-chave e árvores de resumo capítulo→volume→livro a partir do texto; se embedding estiver ativado e configurado, apenas blocos sem vetor ou afetados por troca de modelo são embutidos. Sem embedding, a recuperação de longo alcance ainda usa resumos hierárquicos + busca pura por palavras-chave.",
+    "proxyNote": "Predefinições nacionais usam por padrão um <strong>proxy local</strong> (contorna CORS do navegador ao rodar a ferramenta localmente); em builds publicados, troque a URL base pelo endpoint direto do provedor. Sem GPU? Escolha <strong>SiliconFlow/Qwen/GLM</strong> — computação na nuvem, basta informar a chave.",
+    "baseUrlLabel": "URL base",
+    "switchToDirect": "🔗 Usar conexão direta (para builds publicados)",
+    "switchToProxy": "🔄 Usar proxy local (para execução local)",
+    "modelLabel": "Modelo de embedding",
+    "apiKeyLabel": "Chave de API",
+    "apiKeyHint": "(deixe em branco para Ollama local)",
+    "idempotentNote": "Vetores semânticos são idempotentes e retomáveis; novos capítulos aceitos são indexados automaticamente. Cerca de ¥0,2 por milhão de caracteres na nuvem, grátis localmente.",
+    "presets": {
+      "siliconflow": {
+        "label": "SiliconFlow · bge-m3",
+        "note": "Sem GPU · disponível na China · plano gratuito (recomendado)"
+      },
+      "qwen": {
+        "label": "Qwen · v3",
+        "note": "Da Alibaba · acessível e estável · forte em chinês"
+      },
+      "glm": {
+        "label": "GLM · embedding-3",
+        "note": "Grande provedor CN · compatível com OpenAI"
+      },
+      "ollama": {
+        "label": "Ollama local · bge-m3",
+        "note": "Offline gratuito · manuscritos nunca saem do dispositivo · requer GPU"
+      },
+      "openai": {
+        "label": "OpenAI · 3-small",
+        "note": "Requer rede externa · 1536 dimensões"
+      }
+    },
+    "progress": {
+      "preparing": "Preparando…",
+      "chunking": "Dividindo {{done}}/{{total}} capítulos",
+      "summarizing": "Resumindo {{done}}/{{total}} capítulos",
+      "embedding": "Embutindo {{done}}/{{total}} blocos"
+    },
+    "messages": {
+      "readyWithoutEmbedding": "Índice de recuperação pronto: {{chapters}} capítulos escaneados, {{rebuiltChapters}} capítulos / {{chunks}} blocos reconstruídos; árvore de resumos com {{summaryChapters}} capítulos, {{summaryVolumes}} volumes, {{summaryBooks}} livros. Sem embedding configurado — usando resumos hierárquicos + busca por palavras-chave.",
+      "readyWithEmbedding": "Índice de recuperação pronto: {{chapters}} capítulos escaneados, {{chunks}} blocos atuais; árvore de resumos com {{summaryChapters}} capítulos, {{summaryVolumes}} volumes, {{summaryBooks}} livros; vetores semânticos totalmente prontos.",
+      "completed": "Concluído: {{chapters}} capítulos escaneados, {{rebuiltChapters}} capítulos / {{chunks}} blocos reconstruídos; árvore de resumos com {{summaryChapters}} capítulos, {{summaryVolumes}} volumes, {{summaryBooks}} livros; {{embedded}} blocos embutidos nesta execução, {{skipped}} blocos já prontos ignorados",
+      "failed": "Falha ao construir índice: {{error}} (índices existentes continuam usáveis; falhas de embedding voltam automaticamente para busca por palavras-chave)"
+    }
+  },
+  "modelList": {
+    "fetchFailed": "Falha ao solicitar lista de modelos (HTTP {{status}})",
+    "invalidResponse": "Formato inválido da resposta da lista de modelos; o serviço deve ser compatível com /v1/models do OpenAI",
+    "timeout": "Tempo esgotado ao atualizar a lista de modelos. Verifique se o serviço local de modelos está em execução.",
+    "connectionFailed": "Não foi possível conectar ao serviço de modelos. Verifique o Base URL, o status do serviço ou as configurações de CORS."
+  },
+  "theme": {
+    "title": "Tema",
+    "currentAria": "Tema atual",
+    "themes": {
+      "warm": {
+        "label": "Sala de Edição Creme",
+        "desc": "Escrita prolongada · Hierarquia clara · Padrão recomendado"
+      },
+      "jade": {
+        "label": "Jade Escura",
+        "desc": "Imersão em tom escuro · Estúdio verde-escuro · Texto em branco"
+      },
+      "slate": {
+        "label": "Azul-Cinza Frio",
+        "desc": "Gestão de produtividade · Calmo e nítido · Ideal para banco de configurações"
+      },
+      "forge": {
+        "label": "Forja",
+        "desc": "Âmbar noturno · Brasas e fogo"
+      },
+      "scroll": {
+        "label": "Pergaminho Antigo",
+        "desc": "Papel envelhecido · Tinta ferrogálica"
+      },
+      "paper": {
+        "label": "Papel e Tinta",
+        "desc": "Papel branco como neve · Traços nítidos"
+      }
+    }
+  },
+  "usageStats": {
+    "title": "Estatísticas de uso",
+    "callsCount": "({{count}} chamadas)",
+    "exchangeRate": "Câmbio 1$ =",
+    "currentProjectOnly": "Somente projeto atual",
+    "refresh": "Atualizar",
+    "clear": "Limpar",
+    "clearTitle": "Limpar registros de uso?",
+    "clearMessage": "Esta ação não pode ser desfeita.",
+    "totalInputTokens": "Total de tokens de entrada",
+    "totalOutputTokens": "Total de tokens de saída",
+    "totalCost": "Custo total",
+    "timeColumn": "Hora",
+    "categoryColumn": "Categoria",
+    "modelColumn": "Modelo",
+    "inputColumn": "Entrada",
+    "outputColumn": "Saída",
+    "costColumn": "Custo",
+    "loading": "Carregando…",
+    "empty": "Sem registros de uso ainda. Eles aparecem aqui automaticamente após qualquer geração com IA.",
+    "footer": "Observação: custos são estimados pelo preço unitário do modelo × tokens (valores reais variam conforme relay/proxy; ajuste acima a taxa USD→CNY). As categorias vêm das tags de cada ação de IA; itens sem rótulo ficam em \"Outros\" (serão preenchidos conforme a camada unificada de execução avançar).",
+    "taskKindLabels": {
+      "creation": "Criação",
+      "extraction": "Extração",
+      "analysis": "Análise",
+      "review": "Revisão",
+      "agentOrchestrator": "Agente Principal",
+      "agentWorldOrigin": "Agente Mundo",
+      "agentCharacter": "Agente Personagem",
+      "agentInspiration": "Agente Inspiração",
+      "agentOutline": "Agente Esboço",
+      "agentProse": "Agente Prosa"
+    }
+  },
+  "ns0Eval": {
+    "title": "Linha de base de consistência de longo prazo NS-0 (somente dev)",
+    "description": "O botão comum roda fixtures de desenvolvimento; o botão final NS-1 roda o conjunto held-out congelado e pontua com juiz semântico independente. O teste cego final mostra apenas agregados, sem saídas por caso.",
+    "runDevelopment": "Rodar conjunto development",
+    "running": "Rodando {{progress}}",
+    "ns1FinalLocked": "Teste cego final NS-1 travado",
+    "ns1PairedAB": "A/B pareado final NS-1",
+    "factRecall": "Revocação de fatos: {{value}}%",
+    "constraintRecall": "Revocação de restrições: {{value}}%",
+    "futureLeakage": "Vazamento futuro: {{value}}%",
+    "wrongWorldLeakage": "Vazamento de mundo errado: {{value}}%",
+    "estimatedInput": "Entrada estimada: {{value}} tokens",
+    "estimatedOutput": "Saída estimada: {{value}} tokens",
+    "tableBudget": "Orçamento",
+    "tableVariant": "Variante",
+    "tableFact": "Fato",
+    "tableConstraint": "Restrição",
+    "tableFuture": "Futuro",
+    "tableWrongWorld": "Mundo errado",
+    "tableInOut": "Entr./Saíd.",
+    "fixedGate": "porta rígida fixed: {{result}}",
+    "naturalGate": "porta rígida natural: {{result}}",
+    "perCaseSummary": "{{budgetMode}} · {{variant}} resultados por caso",
+    "caseScore": "{{fixtureId}} · fato {{fact}}% · restrição {{constraint}}%",
+    "matchedConstraints": "Restrições atendidas: {{list}}",
+    "matchedConstraintsEmpty": "nenhuma",
+    "groupsUnit": "grupos",
+    "casesUnit": "casos",
+    "progressPaired": "{{completed}}/{{total}} grupos",
+    "progressCase": "{{completedRuns}}/{{totalRuns}} grupos · {{completedCases}}/{{totalCases}} casos",
+    "judgeParseError": "Juiz semântico retornou veredicto não analisável: {{id}}"
+  },
+  "promptManager": {
+    "tabTemplates": "Modelos",
+    "tabWorkflows": "Workflows",
+    "genrePackLabel": "Pacote de gênero",
+    "scopeLabel": "Escopo",
+    "scopeAll": "Todos",
+    "scopeSystem": "Integrados",
+    "scopeUser": "Meus",
+    "countSuffix": "{{count}} no total",
+    "newTemplate": "Novo",
+    "import": "Importar",
+    "exportAll": "Exportar tudo",
+    "importSuccess": "{{count}} modelos importados com sucesso",
+    "importError": "Falha ao importar: {{error}}",
+    "untitledTemplate": "Modelo sem título",
+    "importedTemplateName": "Modelo importado",
+    "emptyFilter": "Nenhum modelo corresponde ao filtro atual"
+  },
+  "promptEditor": {
+    "selectPrompt": "Escolha um modelo à esquerda para visualizar / editar",
+    "systemBadge": "Sistema",
+    "userBadge": "Meu",
+    "defaultBadge": "★ Padrão",
+    "activeBadge": "Ativo",
+    "descriptionPlaceholder": "Descrição do modelo...",
+    "moduleLabel": "Módulo",
+    "continuityLabel": "Contexto de continuidade",
+    "continuityInherit": "Herdar injeção padrão",
+    "continuityRequired": "Forçar injeção",
+    "continuityOff": "Desativar injeção",
+    "setActive": "Definir como ativo",
+    "clone": "Clonar",
+    "export": "Exportar",
+    "cloneSuccess": "Clonado como modelo \"Meu\" (id={{id}}); encontre-o na lista à esquerda.",
+    "deleteTitle": "Excluir modelo \"{{name}}\"?",
+    "deleteMessage": "Esta ação não pode ser desfeita.",
+    "variablesTitle": "Variáveis declaradas (apenas autodocumentação; não afeta renderização)",
+    "addVariable": "Adicionar",
+    "noVariables": "(nenhuma)",
+    "variableBindingsTitle": "Vínculos de campos de variáveis",
+    "bindingRequired": "obrigatório",
+    "bindingManual": "pode ser preenchido manualmente",
+    "bindingProjectField": "Campo do projeto: {{field}}",
+    "bindingSourceKey": "Contexto: {{key}}",
+    "bindingManualInput": "Entrada manual",
+    "previewTitle": "Prévia ao vivo (renderizada com dicionário de variáveis de exemplo)",
+    "previewHint": "Atualiza enquanto você edita o modelo",
+    "renderError": "Erro de renderização: {{error}}",
+    "exampleVarPlaceholder": "(exemplo: {{label}})",
+    "newVariableTitle": "Adicionar variável",
+    "newVariableMessage": "Nomes de variáveis podem conter apenas letras, dígitos e sublinhado.",
+    "userPromptTemplateLabel": "Modelo de User Prompt",
+    "templateSyntaxHint": "Suporta <code>{{var}}</code> e <code>{{#if var}}...{{/if}}</code>"
+  },
+  "promptParameters": {
+    "title": "Parâmetros ajustáveis",
+    "add": "Adicionar parâmetro",
+    "empty": "Sem parâmetros ainda. Declare parâmetros para referenciá-los nos modelos com <code>{{key}}</code>; opcionais podem ser envolvidos por <code>{{#if usesKey}}...{{/if}}</code>.",
+    "keyPlaceholder": "chave (usada como {{key}})",
+    "labelPlaceholder": "Nome exibido na UI",
+    "defaultPlaceholder": "Valor padrão",
+    "optionalToggle": "Permitir desativar",
+    "selectOptionsPlaceholder": "Opções separadas por vírgula (ex.: sério,leve,humorado)",
+    "descriptionPlaceholder": "Descrição (mostrada ao passar o mouse)",
+    "newParameterLabel": "Novo parâmetro",
+    "typeLabels": {
+      "select": "Lista suspensa",
+      "slider": "Controle deslizante",
+      "number": "Número",
+      "text": "Texto",
+      "boolean": "Alternador"
+    }
+  },
+  "promptExamples": {
+    "title": "Exemplos / contraexemplos",
+    "titleHint": "few-shot, anexados automaticamente ao prompt do usuário",
+    "sourceLegend": "🤖 Gerado por IA · 👤 Marcado pelo usuário · ✍️ Manual",
+    "goodLabel": "Bons exemplos",
+    "badLabel": "Contraexemplos",
+    "manualAdd": "Manual",
+    "aiGenerate": "Gerar com IA",
+    "manualAddTitle": "Adicionar manualmente",
+    "aiGenerateTitle": "Deixar a IA gerar alguns a partir do modelo",
+    "emptyGood": "Nenhum bom exemplo ainda.",
+    "emptyBad": "Nenhum contraexemplo ainda.",
+    "emptyEditableSuffix": "Clique em \"Manual\" ou \"Gerar com IA\" no canto superior direito para adicionar.",
+    "addGoodTitle": "Adicionar bom exemplo",
+    "addBadTitle": "Adicionar contraexemplo",
+    "addMessage": "Cole um texto completo de exemplo.",
+    "addPlaceholder": "Cole o conteúdo do exemplo",
+    "noExamplesError": "Nenhum exemplo encontrado na saída da IA; tente novamente ou adicione manualmente",
+    "generateError": "Falha ao gerar: {{error}}",
+    "tip": "Dica: até 3 bons exemplos e 2 contraexemplos são anexados ao prompt (para evitar desperdício de tokens)."
+  },
+  "promptModuleKeys": {
+    "worldviewDimension": "Construção de Mundo · Geração de dimensões",
+    "worldviewGenerate": "Construção de Mundo · Geração completa (pendente)",
+    "worldviewWorldbuilding": "Construção de Mundo · Tarefas de fase",
+    "characterGenerate": "Personagens · Design completo",
+    "characterDimension": "Personagens · Complemento de dimensões",
+    "characterDesign": "Personagens · Fase de criação",
+    "storyGenerate": "História · Geração geral (pendente)",
+    "storyBrief": "História · Briefing do projeto",
+    "storyIdeation": "História · Ideação",
+    "storyPositioning": "História · Posicionamento",
+    "storyCore": "História · Núcleo da história",
+    "storyPackaging": "História · Embalagem da obra",
+    "rulesGenerate": "Regras criativas · Geração (pendente)",
+    "researchMethod": "Pesquisa · Metodologia",
+    "promptOperations": "Prompt · Gestão e avaliação",
+    "outlineVolume": "Esboço · Nível de volume",
+    "outlineChapter": "Esboço · Nível de capítulo",
+    "outlinePlot": "Esboço · Design de enredo",
+    "outlineStructure": "Esboço · Design de estrutura",
+    "outlineLongForm": "Esboço · Arquitetura de longa duração",
+    "outlineShortStory": "Esboço · Arquitetura de conto",
+    "outlineSerialization": "Esboço · Arquitetura serializada",
+    "detailScene": "Esboço de cena · Cena (pendente)",
+    "detailChapterPlanning": "Esboço de cena · Planejamento de capítulo",
+    "chapterContent": "Capítulo · Geração de prosa",
+    "chapterContinue": "Capítulo · Continuação",
+    "chapterDrafting": "Capítulo · Redação de prosa",
+    "chapterContinuity": "Capítulo · Continuidade",
+    "chapterLineEditing": "Capítulo · Revisão linha a linha",
+    "chapterMemory": "Capítulo · Extração de memória de continuidade",
+    "chapterPolish": "Capítulo · Polimento",
+    "chapterExpand": "Capítulo · Expansão",
+    "chapterDeAi": "Capítulo · Tom menos artificial",
+    "reviewDevelopmental": "Revisão · Edição macro",
+    "reviewLineEditing": "Revisão · Revisão linha a linha",
+    "reviewReaderValidation": "Revisão · Validação pelo leitor",
+    "foreshadowGenerate": "Prenúncios · Sugestões",
+    "geographyConceptMap": "Geografia · Mapa conceitual SVG",
+    "geographyImageMapPrompt": "Geografia · Prompt de imagem",
+    "importParseAll": "Importação · Análise inteligente unificada",
+    "importParseCharacter": "Importação · Análise de personagem (legado)",
+    "importParseWorldview": "Importação · Análise de construção de mundo (legado)",
+    "importParseOutline": "Importação · Análise de esboço (legado)",
+    "styleLearn": "Estilo · Aprendizado de perfil",
+    "styleCalibrate": "Estilo · Calibração interativa"
+  },
+  "promptGroupLabels": {
+    "worldview": "Construção de Mundo",
+    "research": "Pesquisa",
+    "character": "Personagens",
+    "outline": "Esboço",
+    "chapter": "Capítulos",
+    "detail": "Esboço de cena",
+    "review": "Revisão",
+    "foreshadow": "Prenúncios",
+    "geography": "Geografia",
+    "story": "História",
+    "rules": "Regras criativas",
+    "prompt": "Gestão de prompts",
+    "import": "Análise de importação"
+  },
+  "promptSubLabels": {
+    "dimension": "Geração de dimensões",
+    "generate": "Geração completa",
+    "volume": "Nível de volume",
+    "chapter": "Nível de capítulo",
+    "content": "Geração de prosa",
+    "continue": "Continuação",
+    "polish": "Polimento",
+    "expand": "Expansão",
+    "deAi": "Tom menos artificial",
+    "conceptMap": "Mapa conceitual SVG",
+    "imageMapPrompt": "Prompt de imagem",
+    "parseCharacter": "Análise de personagem",
+    "parseWorldview": "Análise de construção de mundo",
+    "parseOutline": "Análise de esboço",
+    "parseAll": "Análise completa",
+    "scene": "Cena",
+    "brief": "Briefing do projeto",
+    "ideation": "Ideação",
+    "positioning": "Posicionamento",
+    "core": "Núcleo da história",
+    "packaging": "Embalagem",
+    "method": "Metodologia de pesquisa",
+    "operations": "Gestão de prompts",
+    "worldbuilding": "Fase de construção de mundo",
+    "design": "Design de personagem",
+    "plot": "Enredo",
+    "structure": "Estrutura",
+    "longForm": "Arquitetura de longa duração",
+    "shortStory": "Arquitetura de conto",
+    "serialization": "Arquitetura serializada",
+    "drafting": "Redação de prosa",
+    "continuity": "Continuidade",
+    "chapterPlanning": "Planejamento de capítulo",
+    "lineEditing": "Revisão linha a linha",
+    "developmental": "Edição macro",
+    "readerValidation": "Validação pelo leitor"
+  },
+  "workflow": {
+    "panelTitle": "Modo nó",
+    "panelDescription": "Criação estilo ComfyUI: conecte nós num fluxo; cada etapa ainda pode pausar, ser editada e confirmada.",
+    "newWorkflow": "Novo",
+    "newWorkflowName": "Novo workflow",
+    "import": "Importar",
+    "exportAll": "Exportar tudo",
+    "importSuccess": "{{count}} workflows importados com sucesso",
+    "importError": "Falha ao importar: {{error}}",
+    "deleteTitle": "Excluir workflow \"{{name}}\"?",
+    "deleteMessage": "Esta ação não pode ser desfeita.",
+    "systemBadge": "Sistema",
+    "userBadge": "Meu",
+    "defaultBadge": "★ Padrão",
+    "run": "Executar",
+    "edit": "Editar",
+    "clone": "Clonar",
+    "runAria": "Executar workflow {{name}}",
+    "editAria": "Editar workflow {{name}}",
+    "cloneAria": "Clonar workflow {{name}}",
+    "deleteAria": "Excluir workflow {{name}}",
+    "stepsSummary": "{{total}} etapas · {{confirm}} exigem confirmação do autor",
+    "loading": "Carregando...",
+    "editorTitle": "Modo nó · {{name}}",
+    "editorSubtitle": "FLOW-1 fase 1 · orquestração DAG reutiliza GenerationNode existente e confirmação de escrita do autor",
+    "canvasTab": "Tela",
+    "sequenceTab": "Sequência",
+    "back": "Voltar",
+    "graphIssuesPrefix": "Corrija os erros do grafo do workflow primeiro.",
+    "savedToast": "Modo nó salvo",
+    "discardTitle": "Descartar alterações não salvas?",
+    "discardMessage": "Nós, conexões ou parâmetros têm edições não salvas e serão perdidos se você voltar.",
+    "discardConfirm": "Descartar e voltar",
+    "deleteFullMessage": "Layout de nós e conexões também serão excluídos. Esta ação não pode ser desfeita.",
+    "authorOrderTitle": "Ordem do autor",
+    "authorOrderHint": "Usada quando a ordenação topológica gera empates; dependências reais seguem as conexões da tela.",
+    "addNode": "Adicionar nó",
+    "moveUpAria": "Mover nó {{label}} para cima",
+    "moveDownAria": "Mover nó {{label}} para baixo",
+    "deleteNodeAria": "Excluir nó {{label}}",
+    "inspectorTitle": "Inspetor de nó",
+    "workflowNameLabel": "Nome do workflow",
+    "descriptionLabel": "Descrição",
+    "nodeLabel": "Nome do nó",
+    "promptModuleLabel": "Módulo de prompt",
+    "userHintLabel": "Dica para a IA",
+    "saveTargetLabel": "Destino de salvamento após confirmação do autor",
+    "pauseForConfirmation": "Pausar após este nó e aguardar confirmação do autor",
+    "inputPortsTitle": "Portas de entrada",
+    "fromPrefix": "De: {{label}}",
+    "edgeVariableAria": "Variável de conexão {{label}}",
+    "templateFieldsHint": "Campos do modelo leem primeiro dados registrados do projeto; estes são complementos do autor e não sobrescrevem arestas de entrada do grafo.",
+    "selectNodeHint": "Adicione ou selecione um nó para editar seus parâmetros.",
+    "deleteEntireWorkflow": "Excluir workflow inteiro",
+    "newNodeLabel": "Nó {{index}}",
+    "canvasAddNode": "Adicionar nó",
+    "connectingHint": "Conectando \"{{label}}\": escolha uma porta de entrada à esquerda do nó alvo",
+    "dragHint": "Arraste nós para reorganizar; clique numa porta de saída à direita e depois numa porta de entrada alvo para conectar",
+    "cancelConnection": "Cancelar conexão",
+    "zoomOutAria": "Diminuir zoom",
+    "zoomInAria": "Aumentar zoom",
+    "resetZoomAria": "Redefinir zoom",
+    "connectToAria": "Conectar a {{label}}",
+    "inputPortTitle": "Porta de entrada",
+    "outputFromAria": "Saída de {{label}}",
+    "outputPortTitle": "Porta de saída",
+    "inputsCount": "Entradas {{count}}",
+    "outputsCount": "Saídas {{count}}",
+    "needsConfirmation": "Requer confirmação",
+    "autoAdvance": "Avanço automático",
+    "confirmWriteTarget": "Destino confirmável de escrita: {{type}}",
+    "edgesPanelTitle": "Conexões",
+    "removeEdgeAria": "Remover conexão {{edgeId}}",
+    "executionGraphTitle": "Grafo de execução",
+    "executionGraphHint": "Conexões definem dependências de dados; chamadas reais executam uma a uma em ordem topológica estável.",
+    "executionGraphStats": "{{nodes}} nós · {{edges}} conexões",
+    "statusPending": "Aguardando",
+    "statusRunning": "Executando",
+    "statusDone": "Candidato pronto",
+    "statusFailed": "Falhou",
+    "statusSkipped": "Ignorado",
+    "noCandidateYet": "Nenhum candidato gerado ainda",
+    "runnerTitle": "▶ Executando: {{name}}",
+    "start": "Iniciar",
+    "abort": "Abortar",
+    "continue": "Continuar",
+    "backToList": "Voltar à lista",
+    "graphExecutionError": "O grafo do workflow não pode ser executado: {{error}}",
+    "runningProgress": "▶ Executando etapa {{current}} / {{total}}...",
+    "pausedStatus": "⏸ Pausado (etapa {{current}} aguarda sua revisão)",
+    "completedStatus": "✓ Workflow concluído",
+    "abortedStatus": "✗ Abortado",
+    "allCompletedTitle": "✓ Tudo pronto",
+    "allCompletedBody": "Você pode copiar a saída de cada etapa para o módulo correspondente (personagens / esboço / prosa do capítulo etc.). Automação de escrita com um clique pode chegar numa fase futura.",
+    "noProjectError": "Nenhum projeto vinculado; não é possível salvar automaticamente. Entre num projeto antes de executar.",
+    "invalidJsonArrayError": "A saída da IA não é um array JSON",
+    "charactersWritten": "{{written}} personagens escritos",
+    "charactersWrittenWithSkipped": "{{written}} personagens escritos, {{skipped}} ignorados",
+    "outlineNodesWritten": "{{count}} nós de esboço escritos",
+    "foreshadowsWritten": "{{written}} prenúncios escritos",
+    "foreshadowsWrittenWithSkipped": "{{written}} prenúncios escritos, {{skipped}} ignorados",
+    "saveFailed": "Falha ao salvar: {{error}}. Destinos de personagem/esboço/prenúncio exigem saída JSON da IA. Use um prompt import.parse-* para formatá-la antes.",
+    "missingScopesError": "Este modelo precisa do(s) escopo(s) {{scopes}}; selecione o projeto/capítulo correspondente primeiro",
+    "missingVariablesError": "Preencha os campos obrigatórios: {{variables}}",
+    "title": "Grafo de Execução",
+    "subtitle": "Status de execução dos nós do workflow",
+    "stats": "{{nodes}} nós · {{edges}} arestas",
+    "deleteEdgeAria": "Excluir aresta {{id}}"
+  },
+  "workflowStep": {
+    "needsConfirmBadge": "⏸ Requer confirmação",
+    "charsCount": "{{count}} carac.",
+    "failed": "Falhou",
+    "skipped": "Ignorado",
+    "userInputPlaceholder": "Sua entrada (opcional): escreva aqui o conteúdo desta etapa; a IA vai criar a partir dele",
+    "pending": "Pendente",
+    "generating": "Gerando...",
+    "editableOutputHint": "A saída da IA pode ser editada; salvar/copiar usa o conteúdo editado.",
+    "regenerate": "Gerar novamente",
+    "copy": "Copiar",
+    "saveTo": "Salvar em {{target}}",
+    "savedTo": "Salvo em {{target}}",
+    "saveTitle": "Escrita automática em {{target}}",
+    "needProjectTitle": "Entre num projeto primeiro",
+    "skip": "Pular esta etapa"
+  },
+  "saveTargets": {
+    "none": "Não salvar automaticamente (apenas copiar)",
+    "worldviewField": "Construção de Mundo.{{field}}",
+    "storyCoreField": "História.{{field}}",
+    "creativeRulesField": "Regras criativas.{{field}}",
+    "createCharacters": "Personagens (criação em lote)",
+    "createOutlineNodes": "Esboço (criação em lote)",
+    "createForeshadows": "Prenúncios (criação em lote)",
+    "fields": {
+      "worldOrigin": "Origem do mundo",
+      "powerHierarchy": "Hierarquia de poder",
+      "historyLine": "Linha histórica do mundo",
+      "summary": "Resumo da construção de mundo",
+      "logline": "Logline",
+      "concept": "Conceito da história",
+      "theme": "Tema",
+      "centralConflict": "Conflito central",
+      "mainPlot": "Enredo principal",
+      "writingStyle": "Estilo de escrita",
+      "toneAndMood": "Tom e clima"
+    }
+  },
+  "providerLabels": {
+    "deepseek": "DeepSeek",
+    "qwen": "Qwen",
+    "doubao": "Doubao",
+    "minimax": "MiniMax",
+    "glm": "Zhipu GLM",
+    "wenxin": "ERNIE Bot",
+    "gemini": "Gemini",
+    "poe": "Poe",
+    "openai": "OpenAI",
+    "kimi": "Kimi",
+    "claude": "Claude",
+    "nvidia": "NVIDIA NIM",
+    "modelscope": "ModelScope",
+    "agnes": "Agnes AI (gratuito)",
+    "longcat": "LongCat (Meituan)",
+    "opencode": "OpenCode Go (mensal)",
+    "ollama": "Modelo local (Ollama / LM Studio etc.)",
+    "custom": "Personalizado"
+  },
+  "promptParams": {
+    "pace": {
+      "label": "Ritmo geral",
+      "chapterLabel": "Ritmo",
+      "description": "Influencia a densidade de informações por volume",
+      "chapterDescription": "Rápido = mais ação, menos preparação; lento = mais psicologia e ambiente",
+      "options": {
+        "slow": "Lento",
+        "medium": "Médio",
+        "fast": "Rápido",
+        "veryFast": "Muito rápido"
+      }
+    },
+    "volumeCount": {
+      "label": "Número sugerido de volumes",
+      "description": "Se não especificado, estima automaticamente pelo número alvo de palavras"
+    },
+    "tone": {
+      "label": "Tom",
+      "worldviewDescription": "Influencia o estilo narrativo do mundo",
+      "styleDescription": "Influencia o estilo geral da linguagem",
+      "options": {
+        "serious": "Sério",
+        "epic": "Épico",
+        "lyrical": "Lírico",
+        "hardcore": "Hardcore",
+        "lightFantasy": "Fantasia leve",
+        "relaxed": "Descontraído",
+        "humorous": "Humorístico",
+        "heavy": "Pesado",
+        "tense": "Tenso",
+        "passionate": "Apaixonante",
+        "dark": "Sombrio",
+        "warm": "Acolhedor",
+        "fateful": "Fatalista",
+        "ethereal": "Etéreo",
+        "frigid": "Gélido",
+        "vast": "Imenso",
+        "zen": "Zen",
+        "archaic": "Arcaico",
+        "sweet": "Doce",
+        "angst": "Angustiante",
+        "bittersweet": "Agridoce",
+        "healing": "Reconfortante",
+        "restrained": "Contido",
+        "burning": "Ardente",
+        "bleak": "Desolador",
+        "absurd": "Absurdo",
+        "detached": "Composto",
+        "nostalgic": "Nostálgico",
+        "grim": "Severo",
+        "eerie": "Insólito",
+        "taut": "Nervoso",
+        "gloomy": "Lúgubre",
+        "repartee": "Afiado",
+        "weighty": "Imponente",
+        "intrigue": "Intriga",
+        "mournful": "Tristonho",
+        "classical": "Clássico",
+        "rousing": "Exaltado",
+        "domineering": "Dominador",
+        "mysterious": "Misterioso",
+        "comedic": "Cômico",
+        "heroic": "Heroico",
+        "tragic": "Trágico",
+        "dashing": "Despojado",
+        "scheming": "Conspiratório",
+        "tender": "Terno",
+        "corporate": "Corporativo",
+        "darkGritty": "Soturno",
+        "solemn": "Solene",
+        "witty": "Sagaz",
+        "somber": "Melancólico",
+        "cyber": "Cyber",
+        "spaceOpera": "Ópera Espacial",
+        "apocalyptic": "Apocalíptico",
+        "philosophical": "Filosófico",
+        "oppressive": "Opresivo",
+        "heartwarming": "Caloroso",
+        "horrific": "Aterrorizante",
+        "satirical": "Satírico",
+        "farming": "Bucólico",
+        "vengeful": "Vingativo",
+        "cozy": "Aconchegante",
+        "campus": "Campus",
+        "longGame": "Longo Prazo",
+        "cathartic": "Catártico",
+        "strategic": "Estratégico",
+        "mindBending": "Cerebral",
+        "filmNoir": "Film Noir",
+        "dystopian": "Distópico",
+        "uncanny": "Sinistro",
+        "frenzied": "Frenético",
+        "desperate": "Desesperador",
+        "grotesque": "Grotesco",
+        "pastoral": "Pastoral",
+        "commercial": "Comercial",
+        "grand": "Grandioso",
+        "cunning": "Astuto",
+        "romantic": "Romântico",
+        "whimsical": "Quimérico",
+        "competitive": "Competitivo",
+        "adventurous": "Aventureiro"
+      }
+    },
+    "pov": {
+      "label": "Ponto de Vista",
+      "options": {
+        "femalePov": "POV da Protagonista",
+        "malePov": "POV do Protagonista",
+        "dualPov": "POV Duplo",
+        "omniscient": "Onisciente"
+      }
+    },
+    "sceneCount": {
+      "label": "Número de Cenas",
+      "description": "Quantidade de cenas em que dividir cada capítulo"
+    },
+    "detailLevel": {
+      "label": "Nível de detalhe",
+      "lengthDescription": "Influencia o comprimento da saída",
+      "options": {
+        "oneLiner": "Uma frase",
+        "brief": "Breve",
+        "medium": "Médio",
+        "detailed": "Detalhado"
+      }
+    },
+    "archetype": {
+      "label": "Arquétipo",
+      "description": "Tipo base de personalidade do personagem",
+      "options": {
+        "ordinary": "Pessoa comum",
+        "genius": "Gênio",
+        "antiHero": "Anti-herói",
+        "underdog": "Virada do azarão",
+        "patient": "Paciente e resiliente",
+        "noble": "Herdeiro nobre",
+        "reborn": "Renascido das cinzas",
+        "mysterious": "Mestre misterioso"
+      }
+    },
+    "chapterLength": {
+      "label": "Palavras-alvo",
+      "description": "⚠ Limite = saída máxima do modelo selecionado. Mais palavras = mais lento/caro e risco de enrolação; desmarcado = IA decide pelo conteúdo."
+    },
+    "style": {
+      "label": "Estilo",
+      "options": {
+        "colloquial": "Coloquial",
+        "literary": "Literário",
+        "concise": "Conciso",
+        "ornate": "Ornado",
+        "cold": "Frio",
+        "gentle": "Suave"
+      }
+    },
+    "expandRatio": {
+      "label": "Fator de expansão",
+      "description": "Multiplicador de palavras em relação ao original"
+    },
+    "addType": {
+      "label": "Adicionar principalmente",
+      "options": {
+        "psychology": "Descrição psicológica",
+        "atmosphere": "Ambiente e atmosfera",
+        "dialogue": "Diálogos",
+        "action": "Detalhes de ação",
+        "sensory": "Descrição sensorial"
+      }
+    },
+    "aggressiveness": {
+      "label": "Intensidade da reescrita",
+      "description": "Agressivo = pode alterar estrutura das frases; leve = apenas troca de palavras",
+      "options": {
+        "light": "Leve",
+        "moderate": "Moderada",
+        "aggressive": "Agressiva"
+      }
+    },
+    "density": {
+      "label": "Densidade",
+      "description": "Esparsa = apenas núcleos; densa = todas as linhas se conectam",
+      "options": {
+        "sparse": "Esparsa",
+        "medium": "Média",
+        "dense": "Densa"
+      }
+    },
+    "count": {
+      "label": "Quantidade sugerida",
+      "description": "Se não especificado, padrão de 3-5"
+    },
+    "strictness": {
+      "label": "Rigor das restrições",
+      "description": "Rigoroso = mais proibições / Flexível = mais sugestões",
+      "options": {
+        "lenient": "Flexível",
+        "medium": "Médio",
+        "strict": "Rigoroso"
+      }
+    }
+  },
+  "workflowSeeds": {
+    "fastStart": {
+      "name": "Início Rápido · Geral",
+      "description": "Do zero ao primeiro capítulo: núcleo da história → mundo → personagem principal → esboço de volume → texto do primeiro capítulo. Cada etapa pode ser pausada para revisão.",
+      "steps": {
+        "logline": "Logline",
+        "worldOrigin": "Origem do Mundo",
+        "mainCharacter": "Personagem Principal",
+        "volumeOutline": "Esboço de Volume",
+        "firstChapter": "Primeiro Capítulo"
+      },
+      "hints": {
+        "logline": "Resuma em uma frase sobre o que é este romance",
+        "worldOrigin": "Com base no núcleo da história, conceba a origem e o sistema de poder do mundo",
+        "mainCharacter": "Projete um protagonista que combine com esse mundo",
+        "volumeOutline": "Gere um esboço de 3-5 volumes com base nas configurações acima",
+        "firstChapter": "Escreva o texto do primeiro capítulo do primeiro volume, cerca de 2500 palavras"
+      }
+    },
+    "deepChapter": {
+      "name": "Geração Profunda de Capítulo",
+      "description": "Expande um esboço de capítulo em cenas detalhadas → escreve o texto → lapida → remove traços de IA. Ideal para refinar um capítulo.",
+      "steps": {
+        "sceneBreakdown": "Divisão em Cenas",
+        "writeProse": "Escrita do Texto",
+        "polish": "Lapidação",
+        "deAi": "Remover Traços de IA"
+      },
+      "hints": {
+        "sceneBreakdown": "Divida o esboço do capítulo em 4-5 batidas de cena",
+        "polish": "Torne o ritmo mais compacto, remova descrições redundantes"
+      }
+    },
+    "foreshadowSystem": {
+      "name": "Sistema de Pistas",
+      "description": "Com base no mundo e personagens existentes, sugere um conjunto cuidadosamente projetado de pistas.",
+      "steps": {
+        "worldSummary": "Resumo do Mundo",
+        "foreshadowSuggest": "Sugestão de Pistas"
+      },
+      "hints": {
+        "worldSummary": "Gere um resumo essencial do mundo de 200-400 palavras para contexto futuro da IA",
+        "foreshadowSuggest": "Com base no mundo e personagens, sugira 5-8 pistas bem estratificadas"
+      }
+    }
+  },
+  "promptTemplates": {
+    "worldviewDimension": {
+      "name": "Interno - Geração de Dimensão do Mundo",
+      "description": "Gera conteúdo para uma única dimensão do mundo (geografia/história/sociedade/cultura/economia/regras/resumo)."
+    },
+    "characterGenerate": {
+      "name": "Interno - Design Completo de Personagem",
+      "description": "Com base no mundo e personagens existentes, projeta um novo personagem completo."
+    },
+    "characterDimension": {
+      "name": "Interno - Complemento de Dimensão de Personagem",
+      "description": "Adiciona detalhes de 200-400 palavras a uma dimensão específica (histórico/personalidade/habilidades etc.) de um personagem."
+    },
+    "outlineVolume": {
+      "name": "Interno - Geração de Esboço de Volume",
+      "description": "Gera o esboço de volume de todo o livro com base no mundo e no núcleo da história."
+    },
+    "outlineChapter": {
+      "name": "Interno - Expansão de Esboço de Capítulo",
+      "description": "Expande um único volume em 15-25 capítulos."
+    },
+    "chapterContent": {
+      "name": "Interno - Serialização Longa (Padrão)",
+      "description": "Geração de texto de capítulo no estilo de web novel masculina geral, com parâmetros ajustáveis de tom/ritmo/comprimento."
+    },
+    "chapterContinue": {
+      "name": "Interno - Continuação de Capítulo",
+      "description": "Continua a escrita a partir do final do texto existente, cerca de 1000-2000 palavras."
+    },
+    "chapterMemory": {
+      "name": "Interno - Memória de Continuidade de Capítulo",
+      "description": "Extrai simultaneamente resumo do capítulo, handoff para o próximo e reconciliação com o plano; citações são verificadas pelo sistema."
+    },
+    "chapterPolish": {
+      "name": "Interno - Lapidação de Texto",
+      "description": "Lapida o texto conforme instruções do usuário, mantendo o significado original."
+    },
+    "chapterExpand": {
+      "name": "Interno - Expansão de Texto",
+      "description": "Expande e enriquece o texto, adicionando detalhes, psicologia e ambiente, sem alterar o enredo."
+    },
+    "chapterDeAi": {
+      "name": "Interno - Reescrita Anti-IA",
+      "description": "Reescreve textos com fortes traços de IA para parecerem mais humanos."
+    },
+    "foreshadowGenerate": {
+      "name": "Interno - Sugestão de Pistas",
+      "description": "Com base no mundo, personagens e pistas existentes, sugere 3-5 novas pistas."
+    },
+    "relationExtract": {
+      "name": "Interno - Extração de Relacionamentos",
+      "description": "Extrai automaticamente relacionamentos entre personagens a partir de resumos e textos de capítulos."
+    },
+    "geographyConceptMap": {
+      "name": "Interno - Mapa Conceitual SVG",
+      "description": "Gera um mapa conceitual SVG em estilo fantástico com base na lista de locais."
+    },
+    "geographyImageMapPrompt": {
+      "name": "Interno - Prompt de Imagem de Mapa",
+      "description": "Gera prompt de mapa mundial para Midjourney/DALL-E/SD."
+    },
+    "storyGenerate": {
+      "name": "Interno - Geração de Núcleo da História",
+      "description": "Com base no mundo existente e dicas do usuário, gera uma dimensão da história (logline/conceito/tema/conflito central etc.)."
+    },
+    "rulesGenerate": {
+      "name": "Interno - Geração de Regras Criativas",
+      "description": "Com base no tipo de projeto e no mundo, sugere regras criativas adequadas (estilo/perspectiva/tom/tabu etc.)."
+    },
+    "importParseCharacter": {
+      "name": "Interno - Análise de Documento de Personagem",
+      "description": "Extrai dados estruturados de personagem (JSON) de um documento de configurações de personagem enviado."
+    },
+    "importParseWorldview": {
+      "name": "Interno - Análise de Documento de Mundo",
+      "description": "Extrai campos estruturados (JSON) de um documento de construção de mundo."
+    },
+    "importParseOutline": {
+      "name": "Interno - Análise de Documento de Esboço",
+      "description": "Extrai uma árvore estruturada de volumes/capítulos (array JSON) de um documento de esboço."
+    },
+    "importParseAll": {
+      "name": "Interno - Análise Inteligente Unificada",
+      "description": "Extrai de uma só vez dados estruturados de mundo / personagens / esboço de qualquer documento (documentos de configuração ou romances finalizados)."
+    },
+    "importParseChunk": {
+      "name": "Interno - Análise em Blocos (Pipeline de Documentos Grandes)",
+      "description": "Para romances de milhões de palavras: divide o texto em blocos e extrai mundo / personagens / esboço bloco a bloco, carregando o contexto já reconhecido."
+    },
+    "importMergeCharacters": {
+      "name": "Interno - Fusão de Personagens entre Blocos",
+      "description": "Revisa a lista de personagens exportada por blocos e identifica quais são a mesma pessoa (apelidos / títulos / alcunhas) e devem ser fundidos."
+    },
+    "detailScene": {
+      "name": "Interno - Geração de Cenas Detalhadas",
+      "description": "Expande o esboço de um capítulo em cenas (cada uma com personagens / local / conflito / ritmo)."
+    },
+    "plotCharacterDriven": {
+      "name": "Interno - Enredo Orientado por Personagens",
+      "description": "A partir dos estados inicial e final de um personagem, a IA gera a progressão do enredo entre eles (estrutura de esboço de volume/capítulo)."
+    },
+    "plotCharacterRevision": {
+      "name": "Interno - Análise de Impacto de Alteração de Personagem",
+      "description": "Analisa mudanças de personagem no meio da criação, separa as zonas já escrita, de transição e não escrita, e gera um patch de esboço revisável."
+    },
+    "inspirationReverse": {
+      "name": "Interno - Retroengenharia de Inspiração",
+      "description": "O autor escreve fragmentos de ideias; a IA gera por retroengenharia um rascunho de mundo, núcleo da história e fichas iniciais de personagens."
+    },
+    "inspirationReverseMultiworld": {
+      "name": "Interno - Retroengenharia de Inspiração Multiversal",
+      "description": "Temas multiversais: a partir de uma inspiração com múltiplos mundos pretendidos, a IA reconstrói a trama principal + múltiplos mundos + personagens."
+    },
+    "worldGroupSuggest": {
+      "name": "Interno - Mundos Sugeridos por IA",
+      "description": "Para temas multiversais (fluxo infinito e similares), sugere novos grupos de mundos com base no conceito da história e nos mundos existentes."
+    },
+    "worldGroupExpand": {
+      "name": "Interno - Expansão de Mundo por IA",
+      "description": "Expande a descrição de rascunho de um mundo em uma configuração completa de construção de mundo."
+    },
+    "codexExtract": {
+      "name": "Interno - Extração de Entradas de Códice",
+      "description": "Divide um bloco de conteúdo de mundo em entradas estruturadas de códice prontas para confirmar e gravar na categoria atual."
+    },
+    "locationExtract": {
+      "name": "Interno - Extração de Locais Importantes",
+      "description": "Extrai dos capítulos escritos os locais importantes recorrentes ou que movem o enredo, como candidatos."
+    },
+    "inventoryExtract": {
+      "name": "Interno - Extração de Inventário",
+      "description": "Extrai dos capítulos os eventos de ganho/consumo de itens por personagem e monta inventários por personagem."
+    },
+    "storyTimelineExtract": {
+      "name": "Interno - Extração de Cronologia da História",
+      "description": "Extrai dos capítulos os grandes eventos do enredo e monta a cronologia do progresso da história (distinta da história de fundo do mundo)."
+    },
+    "sceneVerify": {
+      "name": "Interno - Verificação de Cena",
+      "description": "O autor descreve a cena atual; a IA usa mundo / cronologia histórica / regras do mundo para dar detalhes coerentes, alertas de anacronismo e ideias de enredo."
+    },
+    "styleLearn": {
+      "name": "Interno - Aprendizado de Perfil de Estilo",
+      "description": "Resume o perfil de estilo de escrita do autor a partir de capítulos finalizados/polidos, como referência para gerações futuras."
+    },
+    "styleCalibrate": {
+      "name": "Interno - Calibração Interativa de Estilo",
+      "description": "Reescreve um trecho curto comparando o perfil de estilo atual e a revisão aprovada pelo autor, para comparação, feedback e novos exemplos."
+    },
+    "historyConsult": {
+      "name": "Interno - Agente de Pesquisa Histórica",
+      "description": "Agente de pesquisa para entradas da cronologia histórica. Crítico, mas cooperativo: nunca inventa detalhes para confirmar suposições erradas do autor; respeita o escopo artístico/alternativo declarado."
+    },
+    "historyStorm": {
+      "name": "Interno - Agente de Brainstorm",
+      "description": "Agente de brainstorm para entradas da cronologia histórica. Diverge material aproveitável em torno da direção já definida pelo autor, respeitando o escopo artístico declarado."
+    },
+    "xianxiaChapterContent": {
+      "name": "Pacote Xianxia - Prosa de Capítulo",
+      "description": "Sistemas de ascensão, moralidade mundana, duelo entre bem e mal. Prosa clássica, foco na mente."
+    },
+    "xianxiaVolumeOutline": {
+      "name": "Pacote Xianxia - Esboço de Volume",
+      "description": "Reinos de cultivo como marcos; uma transformação mental por volume."
+    },
+    "xianxiaCharacterDesign": {
+      "name": "Pacote Xianxia - Design de Personagem",
+      "description": "Foco em coração do dao, linhagem e nós internos."
+    },
+    "xianxiaStoryCore": {
+      "name": "Pacote Xianxia - Núcleo da História",
+      "description": "Conflitos entre dao e emoção, mortal e imortal, desafiar o céu e guardar o coração."
+    },
+    "xianxiaWorldviewDimension": {
+      "name": "Pacote Xianxia - Dimensões de Mundo",
+      "description": "Sistemas de ascensão, leis de seitas, terras abençoadas e paraísos."
+    },
+    "xianxiaChapterContinue": {
+      "name": "Pacote Xianxia - Continuação de Capítulo",
+      "description": "Continuação mantendo prosa clássica e narração centrada na mente."
+    },
+    "yanqingChapterContent": {
+      "name": "Pacote Romance - Prosa de Capítulo",
+      "description": "Tensão emocional, psicologia em POV duplo, alta densidade de interação de casal."
+    },
+    "yanqingVolumeOutline": {
+      "name": "Pacote Romance - Esboço de Volume",
+      "description": "A linha romântica como esqueleto; carreira/família/conflitos externos como carne."
+    },
+    "yanqingCharacterDesign": {
+      "name": "Pacote Romance - Design de Personagem",
+      "description": "Tensão de casal em primeiro lugar; evitar estereótipos CEO-dominador/Mary Sue."
+    },
+    "yanqingStoryCore": {
+      "name": "Pacote Romance - Núcleo da História",
+      "description": "Sobre como amar e como ser amado."
+    },
+    "yanqingWorldviewDimension": {
+      "name": "Pacote Romance - Dimensões de Mundo",
+      "description": "Detalhes autênticos para cenários modernos / de época / campus."
+    },
+    "yanqingChapterContinue": {
+      "name": "Pacote Romance - Continuação de Capítulo",
+      "description": "Continuação mantendo cenas psicológicas e tensão de casal."
+    },
+    "realismChapterContent": {
+      "name": "Pacote Realismo - Prosa de Capítulo",
+      "description": "Textura cotidiana, vida interior, narração contida. Não evita o trivial."
+    },
+    "realismVolumeOutline": {
+      "name": "Pacote Realismo - Esboço de Volume",
+      "description": "O destino dos personagens como fio; a mudança de época como chão."
+    },
+    "realismCharacterDesign": {
+      "name": "Pacote Realismo - Design de Personagem",
+      "description": "Complexos, contraditórios, imperfeitos — como pessoas reais."
+    },
+    "realismStoryCore": {
+      "name": "Pacote Realismo - Núcleo da História",
+      "description": "O destino de uma geração, a condição de um grupo, a nota de rodapé de uma era."
+    },
+    "realismWorldviewDimension": {
+      "name": "Pacote Realismo - Dimensões de Mundo",
+      "description": "Sem worldbuilding — escrever o mundo real com detalhes sólidos."
+    },
+    "realismChapterContinue": {
+      "name": "Pacote Realismo - Continuação de Capítulo",
+      "description": "Continuação mantendo textura cotidiana e narração contida."
+    },
+    "suspenseChapterContent": {
+      "name": "Pacote Suspense - Prosa de Capítulo",
+      "description": "Controle de informação + narração não confiável + progresso em todo capítulo."
+    },
+    "suspenseVolumeOutline": {
+      "name": "Pacote Suspense - Esboço de Volume",
+      "description": "O caso aprofunda camada a camada; cada volume revela uma ilusão."
+    },
+    "suspenseCharacterDesign": {
+      "name": "Pacote Suspense - Design de Personagem",
+      "description": "Todos têm segredos, motivos e um lado suspeito."
+    },
+    "suspenseStoryCore": {
+      "name": "Pacote Suspense - Núcleo da História",
+      "description": "Não apenas quem fez, mas por quê."
+    },
+    "suspenseWorldviewDimension": {
+      "name": "Pacote Suspense - Dimensões de Mundo",
+      "description": "Controle de informação, narração não confiável, alta densidade de prenúncios."
+    },
+    "suspenseForeshadow": {
+      "name": "Pacote Suspense - Sugestões de Prenúncios",
+      "description": "Mais densos, mais complexos, precisam ser reversíveis em retrospecto."
+    },
+    "suspenseChapterContinue": {
+      "name": "Pacote Suspense - Continuação de Capítulo",
+      "description": "Continuação mantendo controle de informação e ritmo de reviravoltas."
+    },
+    "lishiChapterContent": {
+      "name": "Pacote Histórico - Prosa de Capítulo",
+      "description": "Cenários históricos, intrigas de corte, história alternativa ou pesquisada. Inclui mecanismo de anotação de fatos."
+    },
+    "lishiVolumeOutline": {
+      "name": "Pacote Histórico - Esboço de Volume",
+      "description": "Desenrola-se por marés históricas, lutas políticas e mudanças sociais."
+    },
+    "lishiCharacterDesign": {
+      "name": "Pacote Histórico - Design de Personagem",
+      "description": "Ênfase em status histórico, posição política, origem familiar e limitações da época."
+    },
+    "lishiStoryCore": {
+      "name": "Pacote Histórico - Núcleo da História",
+      "description": "Sobre a maré e o indivíduo, poder e princípios, escolhas sob a gravidade da história."
+    },
+    "lishiWorldviewDimension": {
+      "name": "Pacote Histórico - Dimensões de Mundo",
+      "description": "Geografia, burocracia, tributação, tecnologia e produtividade pesquisadas."
+    },
+    "lishiChapterContinue": {
+      "name": "Pacote Histórico - Continuação de Capítulo",
+      "description": "Continuação mantendo peso histórico e tensão política."
+    },
+    "lishiVolumeOutlineExt": {
+      "name": "Pacote Histórico - Esboço de Volume (Risco Factual)",
+      "description": "Esboço de nível de volume para temas históricos com avisos de risco factual."
+    },
+    "xuanhuanChapterContent": {
+      "name": "Pacote Xuanhuan - Prosa de Capítulo",
+      "description": "Mundos grandiosos, sistemas de talentos, evolução empolgante."
+    },
+    "xuanhuanVolumeOutline": {
+      "name": "Pacote Xuanhuan - Esboço de Volume",
+      "description": "Estrutura de volumes guiada por sistemas de reinos."
+    },
+    "wuxiaChapterContent": {
+      "name": "Pacote Wuxia - Prosa de Capítulo",
+      "description": "Rixas do jianghu, cavalaria, conflitos de seitas."
+    },
+    "dushiChapterContent": {
+      "name": "Pacote Urbano - Prosa de Capítulo",
+      "description": "Cenário urbano moderno: trabalho / guerras corporativas / vida."
+    },
+    "scifiChapterContent": {
+      "name": "Pacote Sci-Fi - Prosa de Capítulo",
+      "description": "Premissas científicas, sociedade futura, exploração interestelar."
+    },
+    "moshiChapterContent": {
+      "name": "Pacote Pós-Apocalíptico - Prosa de Capítulo",
+      "description": "Sobrevivência do fim dos tempos, provas da humanidade, exploração de terras devastadas."
+    },
+    "chuanyueChapterContent": {
+      "name": "Pacote Viagem no Tempo - Prosa de Capítulo",
+      "description": "Cruzando o tempo, vantagem de presciência, mudando o destino."
+    },
+    "chongshengChapterContent": {
+      "name": "Pacote Renascimento - Prosa de Capítulo",
+      "description": "Voltando ao passado, reparando arrependimentos, revertendo a vida."
+    },
+    "xitongChapterContent": {
+      "name": "Pacote Sistema - Prosa de Capítulo",
+      "description": "Assistência de sistema, missões de nível, crescimento numérico."
+    },
+    "wuxianChapterContent": {
+      "name": "Pacote Fluxo Infinito - Prosa de Capítulo",
+      "description": "Mundos-instância, trabalho em equipe, desafios de sobrevivência."
+    },
+    "cyberpunkChapterContent": {
+      "name": "Pacote Cyberpunk - Prosa de Capítulo",
+      "description": "Alta tecnologia e vida precária, aumentos cibernéticos, conspirações corporativas."
+    },
+    "cthulhuChapterContent": {
+      "name": "Pacote Cthulhu - Prosa de Capítulo",
+      "description": "Medo do desconhecido, sanidade em colapso, coisas sem nome."
+    },
+    "zhongtianChapterContent": {
+      "name": "Pacote Vida Rural - Prosa de Capítulo",
+      "description": "Gestão e construção, crescimento, desenvolvimento em ritmo lento."
+    },
+    "zhengbaChapterContent": {
+      "name": "Pacote Hegemonia - Prosa de Capítulo",
+      "description": "Disputas de poder, expansão de influência, luta pelo reino."
+    },
+    "xifanChapterContent": {
+      "name": "Pacote Fantasia Ocidental - Prosa de Capítulo",
+      "description": "Mundos mágicos, conflitos raciais, aventura épica."
+    },
+    "youxiChapterContent": {
+      "name": "Pacote Games - Prosa de Capítulo",
+      "description": "Mundos de jogos, desafios de masmorra, competição."
+    },
+    "novelP00AProjectBrief": {
+      "name": "Conteúdo do Romance-P00-A-Lançamento do romance: brief da tarefa criativa e diagnóstico de lacunas",
+      "description": "Lançamento · Lançamento do romance: brief da tarefa criativa e diagnóstico de lacunas. Use um modelo ou workflow existente."
+    },
+    "novelP01AInspirationCards": {
+      "name": "Conteúdo do Romance-P01-A-Fase de inspiração: purificação de materiais mistos e cartões de inspiração original",
+      "description": "Inspiração · Fase de inspiração: purificação de materiais mistos e cartões de inspiração original. Use um modelo ou workflow existente."
+    },
+    "novelP02APositioning": {
+      "name": "Conteúdo do Romance-P02-A-Fase de posicionamento: gênero, promessa ao leitor e diferenciação",
+      "description": "Posicionamento · Fase de posicionamento: gênero, promessa ao leitor e diferenciação. Use um modelo ou workflow existente."
+    },
+    "novelP03AConceptSelection": {
+      "name": "Conteúdo do Romance-P03-A-Núcleo da história: triagem de conceitos e teste de estresse da premissa",
+      "description": "Núcleo da História · Núcleo da história: triagem de conceitos e teste de estresse da premissa. Use um modelo ou workflow existente."
+    },
+    "novelP04AResearchPlan": {
+      "name": "Conteúdo do Romance-P04-A-Árvore de perguntas de pesquisa e plano mínimo de verificação",
+      "description": "Pesquisa e Verificação · Árvore de perguntas de pesquisa e plano mínimo de verificação. Use um modelo ou workflow existente."
+    },
+    "novelP04BSourceConflict": {
+      "name": "Conteúdo do Romance-P04-B-Conflito de fontes e arbitragem de fronteiras factuais",
+      "description": "Pesquisa e Verificação · Conflito de fontes e arbitragem de fronteiras factuais. Use um modelo ou workflow existente."
+    },
+    "novelP04CFactsToPlot": {
+      "name": "Conteúdo do Romance-P04-C-Conversão de fatos em condições de enredo",
+      "description": "Pesquisa e Verificação · Conversão de fatos em condições de enredo. Use um modelo ou workflow existente."
+    },
+    "novelP05AMinimalWorld": {
+      "name": "Conteúdo do Romance-P05-A-Especificação mínima de mundo para a narrativa",
+      "description": "Visão de Mundo · Especificação mínima de mundo para a narrativa. Use um modelo ou workflow existente."
+    },
+    "novelP05BGeographyCausalChain": {
+      "name": "Conteúdo do Romance-P05-B-Cadeia causal geografia—recursos—sociedade—conflito",
+      "description": "Visão de Mundo · Cadeia causal geografia—recursos—sociedade—conflito. Use um modelo ou workflow existente."
+    },
+    "novelP05CCultureTexture": {
+      "name": "Conteúdo do Romance-P05-C-Textura da cultura e da vida cotidiana",
+      "description": "Visão de Mundo · Textura da cultura e da vida cotidiana. Use um modelo ou workflow existente."
+    },
+    "novelP05DWorldviewAudit": {
+      "name": "Conteúdo do Romance-P05-D-Auditoria de contradições e lacunas da visão de mundo",
+      "description": "Visão de Mundo · Auditoria de contradições e lacunas da visão de mundo. Use um modelo ou workflow existente."
+    },
+    "novelP06ACharacterPressure": {
+      "name": "Conteúdo do Romance-P06-A-Modelo de pressão do personagem central",
+      "description": "Personagens · Modelo de pressão do personagem central. Use um modelo ou workflow existente."
+    },
+    "novelP06BAntagonist": {
+      "name": "Conteúdo do Romance-P06-B-Forças de oposição e legitimidade do antagonista",
+      "description": "Personagens · Forças de oposição e legitimidade do antagonista. Use um modelo ou workflow existente."
+    },
+    "novelP06CSupportingNetwork": {
+      "name": "Conteúdo do Romance-P06-C-Rede de coadjuvantes e dinâmica de relacionamentos",
+      "description": "Personagens · Rede de coadjuvantes e dinâmica de relacionamentos. Use um modelo ou workflow existente."
+    },
+    "novelP06DCharacterArc": {
+      "name": "Conteúdo do Romance-P06-D-Arco do personagem e estados por etapa",
+      "description": "Personagens · Arco do personagem e estados por etapa. Use um modelo ou workflow existente."
+    },
+    "novelP07APlotEngine": {
+      "name": "Conteúdo do Romance-P07-A-Motor objetivo—motivação—conflito",
+      "description": "Enredo · Motor objetivo—motivação—conflito. Use um modelo ou workflow existente."
+    },
+    "novelP07BEscalationLadder": {
+      "name": "Conteúdo do Romance-P07-B-Escada de escalada e ciclo tentativa—fracasso",
+      "description": "Enredo · Escada de escalada e ciclo tentativa—fracasso. Use um modelo ou workflow existente."
+    },
+    "novelP07CInfoRelease": {
+      "name": "Conteúdo do Romance-P07-C-Liberação de informação e gestão de suspense",
+      "description": "Enredo · Liberação de informação e gestão de suspense. Use um modelo ou workflow existente."
+    },
+    "novelP07DSubplotWeave": {
+      "name": "Conteúdo do Romance-P07-D-Tramas e colisões de subenredos",
+      "description": "Enredo · Tramas e colisões de subenredos. Use um modelo ou workflow existente."
+    },
+    "novelP08AStructureModel": {
+      "name": "Conteúdo do Romance-P08-A-Fase de estrutura: escolha do modelo estrutural e viradas do livro",
+      "description": "Estrutura · Fase de estrutura: escolha do modelo estrutural e viradas do livro. Use um modelo ou workflow existente."
+    },
+    "novelP09LAVolumeArchitecture": {
+      "name": "Conteúdo do Romance-P09L-A-Etapas do livro e arquitetura de volumes",
+      "description": "Arquitetura de Longo Formato · Etapas do livro e arquitetura de volumes. Use um modelo ou workflow existente."
+    },
+    "novelP09LBPromiseLedger": {
+      "name": "Conteúdo do Romance-P09L-B-Livro de registro promessa—cumprimento por volume",
+      "description": "Arquitetura de Longo Formato · Livro de registro promessa—cumprimento por volume. Use um modelo ou workflow existente."
+    },
+    "novelP09LCMidsectionDiagnose": {
+      "name": "Conteúdo do Romance-P09L-C-Diagnóstico e reestruturação da barriga do meio em obras longas",
+      "description": "Arquitetura de Longo Formato · Diagnóstico e reestruturação da barriga do meio em obras longas. Use um modelo ou workflow existente."
+    },
+    "novelP09LDClimaxLadder": {
+      "name": "Conteúdo do Romance-P09L-D-Escada de clímax e convergência do final",
+      "description": "Arquitetura de Longo Formato · Escada de clímax e convergência do final. Use um modelo ou workflow existente."
+    },
+    "novelP09SACoreChange": {
+      "name": "Conteúdo do Romance-P09S-A-Design da mudança central do conto",
+      "description": "Arquitetura de Curto Formato · Design da mudança central do conto. Use um modelo ou workflow existente."
+    },
+    "novelP09SBCompression": {
+      "name": "Conteúdo do Romance-P09S-B-Compressão do conto e fusão de personagens",
+      "description": "Arquitetura de Curto Formato · Compressão do conto e fusão de personagens. Use um modelo ou workflow existente."
+    },
+    "novelP09SCOpening": {
+      "name": "Conteúdo do Romance-P09S-C-Ponto de entrada da abertura e alcance narrativo",
+      "description": "Arquitetura de Curto Formato · Ponto de entrada da abertura e alcance narrativo. Use um modelo ou workflow existente."
+    },
+    "novelP09SDEnding": {
+      "name": "Conteúdo do Romance-P09S-D-Final do conto e ressonância",
+      "description": "Arquitetura de Curto Formato · Final do conto e ressonância. Use um modelo ou workflow existente."
+    },
+    "novelP09RASerialPayoff": {
+      "name": "Conteúdo do Romance-P09R-A-Planejamento de recompensas de leitura por etapa",
+      "description": "Arquitetura de Serialização · Planejamento de recompensas de leitura por etapa. Use um modelo ou workflow existente."
+    },
+    "novelP09RBChapterBreaks": {
+      "name": "Conteúdo do Romance-P09R-B-Design de pontos de quebra de capítulo",
+      "description": "Arquitetura de Serialização · Design de pontos de quebra de capítulo. Use um modelo ou workflow existente."
+    },
+    "novelP09RCSerialSchedule": {
+      "name": "Conteúdo do Romance-P09R-C-Buffer de produção da serialização e cronograma por volume",
+      "description": "Arquitetura de Serialização · Buffer de produção da serialização e cronograma por volume. Use um modelo ou workflow existente."
+    },
+    "novelP09RDFeedbackDenoise": {
+      "name": "Conteúdo do Romance-P09R-D-Remoção de ruído do feedback dos leitores",
+      "description": "Arquitetura de Serialização · Remoção de ruído do feedback dos leitores. Use um modelo ou workflow existente."
+    },
+    "novelP10AChapterTask": {
+      "name": "Conteúdo do Romance-P10-A-Ordem de tarefa do capítulo",
+      "description": "Planejamento de Capítulos e Cenas · Ordem de tarefa do capítulo. Use um modelo ou workflow existente."
+    },
+    "novelP10BSceneCard": {
+      "name": "Conteúdo do Romance-P10-B-Cartão de cena e prova de mudança",
+      "description": "Planejamento de Capítulos e Cenas · Cartão de cena e prova de mudança. Use um modelo ou workflow existente."
+    },
+    "novelP10CSceneSequel": {
+      "name": "Conteúdo do Romance-P10-C-Escolhas de ritmo cena—reação—decisão",
+      "description": "Planejamento de Capítulos e Cenas · Escolhas de ritmo cena—reação—decisão. Use um modelo ou workflow existente."
+    },
+    "novelP10DEmotionBeats": {
+      "name": "Conteúdo do Romance-P10-D-Batidas emocionais do capítulo",
+      "description": "Planejamento de Capítulos e Cenas · Batidas emocionais do capítulo. Use um modelo ou workflow existente."
+    },
+    "novelP10EChapterTitle": {
+      "name": "Conteúdo do Romance-P10-E-Geração e seleção de títulos de capítulo",
+      "description": "Planejamento de Capítulos e Cenas · Geração e seleção de títulos de capítulo. Use um modelo ou workflow existente."
+    },
+    "novelP11AFirstChapter": {
+      "name": "Conteúdo do Romance-P11-A-Rascunho do primeiro capítulo",
+      "description": "Prosa · Rascunho do primeiro capítulo. Use um modelo ou workflow existente."
+    },
+    "novelP11BTaskDrafting": {
+      "name": "Conteúdo do Romance-P11-B-Escrita de prosa por tarefa de capítulo-cena",
+      "description": "Prosa · Escrita de prosa por tarefa de capítulo-cena. Use um modelo ou workflow existente."
+    },
+    "novelP11CContinuousDraft": {
+      "name": "Conteúdo do Romance-P11-C-Continuação contínua",
+      "description": "Prosa · Continuação contínua. Use um modelo ou workflow existente."
+    },
+    "novelP11DDialogue": {
+      "name": "Conteúdo do Romance-P11-D-Diálogo e subtexto",
+      "description": "Prosa · Diálogo e subtexto. Use um modelo ou workflow existente."
+    },
+    "novelP11EActionSpace": {
+      "name": "Conteúdo do Romance-P11-E-Ação e continuidade espacial",
+      "description": "Prosa · Ação e continuidade espacial. Use um modelo ou workflow existente."
+    },
+    "novelP11FProseBalance": {
+      "name": "Conteúdo do Romance-P11-F-Equilíbrio entre descrição, mundo interior e transições",
+      "description": "Prosa · Equilíbrio entre descrição, mundo interior e transições. Use um modelo ou workflow existente."
+    },
+    "novelP12AChapterMemory": {
+      "name": "Conteúdo do Romance-P12-A-Memória do capítulo e passagem do final",
+      "description": "Continuidade · Memória do capítulo e passagem do final. Use um modelo ou workflow existente."
+    },
+    "novelP12BCharacterStateDiff": {
+      "name": "Conteúdo do Romance-P12-B-Diferenças de estado de personagens e relacionamentos",
+      "description": "Continuidade · Diferenças de estado de personagens e relacionamentos. Use um modelo ou workflow existente."
+    },
+    "novelP12CContinuityLedger": {
+      "name": "Conteúdo do Romance-P12-C-Livro de registro de linha do tempo, locais e itens",
+      "description": "Continuidade · Livro de registro de linha do tempo, locais e itens. Use um modelo ou workflow existente."
+    },
+    "novelP12DForeshadowLifecycle": {
+      "name": "Conteúdo do Romance-P12-D-Atualização do ciclo de vida de prenúncios",
+      "description": "Continuidade · Atualização do ciclo de vida de prenúncios. Use um modelo ou workflow existente."
+    },
+    "novelP12EPlanReconcile": {
+      "name": "Conteúdo do Romance-P12-E-Reconciliação plano—prosa",
+      "description": "Continuidade · Reconciliação plano—prosa. Use um modelo ou workflow existente."
+    },
+    "novelP12FCrossChapterAudit": {
+      "name": "Conteúdo do Romance-P12-F-Auditoria de continuidade entre capítulos",
+      "description": "Continuidade · Auditoria de continuidade entre capítulos. Use um modelo ou workflow existente."
+    },
+    "novelP13ADevelopmentalDiagnose": {
+      "name": "Conteúdo do Romance-P13-A-Diagnóstico desenvolvimental do manuscrito completo",
+      "description": "Revisão Macro · Diagnóstico desenvolvimental do manuscrito completo. Use um modelo ou workflow existente."
+    },
+    "novelP13BPlotHoleAudit": {
+      "name": "Conteúdo do Romance-P13-B-Auditoria de cadeias causais e furos de enredo",
+      "description": "Revisão Macro · Auditoria de cadeias causais e furos de enredo. Use um modelo ou workflow existente."
+    },
+    "novelP13CArcDrift": {
+      "name": "Conteúdo do Romance-P13-C-Deriva de arcos e reestruturação de funções de personagens",
+      "description": "Revisão Macro · Deriva de arcos e reestruturação de funções de personagens. Use um modelo ou workflow existente."
+    },
+    "novelP13DRevisionRoadmap": {
+      "name": "Conteúdo do Romance-P13-D-Roteiro de revisão: cortar, alterar, mover e preencher",
+      "description": "Revisão Macro · Roteiro de revisão: cortar, alterar, mover e preencher. Use um modelo ou workflow existente."
+    },
+    "novelP13EClimaxPayoffAudit": {
+      "name": "Conteúdo do Romance-P13-E-Auditoria de cumprimento do clímax e do final",
+      "description": "Revisão Macro · Auditoria de cumprimento do clímax e do final. Use um modelo ou workflow existente."
+    },
+    "novelP14ASceneRevision": {
+      "name": "Conteúdo do Romance-P14-A-Diagnóstico por cena e revisão direcionada",
+      "description": "Revisão de Linguagem · Diagnóstico por cena e revisão direcionada. Use um modelo ou workflow existente."
+    },
+    "novelP14BDialogueRevision": {
+      "name": "Conteúdo do Romance-P14-B-Desexpositividade do diálogo e revisão de subtexto",
+      "description": "Revisão de Linguagem · Desexpositividade do diálogo e revisão de subtexto. Use um modelo ou workflow existente."
+    },
+    "novelP14CPovDistance": {
+      "name": "Conteúdo do Romance-P14-C-Ponto de vista, distância narrativa e fronteiras de conhecimento",
+      "description": "Revisão de Linguagem · Ponto de vista, distância narrativa e fronteiras de conhecimento. Use um modelo ou workflow existente."
+    },
+    "novelP14DPacingDensity": {
+      "name": "Conteúdo do Romance-P14-D-Ritmo, grupos de frases e densidade de informação",
+      "description": "Revisão de Linguagem · Ritmo, grupos de frases e densidade de informação. Use um modelo ou workflow existente."
+    },
+    "novelP14EShowTellBalance": {
+      "name": "Conteúdo do Romance-P14-E-Equilíbrio entre mostrar, resumir, explicar e omitir",
+      "description": "Revisão de Linguagem · Equilíbrio entre mostrar, resumir, explicar e omitir. Use um modelo ou workflow existente."
+    },
+    "novelP14FFaithfulPolish": {
+      "name": "Conteúdo do Romance-P14-F-Lapidação fiel, expansão e compressão",
+      "description": "Revisão de Linguagem · Lapidação fiel, expansão e compressão. Use um modelo ou workflow existente."
+    },
+    "novelP15ABlindRead": {
+      "name": "Conteúdo do Romance-P15-A-Trajetória de leitura cega do primeiro capítulo",
+      "description": "Verificação do Leitor · Trajetória de leitura cega do primeiro capítulo. Use um modelo ou workflow existente."
+    },
+    "novelP15BGenrePromiseTest": {
+      "name": "Conteúdo do Romance-P15-B-Teste expectativa—cumprimento do gênero",
+      "description": "Verificação do Leitor · Teste expectativa—cumprimento do gênero. Use um modelo ou workflow existente."
+    },
+    "novelP15CBetaSimulation": {
+      "name": "Conteúdo do Romance-P15-C-Simulação de leitores beta com múltiplas perspectivas",
+      "description": "Verificação do Leitor · Simulação de leitores beta com múltiplas perspectivas. Use um modelo ou workflow existente."
+    },
+    "novelP15DSuspenseExperience": {
+      "name": "Conteúdo do Romance-P15-D-Experiência de suspense e cadeias de perguntas",
+      "description": "Verificação do Leitor · Experiência de suspense e cadeias de perguntas. Use um modelo ou workflow existente."
+    },
+    "novelP15EAbComparison": {
+      "name": "Conteúdo do Romance-P15-E-Comparação A/B de experiência após revisão",
+      "description": "Verificação do Leitor · Comparação A/B de experiência após revisão. Use um modelo ou workflow existente."
+    },
+    "novelP16ATitleBrainstorm": {
+      "name": "Conteúdo do Romance-P16-A-Divergência e seleção de títulos",
+      "description": "Apresentação · Divergência e seleção de títulos. Use um modelo ou workflow existente."
+    },
+    "novelP16BSpoilerFreeBlurb": {
+      "name": "Conteúdo do Romance-P16-B-Sinopse sem spoilers",
+      "description": "Apresentação · Sinopse sem spoilers. Use um modelo ou workflow existente."
+    },
+    "novelP16CFullSynopsis": {
+      "name": "Conteúdo do Romance-P16-C-Sinopse completa do enredo",
+      "description": "Apresentação · Sinopse completa do enredo. Use um modelo ou workflow existente."
+    },
+    "novelP16DTagsKeywords": {
+      "name": "Conteúdo do Romance-P16-D-Tags, palavras-chave e avisos de conteúdo",
+      "description": "Apresentação · Tags, palavras-chave e avisos de conteúdo. Use um modelo ou workflow existente."
+    },
+    "novelP16EQueryLetter": {
+      "name": "Conteúdo do Romance-P16-E-Material de submissão/carta de consulta",
+      "description": "Apresentação · Material de submissão/carta de consulta. Use um modelo ou workflow existente."
+    },
+    "novelP17ARunReview": {
+      "name": "Conteúdo do Romance-P17-A-Revisão de execuções de prompt e atribuição de diferenças",
+      "description": "Gestão de Prompts · Revisão de execuções de prompt e atribuição de diferenças. Use um modelo ou workflow existente."
+    },
+    "novelP17BAbEvaluation": {
+      "name": "Conteúdo do Romance-P17-B-Design de avaliação A/B de versões de prompt",
+      "description": "Gestão de Prompts · Design de avaliação A/B de versões de prompt. Use um modelo ou workflow existente."
+    },
+    "novelP17CPromptGenerator": {
+      "name": "Conteúdo do Romance-P17-C-Gerador de prompts para fases do romance",
+      "description": "Gestão de Prompts · Gerador de prompts para fases do romance. Use um modelo ou workflow existente."
+    },
+    "novelP17DLibraryDedup": {
+      "name": "Conteúdo do Romance-P17-D-Deduplicação semântica da biblioteca e decisões de fusão",
+      "description": "Gestão de Prompts · Deduplicação semântica da biblioteca e decisões de fusão. Use um modelo ou workflow existente."
+    },
+    "novelP17EReleaseAcceptance": {
+      "name": "Conteúdo do Romance-P17-E-Aceitação de ativos antes da publicação",
+      "description": "Gestão de Prompts · Aceitação de ativos antes da publicação. Use um modelo ou workflow existente."
+    },
+    "novelMysteryAReverseSolution": {
+      "name": "Conteúdo do Romance-G-MYSTERY-A-Reconstrução dos fatos completos a partir da solução",
+      "description": "Enredo · Reconstrução dos fatos completos a partir da solução. Use um modelo ou workflow existente."
+    },
+    "novelMysteryBClueMatrix": {
+      "name": "Conteúdo do Romance-G-MYSTERY-B-Matriz de pistas justas",
+      "description": "Enredo · Matriz de pistas justas. Use um modelo ou workflow existente."
+    },
+    "novelMysteryCSuspects": {
+      "name": "Conteúdo do Romance-G-MYSTERY-C-Suspeitos e pistas falsas",
+      "description": "Enredo · Suspeitos e pistas falsas. Use um modelo ou workflow existente."
+    },
+    "novelMysteryDInvestigationBeats": {
+      "name": "Conteúdo do Romance-G-MYSTERY-D-Batidas da investigação e ordem das revelações",
+      "description": "Enredo · Batidas da investigação e ordem das revelações. Use um modelo ou workflow existente."
+    },
+    "novelMysteryEFairnessAudit": {
+      "name": "Conteúdo do Romance-G-MYSTERY-E-Auditoria de justiça do mistério",
+      "description": "Enredo · Auditoria de justiça do mistério. Use um modelo ou workflow existente."
+    },
+    "novelHistoryAFactAnchors": {
+      "name": "Conteúdo do Romance-G-HISTORY-A-Âncoras de fatos históricos e espaço de ficção",
+      "description": "Pesquisa e Verificação · Âncoras de fatos históricos e espaço de ficção. Use um modelo ou workflow existente."
+    },
+    "novelHistoryBEraKnowledge": {
+      "name": "Conteúdo do Romance-G-HISTORY-B-Vida da época e fronteiras de conhecimento por identidade",
+      "description": "Pesquisa e Verificação · Vida da época e fronteiras de conhecimento por identidade. Use um modelo ou workflow existente."
+    },
+    "novelHistoryCMixedCast": {
+      "name": "Conteúdo do Romance-G-HISTORY-C-Personagens históricas e fictícias em cena conjunta",
+      "description": "Pesquisa e Verificação · Personagens históricas e fictícias em cena conjunta. Use um modelo ou workflow existente."
+    },
+    "novelHistoryDAnachronismAudit": {
+      "name": "Conteúdo do Romance-G-HISTORY-D-Auditoria de anacronismos e projeção de valores modernos",
+      "description": "Pesquisa e Verificação · Auditoria de anacronismos e projeção de valores modernos. Use um modelo ou workflow existente."
+    },
+    "novelComedyAEngine": {
+      "name": "Conteúdo do Romance-G-COMEDY-A-Motor de comédia",
+      "description": "Enredo · Motor de comédia. Use um modelo ou workflow existente."
+    },
+    "novelComedyBFairMisunderstanding": {
+      "name": "Conteúdo do Romance-G-COMEDY-B-Informação justa na comédia de mal-entendidos",
+      "description": "Enredo · Informação justa na comédia de mal-entendidos. Use um modelo ou workflow existente."
+    },
+    "novelComedyCTimingCallbacks": {
+      "name": "Conteúdo do Romance-G-COMEDY-C-Ritmo cômico e callbacks",
+      "description": "Enredo · Ritmo cômico e callbacks. Use um modelo ou workflow existente."
+    },
+    "novelComedyDDignityAudit": {
+      "name": "Conteúdo do Romance-G-COMEDY-D-Auditoria de limites da comédia e dignidade dos personagens",
+      "description": "Enredo · Auditoria de limites da comédia e dignidade dos personagens. Use um modelo ou workflow existente."
+    },
+    "novelFantasyAMagicRules": {
+      "name": "Conteúdo do Romance-G-FANTASY-A-Regras de magia/sobrenatural e limites narrativos",
+      "description": "Visão de Mundo · Regras de magia/sobrenatural e limites narrativos. Use um modelo ou workflow existente."
+    },
+    "novelFantasyBMythFunction": {
+      "name": "Conteúdo do Romance-G-FANTASY-B-Função social de mitos, religiões e rituais",
+      "description": "Visão de Mundo · Função social de mitos, religiões e rituais. Use um modelo ou workflow existente."
+    },
+    "novelFantasyCSpectacle": {
+      "name": "Conteúdo do Romance-G-FANTASY-C-Cenas de espetáculo e função causal",
+      "description": "Visão de Mundo · Cenas de espetáculo e função causal. Use um modelo ou workflow existente."
+    },
+    "novelFantasyDMagicLoopholes": {
+      "name": "Conteúdo do Romance-G-FANTASY-D-Auditoria de brechas de magia e soluções universais",
+      "description": "Visão de Mundo · Auditoria de brechas de magia e soluções universais. Use um modelo ou workflow existente."
+    },
+    "novelHorrorAFearSource": {
+      "name": "Conteúdo do Romance-G-HORROR-A-Fonte e limites do horror",
+      "description": "Enredo · Fonte e limites do horror. Use um modelo ou workflow existente."
+    },
+    "novelHorrorBThreatReveal": {
+      "name": "Conteúdo do Romance-G-HORROR-B-Revelação e escalada da ameaça",
+      "description": "Enredo · Revelação e escalada da ameaça. Use um modelo ou workflow existente."
+    },
+    "novelHorrorCSubjectivePerception": {
+      "name": "Conteúdo do Romance-G-HORROR-C-Percepção subjetiva das cenas de horror",
+      "description": "Enredo · Percepção subjetiva das cenas de horror. Use um modelo ou workflow existente."
+    },
+    "novelHorrorDRevealAftermath": {
+      "name": "Conteúdo do Romance-G-HORROR-D-Grau de revelação e medo residual no final",
+      "description": "Enredo · Grau de revelação e medo residual no final. Use um modelo ou workflow existente."
+    },
+    "novelProgressionAGrowthSystem": {
+      "name": "Conteúdo do Romance-G-PROGRESSION-A-Sistema de progressão e limites",
+      "description": "Enredo · Sistema de progressão e limites. Use um modelo ou workflow existente."
+    },
+    "novelProgressionBResourceEconomy": {
+      "name": "Conteúdo do Romance-G-PROGRESSION-B-Economia de recursos e escassez",
+      "description": "Enredo · Economia de recursos e escassez. Use um modelo ou workflow existente."
+    },
+    "novelProgressionCChallengeLadder": {
+      "name": "Conteúdo do Romance-G-PROGRESSION-C-Escada de desafios e prova de capacidade",
+      "description": "Enredo · Escada de desafios e prova de capacidade. Use um modelo ou workflow existente."
+    },
+    "novelProgressionDTrainingBeats": {
+      "name": "Conteúdo do Romance-G-PROGRESSION-D-Batidas de treino, avanço e recompensa",
+      "description": "Enredo · Batidas de treino, avanço e recompensa. Use um modelo ou workflow existente."
+    },
+    "novelProgressionEPowerInflation": {
+      "name": "Conteúdo do Romance-G-PROGRESSION-E-Auditoria de inflação de níveis e descontrole tardio",
+      "description": "Enredo · Auditoria de inflação de níveis e descontrole tardio. Use um modelo ou workflow existente."
+    },
+    "novelRomanceARelationshipEngine": {
+      "name": "Conteúdo do Romance-G-ROMANCE-A-Motor de relacionamento de protagonistas duplos",
+      "description": "Personagens · Motor de relacionamento de protagonistas duplos. Use um modelo ou workflow existente."
+    },
+    "novelRomanceBRelationshipBeats": {
+      "name": "Conteúdo do Romance-G-ROMANCE-B-Batidas do relacionamento e novo equilíbrio",
+      "description": "Personagens · Batidas do relacionamento e novo equilíbrio. Use um modelo ou workflow existente."
+    },
+    "novelRomanceCConflictRepair": {
+      "name": "Conteúdo do Romance-G-ROMANCE-C-Resistência crível e reparação de conflitos",
+      "description": "Personagens · Resistência crível e reparação de conflitos. Use um modelo ou workflow existente."
+    },
+    "novelRomanceDIntimacy": {
+      "name": "Conteúdo do Romance-G-ROMANCE-D-Consentimento, vulnerabilidade e consequências nas cenas íntimas",
+      "description": "Personagens · Consentimento, vulnerabilidade e consequências nas cenas íntimas. Use um modelo ou workflow existente."
+    },
+    "novelRomanceEHappilyEverAfter": {
+      "name": "Conteúdo do Romance-G-ROMANCE-E-Clímax do relacionamento e cumprimento do final otimista",
+      "description": "Personagens · Clímax do relacionamento e cumprimento do final otimista. Use um modelo ou workflow existente."
+    },
+    "novelLiteraryAStructuralPressure": {
+      "name": "Conteúdo do Romance-G-LITERARY-A-Pressão estrutural nas situações cotidianas",
+      "description": "Núcleo da História · Pressão estrutural nas situações cotidianas. Use um modelo ou workflow existente."
+    },
+    "novelLiteraryBPlotlessStructure": {
+      "name": "Conteúdo do Romance-G-LITERARY-B-Estrutura de enredo fraco/mudança interna",
+      "description": "Núcleo da História · Estrutura de enredo fraco/mudança interna. Use um modelo ou workflow existente."
+    },
+    "novelLiteraryCDetailSelection": {
+      "name": "Conteúdo do Romance-G-LITERARY-C-Seleção de detalhes e evitar a exploração do sofrimento",
+      "description": "Núcleo da História · Seleção de detalhes e evitar a exploração do sofrimento. Use um modelo ou workflow existente."
+    },
+    "novelLiteraryDOpenEnding": {
+      "name": "Conteúdo do Romance-G-LITERARY-D-Final aberto e ressonância temática",
+      "description": "Núcleo da História · Final aberto e ressonância temática. Use um modelo ou workflow existente."
+    },
+    "novelScifiACoreNovum": {
+      "name": "Conteúdo do Romance-G-SCIFI-A-Premissa nova central e mudança mínima",
+      "description": "Visão de Mundo · Premissa nova central e mudança mínima. Use um modelo ou workflow existente."
+    },
+    "novelScifiBCascadeExtrapolation": {
+      "name": "Conteúdo do Romance-G-SCIFI-B-Extrapolação em cadeia tecnologia—instituições—cotidiano",
+      "description": "Visão de Mundo · Extrapolação em cadeia tecnologia—instituições—cotidiano. Use um modelo ou workflow existente."
+    },
+    "novelScifiCPlausibilityAudit": {
+      "name": "Conteúdo do Romance-G-SCIFI-C-Auditoria de plausibilidade científica e incerteza",
+      "description": "Visão de Mundo · Auditoria de plausibilidade científica e incerteza. Use um modelo ou workflow existente."
+    },
+    "novelScifiDTechToConflict": {
+      "name": "Conteúdo do Romance-G-SCIFI-D-Conversão de problemas técnicos em conflitos de personagens",
+      "description": "Visão de Mundo · Conversão de problemas técnicos em conflitos de personagens. Use um modelo ou workflow existente."
+    },
+    "novelEnsembleAWeighting": {
+      "name": "Conteúdo do Romance-G-ENSEMBLE-A-Centro do ensemble e peso dos personagens",
+      "description": "Personagens · Centro do ensemble e peso dos personagens. Use um modelo ou workflow existente."
+    },
+    "novelEnsembleBPovAllocation": {
+      "name": "Conteúdo do Romance-G-ENSEMBLE-B-Alocação e alternância de múltiplos pontos de vista",
+      "description": "Personagens · Alocação e alternância de múltiplos pontos de vista. Use um modelo ou workflow existente."
+    },
+    "novelEnsembleCInfoPuzzle": {
+      "name": "Conteúdo do Romance-G-ENSEMBLE-C-Quebra-cabeça de informação e viés de perspectiva",
+      "description": "Personagens · Quebra-cabeça de informação e viés de perspectiva. Use um modelo ou workflow existente."
+    },
+    "novelEnsembleDConvergence": {
+      "name": "Conteúdo do Romance-G-ENSEMBLE-D-Auditoria de convergência e saída do ensemble",
+      "description": "Personagens · Auditoria de convergência e saída do ensemble. Use um modelo ou workflow existente."
+    }
+  },
+  "genrePacks": {
+    "general": {
+      "label": "Geral / Xuanhuan de Poder (Padrão)",
+      "description": "Pacote padrão: serialização longa com base masculina de xuanhuan de poder."
+    },
+    "lishi": {
+      "label": "Histórico",
+      "description": "Cenários históricos, intrigas de corte, história alternativa ou pesquisada."
+    },
+    "xianxia": {
+      "label": "Xianxia (Cultivo)",
+      "description": "Sistemas de ascensão, moralidade mundana, duelo entre bem e mal. Prosa elegante."
+    },
+    "yanqing": {
+      "label": "Romance",
+      "description": "Emoção delicada, psicologia em POV duplo, tensão de casal como espinha."
+    },
+    "realism": {
+      "label": "Realismo",
+      "description": "Textura cotidiana, sem evitar o trivial, vida interior e retratos de época."
+    },
+    "suspense": {
+      "label": "Suspense e Mistério",
+      "description": "Controle de informação, narração não confiável, alta densidade de prenúncios."
+    },
+    "xuanhuan": {
+      "label": "Xuanhuan",
+      "description": "Mundos grandiosos, sistemas de talentos, evolução empolgante."
+    },
+    "wuxia": {
+      "label": "Wuxia",
+      "description": "Rixas do jianghu, cavalaria, conflitos de seitas."
+    },
+    "dushi": {
+      "label": "Urbano",
+      "description": "Cenário urbano moderno: trabalho / guerras corporativas / vida."
+    },
+    "scifi": {
+      "label": "Ficção Científica",
+      "description": "Premissas científicas, sociedade futura, exploração interestelar."
+    },
+    "moshi": {
+      "label": "Pós-Apocalíptico",
+      "description": "Sobrevivência do fim dos tempos, provas da humanidade, terras devastadas."
+    },
+    "chuanyue": {
+      "label": "Viagem no Tempo",
+      "description": "Cruzando o tempo, usando presciência, mudando o destino."
+    },
+    "chongsheng": {
+      "label": "Renascimento",
+      "description": "Voltando ao passado, reparando arrependimentos, revertendo a vida."
+    },
+    "xitong": {
+      "label": "Sistema",
+      "description": "Assistência de sistema, missões de nível, crescimento numérico."
+    },
+    "wuxian": {
+      "label": "Fluxo Infinito",
+      "description": "Cruzando mundos/instâncias, trabalho em equipe, desafios de sobrevivência."
+    },
+    "cyberpunk": {
+      "label": "Cyberpunk",
+      "description": "Alta tecnologia e vida precária, aumentos cibernéticos, conspirações corporativas."
+    },
+    "cthulhu": {
+      "label": "Cthulhu",
+      "description": "Medo do desconhecido, sanidade em colapso, coisas sem nome."
+    },
+    "zhongtian": {
+      "label": "Vida Rural",
+      "description": "Gestão e construção, crescimento, desenvolvimento em ritmo lento."
+    },
+    "zhengba": {
+      "label": "Hegemonia",
+      "description": "Disputas de poder, expansão de influência, luta pelo reino."
+    },
+    "xifan": {
+      "label": "Fantasia Ocidental",
+      "description": "Mundos mágicos, conflitos raciais, aventura épica."
+    },
+    "youxi": {
+      "label": "Games",
+      "description": "Mundos de jogos, desafios de masmorra, competição."
+    }
+  }
+}

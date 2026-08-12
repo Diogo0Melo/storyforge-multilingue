@@ -1,0 +1,23 @@
+{
+  "panel": {
+    "title": "场景考证",
+    "subtitle": "描述你正在构思的场景，AI 结合本作品的世界观、历史年表与「真实与幻想」规则，给出符合背景的细节、设定校验与情节灵感。"
+  },
+  "form": {
+    "sceneLabel": "当前场景",
+    "scenePlaceholder": "描述你正在写或构思的场景，越具体越好。\n\n例如：主角在宋代汴京的酒楼里，与一名丝绸商人讨价还价，想压低一批江南绸缎的进货价。",
+    "eraLabel": "时代/时间背景（可选）",
+    "eraPlaceholder": "如：北宋仁宗年间 / 穿越后第三年",
+    "locationLabel": "地点（可选）",
+    "locationPlaceholder": "如：汴京樊楼 / 斗气大陆乌坦城"
+  },
+  "action": {
+    "building": "读取设定中...",
+    "streaming": "考证中...",
+    "button": "场景考证",
+    "stop": "停止"
+  },
+  "output": {
+    "placeholder": "考证结果会显示在这里..."
+  }
+}

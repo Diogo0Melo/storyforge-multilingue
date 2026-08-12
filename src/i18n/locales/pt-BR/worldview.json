@@ -1,0 +1,926 @@
+{
+  "origin": {
+    "title": "🌌 Origem do Mundo e Definições Centrais",
+    "subtitle": "Defina a origem do mundo, o sistema de poder e o sistema de crenças. Para declarar regras entre realidade e fantasia, vá ao painel «⚖️ Realidade e Fantasia».",
+    "fields": {
+      "origin": {
+        "label": "Origem do Mundo",
+        "desc": "Mitos de criação / Períodos históricos / Origens da civilização… De onde vem o mundo?"
+      },
+      "power": {
+        "label": "Sistema de Poder",
+        "desc": "Níveis de cultivo / Hierarquia social / Níveis tecnológicos… Como o poder se estratifica e como se avança?"
+      },
+      "divine": {
+        "label": "Divindades e Crenças",
+        "desc": "Existem deuses ou religiões? Hierarquias, nomes, regras e restrições das divindades e crenças."
+      }
+    },
+    "streamingAriaLabel": "{{label}} gerando",
+    "powerCodexHeading": "📚 Níveis de Poder · Entradas Específicas",
+    "powerCodexHint": "Depois de escrever a visão geral do sistema de poder acima, registre aqui cada nível/camada individualmente, com campos personalizáveis, estrelas de importância e contexto para geração por IA.",
+    "divineCodexHeading": "📚 Crenças Divinas · Entradas Específicas",
+    "divineCodexHint": "Depois de escrever a visão geral do sistema de crenças acima, registre aqui cada divindade/crença individualmente, com campos personalizáveis, estrelas de importância e contexto para geração por IA.",
+    "hintPlaceholder": "Instruções adicionais para a IA (opcional)",
+    "aiGenerate": "Gerar com IA",
+    "divine": {
+      "hasDivinity": "Existem divindades ou crenças religiosas",
+      "rankLabel": "Hierarquia de Crenças",
+      "rankPlaceholder": "Ex.: Deus principal / Deuses menores / Semideuses / Religião estatal / Crenças populares ...",
+      "namesLabel": "Nomes e Domínios",
+      "namesPlaceholder": "Ex.: Deus Celestial · Deus Criador; Culto de Guan Yu; Crença em Mazu ...",
+      "rulesLabel": "Regras e Tabus",
+      "rulesPlaceholder": "Ex.: Não podem interferir diretamente no mundo mortal / Nomes tabu / Rituais de sacrifício ...",
+      "generateButton": "Gerar Sistema de Crenças com IA",
+      "splittingStatus": "A IA está dividindo o sistema de crenças em três campos..."
+    }
+  },
+  "natural": {
+    "title": "🏔️ Ambiente Natural e Geografia",
+    "subtitle": "Defina a geografia, o clima e os recursos naturais do mundo. Para declarar regras entre realidade e fantasia, vá ao painel «⚖️ Realidade e Fantasia».",
+    "fields": {
+      "worldStructure": {
+        "label": "Estrutura do Mundo",
+        "desc": "Camadas físicas do mundo — planetas / continentes / divisões administrativas / espaços paralelos etc."
+      },
+      "worldDimensions": {
+        "label": "Dimensões Territoriais",
+        "desc": "Tamanho total do mundo, extensão territorial das regiões centrais"
+      },
+      "continentLayout": {
+        "label": "Distribuição Geográfica",
+        "desc": "Distribuição e características dos principais continentes / cadeias montanhosas / planícies / bacias"
+      },
+      "mountainsRivers": {
+        "label": "Montanhas e Rios",
+        "desc": "Principais cadeias montanhosas, rios, lagos, canais e vias navegáveis"
+      },
+      "climateByRegion": {
+        "label": "Clima Regional",
+        "desc": "Tipos climáticos, características sazonais e desastres naturais por região"
+      },
+      "naturalResources": {
+        "label": "Recursos Naturais",
+        "desc": "Distribuição geral, abundância e características de minerais / materiais espirituais / flora e fauna"
+      }
+    },
+    "codexHeading": "📚 {{label}} · Entradas Específicas",
+    "codexHint": "Depois de escrever a visão geral acima, detalhe aqui cada entrada de «{{label}}» individualmente, com campos personalizáveis, estrelas de importância e contexto para geração por IA.",
+    "resourcesCodexHeading": "📚 Produtos Naturais · Entradas Específicas",
+    "resourcesCodexHint": "Minerais e materiais espirituais / Ervas e plantas / Bestas e criaturas — registre individualmente, com campos personalizáveis, correlações, estrelas e contexto para geração por IA.",
+    "legacyResourcesSummary": "Texto simples legado de «Recursos Naturais» (compatibilidade mantida, ainda editável)",
+    "resourcesTitle": "🌿 Recursos Naturais",
+    "resourcesSubtitle": "Bestas raras / Ervas medicinais / Minerais e gemas / Outros produtos especiais",
+    "resourceRows": {
+      "rareCreatures": {
+        "label": "🦅 Bestas Raras / Animais",
+        "placeholder": "Ex.: Tartaruga Mística / Fênix de Fogo / Cavalo de Guerra / Boi de Arado ..."
+      },
+      "herbs": {
+        "label": "🌿 Ervas / Cultivos Alimentares",
+        "placeholder": "Ex.: Lótus da Neve Milenar / Ginseng Espiritual / Arroz e Trigo ..."
+      },
+      "minerals": {
+        "label": "💎 Minérios / Metais",
+        "placeholder": "Ex.: Ferro Negro / Pedras Espirituais / Minas de Sal e Ferro ..."
+      },
+      "others": {
+        "label": "✨ Outros Produtos Especiais",
+        "placeholder": "Ex.: Madeira Divina / Seda de Shu / Chá ..."
+      }
+    },
+    "hintPlaceholder": "Instruções adicionais para a IA (opcional)",
+    "aiGenerate": "Gerar com IA"
+  },
+  "humanity": {
+    "title": "🏛️ Sociedade Humana",
+    "subtitle": "Defina a história, facções, política, economia, cultura e conflitos sociais do mundo. Para declarar regras entre realidade e fantasia, vá ao painel «⚖️ Realidade e Fantasia».",
+    "fields": {
+      "races": {
+        "label": "Raças e Etnias",
+        "description": "Características, habilidades, história e relações entre diferentes raças e etnias"
+      },
+      "factions": {
+        "label": "Distribuição de Facções",
+        "description": "Cenário e relações de aliança/inimizade das principais facções (seitas / corte imperial / guildas comerciais / partidos…)"
+      },
+      "cities": {
+        "label": "Cidades e Fortalezas",
+        "description": "Distribuição e estrutura das principais cidades, fortalezas militares e centros comerciais"
+      },
+      "politics": {
+        "label": "Sistema Político",
+        "description": "Regime, burocracia, leis, forças armadas, diplomacia, atores de poder e estrutura de classes"
+      },
+      "economy": {
+        "label": "Sistema Econômico",
+        "description": "Moeda, tributação, comércio, indústrias, distribuição de recursos e principais agentes econômicos"
+      },
+      "culture": {
+        "label": "Sistema Cultural",
+        "description": "Idioma, religião, educação, rituais, festivais, artes, costumes e tabus"
+      },
+      "conflicts": {
+        "label": "Conflitos Sociais",
+        "description": "Contradições internas da sociedade / conflitos de classe / indivíduo vs. coletivo / tensões com o mundo exterior"
+      },
+      "items": {
+        "label": "Artefatos e Itens",
+        "description": "Armas / artefatos mágicos / ferramentas / equipamento tecnológico… origem, classificação e regras dos itens",
+        "hint": "Escreva aqui a visão geral do sistema de itens; itens específicos são gerenciados abaixo em «📚 Artefatos e Itens · Entradas Específicas». Os itens obtidos e consumidos pelo protagonista são rastreados na área de criação «🎒 Inventário»."
+      }
+    },
+    "historyNav": {
+      "label": "Linha do Tempo Histórica"
+    },
+    "historyTitle": "📜 Linha do Tempo Histórica",
+    "historyDescription": "Visão geral histórica, sistema de eras, eventos oficiais e palavras-chave de época são mantidos unificados na linha do tempo histórica, evitando sobreposição de duas entradas.",
+    "openHistoryTimeline": "Abrir Linha do Tempo Oficial",
+    "legacyHistorySummary": "Material histórico legado (compatibilidade mantida, não é a entrada principal para nova história)",
+    "legacyHistoryLineLabel": "Linha histórica legada do mundo",
+    "legacyHistoryLinePlaceholder": "Material histórico legado",
+    "legacyEventsLabel": "Registro de grandes eventos legados",
+    "legacyEventsPlaceholder": "Material de registro de eventos legados",
+    "codexHeading": "📚 {{label}} · Entradas Específicas",
+    "codexHint": "Depois de escrever a visão geral acima, detalhe aqui cada entrada de «{{label}}» individualmente, com campos personalizáveis, estrelas de importância e contexto para geração por IA.",
+    "legacySocietySummary": "Material legado compatível de «Política, Economia e Cultura»",
+    "legacySocietyPlaceholder": "Texto original legado de política, economia e cultura",
+    "hintPlaceholder": "Instruções adicionais para a IA (opcional)",
+    "aiGenerate": "Gerar com IA"
+  },
+  "storyCore": {
+    "fields": {
+      "logline": {
+        "label": "Logline",
+        "description": "Conte sua história em uma única frase."
+      },
+      "concept": {
+        "label": "Conceito da História",
+        "description": "Premissa única ou ponto de virada: 'E se…?'"
+      },
+      "theme": {
+        "label": "Tema da História",
+        "description": "Os valores humanos ou temas que você quer explorar."
+      },
+      "centralConflict": {
+        "label": "Conflito Central",
+        "description": "O maior conflito enfrentado pelo protagonista (externo + interno)."
+      },
+      "plotPattern": {
+        "label": "Padrão Narrativo",
+        "description": "Linear / Mapa de lótus / Linhas paralelas / Montagem etc."
+      },
+      "mainPlot": {
+        "label": "Enredo Principal",
+        "description": "Linha central do enredo — objetivos e obstáculos do protagonista."
+      },
+      "subPlots": {
+        "label": "Sub-enredos",
+        "description": "Linhas secundárias (romance / personagens coadjuvantes / mistério / suspense)."
+      }
+    },
+    "placeholderFill": "Clique para preencher {{label}}…",
+    "hintPlaceholder": "Dica adicional (opcional)",
+    "aiGenerate": "Gerar com IA"
+  },
+  "worldRules": {
+    "title": "⚖️ Realidade e Fantasia",
+    "subtitle": "Declare por dimensão quais definições vêm da história real e quais são adaptações fictícias. A IA respeitará rigorosamente essas restrições ao gerar conteúdo.",
+    "filledCount": "{{count}} dimensões definidas",
+    "closePreview": "Fechar Prévia",
+    "openPreview": "Prévia da Lista IA",
+    "globalNoteLabel": "📝 Nota Global (restrições adicionais para a IA, aplicáveis a todas as dimensões)",
+    "globalNotePlaceholder": "Exemplo: Esta obra usa a Dinastia Tang como base mas adiciona elementos xianxia; tudo relacionado ao sistema da corte imperial segue rigorosamente a história real, enquanto o sistema de poder é totalmente fictício.",
+    "previewTitle": "Prévia da Lista IA",
+    "previewStats": "Aprox. {{tokens}} tokens ({{chars}} caracteres)",
+    "previewEmpty": "Nenhum conteúdo definido ainda. Preencha as dimensões acima para ver a lista estruturada injetada na IA.",
+    "loading": "Carregando...",
+    "deleteNodeConfirmTitle": "Excluir «{{label}}» e suas definições?",
+    "deleteNodeConfirmMessage": "Esta ação não pode ser desfeita.",
+    "deleteNodeConfirmText": "Excluir",
+    "clearEntryConfirmTitle": "Limpar todas as definições deste nó?",
+    "clearEntryConfirmMessage": "Esta ação não pode ser desfeita.",
+    "clearEntryConfirmText": "Limpar",
+    "navigation": {
+      "l1Header": "CATEGORIAS",
+      "l2Header": "SUBCATEGORIAS",
+      "overview": "Visão Geral",
+      "addL1": "Adicionar Categoria",
+      "addL2": "Adicionar Subcategoria",
+      "newL1Placeholder": "Nome da nova categoria",
+      "newL2Placeholder": "Nome da nova subcategoria",
+      "confirmAddL1AriaLabel": "Confirmar adição de categoria",
+      "confirmAddL2AriaLabel": "Confirmar adição de subcategoria",
+      "cancelAddL1AriaLabel": "Cancelar adição de categoria",
+      "cancelAddL2AriaLabel": "Cancelar adição de subcategoria",
+      "deleteL2AriaLabel": "Excluir subcategoria {{label}}"
+    },
+    "conflictPriority": {
+      "historical": "Prioridade histórica",
+      "balanced": "Equilibrado",
+      "fictional": "Prioridade ficcional"
+    },
+    "tree": {
+      "era": {
+        "label": "Contexto histórico",
+        "period": {
+          "label": "Período histórico",
+          "hint": {
+            "0": "Dinastias",
+            "1": "Cronologia",
+            "2": "Nomes de era"
+          }
+        },
+        "divergence": {
+          "label": "Ponto de divergência",
+          "hint": {
+            "0": "Fronteira do efeito borboleta",
+            "1": "Ponto de bifurcação",
+            "2": "Grau de ficção"
+          }
+        },
+        "calendar": {
+          "label": "Calendário e tempo",
+          "hint": {
+            "0": "Calendário",
+            "1": "Termos solares",
+            "2": "Horas tradicionais"
+          }
+        }
+      },
+      "events": {
+        "label": "Eventos importantes",
+        "hint": {
+          "0": "Integração com linha do tempo histórica",
+          "1": "📜 Eventos históricos tornam-se âncoras automaticamente",
+          "2": "✨ Eventos fictícios são planejados pelo autor"
+        }
+      },
+      "geography": {
+        "label": "Geografia e território",
+        "admin": {
+          "label": "Divisão administrativa",
+          "hint": {
+            "0": "Província/prefeitura/estado/condado",
+            "1": "Fronteira e interior"
+          }
+        },
+        "terrain": {
+          "label": "Relevo e terreno",
+          "hint": {
+            "0": "Cordilheiras",
+            "1": "Planícies",
+            "2": "Bacias",
+            "3": "Desertos",
+            "4": "Planaltos"
+          }
+        },
+        "cities": {
+          "label": "Cidades e praças-fortes",
+          "hint": {
+            "0": "Traçado da capital",
+            "1": "Fortalezas militares",
+            "2": "Centros comerciais",
+            "3": "Muralhas e portões"
+          }
+        },
+        "water": {
+          "label": "Sistema hídrico",
+          "hint": {
+            "0": "Rios",
+            "1": "Lagos",
+            "2": "Canais",
+            "3": "Rotas de transporte fluvial",
+            "4": "Obras hidráulicas"
+          }
+        },
+        "roads": {
+          "label": "Estradas e transporte",
+          "hint": {
+            "0": "Estradas oficiais",
+            "1": "Estações de posta",
+            "2": "Passarelas suspensas",
+            "3": "Desfiladeiros",
+            "4": "Rotas marítimas"
+          }
+        }
+      },
+      "climate": {
+        "label": "Clima e ambiente",
+        "weather": {
+          "label": "Características climáticas",
+          "hint": {
+            "0": "Estações",
+            "1": "Temperatura",
+            "2": "Precipitação"
+          }
+        },
+        "disaster": {
+          "label": "Desastres naturais",
+          "hint": {
+            "0": "Secas e enchentes",
+            "1": "Terremotos",
+            "2": "Epidemias",
+            "3": "Pragas de gafanhotos"
+          }
+        },
+        "ecology": {
+          "label": "Ecologia e espécies",
+          "hint": {
+            "0": "Animais",
+            "1": "Plantas",
+            "2": "Produtos especiais"
+          }
+        }
+      },
+      "politics": {
+        "label": "Sistema político",
+        "system": {
+          "label": "Forma de governo",
+          "hint": {
+            "0": "Monarquia/república",
+            "1": "Grau de centralização",
+            "2": "Separação de poderes"
+          }
+        },
+        "central": {
+          "label": "Burocracia central",
+          "hint": {
+            "0": "Chanceleres",
+            "1": "Ministérios e tribunais",
+            "2": "Secretarias e diretorias",
+            "3": "Grande Secretariado/Conselho Militar"
+          }
+        },
+        "local": {
+          "label": "Burocracia local",
+          "hint": {
+            "0": "Governadores/inspetores/prefeitos",
+            "1": "Senhorios militares",
+            "2": "Autonomia local"
+          }
+        },
+        "selection": {
+          "label": "Seleção de oficiais",
+          "hint": {
+            "0": "Exames imperiais",
+            "1": "Recomendação",
+            "2": "Sistema de nove graus",
+            "3": "Hereditariedade"
+          }
+        },
+        "nobility": {
+          "label": "Títulos de nobreza",
+          "hint": {
+            "0": "Duque/marquês/conde/visconde/barão",
+            "1": "Feudos",
+            "2": "Feudos de renda"
+          }
+        },
+        "law": {
+          "label": "Leis e penas",
+          "hint": {
+            "0": "Códigos e estatutos",
+            "1": "Tipos de pena",
+            "2": "Processo judicial",
+            "3": "Prisões"
+          }
+        },
+        "diplomacy": {
+          "label": "Diplomacia",
+          "hint": {
+            "0": "Tributo",
+            "1": "Relações diplomáticas",
+            "2": "Aliança matrimonial",
+            "3": "Reféns",
+            "4": "Cartas oficiais"
+          }
+        }
+      },
+      "military": {
+        "label": "Militar",
+        "organization": {
+          "label": "Organização militar",
+          "hint": {
+            "0": "Tipos de tropa",
+            "1": "Patentes",
+            "2": "Unidades de formação",
+            "3": "Tropas territoriais/mercenárias"
+          }
+        },
+        "weapons": {
+          "label": "Armas e equipamentos",
+          "hint": {
+            "0": "Armamento",
+            "1": "Armaduras",
+            "2": "Equipamento de cerco"
+          }
+        },
+        "tactics": {
+          "label": "Táticas de combate",
+          "hint": {
+            "0": "Formações",
+            "1": "Cavalaria/infantaria/marinha",
+            "2": "Cerco/defesa"
+          }
+        },
+        "fortification": {
+          "label": "Fortificações",
+          "hint": {
+            "0": "Cidades fortificadas",
+            "1": "Desfiladeiros",
+            "2": "Grande Muralha",
+            "3": "Torres de vigia",
+            "4": "Fortalezas"
+          }
+        }
+      },
+      "economy": {
+        "label": "Economia",
+        "tax": {
+          "label": "Sistema tributário",
+          "hint": {
+            "0": "Imposto territorial",
+            "1": "Corveia",
+            "2": "Imposto comercial",
+            "3": "Sistema de duplo imposto/lei única"
+          }
+        },
+        "currency": {
+          "label": "Moeda e finanças",
+          "hint": {
+            "0": "Moedas de cobre",
+            "1": "Prata",
+            "2": "Papel-moeda",
+            "3": "Casas de câmbio",
+            "4": "Notas de transferência"
+          }
+        },
+        "trade": {
+          "label": "Comércio",
+          "hint": {
+            "0": "Mercados",
+            "1": "Comerciantes itinerantes e fixos",
+            "2": "Rota da Seda/comércio marítimo",
+            "3": "Guildas"
+          }
+        },
+        "agriculture": {
+          "label": "Agricultura",
+          "hint": {
+            "0": "Métodos de cultivo",
+            "1": "Tipos de cultura",
+            "2": "Irrigação",
+            "3": "Sistema fundiário"
+          }
+        },
+        "crafts": {
+          "label": "Artesanato e manufatura",
+          "hint": {
+            "0": "Tecelagem",
+            "1": "Fundição",
+            "2": "Cerâmica",
+            "3": "Fabricação de papel",
+            "4": "Impressão"
+          }
+        },
+        "resources": {
+          "label": "Recursos e produtos",
+          "hint": {
+            "0": "Sal, ferro, chá e cavalos",
+            "1": "Minerais",
+            "2": "Especialidades regionais",
+            "3": "Materiais estratégicos"
+          }
+        }
+      },
+      "society": {
+        "label": "Estrutura social",
+        "hierarchy": {
+          "label": "Hierarquia social",
+          "hint": {
+            "0": "Eruditos/lavradores/artesãos/mercadores",
+            "1": "Nobreza/plebeus/servos",
+            "2": "Mobilidade social"
+          }
+        },
+        "clan": {
+          "label": "Clãs e famílias",
+          "hint": {
+            "0": "Genealogias",
+            "1": "Templos ancestrais",
+            "2": "Linhagem/ordem de nascimento",
+            "3": "Divisão/herança"
+          }
+        },
+        "gender": {
+          "label": "Ordem de gênero",
+          "hint": {
+            "0": "Sistema matrimonial",
+            "1": "Noções de castidade",
+            "2": "Status da mulher"
+          }
+        },
+        "servitude": {
+          "label": "Relações de dependência",
+          "hint": {
+            "0": "Escravos",
+            "1": "Arrendatários",
+            "2": "Criados",
+            "3": "Dependência pessoal"
+          }
+        },
+        "organizations": {
+          "label": "Organizações populares",
+          "hint": {
+            "0": "Guildas",
+            "1": "Sociedades secretas",
+            "2": "Grupos mercantis",
+            "3": "Associações regionais"
+          }
+        }
+      },
+      "technology": {
+        "label": "Tecnologia e produtividade",
+        "engineering": {
+          "label": "Engenharia e construção",
+          "hint": {
+            "0": "Construções",
+            "1": "Pontes",
+            "2": "Obras hidráulicas",
+            "3": "Métodos de construção"
+          }
+        },
+        "medicine": {
+          "label": "Medicina",
+          "hint": {
+            "0": "Sistemas médicos",
+            "1": "Ervas medicinais",
+            "2": "Prevenção de epidemias",
+            "3": "Curandeiros"
+          }
+        },
+        "astronomy": {
+          "label": "Astronomia e calendário",
+          "hint": {
+            "0": "Observação estelar",
+            "1": "Adivinhação",
+            "2": "Matemática",
+            "3": "Elaboração de calendário"
+          }
+        },
+        "transport": {
+          "label": "Meios de transporte",
+          "hint": {
+            "0": "Carroças e cavalos",
+            "1": "Embarcações",
+            "2": "Liteiras",
+            "3": "Construção naval"
+          }
+        },
+        "communication": {
+          "label": "Comunicação",
+          "hint": {
+            "0": "Sistema de correio",
+            "1": "Sinais de fumaça",
+            "2": "Pombos-correio",
+            "3": "Mensageiros"
+          }
+        },
+        "tools": {
+          "label": "Ferramentas de produção",
+          "hint": {
+            "0": "Implementos agrícolas",
+            "1": "Teares",
+            "2": "Fornos de fundição",
+            "3": "Limites tecnológicos"
+          }
+        }
+      },
+      "culture": {
+        "label": "Cultura e pensamento",
+        "philosophy": {
+          "label": "Correntes de pensamento",
+          "hint": {
+            "0": "Confucionismo",
+            "1": "Budismo",
+            "2": "Taoísmo",
+            "3": "Legismo",
+            "4": "Moísmo",
+            "5": "Neoconfucionismo/Escola da Mente"
+          }
+        },
+        "arts": {
+          "label": "Literatura e artes",
+          "hint": {
+            "0": "Poesia",
+            "1": "Contos populares",
+            "2": "Ópera e teatro",
+            "3": "Caligrafia e pintura",
+            "4": "Música"
+          }
+        },
+        "education": {
+          "label": "Educação",
+          "hint": {
+            "0": "Escolas particulares",
+            "1": "Escolas oficiais",
+            "2": "Academias",
+            "3": "Universidade imperial",
+            "4": "Clássicos"
+          }
+        }
+      },
+      "religion": {
+        "label": "Religião e crenças",
+        "official": {
+          "label": "Religião oficial",
+          "hint": {
+            "0": "Religião de Estado",
+            "1": "Culto ao Céu",
+            "2": "Templos ancestrais",
+            "3": "Política religiosa"
+          }
+        },
+        "folk": {
+          "label": "Crenças populares",
+          "hint": {
+            "0": "Deus da Terra",
+            "1": "Deus da Cozinha",
+            "2": "Mazu",
+            "3": "Guan Di",
+            "4": "Bênçãos e proteção"
+          }
+        },
+        "funeral": {
+          "label": "Funerais e ritos",
+          "hint": {
+            "0": "Ritos funerários",
+            "1": "Culto aos ancestrais",
+            "2": "Chamado da alma",
+            "3": "Datas memoriais",
+            "4": "Mausoléus"
+          }
+        },
+        "taboo": {
+          "label": "Tabus e interdições",
+          "hint": {
+            "0": "Tabu de nomes",
+            "1": "Nomes sociais",
+            "2": "Perseguição literária",
+            "3": "Ideias de sorte e azar"
+          }
+        }
+      },
+      "ethnicity": {
+        "label": "Grupos étnicos",
+        "main": {
+          "label": "Etnia majoritária",
+          "hint": {
+            "0": "Características étnicas",
+            "1": "Identidade cultural"
+          }
+        },
+        "neighbors": {
+          "label": "Povos vizinhos",
+          "hint": {
+            "0": "Nômades/caçadores-coletores",
+            "1": "Relações sino-bárbaras"
+          }
+        },
+        "interaction": {
+          "label": "Interação entre povos",
+          "hint": {
+            "0": "Guerra",
+            "1": "Fusão",
+            "2": "Assimilação",
+            "3": "Política de fronteira"
+          }
+        },
+        "foreign": {
+          "label": "Potências estrangeiras",
+          "hint": {
+            "0": "Cultura estrangeira",
+            "1": "Missionários",
+            "2": "Comércio"
+          }
+        }
+      },
+      "language": {
+        "label": "Linguagem e títulos",
+        "spoken": {
+          "label": "Estilo oral",
+          "hint": {
+            "0": "Tom da época",
+            "1": "Dialetos",
+            "2": "Divisão culto/popular"
+          }
+        },
+        "titles": {
+          "label": "Sistema de títulos",
+          "hint": {
+            "0": "Tratamento oficial",
+            "1": "Tratamento familiar",
+            "2": "Tratamento próprio/honroso/humilde"
+          }
+        },
+        "written": {
+          "label": "Linguagem escrita",
+          "hint": {
+            "0": "Clássico/vernáculo",
+            "1": "Formato de memoriais/documentos/cartas"
+          }
+        },
+        "taboo": {
+          "label": "Expressões interditadas",
+          "hint": {
+            "0": "Caracteres interditados",
+            "1": "Eufemismos",
+            "2": "Expressões típicas da época"
+          }
+        }
+      },
+      "daily": {
+        "label": "Vida cotidiana",
+        "food": {
+          "label": "Alimentação",
+          "hint": {
+            "0": "Alimentos básicos",
+            "1": "Pratos",
+            "2": "Bebidas",
+            "3": "Métodos de preparo",
+            "4": "Etiqueta à mesa"
+          }
+        },
+        "clothing": {
+          "label": "Vestuário",
+          "hint": {
+            "0": "Materiais",
+            "1": "Estilos",
+            "2": "Cores",
+            "3": "Marcas de status"
+          }
+        },
+        "housing": {
+          "label": "Moradia",
+          "hint": {
+            "0": "Casas populares",
+            "1": "Mansões",
+            "2": "Palácios",
+            "3": "Pousadas",
+            "4": "Mobiliário"
+          }
+        },
+        "travel": {
+          "label": "Deslocamento",
+          "hint": {
+            "0": "Transporte diário",
+            "1": "Etiqueta de viagem",
+            "2": "Despesas de viagem"
+          }
+        },
+        "measures": {
+          "label": "Pesos e medidas",
+          "hint": {
+            "0": "Comprimento",
+            "1": "Peso",
+            "2": "Volume",
+            "3": "Conversão monetária"
+          }
+        },
+        "time": {
+          "label": "Noção de tempo",
+          "hint": {
+            "0": "Doze períodos do dia",
+            "1": "Toques de vigia",
+            "2": "Rotina do nascer ao pôr do sol"
+          }
+        },
+        "entertainment": {
+          "label": "Entretenimento",
+          "hint": {
+            "0": "Jogos de tabuleiro e cartas",
+            "1": "Futebol antigo",
+            "2": "Rinha de galos",
+            "3": "Banquetes"
+          }
+        },
+        "festivals": {
+          "label": "Festividades",
+          "hint": {
+            "0": "Ano-Novo",
+            "1": "Dia da Limpeza dos Túmulos",
+            "2": "Festival do Barco-Dragão",
+            "3": "Festival da Lua",
+            "4": "Festival do Duplo Nove"
+          }
+        },
+        "etiquette": {
+          "label": "Etiqueta social",
+          "hint": {
+            "0": "Cartões de visita",
+            "1": "Banquetes",
+            "2": "Presentes",
+            "3": "Etiqueta oficial/popular"
+          }
+        }
+      },
+      "supernatural": {
+        "label": "Poder e sobrenatural",
+        "system": {
+          "label": "Sistema de poder",
+          "hint": {
+            "0": "Níveis de cultivo",
+            "1": "Restrições de regras",
+            "2": "Caminhos de ascensão"
+          }
+        },
+        "beings": {
+          "label": "Seres sobrenaturais",
+          "hint": {
+            "0": "Divindades",
+            "1": "Demônios",
+            "2": "Fantasmas",
+            "3": "Imortais"
+          }
+        },
+        "artifacts": {
+          "label": "Materiais e artefatos espirituais",
+          "hint": {
+            "0": "Tesouros mágicos",
+            "1": "Elixires",
+            "2": "Pedras espirituais",
+            "3": "Formações mágicas"
+          }
+        },
+        "impact": {
+          "label": "Poder e sociedade",
+          "hint": {
+            "0": "Cultivadores vs. mortais",
+            "1": "Poder vs. autoridade",
+            "2": "Sistema de gestão"
+          }
+        }
+      }
+    },
+    "entryEditor": {
+      "deleteNode": "Excluir Nó",
+      "clearEntry": "Limpar",
+      "historicalAnchorsLabel": "📜 Baseado em Fatos (Pesquisa Histórica / Protótipos Reais)",
+      "historicalAnchorsPlaceholder": "Quais aspectos desta dimensão são baseados em história ou realidade reais? Exemplo: uso do sistema oficial real da era Kaiyuan da Dinastia Tang com os Três Departamentos e Seis Ministérios",
+      "fictionalAdaptationsLabel": "✨ Adaptação Fictícia (Ficção / Adaptação / Definições Originais)",
+      "fictionalAdaptationsPlaceholder": "Quais aspectos desta dimensão são fictícios ou adaptados? Exemplo: adicionar uma Academia de Cultivo Espiritual ao sistema oficial real, responsável pelos assuntos dos cultivadores",
+      "priorityLabel": "⚖️ Quando Realidade e Fantasia Conflitam",
+      "emptyStatePrimary": "Selecione uma subcategoria à esquerda para começar a definir",
+      "emptyStateSecondary": "Ou clique em «Visão Geral» para definir regras no nível da categoria"
+    }
+  },
+  "powerSystem": {
+    "title": "⚡ Sistema de Poder",
+    "nameLabel": "Nome do Sistema",
+    "namePlaceholder": "Ex.: Sistema de Cultivo de Qi, Níveis de Magia...",
+    "descriptionLabel": "Descrição do Sistema",
+    "descriptionPlaceholder": "Descreva brevemente os princípios fundamentais do sistema de poder...",
+    "levelsLabel": "Lista de Níveis",
+    "levelsPlaceholder": "Liste os níveis do mais baixo ao mais alto, um por linha...",
+    "rulesLabel": "Regras do Sistema",
+    "rulesPlaceholder": "Condições de cultivo, gargalos de avanço, tabus..."
+  },
+  "cultivation": {
+    "title": "Sistemas de Cultivo",
+    "description": "Aqui se definem as escolas e caminhos de reinos para \"como utilizar o poder\"; o sistema de poder acima descreve apenas a energia subjacente do mundo. Os reinos suportam ramificação e convergência.",
+    "addSystem": "Novo Sistema",
+    "emptyState": "Este mundo ainda não tem sistemas de cultivo. Você pode criar múltiplos caminhos independentes como Guerreiro, Mago, Espadachim etc.",
+    "stageCount_one": "{{count}} reino",
+    "stageCount_other": "{{count}} reinos",
+    "promptTitle": "Novo Sistema de Cultivo",
+    "promptPlaceholder": "Ex.: Espadachim, Guerreiro, Invocador",
+    "deleteConfirmTitle": "Excluir sistema de cultivo «{{name}}»?",
+    "deleteConfirmMessage": "As associações de personagens e bestas serão removidas com segurança; esta ação não pode ser desfeita.",
+    "deleteConfirmText": "Excluir",
+    "loadError": "Os dados do mundo ainda não foram carregados completamente. Tente novamente mais tarde.",
+    "editor": {
+      "descriptionPlaceholder": "Clique para explicar os princípios fundamentais, usuários adequados e custos deste sistema…",
+      "deleteSystemAriaLabel": "Excluir sistema de cultivo",
+      "dagHeading": "DAG de Reinos",
+      "addNextStage": "Adicionar Próximo Reino",
+      "addFirstStage": "Adicionar Primeiro Reino Inicial",
+      "tierLabel": "Camada {{tier}}",
+      "stageNameLabel": "Nome do Reino",
+      "deleteStageAriaLabel": "Excluir reino",
+      "branchLabelLabel": "Rótulo de Ramificação",
+      "branchLabelPlaceholder": "Ex.: Espadachim / Cultivador Corporal (opcional)",
+      "featuresLabel": "Características do Reino / Limites de Poder",
+      "featuresPlaceholder": "O que pode e não pode ser feito…",
+      "breakthroughLabel": "Condições para Avançar a Este Reino",
+      "breakthroughPlaceholder": "Recursos, compreensão, rituais, custos…",
+      "parentStagesLabel": "Reinos Pré-requisitos (múltipla seleção para convergência)",
+      "noParentNeeded": "O reino inicial não precisa de pré-requisitos",
+      "defaultStageName": "Novo Reino"
+    }
+  },
+  "shared": {
+    "aiGenerate": "Gerar com IA",
+    "hintPlaceholder": "Instruções adicionais para a IA (opcional)"
+  }
+}

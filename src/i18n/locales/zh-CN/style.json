@@ -1,0 +1,61 @@
+{
+  "learning": {
+    "title": "文风学习",
+    "subtitle": "让 AI 阅读你已打磨过的章节,总结出你的个人文风画像。开启后,后续章节生成会自动贴合你的笔触。",
+    "corpusLabel": "学习语料",
+    "selectedStats": "已选 {{count}} 章 · 约 {{words}} 字",
+    "emptyCorpus": "暂无可学习的章节。请先写几章正文,并把它们的状态设为「已修改 / 已润色 / 定稿」(这些是你亲手打磨过的内容,最能代表你的文风),或先保存改稿对照样本。",
+    "chapterWords": "{{count}} 字",
+    "learnButtonRunning": "正在学习你的文风…",
+    "learnButtonRelearn": "重新学习我的文风",
+    "learnButtonFirst": "一键学习我的文风",
+    "learnHint": "每次最多读取 {{maxChapters}} 章、每章 {{maxChars}} 字符；改稿对照最多注入 3 组短片段，不会反复发送整章。",
+    "errorMaxChapters": "为控制输入成本，每次最多选择 {{max}} 章。可取消一章后再选择。",
+    "errorEmptyResponse": "AI 未返回内容,请重试。",
+    "errorLearnFailed": "学习失败,请重试。",
+    "profileTitle": "我的文风画像",
+    "profileStats": "画像基于 {{chapters}} 章、约 {{words}} 字学习而成。下方可手动修改,失焦自动保存。",
+    "profilePlaceholder": "文风画像(可手动编辑,失焦自动保存)",
+    "toggleEnabled": "已开启:生成时注入文风",
+    "toggleDisabled": "已关闭:生成时不注入",
+    "toggleOn": "注入中",
+    "toggleOff": "已关闭",
+    "revisionPairsSectionTitle": "改稿对照样本",
+    "revisionPairsSectionHint": "已保存 {{count}} / 8 组；带作者说明的样本会优先参与学习。"
+  },
+  "calibration": {
+    "title": "互动校准",
+    "subtitle": "用一段短文测试当前画像。AI 只改写这段文字；你确认、编辑后再保存，未确认的输出不会污染文风样本。",
+    "sourcePlaceholder": "粘贴一段待校准短文（最多 {{max}} 字符）",
+    "charCount": "{{used}} / {{max}} 字符",
+    "generateRunning": "生成中…",
+    "generateButton": "生成校准稿",
+    "resultLabel": "校准稿（可继续手改）",
+    "judgmentLabel": "你的判断",
+    "feedbackPlaceholder": "可选：具体哪里像 / 哪里还不对",
+    "verdictCloser": "接近我的风格",
+    "verdictAdjust": "仍需调整",
+    "savePairButton": "保存为改稿样本",
+    "errorEmptyResult": "AI 未返回校准稿，请重试。",
+    "errorGenerateFailed": "生成失败，请重试。",
+    "toastRecordedCloser": "已记录：更接近你的风格",
+    "toastRecordedAdjust": "已记录：仍需调整",
+    "errorFeedbackSaveFailed": "反馈保存失败：{{message}}",
+    "toastPairSaved": "已保存改前/改后样本；下次重新学习画像时会优先参考",
+    "errorPairSaveFailed": "样本保存失败：{{message}}",
+    "pairChapterTitle": "互动校准样本"
+  },
+  "revisionPairs": {
+    "empty": "暂无改稿对照。使用章节编辑器里的“对照润色”并保存，或在下方完成一次互动校准，即可沉淀样本。",
+    "deleteTitle": "删除这个文风样本",
+    "deleteAria": "删除文风样本：{{title}}",
+    "beforeLabel": "改前",
+    "afterLabel": "改后",
+    "notePlaceholder": "补充你为什么这样改（失焦自动保存，填写后会优先参与学习）"
+  },
+  "status": {
+    "revised": "已修改",
+    "polished": "已润色",
+    "final": "定稿"
+  }
+}

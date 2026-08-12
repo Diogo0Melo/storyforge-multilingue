@@ -1,0 +1,42 @@
+{
+  "welcome": {
+    "title": "Welcome to StoryForge",
+    "content1": "StoryForge is an AI-assisted long-form novel writing tool that helps you manage the entire creative process from concept to final draft.",
+    "content2": "Data is stored locally in your browser (IndexedDB) by default — no account needed. When you enable AI or cloud backup, relevant content is sent to the third-party services you configure.",
+    "content3": "The next few steps will help you get started quickly."
+  },
+  "configAi": {
+    "title": "Step 1: Configure AI",
+    "content1": "Before using AI features, you need to set up an API key.",
+    "content2": "Supported providers: OpenAI, DeepSeek, Tongyi Qianwen, Moonshot, Zhipu GLM, and custom OpenAI-compatible endpoints.",
+    "content3": "Go to Settings, choose a provider, enter your API key and model name, then test the connection.",
+    "content4": "Tip: DeepSeek offers great value (~¥1/million tokens) and works well for long-form writing.",
+    "tip": "If you hit CORS errors, enable proxy mode in Settings (dev environment) or use a relay API endpoint."
+  },
+  "createProject": {
+    "title": "Step 2: Create a Project",
+    "content1": "Return to the home page, click \"New Project\", enter a title, pick a genre, and set a target word count.",
+    "content2": "Once created, you'll enter the workspace with all modules in the left sidebar.",
+    "content3": "Suggested workflow:",
+    "step1": "Settings → Define worldview and characters",
+    "step2": "Story Design → Establish core conflict and theme",
+    "step3": "Outline → Build the story skeleton",
+    "step4": "Detailed Outline → Flesh out each chapter's scenes",
+    "step5": "Draft → AI-assisted generation and polishing"
+  },
+  "features": {
+    "title": "Core Features at a Glance",
+    "content1": "AI Writing: Generate drafts, continue, expand, polish, and de-AI-ify text with custom instructions.",
+    "content2": "State Tables: Automatically track character/location/item state changes and inject context while writing.",
+    "content3": "Emotion Beats: Plan emotional arcs before drafting so AI generates more layered content.",
+    "content4": "Foreshadowing: Track planted and resolved foreshadowing to avoid loose ends.",
+    "content5": "Context Snapshots: Generate project state summaries to maintain coherence across chapters.",
+    "content6": "Data Management: Backup, restore, and export — your data stays safe.",
+    "tip": "Every feature has detailed error logs. If something goes wrong, open the browser console (F12) to investigate."
+  },
+  "skipGuide": "Skip guide",
+  "prevStep": "Previous",
+  "goSettings": "Go to Settings",
+  "startCreating": "Start Creating",
+  "nextStep": "Next"
+}

@@ -1,0 +1,31 @@
+{
+  "panel": {
+    "title": "Linha do Tempo da História",
+    "subtitle": "A IA extrai grandes eventos do enredo dos capítulos escritos e os organiza pela progressão da história. Diferente da \"Linha do Tempo Histórica\" (contexto do mundo) e das \"Linhas Narrativas\" (estrutura)."
+  },
+  "actions": {
+    "manualAdd": "Adicionar Manualmente",
+    "extractFromText": "Extrair Linha do Tempo do Texto",
+    "extracting": "Extraindo {{done}}/{{total}}",
+    "newEventTitle": "Novo Evento"
+  },
+  "progress": {
+    "extracting": "Extraindo eventos do enredo capítulo por capítulo… ({{done}}/{{total}})"
+  },
+  "empty": {
+    "loading": "Carregando...",
+    "noTimeline": "Nenhuma linha do tempo ainda",
+    "noTimelineHint": "Após escrever alguns capítulos, clique em \"Extrair Linha do Tempo do Texto\" para que a IA organize os principais eventos do enredo"
+  },
+  "errors": {
+    "noWrittenChapters": "Nenhum capítulo com texto escrito ainda — escreva alguns antes de extrair"
+  },
+  "importance": {
+    "minor": "Menor",
+    "important": "Importante",
+    "critical": "Crítico"
+  },
+  "event": {
+    "jumpToChapter": "Ir para o capítulo vinculado"
+  }
+}

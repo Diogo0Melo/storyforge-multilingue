@@ -1,0 +1,62 @@
+{
+  "learning": {
+    "title": "Aprendizado de Estilo",
+    "subtitle": "Deixe a IA ler capítulos que você já lapidou para montar um perfil do seu estilo. Quando ativado, os próximos capítulos gerados vão seguir a sua voz.",
+    "corpusLabel": "Corpus de Aprendizado",
+    "selectedStats_one": "{{count}} capítulo selecionado · ~{{words}} palavras",
+    "selectedStats_other": "{{count}} capítulos selecionados · ~{{words}} palavras",
+    "emptyCorpus": "Nenhum capítulo disponível para aprendizado ainda. Escreva alguns capítulos e defina o status como \"Revisado / Lapidado / Final\" (são os que você trabalhou à mão e melhor representam seu estilo), ou salve um par de revisão antes.",
+    "chapterWords": "{{count}} palavras",
+    "learnButtonRunning": "Aprendendo seu estilo…",
+    "learnButtonRelearn": "Reaprender Meu Estilo",
+    "learnButtonFirst": "Aprender Meu Estilo",
+    "learnHint": "Lê até {{maxChapters}} capítulos por vez, com {{maxChars}} caracteres cada; pares de revisão injetam no máximo 3 trechos curtos em vez de capítulos inteiros.",
+    "errorMaxChapters": "Para controlar custos de entrada, selecione no máximo {{max}} capítulos por vez. Desmarque um antes de adicionar mais.",
+    "errorEmptyResponse": "A IA não retornou conteúdo. Tente novamente.",
+    "errorLearnFailed": "Falha ao aprender. Tente novamente.",
+    "profileTitle": "Meu Perfil de Estilo",
+    "profileStats": "Perfil aprendido a partir de {{chapters}} capítulos (~{{words}} palavras). Edite abaixo; alterações são salvas ao perder o foco.",
+    "profilePlaceholder": "Perfil de estilo (editável; salva ao perder o foco)",
+    "toggleEnabled": "Ativado: injetado durante a geração",
+    "toggleDisabled": "Desativado: não é injetado",
+    "toggleOn": "Injetando",
+    "toggleOff": "Desativado",
+    "revisionPairsSectionTitle": "Pares de Revisão",
+    "revisionPairsSectionHint": "{{count}} / 8 pares salvos; amostras com notas do autor têm prioridade no aprendizado."
+  },
+  "calibration": {
+    "title": "Calibração Interativa",
+    "subtitle": "Teste o perfil atual com um texto curto. A IA reescreve apenas este trecho; confirme e edite antes de salvar para que saídas não confirmadas nunca contaminem suas amostras de estilo.",
+    "sourcePlaceholder": "Cole um texto curto para calibrar (até {{max}} caracteres)",
+    "charCount": "{{used}} / {{max}} caracteres",
+    "generateRunning": "Gerando…",
+    "generateButton": "Gerar Rascunho Calibrado",
+    "resultLabel": "Rascunho calibrado (você pode continuar editando)",
+    "judgmentLabel": "Seu julgamento",
+    "feedbackPlaceholder": "Opcional: o que soou certo / o que ainda destoa",
+    "verdictCloser": "Mais próximo do meu estilo",
+    "verdictAdjust": "Ainda precisa de ajustes",
+    "savePairButton": "Salvar como Par de Revisão",
+    "errorEmptyResult": "A IA não retornou um rascunho calibrado. Tente novamente.",
+    "errorGenerateFailed": "Falha na geração. Tente novamente.",
+    "toastRecordedCloser": "Registrado: mais próximo do seu estilo",
+    "toastRecordedAdjust": "Registrado: ainda precisa de ajustes",
+    "errorFeedbackSaveFailed": "Falha ao salvar feedback: {{message}}",
+    "toastPairSaved": "Par antes/depois salvo; ele será priorizado na próxima vez que você reaprender o perfil",
+    "errorPairSaveFailed": "Falha ao salvar par: {{message}}",
+    "pairChapterTitle": "Amostra de Calibração Interativa"
+  },
+  "revisionPairs": {
+    "empty": "Nenhum par de revisão ainda. Use \"Comparar e Lapidar\" no editor de capítulos e salve, ou faça uma calibração interativa abaixo para começar a coletar amostras.",
+    "deleteTitle": "Excluir esta amostra de estilo",
+    "deleteAria": "Excluir amostra de estilo: {{title}}",
+    "beforeLabel": "Antes",
+    "afterLabel": "Depois",
+    "notePlaceholder": "Explique por que reescreveu assim (salva ao perder o foco; amostras anotadas são priorizadas no aprendizado)"
+  },
+  "status": {
+    "revised": "Revisado",
+    "polished": "Lapidado",
+    "final": "Final"
+  }
+}

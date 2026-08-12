@@ -1,0 +1,78 @@
+{
+  "simulation": {
+    "selectChatSessionFirst": "请先选择角色聊天会话。",
+    "selectRuntimeSessionFirst": "请先选择运行时会话。",
+    "currentSessionMissing": "当前运行时会话不存在。",
+    "checkpointMissing": "要恢复的检查点不存在。",
+    "checkpointVerifyFailed": "检查点内容校验失败，不能用于恢复。"
+  },
+  "characterDrivenPlan": {
+    "sourcePlanMissing": "来源方案不存在",
+    "planMissing": "方案不存在",
+    "noValidVolumes": "生成结果没有可保存的有效卷",
+    "crossProjectActivation": "不能激活其它项目的角色驱动方案",
+    "defaultNamePrefix": "角色驱动方案"
+  },
+  "backup": {
+    "snapshotMissing": "快照不存在"
+  },
+  "workflow": {
+    "graphInvalid": "工作流图无效：{{details}}",
+    "cloneSuffix": "副本"
+  },
+  "gist": {
+    "connectFailed": "连接失败",
+    "notConnected": "未连接 GitHub",
+    "backupFailed": "备份失败",
+    "restoreFailed": "恢复失败"
+  },
+  "worldRules": {
+    "migrationNote": "【自动迁移提示】本项目原先使用「历史考证」模式。现已升级为维度级「真实与幻想」规则体系，请在左侧各维度中分别设定哪些内容取自真实、哪些是架空改造。"
+  },
+  "project": {
+    "deleteOperation": "删除项目",
+    "deleteDetails": "此操作将清除该项目的全部数据(章节、世界观、角色、词条、状态卡等),不可恢复。",
+    "enableMultiWorldOperation": "启用多世界模式",
+    "enableMultiWorldDetails": "此操作将把现有项目数据(世界观、力量体系、大纲、词条等)迁移到「主世界」归属。建议先导出备份。",
+    "deleteGroupOperation": "删除世界「{{name}}」",
+    "deleteGroupDetails": "此操作将清除该世界的全部设定数据(世界观、力量体系、地理、历史、词条等),不可恢复。"
+  },
+  "inspiration": {
+    "parseFailed": "Agnes 返回内容无法解析，请检查原始输出后重试",
+    "fragmentTooLong": "单条灵感最多 {{limit}} 字，请拆成多个碎片",
+    "fragmentSaveFailed": "灵感碎片保存失败",
+    "fusionSaveFailed": "融合版本保存失败",
+    "fragmentDeleteFailed": "灵感碎片删除失败"
+  },
+  "beforeUnload": {
+    "unsavedWarning": "你有未保存的内容，确定要离开吗？"
+  },
+  "autoBackup": {
+    "labelPrefix": "自动备份"
+  },
+  "aiConfig": {
+    "status401": "API Key 无效或已过期",
+    "status402": "账户余额不足，请充值后使用",
+    "status403": "API Key 权限不足，无权访问该模型",
+    "status404": "API 地址或模型名称错误，请检查 Base URL 和模型名",
+    "status429": "请求频率超限，请稍后再试",
+    "status500": "服务器内部错误，请稍后重试",
+    "status502": "网关错误，服务暂时不可用",
+    "status503": "服务暂时不可用，可能正在维护",
+    "insufficientBalance": "账户余额不足，请充值",
+    "invalidApiKey": "API Key 无效，请检查是否填写正确",
+    "authenticationFailed": "认证失败，API Key 无效或已过期",
+    "rateLimit": "请求频率超限，请稍后再试",
+    "modelNotFound": "模型不存在，请检查模型名称是否正确",
+    "contextLengthExceeded": "输入内容超过模型最大上下文长度",
+    "quotaExceeded": "配额已用完",
+    "serverError": "服务器内部错误",
+    "timeout": "请求超时",
+    "badRequest": "请求格式错误，请检查参数",
+    "notFound": "接口不存在，请检查 Base URL",
+    "permissionDenied": "权限不足",
+    "billingIssue": "账单/付款问题，请检查账户",
+    "serviceOverloaded": "服务过载，请稍后重试",
+    "thinkingBudgetConflict": "思考模式参数冲突，请不要手动传 thinking 相关参数"
+  }
+}

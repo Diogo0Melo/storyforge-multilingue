@@ -1,0 +1,78 @@
+{
+  "simulation": {
+    "selectChatSessionFirst": "Selecione uma sessão de chat com personagem primeiro.",
+    "selectRuntimeSessionFirst": "Selecione uma sessão do runtime primeiro.",
+    "currentSessionMissing": "A sessão atual do runtime não existe.",
+    "checkpointMissing": "O checkpoint a restaurar não existe.",
+    "checkpointVerifyFailed": "Falha na verificação do conteúdo do checkpoint; não é possível restaurar."
+  },
+  "characterDrivenPlan": {
+    "sourcePlanMissing": "O plano de origem não existe",
+    "planMissing": "O plano não existe",
+    "noValidVolumes": "O resultado gerado não tem volumes válidos para salvar",
+    "crossProjectActivation": "Não é possível ativar um plano orientado por personagens de outro projeto",
+    "defaultNamePrefix": "Plano orientado por personagens"
+  },
+  "backup": {
+    "snapshotMissing": "O snapshot não existe"
+  },
+  "workflow": {
+    "graphInvalid": "O grafo do workflow é inválido: {{details}}",
+    "cloneSuffix": "cópia"
+  },
+  "gist": {
+    "connectFailed": "Falha na conexão",
+    "notConnected": "Não conectado ao GitHub",
+    "backupFailed": "Falha no backup",
+    "restoreFailed": "Falha na restauração"
+  },
+  "worldRules": {
+    "migrationNote": "[Aviso de migração automática] Este projeto usava o modo \"Pesquisa Histórica\". Ele foi atualizado para o sistema de regras \"Realidade vs Fantasia\" por dimensão. Configure em cada dimensão à esquerda quais conteúdos são baseados na realidade e quais são ficcionais."
+  },
+  "project": {
+    "deleteOperation": "Excluir projeto",
+    "deleteDetails": "Esta ação apagará permanentemente todos os dados do projeto (capítulos, construção de mundo, personagens, verbetes do códex, fichas de estado etc.). Não pode ser desfeita.",
+    "enableMultiWorldOperation": "Ativar modo multimundo",
+    "enableMultiWorldDetails": "Esta ação migrará os dados existentes do projeto (construção de mundo, sistema de poder, esboço, códex etc.) para o \"Mundo Principal\". Recomendamos exportar um backup antes.",
+    "deleteGroupOperation": "Excluir mundo \"{{name}}\"",
+    "deleteGroupDetails": "Esta ação apagará permanentemente todas as configurações deste mundo (construção de mundo, sistema de poder, geografia, história, códex etc.). Não pode ser desfeita."
+  },
+  "inspiration": {
+    "parseFailed": "Não foi possível analisar a saída da Agnes. Verifique a saída bruta e tente novamente.",
+    "fragmentTooLong": "Cada fragmento permite até {{limit}} caracteres. Divida em vários fragmentos.",
+    "fragmentSaveFailed": "Falha ao salvar fragmento de inspiração",
+    "fusionSaveFailed": "Falha ao salvar versão fundida",
+    "fragmentDeleteFailed": "Falha ao excluir fragmento de inspiração"
+  },
+  "beforeUnload": {
+    "unsavedWarning": "Você tem alterações não salvas. Tem certeza de que deseja sair?"
+  },
+  "autoBackup": {
+    "labelPrefix": "Backup automático"
+  },
+  "aiConfig": {
+    "status401": "API Key inválida ou expirada",
+    "status402": "Saldo insuficiente na conta; recarregue antes de continuar",
+    "status403": "A API Key não tem permissão para acessar este modelo",
+    "status404": "Endpoint da API ou nome do modelo incorreto; verifique a Base URL e o modelo",
+    "status429": "Limite de requisições excedido; tente novamente mais tarde",
+    "status500": "Erro interno do servidor; tente novamente mais tarde",
+    "status502": "Erro de gateway; serviço temporariamente indisponível",
+    "status503": "Serviço temporariamente indisponível; pode estar em manutenção",
+    "insufficientBalance": "Saldo insuficiente na conta; recarregue",
+    "invalidApiKey": "API Key inválida; verifique o valor informado",
+    "authenticationFailed": "Falha na autenticação; API Key inválida ou expirada",
+    "rateLimit": "Limite de requisições excedido; tente novamente mais tarde",
+    "modelNotFound": "O modelo não existe; verifique o nome do modelo",
+    "contextLengthExceeded": "A entrada excede o comprimento máximo de contexto do modelo",
+    "quotaExceeded": "Cota esgotada",
+    "serverError": "Erro interno do servidor",
+    "timeout": "Tempo limite da requisição",
+    "badRequest": "Requisição malformada; verifique os parâmetros",
+    "notFound": "Endpoint não encontrado; verifique a Base URL",
+    "permissionDenied": "Permissão negada",
+    "billingIssue": "Problema de cobrança ou pagamento; revise sua conta",
+    "serviceOverloaded": "Serviço sobrecarregado; tente novamente mais tarde",
+    "thinkingBudgetConflict": "Conflito de parâmetros do modo de raciocínio; não passe parâmetros relacionados ao thinking manualmente"
+  }
+}

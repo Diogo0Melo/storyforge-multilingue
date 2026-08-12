@@ -1,0 +1,54 @@
+{
+  "transition": {
+    "enter": "First confirmation",
+    "advance": "Breakthrough",
+    "regress": "Regression",
+    "switch": "Path change"
+  },
+  "analyze": {
+    "noLinkedCharacter": "This chapter's world has no characters linked to a cultivation system. Set a primary system on the character card first.",
+    "candidatesFound": "Found {{count}} reliable candidates; please confirm them one by one.",
+    "noCandidates": "No reliably confirmable realm changes were found.",
+    "failed": "Analysis failed"
+  },
+  "accept": {
+    "success": "Confirmed and written into the cultivation timeline.",
+    "failed": "Confirmation failed"
+  },
+  "delete": {
+    "confirmTitle": "Delete this confirmed cultivation event?",
+    "confirmMessage": "After deletion, the current realm and actual path will be reprojected from the remaining events.",
+    "confirmButton": "Delete"
+  },
+  "panel": {
+    "title": "Cultivation progress",
+    "subtitle": "This is the downstream timeline confirmed from the story text; the \"current set realm\" on the character card remains an upstream preset, and the two do not override each other.",
+    "feedbackToggle": "Feed back into future writing (off by default)",
+    "selectChapterLabel": "Select written chapter",
+    "sourceChapterAria": "Source chapter for cultivation progress",
+    "noWrittenChapters": "No written chapters yet",
+    "analyzing": "Analyzing",
+    "analyzeButton": "Analyze this chapter",
+    "confirmCandidateAria": "Confirm cultivation candidate",
+    "ignoreCandidateAria": "Ignore cultivation candidate",
+    "noTrackableCharacters": "No characters are linked to a primary cultivation system yet. Go to \"Character generation\" to set one.",
+    "mainRoleSuffix": "Main",
+    "unlinkedSystem": "Unlinked system",
+    "currentStage": "Current in text: {{stage}}",
+    "noConfirmedStage": "No confirmed realm in the text yet",
+    "characterCardSetting": "Character card setting: {{stage}}",
+    "invalidStage": "Invalid",
+    "tierLabel": "Tier {{tier}}",
+    "noConfirmedEvents": "No author-confirmed cultivation events in the text yet",
+    "deleteEventAria": "Delete cultivation event"
+  },
+  "validation": {
+    "missingId": "A stage is missing an ID",
+    "duplicateId": "Duplicate stage ID: {{id}}",
+    "missingName": "Stage {{id}} is missing a name",
+    "unnamed": "(unnamed)",
+    "selfReference": "Stage \"{{name}}\" cannot use itself as a prerequisite",
+    "danglingParent": "Stage \"{{name}}\" references nonexistent prerequisite {{parentId}}",
+    "hasCycle": "Stage relationships contain a directed cycle; the cultivation path must be a DAG"
+  }
+}

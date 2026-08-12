@@ -1,0 +1,55 @@
+{
+  "panel": {
+    "title": "Cartões de estado dos personagens",
+    "subtitle": "Agrupa o estado atual, local, progresso da trama, inventário e facção de cada personagem. A opção \"Extrair estado\" do editor de capítulos só atualiza personagens registrados.",
+    "exportButton": "Exportar",
+    "summaryTotalCharacters": "Total de personagens",
+    "summaryWithState": "Com estado",
+    "summaryMissingState": "Sem estado",
+    "loading": "Carregando…",
+    "emptyTitle": "Nenhum personagem ainda",
+    "emptyHint": "Cadastre personagens em \"Design de personagens\" primeiro e depois extraia o estado dinâmico do texto dos capítulos."
+  },
+  "card": {
+    "pendingExtraction": "Pendente de extração",
+    "noShortDescription": "Nenhum resumo do personagem ainda",
+    "editStateTitle": "Editar estado",
+    "fieldPlaceholder": "Campo",
+    "valuePlaceholder": "Valor atual",
+    "addField": "+ Adicionar campo",
+    "save": "Salvar",
+    "labelLocation": "Local",
+    "labelFaction": "Facção",
+    "labelPlotProgress": "Progresso da trama",
+    "currentStateHeader": "Estado atual",
+    "fieldSuffix": "{{key}}: ",
+    "noDynamicState": "Nenhum estado dinâmico ainda. Clique em \"Extrair estado\" no editor de capítulos.",
+    "defaultFieldKey": "Estado atual",
+    "unrecorded": "Não registrado"
+  },
+  "inventoryFact": {
+    "label": "Inventário",
+    "sourceInventory": "do inventário",
+    "sourceState": "do campo de estado",
+    "goToInventoryTitle": "Ir para o inventário",
+    "goToInventoryAria": "Ir para o inventário"
+  },
+  "diffModal": {
+    "noChanges": "Nenhuma mudança de estado detectada neste capítulo",
+    "close": "Fechar",
+    "reviewTitle": "📋 Revisão de mudanças de estado",
+    "reviewSubtitle": "O capítulo «{{chapterTitle}}» gerou {{count}} mudanças; marque as que devem ser gravadas na tabela de estados.",
+    "selectedCount": "Selecionadas {{selected}}/{{total}}",
+    "skipThisTime": "Pular desta vez",
+    "cancel": "Cancelar",
+    "confirmWrite": "Gravar na tabela de estados ({{count}})",
+    "consoleConfirm": "[StateDiff] Usuário confirmou: {{accepted}}/{{total}} mudanças"
+  },
+  "categoryLabels": {
+    "character": "Personagem",
+    "location": "Local",
+    "item": "Item",
+    "faction": "Facção",
+    "event": "Evento"
+  }
+}

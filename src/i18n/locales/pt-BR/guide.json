@@ -1,0 +1,42 @@
+{
+  "welcome": {
+    "title": "Bem-vindo ao StoryForge",
+    "content1": "O StoryForge é uma ferramenta de escrita de romances longos assistida por IA que ajuda você a gerenciar todo o processo criativo, do conceito ao rascunho final.",
+    "content2": "Os dados são armazenados localmente no seu navegador (IndexedDB) por padrão — sem necessidade de conta. Ao ativar a IA ou o backup em nuvem, o conteúdo relevante é enviado aos serviços de terceiros que você configurar.",
+    "content3": "Os próximos passos vão ajudar você a começar rapidamente."
+  },
+  "configAi": {
+    "title": "Passo 1: Configurar a IA",
+    "content1": "Antes de usar os recursos de IA, você precisa configurar uma chave de API.",
+    "content2": "Provedores suportados: OpenAI, DeepSeek, Tongyi Qianwen, Moonshot, Zhipu GLM e endpoints personalizados compatíveis com OpenAI.",
+    "content3": "Vá para Configurações, escolha um provedor, insira sua chave de API e o nome do modelo, depois teste a conexão.",
+    "content4": "Dica: o DeepSeek oferece ótimo custo-benefício (~¥1/milhão de tokens) e funciona bem para escrita longa.",
+    "tip": "Se encontrar erros de CORS, ative o modo proxy nas Configurações (ambiente de desenvolvimento) ou use um endpoint de retransmissão."
+  },
+  "createProject": {
+    "title": "Passo 2: Criar um Projeto",
+    "content1": "Volte à página inicial, clique em \"Novo Projeto\", insira um título, escolha um gênero e defina uma meta de palavras.",
+    "content2": "Após criar, você entrará no espaço de trabalho com todos os módulos na barra lateral esquerda.",
+    "content3": "Fluxo sugerido:",
+    "step1": "Configurações → Defina construção de mundo e personagens",
+    "step2": "Design da História → Estabeleça conflito central e tema",
+    "step3": "Esboço → Construa o esqueleto da história",
+    "step4": "Esboço Detalhado → Desenvolva as cenas de cada capítulo",
+    "step5": "Rascunho → Geração e polimento assistidos por IA"
+  },
+  "features": {
+    "title": "Recursos Principais",
+    "content1": "Escrita com IA: Gere rascunhos, continue, expanda, poli e remova o tom artificial com instruções personalizadas.",
+    "content2": "Tabelas de Estado: Rastreie automaticamente mudanças de estado de personagens/locais/itens e injete contexto durante a escrita.",
+    "content3": "Batidas Emocionais: Planeje arcos emocionais antes de escrever para que a IA gere conteúdo mais camadas.",
+    "content4": "Prenúncios: Acompanhe prenúncios plantados e resolvidos para evitar pontas soltas.",
+    "content5": "Instantâneos de Contexto: Gere resumos do estado do projeto para manter coerência entre capítulos.",
+    "content6": "Gerenciamento de Dados: Backup, restauração e exportação — seus dados ficam seguros.",
+    "tip": "Cada recurso tem logs de erro detalhados. Se algo der errado, abra o console do navegador (F12) para investigar."
+  },
+  "skipGuide": "Pular guia",
+  "prevStep": "Anterior",
+  "goSettings": "Ir para Configurações",
+  "startCreating": "Começar a Criar",
+  "nextStep": "Próximo"
+}

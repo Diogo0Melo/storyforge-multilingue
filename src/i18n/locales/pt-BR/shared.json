@@ -1,0 +1,220 @@
+{
+  "errorBoundary": {
+    "title": "Algo deu errado 😅",
+    "retry": "Tentar novamente"
+  },
+  "dialog": {
+    "closeAria": "Fechar",
+    "defaultCancel": "Cancelar",
+    "defaultConfirm": "Confirmar",
+    "defaultAlert": "Entendi",
+    "backupDangerTitle": "Ação perigosa: {{operation}}",
+    "backupDangerMessage": "Esta ação não pode ser desfeita. Continuar? Você será perguntado se deseja fazer backup imediatamente.",
+    "backupDownloadTitle": "Baixar um backup agora (arquivo JSON local)?",
+    "backupDownloadMessage": "Confirmar baixa o backup primeiro e depois continua; cancelar significa que você já fez backup e quer continuar.",
+    "backupConfirmLabel": "Fazer backup agora",
+    "backupCancelLabel": "Já fiz backup, continuar"
+  },
+  "toast": {
+    "dismissAria": "Fechar"
+  },
+  "aiStream": {
+    "placeholder": "Clique em gerar para a IA criar para você...",
+    "generateFailed": "⚠️ Falha na geração",
+    "fetchFixLine1": "💡 Possíveis soluções:",
+    "fetchFixCheckNetwork": "1. Verifique sua conexão de rede",
+    "fetchFixSwitchProxy": "2. Em Configurações, clique em \"Alternar para proxy local\"",
+    "fetchFixCheckBaseUrl": "3. Confirme se a Base URL está correta",
+    "apiKeyFix": "💡 Verifique sua API Key nas Configurações",
+    "structuredStreamingWithAccept": "A IA está gerando conteúdo estruturado… (clique em Adotar ao concluir para preencher automaticamente os campos editáveis)",
+    "structuredStreamingReview": "A IA está gerando conteúdo estruturado… (um plano revisável aparecerá abaixo quando estiver pronto)",
+    "structuredDoneWithAccept": "✓ Conteúdo estruturado gerado. Clique em Adotar para preencher automaticamente os campos correspondentes.",
+    "structuredDoneReview": "✓ Conteúdo estruturado gerado. O sistema o analisou no plano revisável abaixo.",
+    "showRaw": "Ver dados brutos",
+    "hideRaw": "Ocultar dados brutos",
+    "thinking": "A IA está pensando...",
+    "tokenStats": "Tokens: ↑{{input}} ↓{{output}}",
+    "estimatedOutputTokens": "≈ saída ~{{count}} tokens",
+    "estimatedOutputTokensTitle": "Estimado pela contagem de caracteres; o valor exato aparece após a geração",
+    "charCount": "{{count}} caracteres",
+    "stop": "Parar",
+    "retry": "Tentar novamente",
+    "markGoodTitle": "Marcar como bom exemplo — a IA usará este estilo como referência na próxima vez",
+    "markGoodDone": "Marcado como bom",
+    "markGood": "Bom exemplo",
+    "markBadTitle": "Marcar como mau exemplo — a IA evitará este estilo na próxima vez",
+    "markBadDone": "Marcado como mau",
+    "markBad": "Mau exemplo",
+    "accept": "Adotar",
+    "dismissTitle": "Descartar sem adotar, mantendo o texto original",
+    "dismiss": "Fechar"
+  },
+  "fieldModeTabs": {
+    "expand": "Expandir",
+    "rewrite": "Reescrever",
+    "polish": "Aprimorar"
+  },
+  "contextBudget": {
+    "layerL0": "Instruções base",
+    "layerL1": "Contexto principal",
+    "layerL2": "Contexto estendido",
+    "layerL3": "Contexto aprimorado",
+    "overBudgetTitle": "Contexto excede o limite da janela",
+    "overBudgetBody": "Excedeu em {{count}} tokens.",
+    "overBudgetTrimHint": "Você pode aparar automaticamente conteúdo de menor prioridade (referências, exemplos etc.).",
+    "autoTrim": "Aparar automaticamente",
+    "segmentViewTitle": "Clique para ver o conteúdo realmente injetado neste segmento",
+    "summary": "Janela do modelo {{maxContext}} | Saída reservada {{maxOutput}} | Margem de segurança {{safetyMargin}}",
+    "usagePercent": "{{percent}}% usado"
+  },
+  "extractionReview": {
+    "analyzing": "A IA está analisando e organizando candidatos…",
+    "empty": "Nenhum novo conteúdo encontrado para gravar.",
+    "confirmWrite": "Confirmar gravação ({{count}})",
+    "closeTitle": "Fechar"
+  },
+  "promptRunPanel": {
+    "templateMissing": "⚠ Nenhum modelo encontrado para moduleKey={{moduleKey}}",
+    "saveAsTitle": "Salvar como novo modelo",
+    "saveAsPlaceholder": "Nome do modelo",
+    "saveAsSuccess": "Salvo como \"{{name}}\". Ative-o na Biblioteca de Prompts para usar.",
+    "currentTemplate": "Modelo atual:",
+    "dirtyBadge": "Ajustado temporariamente",
+    "noParams": "Este modelo não tem parâmetros ajustáveis.",
+    "advancedHeading": "Avançado: editar temporariamente o texto do prompt (não salva no modelo)",
+    "systemPromptLabel": "System Prompt",
+    "userPromptLabel": "Modelo de User Prompt",
+    "restoreOverride": "Restaurar",
+    "reset": "Redefinir",
+    "saveAs": "Salvar como minha versão",
+    "enableParamTitle": "Ativar este parâmetro",
+    "saveAsDefaultValue": "{{name}} (meus ajustes)"
+  },
+  "promptPreviewGate": {
+    "heading": "Mensagem final a enviar",
+    "description": "Estas são as mensagens reais montadas a partir de modelos, parâmetros e contexto do projeto. Edições afetam apenas esta chamada e não são salvas.",
+    "tokens": "Cerca de {{draft}} tokens",
+    "tokensDiff": "(era {{original}})",
+    "restore": "Restaurar resultado montado",
+    "back": "Voltar à base de geração",
+    "send": "Enviar esta versão",
+    "assistantRoleLabel": "Contexto do assistente"
+  },
+  "inlineEdit": {
+    "placeholder": "Clique para editar…"
+  },
+  "panelLayout": {
+    "collapseSidebar": "Recolher barra lateral",
+    "expandSidebar": "Expandir barra lateral"
+  },
+  "sidebar": {
+    "backHome": "Voltar ao início",
+    "settingsTitle": "Configurações",
+    "versionTitle": "Versão atual",
+    "collapse": "Recolher barra lateral",
+    "expand": "Expandir barra lateral"
+  },
+  "propertiesPanel": {
+    "title": "Propriedades",
+    "outlineStats": "Estatísticas do esboço",
+    "volumeCount": "Volumes",
+    "arcCount": "Arcos",
+    "chapterCount": "Capítulos",
+    "writtenChapters": "Capítulos escritos",
+    "totalWords": "Total de palavras",
+    "wordsUnit": "{{count}} palavras",
+    "currentChapter": "Capítulo atual",
+    "chapterTitle": "Título",
+    "chapterStatus": "Status",
+    "chapterWords": "Contagem de palavras",
+    "chapterUpdatedAt": "Atualizado em",
+    "characterStats": "Estatísticas de personagens",
+    "totalCharacters": "Total de personagens",
+    "mainSecondary": "Principal / Secundário",
+    "npcExtra": "NPC / Extra",
+    "moralAxis": "Bom / Neutro / Mau",
+    "relationLines": "Linhas de relacionamento",
+    "relationStats": "Estatísticas de relacionamentos",
+    "characterCount": "Personagens",
+    "totalRelations": "Total de relacionamentos",
+    "bidirectional": "Bidirecional",
+    "unidirectional": "Unidirecional",
+    "topRelationType": "Tipo mais comum",
+    "topRelationTypeValue": "{{type}} ({{count}} entradas)",
+    "geographyStats": "Estatísticas geográficas",
+    "locationTotal": "Total de locais",
+    "foreshadowStats": "Estatísticas de prenúncios",
+    "totalForeshadows": "Total de prenúncios",
+    "planned": "Planejados",
+    "planted": "Plantados",
+    "echoed": "Ecoados",
+    "resolved": "Resolvidos",
+    "unresolved": "Não resolvidos",
+    "tips": {
+      "worldview": {
+        "title": "Construção de Mundo",
+        "items": [
+          "A construção de mundo é o contexto central para a escrita com IA",
+          "Preencha as configurações básicas antes de começar a escrever",
+          "Sistemas de poder influenciam a qualidade das cenas de batalha"
+        ]
+      },
+      "storyCore": {
+        "title": "Núcleo da História",
+        "items": [
+          "O núcleo define o conflito principal e o tema",
+          "Motivações claras do protagonista ajudam a IA a manter a consistência dos personagens"
+        ]
+      },
+      "powerSystem": {
+        "title": "Sistema de Poder",
+        "items": [
+          "Hierarquias de poder mais claras resultam em cenas de batalha mais coerentes",
+          "Liste o nível atual do protagonista e as condições de avanço"
+        ]
+      },
+      "history": {
+        "title": "Linha do Tempo Histórica",
+        "items": [
+          "Eventos históricos fornecem referências temporais para prenúncios",
+          "Destaque nós-chave que afetam o enredo atual"
+        ]
+      },
+      "rules": {
+        "title": "Regras de Escrita",
+        "items": [
+          "As regras de escrita são anexadas como system prompts a todas as solicitações de IA",
+          "Mantenha as regras concisas para melhores resultados"
+        ]
+      },
+      "backup": {
+        "title": "Histórico de Versões",
+        "items": [
+          "Backup automático a cada 5 minutos",
+          "Crie snapshots manuais para salvar versões importantes"
+        ]
+      },
+      "export": {
+        "title": "Exportar",
+        "items": [
+          "Suporta formatos Markdown, TXT e JSON",
+          "JSON preserva todos os dados do projeto para restauração"
+        ]
+      },
+      "settings": {
+        "title": "Configurações",
+        "items": [
+          "DeepSeek é recomendado para menor custo",
+          "A API Key é apenas da sessão por padrão; ative \"lembrar neste dispositivo\" para persistir no localStorage. As solicitações de IA vão para o provedor de modelo selecionado."
+        ]
+      },
+      "info": {
+        "title": "Informações do Projeto",
+        "items": [
+          "As informações do projeto são incluídas no contexto da IA",
+          "A meta de palavras acompanha o progresso da escrita"
+        ]
+      }
+    }
+  }
+}

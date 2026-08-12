@@ -1,0 +1,75 @@
+{
+  "license": {
+    "ccBy4": "CC BY 4.0 · Atribuição",
+    "ccBySa4": "CC BY-SA 4.0 · Atribuição-CompartilhaIgual",
+    "ccByNc4": "CC BY-NC 4.0 · Atribuição-NãoComercial",
+    "allRightsReserved": "Todos os direitos reservados · Licença apenas para visualização"
+  },
+  "use": {
+    "writing": "Escrita passo a passo",
+    "ttrpg": "Sessão de RPG",
+    "characterChat": "Chat com personagens",
+    "textGame": "Jogo de texto"
+  },
+  "publish": {
+    "successMessage": "Pacote de compartilhamento do mundo gerado; o arquivo contém apenas dados registrados do mundo, sem texto da obra ou registros de execução.",
+    "generateFailed": "Falha ao gerar o pacote de compartilhamento."
+  },
+  "inspect": {
+    "readFailed": "Não foi possível ler o pacote de compartilhamento: {{message}}",
+    "jsonFormatError": "Formato JSON inválido"
+  },
+  "import": {
+    "successMessage": "Importado como uma nova cópia local do mundo; projetos existentes não foram sobrescritos.",
+    "failed": "Falha ao importar o pacote de compartilhamento do mundo."
+  },
+  "panel": {
+    "ariaLabel": "Publicar e importar mundos",
+    "title": "Publicar e importar mundos",
+    "statusChip": "Sem upload · Pacote de arquivo local",
+    "exportTitle": "Gerar pacote de compartilhamento do mundo",
+    "exportDesc": "Exporta configurações do mundo, personagens, regras e IDs de origem; texto da obra, notas, conversas com Agent, configuração de API e arquivos de execução não são incluídos.",
+    "authorLabel": "Crédito do autor",
+    "authorPlaceholder": "Ex.: Lin Lan",
+    "licenseLabel": "Licença",
+    "allowedUsesLegend": "Usos derivados permitidos",
+    "warningsLabel": "Avisos de conteúdo (opcional)",
+    "warningsPlaceholder": "Separados por vírgula, ex.: guerra, desastre",
+    "downloadButton": "Baixar pacote do mundo",
+    "importTitle": "Importar pacote local do mundo",
+    "importDesc": "Lê primeiro as informações de publicação, licença, usos permitidos e integridade; depois você confirma a importação como uma nova cópia local do mundo.",
+    "chooseButton": "Escolher pacote do mundo",
+    "chooseFileAria": "Escolher pacote de compartilhamento do mundo"
+  },
+  "preview": {
+    "passed": "Pré-verificação do pacote aprovada",
+    "failed": "Pré-verificação do pacote reprovada",
+    "author": "Autor: {{name}} · {{license}}",
+    "uses": "Usos: {{uses}}",
+    "warnings": "Avisos: {{warnings}}",
+    "confirmImport": "Confirmar importação como cópia local"
+  },
+  "wp": {
+    "noCryptoSupport": "Este ambiente não suporta verificação de integridade do pacote.",
+    "noWorldCode": "Este projeto ainda não possui um código de mundo publicável. Volte à página do Motor de Mundos primeiro.",
+    "authorRequired": "Preencha o crédito do autor.",
+    "invalidLicense": "Opção de licença inválida.",
+    "noAllowedUses": "Selecione pelo menos um uso permitido.",
+    "notJsonObject": "O pacote de compartilhamento deve ser um objeto JSON.",
+    "notStoryForgePackage": "Este não é um pacote de compartilhamento de mundo StoryForge.",
+    "unsupportedVersion": "Versão do pacote de mundo não suportada: {{version}}.",
+    "missingManifest": "O pacote não possui informações de publicação.",
+    "manifestMissingIdOrName": "As informações de publicação não possuem código ou nome do mundo.",
+    "invalidWorldVersion": "Versão do mundo inválida.",
+    "manifestMissingAuthor": "O pacote não possui crédito do autor.",
+    "manifestInvalidLicense": "Licença do pacote inválida.",
+    "manifestNoValidUses": "O pacote não possui declaração válida de usos derivados.",
+    "invalidContentWarnings": "Formato dos avisos de conteúdo inválido.",
+    "missingPortableProject": "O pacote não possui dados importáveis do mundo.",
+    "missingWorldTable": "O pacote não possui a tabela de mundo \"{{table}}\".",
+    "unauthorizedPrivateTable": "O pacote contém a tabela privada não autorizada \"{{table}}\"; importação rejeitada.",
+    "missingIntegrity": "O pacote não possui verificação de integridade.",
+    "integrityCheckFailed": "Falha na verificação de integridade; o arquivo pode ter sido modificado.",
+    "precheckFailed": "Falha na pré-verificação do pacote de mundo: {{errors}}"
+  }
+}

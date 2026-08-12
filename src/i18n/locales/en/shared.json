@@ -1,0 +1,220 @@
+{
+  "errorBoundary": {
+    "title": "Something went wrong 😅",
+    "retry": "Retry"
+  },
+  "dialog": {
+    "closeAria": "Close",
+    "defaultCancel": "Cancel",
+    "defaultConfirm": "Confirm",
+    "defaultAlert": "Got it",
+    "backupDangerTitle": "Dangerous action: {{operation}}",
+    "backupDangerMessage": "This cannot be undone. Continue? You will be asked whether to back up immediately.",
+    "backupDownloadTitle": "Download a backup now (JSON file to local)?",
+    "backupDownloadMessage": "Confirming downloads the backup first, then continues; cancel means you already backed up and want to continue.",
+    "backupConfirmLabel": "Back up now",
+    "backupCancelLabel": "Already backed up, continue"
+  },
+  "toast": {
+    "dismissAria": "Dismiss"
+  },
+  "aiStream": {
+    "placeholder": "Click generate to let AI create for you...",
+    "generateFailed": "⚠️ Generation failed",
+    "fetchFixLine1": "💡 Possible fixes:",
+    "fetchFixCheckNetwork": "1. Check your network connection",
+    "fetchFixSwitchProxy": "2. In Settings, click \"Switch to local proxy\"",
+    "fetchFixCheckBaseUrl": "3. Verify the Base URL is correct",
+    "apiKeyFix": "💡 Please check your API Key in Settings",
+    "structuredStreamingWithAccept": "AI is generating structured content… (click Accept when done to auto-fill editable fields)",
+    "structuredStreamingReview": "AI is generating structured content… (a reviewable plan will appear below when ready)",
+    "structuredDoneWithAccept": "✓ Structured content generated. Click Accept to auto-fill the corresponding fields.",
+    "structuredDoneReview": "✓ Structured content generated. The system parsed it into the reviewable plan below.",
+    "showRaw": "View raw data",
+    "hideRaw": "Hide raw data",
+    "thinking": "AI is thinking...",
+    "tokenStats": "Tokens: ↑{{input}} ↓{{output}}",
+    "estimatedOutputTokens": "≈ output ~{{count}} tokens",
+    "estimatedOutputTokensTitle": "Estimated from character count; exact value appears after generation completes",
+    "charCount": "{{count}} chars",
+    "stop": "Stop",
+    "retry": "Retry",
+    "markGoodTitle": "Mark as good example — AI will reference this style next time",
+    "markGoodDone": "Marked good",
+    "markGood": "Good example",
+    "markBadTitle": "Mark as bad example — AI will avoid this style next time",
+    "markBadDone": "Marked bad",
+    "markBad": "Bad example",
+    "accept": "Accept",
+    "dismissTitle": "Dismiss without accepting, keep original text",
+    "dismiss": "Dismiss"
+  },
+  "fieldModeTabs": {
+    "expand": "Expand",
+    "rewrite": "Rewrite",
+    "polish": "Polish"
+  },
+  "contextBudget": {
+    "layerL0": "Base instructions",
+    "layerL1": "Core context",
+    "layerL2": "Extended context",
+    "layerL3": "Enhanced context",
+    "overBudgetTitle": "Context exceeds window limit",
+    "overBudgetBody": "Over by {{count}} tokens.",
+    "overBudgetTrimHint": "You can auto-trim lower-priority content (references, examples, etc.).",
+    "autoTrim": "Auto-trim",
+    "segmentViewTitle": "Click to view the actual injected content for this segment",
+    "summary": "Model window {{maxContext}} | Reserved output {{maxOutput}} | Safety margin {{safetyMargin}}",
+    "usagePercent": "{{percent}}% used"
+  },
+  "extractionReview": {
+    "analyzing": "AI is analyzing and organizing candidates…",
+    "empty": "No new content found to write.",
+    "confirmWrite": "Confirm write ({{count}})",
+    "closeTitle": "Close"
+  },
+  "promptRunPanel": {
+    "templateMissing": "⚠ No template found for moduleKey={{moduleKey}}",
+    "saveAsTitle": "Save as new template",
+    "saveAsPlaceholder": "Template name",
+    "saveAsSuccess": "Saved as \"{{name}}\". Activate it in the Prompt Library to use.",
+    "currentTemplate": "Current template:",
+    "dirtyBadge": "Temporarily adjusted",
+    "noParams": "This template has no adjustable parameters.",
+    "advancedHeading": "Advanced: temporarily edit prompt text (not saved to template)",
+    "systemPromptLabel": "System Prompt",
+    "userPromptLabel": "User Prompt template",
+    "restoreOverride": "Restore",
+    "reset": "Reset",
+    "saveAs": "Save as my version",
+    "enableParamTitle": "Enable this parameter",
+    "saveAsDefaultValue": "{{name}} (my tweaks)"
+  },
+  "promptPreviewGate": {
+    "heading": "Final message to send",
+    "description": "These are the real messages assembled from templates, parameters, and project context. Edits only affect this call and are not saved back.",
+    "tokens": "About {{draft}} tokens",
+    "tokensDiff": "(was {{original}})",
+    "restore": "Restore assembled result",
+    "back": "Back to generation basis",
+    "send": "Send this version",
+    "assistantRoleLabel": "Assistant context"
+  },
+  "inlineEdit": {
+    "placeholder": "Click to edit…"
+  },
+  "panelLayout": {
+    "collapseSidebar": "Collapse sidebar",
+    "expandSidebar": "Expand sidebar"
+  },
+  "sidebar": {
+    "backHome": "Back to home",
+    "settingsTitle": "Settings",
+    "versionTitle": "Current version",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar"
+  },
+  "propertiesPanel": {
+    "title": "Properties",
+    "outlineStats": "Outline stats",
+    "volumeCount": "Volumes",
+    "arcCount": "Arcs",
+    "chapterCount": "Chapters",
+    "writtenChapters": "Written chapters",
+    "totalWords": "Total words",
+    "wordsUnit": "{{count}} words",
+    "currentChapter": "Current chapter",
+    "chapterTitle": "Title",
+    "chapterStatus": "Status",
+    "chapterWords": "Word count",
+    "chapterUpdatedAt": "Updated at",
+    "characterStats": "Character stats",
+    "totalCharacters": "Total characters",
+    "mainSecondary": "Main / Secondary",
+    "npcExtra": "NPC / Extra",
+    "moralAxis": "Good / Neutral / Evil",
+    "relationLines": "Relation lines",
+    "relationStats": "Relation stats",
+    "characterCount": "Characters",
+    "totalRelations": "Total relations",
+    "bidirectional": "Bidirectional",
+    "unidirectional": "Unidirectional",
+    "topRelationType": "Most common type",
+    "topRelationTypeValue": "{{type}} ({{count}} entries)",
+    "geographyStats": "Geography stats",
+    "locationTotal": "Total locations",
+    "foreshadowStats": "Foreshadowing stats",
+    "totalForeshadows": "Total foreshadowings",
+    "planned": "Planned",
+    "planted": "Planted",
+    "echoed": "Echoed",
+    "resolved": "Resolved",
+    "unresolved": "Unresolved",
+    "tips": {
+      "worldview": {
+        "title": "Worldview",
+        "items": [
+          "Worldview is the core context for AI writing",
+          "Fill in basic settings before you start writing",
+          "Power systems influence battle-scene quality"
+        ]
+      },
+      "storyCore": {
+        "title": "Story Core",
+        "items": [
+          "The story core defines the main conflict and theme",
+          "Clear protagonist motivation helps AI maintain character consistency"
+        ]
+      },
+      "powerSystem": {
+        "title": "Power System",
+        "items": [
+          "Clearer power tiers lead to more coherent battle scenes",
+          "List the protagonist's current tier and breakthrough conditions"
+        ]
+      },
+      "history": {
+        "title": "History Timeline",
+        "items": [
+          "Historical events provide timing references for foreshadowing",
+          "Highlight key nodes that affect the current plot"
+        ]
+      },
+      "rules": {
+        "title": "Writing Rules",
+        "items": [
+          "Writing rules are appended as system prompts to all AI requests",
+          "Keep rules concise for best results"
+        ]
+      },
+      "backup": {
+        "title": "Version History",
+        "items": [
+          "Auto-backup every 5 minutes",
+          "Create manual snapshots to save important versions"
+        ]
+      },
+      "export": {
+        "title": "Export",
+        "items": [
+          "Supports Markdown, TXT, and JSON formats",
+          "JSON preserves full project data for restoration"
+        ]
+      },
+      "settings": {
+        "title": "Settings",
+        "items": [
+          "DeepSeek is recommended for lower cost",
+          "API Key is session-only by default; enable \"remember on this device\" to persist in localStorage. AI requests go to the selected model provider."
+        ]
+      },
+      "info": {
+        "title": "Project Info",
+        "items": [
+          "Project info is included in AI context",
+          "Target word count tracks writing progress"
+        ]
+      }
+    }
+  }
+}

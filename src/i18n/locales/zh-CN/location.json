@@ -1,0 +1,55 @@
+{
+  "panel": {
+    "title": "📍 重要地点",
+    "subtitle": "管理故事中的重要场景地点，支持标签组合与树状层级"
+  },
+  "toolbar": {
+    "count": "共 {{count}} 个地点",
+    "viewTree": "树状图",
+    "viewList": "列表",
+    "addLocation": "添加地点",
+    "extractAi": "AI 从正文提取",
+    "extracting": "正在分析正文…"
+  },
+  "extraction": {
+    "noWrittenChapters": "还没有已写正文的章节",
+    "failed": "地点提取失败",
+    "candidatesTitle": "地点候选"
+  },
+  "list": {
+    "childCount": "{{count}} 子地点",
+    "labelName": "名称",
+    "labelParent": "上级地点",
+    "parentTopLevel": "（顶级）",
+    "labelTags": "地点标签（可多选组合）",
+    "labelDescription": "描述",
+    "placeholderDescription": "地点的详细描述、外观、氛围…",
+    "labelSignificance": "剧情重要性",
+    "placeholderSignificance": "此地点在故事中的作用、关键事件、与角色的关联…",
+    "addChild": "添加子地点",
+    "confirmDeletePrompt": "确认删除？子地点也会一并删除",
+    "confirmDelete": "确认",
+    "cancelDelete": "取消",
+    "deleteLocation": "删除地点",
+    "empty": "暂无地点",
+    "addFirst": "添加第一个地点",
+    "treeJumpHint": "点击节点可跳转到列表编辑"
+  },
+  "tagPicker": {
+    "emptyHint": "点击下方添加标签…",
+    "collapse": "收起标签",
+    "expand": "展开标签选择"
+  },
+  "treeView": {
+    "rootName": "世界",
+    "empty": "暂无地点数据，请添加地点",
+    "invalidHierarchy": "地点层级结构有误，请检查父级关系"
+  },
+  "defaults": {
+    "newLocationName": "新地点"
+  },
+  "tagCategories": {
+    "terrain": "自然地形",
+    "place": "人文场所"
+  }
+}

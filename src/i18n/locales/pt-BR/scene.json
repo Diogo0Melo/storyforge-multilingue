@@ -1,0 +1,23 @@
+{
+  "panel": {
+    "title": "Verificação de cena",
+    "subtitle": "Descreva a cena que você está concebendo; a IA combina a construção de mundo desta obra, a linha do tempo histórica e as regras de \"Realidade & Fantasia\" para sugerir detalhes fiéis ao contexto, checagens de cenário e inspirações para a trama."
+  },
+  "form": {
+    "sceneLabel": "Cena atual",
+    "scenePlaceholder": "Descreva a cena que você está escrevendo ou concebendo — quanto mais específica, melhor.\n\nEx.: O protagonista está em uma taverna da dinastia Song em Bianjing, negociando com um comerciante de seda para reduzir o preço de compra de cetim de Jiangnan.",
+    "eraLabel": "Época / contexto temporal (opcional)",
+    "eraPlaceholder": "Ex.: Dinastia Song do Norte, era Renzong / Ano três após a transmigração",
+    "locationLabel": "Local (opcional)",
+    "locationPlaceholder": "Ex.: Fanlou em Bianjing / Cidade de Wutan no continente Dou Qi"
+  },
+  "action": {
+    "building": "Carregando configurações...",
+    "streaming": "Verificando...",
+    "button": "Verificar cena",
+    "stop": "Parar"
+  },
+  "output": {
+    "placeholder": "Os resultados da verificação aparecerão aqui..."
+  }
+}

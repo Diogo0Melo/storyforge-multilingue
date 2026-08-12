@@ -1,0 +1,53 @@
+{
+  "panel": {
+    "title": "📐 Regras Criativas"
+  },
+  "pov": {
+    "label": "Ponto de Vista Narrativo",
+    "firstPerson": "Primeira Pessoa",
+    "firstPersonDesc": "Narrado pela perspectiva do \"eu\"",
+    "thirdLimited": "Terceira Pessoa Limitada",
+    "thirdLimitedDesc": "Segue a perspectiva de um único personagem",
+    "thirdOmniscient": "Terceira Pessoa Onisciente",
+    "thirdOmniscientDesc": "Visão divina dos pensamentos de todos os personagens",
+    "multiPov": "Múltiplos Pontos de Vista",
+    "multiPovDesc": "Alterna entre as perspectivas de vários personagens"
+  },
+  "writingStyle": {
+    "label": "Estilo de Escrita",
+    "aiSuggest": "Sugestão da IA",
+    "placeholder": "Descreva o estilo desejado, ex.: conciso e afiado, lírico, humorístico, realismo frio..."
+  },
+  "toneAndMood": {
+    "label": "Tom e Clima",
+    "aiSuggest": "Sugestão da IA",
+    "placeholder": "Descreva o tom e clima gerais, ex.: sombrio e opressivo, apaixonante, acolhedor e reconfortante..."
+  },
+  "prohibitions": {
+    "title": "Proibições",
+    "placeholder": "ex.: Sem gírias modernas"
+  },
+  "consistencyRules": {
+    "title": "Regras de Consistência",
+    "placeholder": "ex.: O sistema de cultivo deve seguir os Cinco Elementos"
+  },
+  "referenceWorks": {
+    "title": "Obras de Referência",
+    "placeholder": "ex.: A Record of a Mortal's Journey to Immortality"
+  },
+  "citedTechniques": {
+    "title": "Técnicas Citadas",
+    "desc": "Quando marcado, a escrita da IA referenciará as metodologias analíticas dessas obras",
+    "noAnalyzedRefs": "Nenhuma referência analisada ainda. Envie arquivos e conclua a análise em Referências do Projeto → Análise Profunda primeiro.",
+    "wordCount": "{{count}}0k palavras"
+  },
+  "specialRequirements": {
+    "label": "Requisitos Especiais",
+    "aiSuggest": "Sugestão da IA",
+    "placeholder": "Quaisquer outras regras especiais que você quer que a IA siga..."
+  },
+  "listActions": {
+    "add": "Adicionar",
+    "empty": "Nenhum item ainda"
+  }
+}

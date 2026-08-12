@@ -1,0 +1,81 @@
+{
+  "panel": {
+    "sectionLabel": "创作区",
+    "pageTitle": "伏笔追踪",
+    "summaryLine": "{{count}} 个伏笔 · {{plantedCount}} 已埋设 · {{echoedCount}} 已呼应 · {{resolvedCount}} 已回收",
+    "aiSuggestButtonTitle": "AI 建议伏笔",
+    "aiSuggestButtonLabel": "AI 建议",
+    "addButtonLabel": "新建伏笔",
+    "scopeNoticeStrong": "伏笔不会自动改写你已经写好的正文",
+    "scopeNoticeWhen": "生成或续写那一章时",
+    "scopeNoticeBody1": "伏笔<strong>不会自动改写你已经写好的正文</strong>。给伏笔指定埋设 / 呼应 / 回收章节后，<strong>{{when}}</strong>，AI 会把它作为写作任务提醒注入上下文。",
+    "scopeNoticeBody2": "目前没有“一键把伏笔插入已写正文”的按钮；要在已写好的正文里补线索，请手动修改，或用审校 / 改稿功能。",
+    "guideStrong": "伏笔不会自动改写正文。",
+    "guideBody1": "这里管理的是埋设、呼应、回收任务，避免直接改动已经写好的手稿。",
+    "guideBody2": "指定「埋设章节 / 呼应章节 / 回收章节」后，对应任务会进入章节生成、续写与质量审校的上下文。",
+    "guideBody3": "如果该章已经写完，请回到正文页按任务手动补写、续写或重生成，再把伏笔状态推进到「已埋设 / 已呼应 / 已回收」。",
+    "viewListTitle": "列表视图",
+    "viewListLabel": "列表",
+    "viewKanbanTitle": "看板视图",
+    "viewKanbanLabel": "看板",
+    "filterAll": "全部",
+    "aiSectionTitle": "AI 伏笔建议",
+    "adoptStreamingHint": "AI 正在把建议整理为伏笔条目并写入…",
+    "advanceStatusButton": "推进状态",
+    "typeLabel": "类型",
+    "statusLabel": "状态",
+    "descriptionLabel": "伏笔描述",
+    "chapterRelationHeading": "📌 章节关联",
+    "plantChapterLabel": "埋设章节（在哪一章埋下伏笔）",
+    "echoChaptersLabel": "呼应章节（在哪些章节呼应伏笔，可多选）",
+    "noChaptersHint": "暂无章节，请先在大纲中创建章节",
+    "removeStaleEchoTitle": "点击移除这个失效/非规范章节引用",
+    "resolveChapterLabel": "回收章节（在哪一章回收伏笔）",
+    "notesLabel": "备注",
+    "emptySelection": "← 选择或添加一个伏笔"
+  },
+  "kanban": {
+    "emptyColumn": "暂无伏笔",
+    "revertButtonTitle": "回退状态",
+    "revertButtonLabel": "← 回退",
+    "advanceButtonTitle": "推进状态",
+    "advanceButtonLabel": "推进 →"
+  },
+  "status": {
+    "planned": "📋 计划中",
+    "planted": "🌱 已埋设",
+    "echoed": "🔔 已呼应",
+    "resolved": "✅ 已回收"
+  },
+  "statusColumn": {
+    "planned": "已计划",
+    "planted": "已埋设",
+    "echoed": "已呼应",
+    "resolved": "已回收"
+  },
+  "type": {
+    "chekhov": "🔫 契诃夫之枪",
+    "prophecy": "🔮 预言暗示",
+    "symbol": "🎭 象征伏笔",
+    "character": "👤 角色伏笔",
+    "dialogue": "💬 对话伏笔",
+    "environment": "🌿 环境伏笔",
+    "timeline": "⏰ 时间线",
+    "red-herring": "🐟 红鲱鱼",
+    "parallel": "🔄 平行伏笔",
+    "callback": "↩️ 回调伏笔"
+  },
+  "messages": {
+    "parseFailed": "未能解析出伏笔条目，请重试或手动添加",
+    "adoptSuccess": "已写入 {{count}} 条伏笔",
+    "adoptSuccessSkippedSuffix": "，跳过 {{count}} 条",
+    "adoptFailed": "采纳失败：{{message}}",
+    "unknownError": "未知错误",
+    "defaultNewName": "新伏笔",
+    "chapterRefFallback": "章节#{{id}}",
+    "chapterOutlineSuffix": "（大纲：{{outlineTitle}}）",
+    "staleChapterRef": "章节#{{id}}（引用可能已失效）",
+    "nonCanonicalChapterRef": "{{title}}（非规范/重复章节记录）",
+    "unspecifiedOption": "未指定"
+  }
+}

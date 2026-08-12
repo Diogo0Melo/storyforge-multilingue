@@ -1,0 +1,926 @@
+{
+  "origin": {
+    "title": "🌌 World Origin & Core Settings",
+    "subtitle": "Define the world's origin, power system, and belief system. To declare reality-vs-fantasy rules, go to the «⚖️ Reality & Fantasy» panel.",
+    "fields": {
+      "origin": {
+        "label": "World Origin",
+        "desc": "Creation myths / Historical periods / Civilization origins… Where does the world come from?"
+      },
+      "power": {
+        "label": "Power System",
+        "desc": "Cultivation levels / Social hierarchy / Technology tiers… How is power stratified and how does one advance?"
+      },
+      "divine": {
+        "label": "Divinities & Faith",
+        "desc": "Do gods or religions exist? Hierarchies, names, rules, and restrictions of divinities and faiths."
+      }
+    },
+    "streamingAriaLabel": "{{label}} generating",
+    "powerCodexHeading": "📚 Power Tiers · Specific Entries",
+    "powerCodexHint": "After writing the overall power system above, register each tier/level individually here with custom fields, importance stars, and AI generation context.",
+    "divineCodexHeading": "📚 Divine Faith · Specific Entries",
+    "divineCodexHint": "After writing the overall faith system above, register each deity/faith individually here with custom fields, importance stars, and AI generation context.",
+    "hintPlaceholder": "Additional instructions for AI (optional)",
+    "aiGenerate": "AI Generate",
+    "divine": {
+      "hasDivinity": "Gods or religious beliefs exist",
+      "rankLabel": "Faith Hierarchy",
+      "rankPlaceholder": "E.g.: Chief god / Lesser gods / Demigods / State religion / Folk beliefs ...",
+      "namesLabel": "Names & Domains",
+      "namesPlaceholder": "E.g.: Heavenly Emperor · Creator God; Guan Yu worship; Mazu worship ...",
+      "rulesLabel": "Rules & Taboos",
+      "rulesPlaceholder": "E.g.: Cannot directly interfere with the mortal realm / Name taboos / Sacrificial customs ...",
+      "generateButton": "AI Generate Faith System",
+      "splittingStatus": "AI is splitting the faith system into three fields..."
+    }
+  },
+  "natural": {
+    "title": "🏔️ Natural Environment & Geography",
+    "subtitle": "Define the world's geography, climate, and natural resources. To declare reality-vs-fantasy rules, go to the «⚖️ Reality & Fantasy» panel.",
+    "fields": {
+      "worldStructure": {
+        "label": "World Structure",
+        "desc": "Physical layers of the world — planets / continents / administrative divisions / parallel spaces etc."
+      },
+      "worldDimensions": {
+        "label": "Territorial Dimensions",
+        "desc": "Overall size of the world, territorial extent of core regions"
+      },
+      "continentLayout": {
+        "label": "Landform Distribution",
+        "desc": "Distribution and features of major continents / mountain ranges / plains / basins"
+      },
+      "mountainsRivers": {
+        "label": "Mountains & Waterways",
+        "desc": "Major mountain ranges, rivers, lakes, canals, and water routes"
+      },
+      "climateByRegion": {
+        "label": "Regional Climate",
+        "desc": "Climate types, seasonal characteristics, and natural disasters by region"
+      },
+      "naturalResources": {
+        "label": "Natural Resources",
+        "desc": "Overall distribution, abundance, and characteristics of minerals / spiritual materials / flora and fauna"
+      }
+    },
+    "codexHeading": "📚 {{label}} · Specific Entries",
+    "codexHint": "After writing the overall overview above, detail each «{{label}}» entry individually here with custom fields, importance stars, and AI generation context.",
+    "resourcesCodexHeading": "📚 Natural Products · Specific Entries",
+    "resourcesCodexHint": "Minerals & spiritual materials / Herbs & plants / Beasts & creatures — register individually with custom fields, correlations, stars, and AI generation context.",
+    "legacyResourcesSummary": "Legacy plain-text «Natural Resources» (compatibility retained, still editable)",
+    "resourcesTitle": "🌿 Natural Resources",
+    "resourcesSubtitle": "Rare beasts / Medicinal herbs / Minerals & gems / Other specialty products",
+    "resourceRows": {
+      "rareCreatures": {
+        "label": "🦅 Rare Beasts / Livestock",
+        "placeholder": "E.g.: Mystic Turtle / Fire Phoenix / War Horse / Draft Ox ..."
+      },
+      "herbs": {
+        "label": "🌿 Herbs / Food Crops",
+        "placeholder": "E.g.: Millennium Snow Lotus / Spirit Ginseng / Rice & Wheat ..."
+      },
+      "minerals": {
+        "label": "💎 Ores / Metals",
+        "placeholder": "E.g.: Dark Iron / Spirit Stones / Salt & Iron Mines ..."
+      },
+      "others": {
+        "label": "✨ Other Specialties",
+        "placeholder": "E.g.: Divine Wood / Shu Brocade / Tea ..."
+      }
+    },
+    "hintPlaceholder": "Additional instructions for AI (optional)",
+    "aiGenerate": "AI Generate"
+  },
+  "humanity": {
+    "title": "🏛️ Human Society",
+    "subtitle": "Define the world's history, factions, politics, economy, culture, and social conflicts. To declare reality-vs-fantasy rules, go to the «⚖️ Reality & Fantasy» panel.",
+    "fields": {
+      "races": {
+        "label": "Races & Ethnicities",
+        "description": "Characteristics, abilities, history, and relations among different races and ethnic groups"
+      },
+      "factions": {
+        "label": "Faction Distribution",
+        "description": "Landscape and alliance/rivalry relations of major factions (sects / imperial court / merchant guilds / political parties…)"
+      },
+      "cities": {
+        "label": "Cities & Strongholds",
+        "description": "Distribution and structure of core cities, military strongholds, and commercial hubs"
+      },
+      "politics": {
+        "label": "Political System",
+        "description": "Regime, bureaucracy, law, military, diplomacy, power holders, and class structure"
+      },
+      "economy": {
+        "label": "Economic System",
+        "description": "Currency, taxation, trade, industries, resource allocation, and major economic actors"
+      },
+      "culture": {
+        "label": "Cultural System",
+        "description": "Language, religion, education, rituals, festivals, arts, customs, and taboos"
+      },
+      "conflicts": {
+        "label": "Social Conflicts",
+        "description": "Internal societal contradictions / class conflicts / individual vs. collective / tensions with the outside world"
+      },
+      "items": {
+        "label": "Artifacts & Items",
+        "description": "Weapons / magical artifacts / tools / tech equipment… origin, grade, and rules of items",
+        "hint": "Write the item system overview here; specific items are managed below in «📚 Artifacts & Items · Specific Entries». Items actually obtained and consumed by the protagonist are tracked in the creation area «🎒 Inventory»."
+      }
+    },
+    "historyNav": {
+      "label": "Historical Timeline"
+    },
+    "historyTitle": "📜 Historical Timeline",
+    "historyDescription": "Historical overview, era system, official events, and era keywords are maintained uniformly in the historical timeline, avoiding overlap between two entry points.",
+    "openHistoryTimeline": "Open Official Historical Timeline",
+    "legacyHistorySummary": "Legacy historical material (compatibility retained, not the primary entry for new history)",
+    "legacyHistoryLineLabel": "Legacy world history line",
+    "legacyHistoryLinePlaceholder": "Legacy historical material",
+    "legacyEventsLabel": "Legacy major events record",
+    "legacyEventsPlaceholder": "Legacy events material",
+    "codexHeading": "📚 {{label}} · Specific Entries",
+    "codexHint": "After writing the overall overview above, detail each «{{label}}» entry individually here with custom fields, importance stars, and AI generation context.",
+    "legacySocietySummary": "Legacy compatible material for «Politics, Economy & Culture»",
+    "legacySocietyPlaceholder": "Legacy original text for politics, economy & culture",
+    "hintPlaceholder": "Additional instructions for AI (optional)",
+    "aiGenerate": "AI Generate"
+  },
+  "storyCore": {
+    "fields": {
+      "logline": {
+        "label": "Logline",
+        "description": "Tell your story in a single sentence."
+      },
+      "concept": {
+        "label": "Story Concept",
+        "description": "Unique premise or twist: 'What if…?'"
+      },
+      "theme": {
+        "label": "Story Theme",
+        "description": "The human values or themes you want to explore."
+      },
+      "centralConflict": {
+        "label": "Central Conflict",
+        "description": "The greatest conflict the protagonist faces (external + internal)."
+      },
+      "plotPattern": {
+        "label": "Plot Pattern",
+        "description": "Linear / Lotus map / Parallel threads / Montage etc."
+      },
+      "mainPlot": {
+        "label": "Main Plot",
+        "description": "Core storyline — the protagonist's goals and obstacles."
+      },
+      "subPlots": {
+        "label": "Subplots",
+        "description": "Secondary plotlines (romance / supporting characters / hidden threads / suspense)."
+      }
+    },
+    "placeholderFill": "Click to fill in {{label}}…",
+    "hintPlaceholder": "Additional hint (optional)",
+    "aiGenerate": "AI Generate"
+  },
+  "worldRules": {
+    "title": "⚖️ Reality & Fantasy",
+    "subtitle": "Declare per dimension which settings come from real history and which are fictional adaptations. The AI will strictly follow these constraints when generating content.",
+    "filledCount": "{{count}} dimensions defined",
+    "closePreview": "Close Preview",
+    "openPreview": "AI Checklist Preview",
+    "globalNoteLabel": "📝 Global Note (additional AI constraints, applicable to all dimensions)",
+    "globalNotePlaceholder": "Example: This work uses the Tang Dynasty as a blueprint but adds xianxia elements; everything involving the imperial court system strictly follows historical records, while the power system is entirely fictional.",
+    "previewTitle": "AI Checklist Preview",
+    "previewStats": "Approx. {{tokens}} tokens ({{chars}} characters)",
+    "previewEmpty": "No settings defined yet. Fill in the dimensions above to see the structured checklist injected into the AI.",
+    "loading": "Loading...",
+    "deleteNodeConfirmTitle": "Delete «{{label}}» and its settings?",
+    "deleteNodeConfirmMessage": "This action cannot be undone.",
+    "deleteNodeConfirmText": "Delete",
+    "clearEntryConfirmTitle": "Clear all settings for this node?",
+    "clearEntryConfirmMessage": "This action cannot be undone.",
+    "clearEntryConfirmText": "Clear",
+    "navigation": {
+      "l1Header": "CATEGORIES",
+      "l2Header": "SUBCATEGORIES",
+      "overview": "Overview",
+      "addL1": "Add Category",
+      "addL2": "Add Subcategory",
+      "newL1Placeholder": "New category name",
+      "newL2Placeholder": "New subcategory name",
+      "confirmAddL1AriaLabel": "Confirm add category",
+      "confirmAddL2AriaLabel": "Confirm add subcategory",
+      "cancelAddL1AriaLabel": "Cancel add category",
+      "cancelAddL2AriaLabel": "Cancel add subcategory",
+      "deleteL2AriaLabel": "Delete subcategory {{label}}"
+    },
+    "conflictPriority": {
+      "historical": "Historical priority",
+      "balanced": "Balanced",
+      "fictional": "Fictional priority"
+    },
+    "tree": {
+      "era": {
+        "label": "Era & Background",
+        "period": {
+          "label": "Historical period",
+          "hint": {
+            "0": "Dynasties",
+            "1": "Chronology",
+            "2": "Era names"
+          }
+        },
+        "divergence": {
+          "label": "Divergence point",
+          "hint": {
+            "0": "Butterfly-effect boundary",
+            "1": "Branching point",
+            "2": "Degree of fictionalization"
+          }
+        },
+        "calendar": {
+          "label": "Calendar & time",
+          "hint": {
+            "0": "Calendar",
+            "1": "Solar terms",
+            "2": "Traditional hours"
+          }
+        }
+      },
+      "events": {
+        "label": "Major Events",
+        "hint": {
+          "0": "Linked to historical timeline",
+          "1": "📜 Historical events auto-become anchors",
+          "2": "✨ Fictional events are author-planned"
+        }
+      },
+      "geography": {
+        "label": "Geography & Territory",
+        "admin": {
+          "label": "Administrative divisions",
+          "hint": {
+            "0": "Province/prefecture/district/county",
+            "1": "Frontier & interior"
+          }
+        },
+        "terrain": {
+          "label": "Terrain & landforms",
+          "hint": {
+            "0": "Mountain ranges",
+            "1": "Plains",
+            "2": "Basins",
+            "3": "Deserts",
+            "4": "Plateaus"
+          }
+        },
+        "cities": {
+          "label": "Cities & strongholds",
+          "hint": {
+            "0": "Capital layout",
+            "1": "Military fortresses",
+            "2": "Commercial hubs",
+            "3": "City walls & gates"
+          }
+        },
+        "water": {
+          "label": "Water systems",
+          "hint": {
+            "0": "Rivers",
+            "1": "Lakes",
+            "2": "Canals",
+            "3": "Grain-transport routes",
+            "4": "Waterworks"
+          }
+        },
+        "roads": {
+          "label": "Roads & transport",
+          "hint": {
+            "0": "Official roads",
+            "1": "Post stations",
+            "2": "Plank roads",
+            "3": "Mountain passes",
+            "4": "Sea routes"
+          }
+        }
+      },
+      "climate": {
+        "label": "Climate & Environment",
+        "weather": {
+          "label": "Climate features",
+          "hint": {
+            "0": "Seasons",
+            "1": "Temperature",
+            "2": "Precipitation"
+          }
+        },
+        "disaster": {
+          "label": "Natural disasters",
+          "hint": {
+            "0": "Droughts & floods",
+            "1": "Earthquakes",
+            "2": "Plagues",
+            "3": "Locust swarms"
+          }
+        },
+        "ecology": {
+          "label": "Ecology & species",
+          "hint": {
+            "0": "Animals",
+            "1": "Plants",
+            "2": "Special products"
+          }
+        }
+      },
+      "politics": {
+        "label": "Political System",
+        "system": {
+          "label": "Form of government",
+          "hint": {
+            "0": "Monarchy/republic",
+            "1": "Degree of centralization",
+            "2": "Separation of powers"
+          }
+        },
+        "central": {
+          "label": "Central bureaucracy",
+          "hint": {
+            "0": "Chancellors",
+            "1": "Ministries & courts",
+            "2": "Temples & directorates",
+            "3": "Grand Secretariat/Grand Council"
+          }
+        },
+        "local": {
+          "label": "Local bureaucracy",
+          "hint": {
+            "0": "Governors/inspectors/prefects",
+            "1": "Military governorates",
+            "2": "Local self-rule"
+          }
+        },
+        "selection": {
+          "label": "Official selection",
+          "hint": {
+            "0": "Imperial exams",
+            "1": "Recommendation",
+            "2": "Nine-rank system",
+            "3": "Heredity"
+          }
+        },
+        "nobility": {
+          "label": "Noble titles",
+          "hint": {
+            "0": "Duke/marquis/earl/viscount/baron",
+            "1": "Fiefdoms",
+            "2": "Fief income"
+          }
+        },
+        "law": {
+          "label": "Law & punishment",
+          "hint": {
+            "0": "Codes & statutes",
+            "1": "Types of punishment",
+            "2": "Trial procedure",
+            "3": "Prisons"
+          }
+        },
+        "diplomacy": {
+          "label": "Diplomacy",
+          "hint": {
+            "0": "Tribute",
+            "1": "Diplomatic relations",
+            "2": "Marriage alliances",
+            "3": "Hostages",
+            "4": "State letters"
+          }
+        }
+      },
+      "military": {
+        "label": "Military",
+        "organization": {
+          "label": "Military organization",
+          "hint": {
+            "0": "Branches",
+            "1": "Ranks",
+            "2": "Formation units",
+            "3": "Garrison/mercenary troops"
+          }
+        },
+        "weapons": {
+          "label": "Weapons & equipment",
+          "hint": {
+            "0": "Weapons",
+            "1": "Armor",
+            "2": "Siege engines"
+          }
+        },
+        "tactics": {
+          "label": "Tactics",
+          "hint": {
+            "0": "Formations",
+            "1": "Cavalry/infantry/navy",
+            "2": "Siege/defense"
+          }
+        },
+        "fortification": {
+          "label": "Fortifications",
+          "hint": {
+            "0": "Walled cities",
+            "1": "Mountain passes",
+            "2": "Great Wall",
+            "3": "Beacon towers",
+            "4": "Fortresses"
+          }
+        }
+      },
+      "economy": {
+        "label": "Economy",
+        "tax": {
+          "label": "Tax system",
+          "hint": {
+            "0": "Land tax",
+            "1": "Corvée labor",
+            "2": "Commercial tax",
+            "3": "Two-tax/single-whip reform"
+          }
+        },
+        "currency": {
+          "label": "Currency & finance",
+          "hint": {
+            "0": "Copper coins",
+            "1": "Silver",
+            "2": "Paper money",
+            "3": "Money shops",
+            "4": "Flying cash"
+          }
+        },
+        "trade": {
+          "label": "Trade & commerce",
+          "hint": {
+            "0": "Ward markets",
+            "1": "Traveling & resident merchants",
+            "2": "Silk Road/maritime trade",
+            "3": "Guilds"
+          }
+        },
+        "agriculture": {
+          "label": "Agriculture",
+          "hint": {
+            "0": "Farming methods",
+            "1": "Crop types",
+            "2": "Irrigation",
+            "3": "Land tenure"
+          }
+        },
+        "crafts": {
+          "label": "Handicrafts",
+          "hint": {
+            "0": "Textile weaving",
+            "1": "Smelting",
+            "2": "Ceramics",
+            "3": "Papermaking",
+            "4": "Printing"
+          }
+        },
+        "resources": {
+          "label": "Resources & products",
+          "hint": {
+            "0": "Salt, iron, tea & horses",
+            "1": "Minerals",
+            "2": "Regional specialties",
+            "3": "Strategic materials"
+          }
+        }
+      },
+      "society": {
+        "label": "Social Structure",
+        "hierarchy": {
+          "label": "Social hierarchy",
+          "hint": {
+            "0": "Scholars/farmers/artisans/merchants",
+            "1": "Nobles/commoners/base",
+            "2": "Social mobility"
+          }
+        },
+        "clan": {
+          "label": "Clans & families",
+          "hint": {
+            "0": "Genealogies",
+            "1": "Ancestral halls",
+            "2": "Legitimate/concubine & seniority",
+            "3": "Partition/inheritance"
+          }
+        },
+        "gender": {
+          "label": "Gender order",
+          "hint": {
+            "0": "Marriage system",
+            "1": "Chastity norms",
+            "2": "Women's status"
+          }
+        },
+        "servitude": {
+          "label": "Dependency relations",
+          "hint": {
+            "0": "Slaves/servants",
+            "1": "Tenant farmers",
+            "2": "Household servants",
+            "3": "Personal bondage"
+          }
+        },
+        "organizations": {
+          "label": "Folk organizations",
+          "hint": {
+            "0": "Gangs",
+            "1": "Secret societies",
+            "2": "Merchant guilds",
+            "3": "Guild halls"
+          }
+        }
+      },
+      "technology": {
+        "label": "Technology & Productivity",
+        "engineering": {
+          "label": "Engineering & construction",
+          "hint": {
+            "0": "Buildings",
+            "1": "Bridges",
+            "2": "Waterworks",
+            "3": "Building codes"
+          }
+        },
+        "medicine": {
+          "label": "Medicine",
+          "hint": {
+            "0": "Medical systems",
+            "1": "Medicinal herbs",
+            "2": "Plague prevention",
+            "3": "Shaman healers"
+          }
+        },
+        "astronomy": {
+          "label": "Astronomy & calendar",
+          "hint": {
+            "0": "Star omens",
+            "1": "Divination",
+            "2": "Mathematics",
+            "3": "Calendar-making"
+          }
+        },
+        "transport": {
+          "label": "Transport",
+          "hint": {
+            "0": "Carts & horses",
+            "1": "Ships",
+            "2": "Sedan chairs",
+            "3": "Shipbuilding"
+          }
+        },
+        "communication": {
+          "label": "Communication",
+          "hint": {
+            "0": "Postal relay",
+            "1": "Beacon fires",
+            "2": "Carrier pigeons",
+            "3": "Couriers"
+          }
+        },
+        "tools": {
+          "label": "Production tools",
+          "hint": {
+            "0": "Farm tools",
+            "1": "Looms",
+            "2": "Smelting furnaces",
+            "3": "Tech boundaries"
+          }
+        }
+      },
+      "culture": {
+        "label": "Culture & Thought",
+        "philosophy": {
+          "label": "Dominant thought",
+          "hint": {
+            "0": "Confucianism",
+            "1": "Buddhism",
+            "2": "Daoism",
+            "3": "Legalism",
+            "4": "Mohism",
+            "5": "Neo-Confucianism/School of Mind"
+          }
+        },
+        "arts": {
+          "label": "Literature & arts",
+          "hint": {
+            "0": "Poetry & lyrics",
+            "1": "Story scripts",
+            "2": "Opera/drama",
+            "3": "Calligraphy & painting",
+            "4": "Music"
+          }
+        },
+        "education": {
+          "label": "Education",
+          "hint": {
+            "0": "Private schools",
+            "1": "Government schools",
+            "2": "Academies",
+            "3": "Imperial university",
+            "4": "Classics"
+          }
+        }
+      },
+      "religion": {
+        "label": "Religion & Faith",
+        "official": {
+          "label": "Official religion",
+          "hint": {
+            "0": "State religion",
+            "1": "Heaven worship",
+            "2": "Ancestral temples",
+            "3": "Religious policy"
+          }
+        },
+        "folk": {
+          "label": "Folk beliefs",
+          "hint": {
+            "0": "Earth God",
+            "1": "Kitchen God",
+            "2": "Mazu",
+            "3": "Guan Di",
+            "4": "Blessing & warding"
+          }
+        },
+        "funeral": {
+          "label": "Funerals & rites",
+          "hint": {
+            "0": "Burial rites",
+            "1": "Ancestor worship",
+            "2": "Soul-calling",
+            "3": "Memorial days",
+            "4": "Mausoleums"
+          }
+        },
+        "taboo": {
+          "label": "Taboos & avoidances",
+          "hint": {
+            "0": "Name taboos",
+            "1": "Style names",
+            "2": "Literary inquisition",
+            "3": "Fortune/misfortune beliefs"
+          }
+        }
+      },
+      "ethnicity": {
+        "label": "Ethnic Groups",
+        "main": {
+          "label": "Dominant ethnicity",
+          "hint": {
+            "0": "Ethnic traits",
+            "1": "Cultural identity"
+          }
+        },
+        "neighbors": {
+          "label": "Neighboring peoples",
+          "hint": {
+            "0": "Nomadic/hunter-gatherer",
+            "1": "Hua-Yi relations"
+          }
+        },
+        "interaction": {
+          "label": "Ethnic interaction",
+          "hint": {
+            "0": "Warfare",
+            "1": "Fusion",
+            "2": "Assimilation",
+            "3": "Frontier policy"
+          }
+        },
+        "foreign": {
+          "label": "Foreign powers",
+          "hint": {
+            "0": "Foreign culture",
+            "1": "Missionaries",
+            "2": "Trade"
+          }
+        }
+      },
+      "language": {
+        "label": "Language & Titles",
+        "spoken": {
+          "label": "Spoken style",
+          "hint": {
+            "0": "Era speech feel",
+            "1": "Dialects",
+            "2": "Elegant/colloquial divide"
+          }
+        },
+        "titles": {
+          "label": "Forms of address",
+          "hint": {
+            "0": "Official titles",
+            "1": "Kinship terms",
+            "2": "Self/honorific/humble forms"
+          }
+        },
+        "written": {
+          "label": "Written language",
+          "hint": {
+            "0": "Classical/vernacular",
+            "1": "Memorial/official/letter formats"
+          }
+        },
+        "taboo": {
+          "label": "Taboo expressions",
+          "hint": {
+            "0": "Avoided characters",
+            "1": "Euphemisms",
+            "2": "Era-specific expressions"
+          }
+        }
+      },
+      "daily": {
+        "label": "Daily Life",
+        "food": {
+          "label": "Food & drink",
+          "hint": {
+            "0": "Staples",
+            "1": "Dishes",
+            "2": "Drinks",
+            "3": "Cooking methods",
+            "4": "Dining etiquette"
+          }
+        },
+        "clothing": {
+          "label": "Clothing",
+          "hint": {
+            "0": "Materials",
+            "1": "Styles",
+            "2": "Colors",
+            "3": "Rank markers"
+          }
+        },
+        "housing": {
+          "label": "Housing",
+          "hint": {
+            "0": "Common homes",
+            "1": "Residences",
+            "2": "Palaces",
+            "3": "Inns",
+            "4": "Furniture"
+          }
+        },
+        "travel": {
+          "label": "Travel",
+          "hint": {
+            "0": "Daily transport",
+            "1": "Travel etiquette",
+            "2": "Travel expenses"
+          }
+        },
+        "measures": {
+          "label": "Weights & measures",
+          "hint": {
+            "0": "Length",
+            "1": "Weight",
+            "2": "Volume",
+            "3": "Currency conversion"
+          }
+        },
+        "time": {
+          "label": "Time concepts",
+          "hint": {
+            "0": "Twelve shichen",
+            "1": "Night-watch drums",
+            "2": "Sunrise-to-sunset routine"
+          }
+        },
+        "entertainment": {
+          "label": "Entertainment",
+          "hint": {
+            "0": "Board & card games",
+            "1": "Cuju (ball game)",
+            "2": "Cockfighting",
+            "3": "Feasts"
+          }
+        },
+        "festivals": {
+          "label": "Festivals",
+          "hint": {
+            "0": "Spring Festival",
+            "1": "Qingming",
+            "2": "Dragon Boat",
+            "3": "Mid-Autumn",
+            "4": "Double Ninth"
+          }
+        },
+        "etiquette": {
+          "label": "Social etiquette",
+          "hint": {
+            "0": "Visiting cards",
+            "1": "Banquets",
+            "2": "Gift-giving",
+            "3": "Official/folk etiquette"
+          }
+        }
+      },
+      "supernatural": {
+        "label": "Power & Supernatural",
+        "system": {
+          "label": "Power system",
+          "hint": {
+            "0": "Cultivation levels",
+            "1": "Rule limits",
+            "2": "Advancement paths"
+          }
+        },
+        "beings": {
+          "label": "Supernatural beings",
+          "hint": {
+            "0": "Deities",
+            "1": "Demons",
+            "2": "Ghosts",
+            "3": "Immortals"
+          }
+        },
+        "artifacts": {
+          "label": "Spiritual materials & artifacts",
+          "hint": {
+            "0": "Magical treasures",
+            "1": "Elixirs",
+            "2": "Spirit stones",
+            "3": "Formations"
+          }
+        },
+        "impact": {
+          "label": "Power & society",
+          "hint": {
+            "0": "Cultivators vs. mortals",
+            "1": "Power vs. authority",
+            "2": "Governance systems"
+          }
+        }
+      }
+    },
+    "entryEditor": {
+      "deleteNode": "Delete Node",
+      "clearEntry": "Clear",
+      "historicalAnchorsLabel": "📜 Based on Reality (Historical Research / Real Prototypes)",
+      "historicalAnchorsPlaceholder": "Which aspects of this dimension are based on real history or reality? Example: using the real Three Departments and Six Ministries official system from the Kaiyuan era of the Tang Dynasty",
+      "fictionalAdaptationsLabel": "✨ Fictional Adaptation (Fiction / Adaptation / Original Settings)",
+      "fictionalAdaptationsPlaceholder": "Which aspects of this dimension are fictional or adapted? Example: adding a Spiritual Cultivation Academy to the real official system, responsible for cultivator affairs",
+      "priorityLabel": "⚖️ When Reality and Fantasy Conflict",
+      "emptyStatePrimary": "Select a subcategory on the left to start defining",
+      "emptyStateSecondary": "Or click «Overview» to set rules at the category level"
+    }
+  },
+  "powerSystem": {
+    "title": "⚡ Power System",
+    "nameLabel": "System Name",
+    "namePlaceholder": "E.g.: Qi Cultivation System, Magic Levels...",
+    "descriptionLabel": "System Description",
+    "descriptionPlaceholder": "Briefly describe the core principles of the power system...",
+    "levelsLabel": "Level List",
+    "levelsPlaceholder": "List levels from lowest to highest, one per line...",
+    "rulesLabel": "System Rules",
+    "rulesPlaceholder": "Cultivation conditions, breakthrough bottlenecks, taboos..."
+  },
+  "cultivation": {
+    "title": "Cultivation Systems",
+    "description": "Define schools and realm paths for \"how to use power\" here; the power system above only describes the world's underlying energy. Realms support branching and merging.",
+    "addSystem": "New System",
+    "emptyState": "This world has no cultivation systems yet. You can create multiple independent paths such as Warrior, Mage, Sword Cultivator, etc.",
+    "stageCount_one": "{{count}} realm",
+    "stageCount_other": "{{count}} realms",
+    "promptTitle": "New Cultivation System",
+    "promptPlaceholder": "E.g.: Sword Cultivator, Warrior, Summoner",
+    "deleteConfirmTitle": "Delete cultivation system «{{name}}»?",
+    "deleteConfirmMessage": "Character and beast associations will be safely cleared; this action cannot be undone.",
+    "deleteConfirmText": "Delete",
+    "loadError": "World data has not finished loading. Please try again later.",
+    "editor": {
+      "descriptionPlaceholder": "Click to explain the core principles, suitable users, and costs of this system…",
+      "deleteSystemAriaLabel": "Delete cultivation system",
+      "dagHeading": "Realm DAG",
+      "addNextStage": "Add Next Realm",
+      "addFirstStage": "Add First Starting Realm",
+      "tierLabel": "Tier {{tier}}",
+      "stageNameLabel": "Realm Name",
+      "deleteStageAriaLabel": "Delete realm",
+      "branchLabelLabel": "Branch Label",
+      "branchLabelPlaceholder": "E.g.: Sword Cultivator / Body Cultivator (optional)",
+      "featuresLabel": "Realm Features / Power Boundaries",
+      "featuresPlaceholder": "What can and cannot be done…",
+      "breakthroughLabel": "Conditions to Break Through to This Realm",
+      "breakthroughPlaceholder": "Resources, enlightenment, rituals, costs…",
+      "parentStagesLabel": "Prerequisite Realms (multi-select for merging)",
+      "noParentNeeded": "Starting realm needs no prerequisites",
+      "defaultStageName": "New Realm"
+    }
+  },
+  "shared": {
+    "aiGenerate": "AI Generate",
+    "hintPlaceholder": "Additional instructions for AI (optional)"
+  }
+}

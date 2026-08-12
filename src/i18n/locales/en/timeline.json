@@ -1,0 +1,31 @@
+{
+  "panel": {
+    "title": "Story Timeline",
+    "subtitle": "AI extracts major plot events from written chapters and arranges them by story progression. Distinct from the \"History Timeline\" (world background) and \"Storylines\" (structure)."
+  },
+  "actions": {
+    "manualAdd": "Add Manually",
+    "extractFromText": "Extract Timeline from Text",
+    "extracting": "Extracting {{done}}/{{total}}",
+    "newEventTitle": "New Event"
+  },
+  "progress": {
+    "extracting": "Extracting plot events chapter by chapter… ({{done}}/{{total}})"
+  },
+  "empty": {
+    "loading": "Loading...",
+    "noTimeline": "No story timeline yet",
+    "noTimelineHint": "After writing some chapters, click \"Extract Timeline from Text\" to let AI organize major plot events"
+  },
+  "errors": {
+    "noWrittenChapters": "No chapters with written text yet — write some first before extracting"
+  },
+  "importance": {
+    "minor": "Minor",
+    "important": "Important",
+    "critical": "Critical"
+  },
+  "event": {
+    "jumpToChapter": "Jump to linked chapter"
+  }
+}

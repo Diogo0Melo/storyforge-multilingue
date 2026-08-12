@@ -1,0 +1,190 @@
+{
+  "contentType": {
+    "upstream": {
+      "label": "设定",
+      "description": "你填写或规划的内容，会作为 AI 创作的上游依据。"
+    },
+    "writing": {
+      "label": "创作",
+      "description": "小说正文的实际写作与编辑区域。"
+    },
+    "downstream": {
+      "label": "产物",
+      "description": "从已写正文提取或整理的内容，可由作者校正。"
+    },
+    "tool": {
+      "label": "AI 工具",
+      "description": "用于生成、反推、分析或考证的辅助工具。"
+    },
+    "experience": {
+      "label": "体验",
+      "description": "独立于创作 Canon 的互动运行、存档与事件区域。"
+    },
+    "system": {
+      "label": "系统",
+      "description": "项目导入、导出、版本、提示词与应用配置。"
+    }
+  },
+  "nav": {
+    "sectionProject": "著作信息",
+    "sectionLib": "设定库",
+    "sectionCreate": "创作区",
+    "sectionExperience": "体验中心",
+    "sectionPrompts": "提示词库",
+    "sectionSystem": "设置区",
+    "branchWorldview": "世界观",
+    "branchCharacters": "角色设计",
+    "leafInfo": "项目概况",
+    "leafInspiration": "灵感反推",
+    "leafReferences": "项目参考",
+    "leafWorldOverview": "世界总览",
+    "leafWorldRules": "真实与幻想",
+    "leafWorldviewOrigin": "世界起源",
+    "leafWorldviewNatural": "自然环境",
+    "leafWorldviewHumanity": "人文环境",
+    "leafHistory": "历史年表",
+    "leafWorldMap": "世界地图",
+    "leafStoryDesign": "故事设计",
+    "leafCharacters": "角色生成",
+    "leafCharactersMain": "主要角色",
+    "leafCharactersMinor": "次要角色",
+    "leafCharactersNpc": "NPC",
+    "leafCharactersExtra": "路人",
+    "leafRelations": "关系网",
+    "leafRules": "创作规则",
+    "leafOutline": "大纲",
+    "leafCharacterDrivenPlot": "角色驱动",
+    "leafRagLibrary": "资料与检索库",
+    "leafVisualWorkflows": "节点模式",
+    "leafStoryArc": "故事线",
+    "leafChaptersList": "章节",
+    "leafForeshadow": "伏笔",
+    "leafStyleLearning": "文风学习",
+    "leafLocations": "重要地点",
+    "leafStateTable": "状态表",
+    "leafInventory": "物品栏",
+    "leafFactLibrary": "事实库",
+    "leafStoryTimeline": "故事年表",
+    "leafCultivationProgress": "修炼进度",
+    "leafSceneVerify": "场景考证",
+    "leafSimulationRuntime": "互动运行时",
+    "leafPrompts": "提示词库",
+    "leafVersionHistory": "版本历史",
+    "leafImportDoc": "文档解析",
+    "leafExport": "数据管理",
+    "leafUsageStats": "消耗统计",
+    "leafSettings": "设置"
+  },
+  "sidebar": {
+    "backHome": "返回首页",
+    "settingsTitle": "设置",
+    "versionTitle": "当前版本号",
+    "collapse": "折叠侧边栏",
+    "expand": "展开侧边栏",
+    "contentTypeTooltip": "{{label}}：{{description}}",
+    "leafTooltipCollapsed": "{{label}} · {{type}}：{{description}}"
+  },
+  "propertiesPanel": {
+    "title": "属性",
+    "outlineStats": "大纲统计",
+    "volumeCount": "卷数",
+    "arcCount": "篇章数",
+    "chapterCount": "章节数",
+    "writtenChapters": "已写章节",
+    "totalWords": "累计字数",
+    "wordsUnit": "{{count}} 字",
+    "currentChapter": "当前章节",
+    "chapterTitle": "标题",
+    "chapterStatus": "状态",
+    "chapterWords": "字数",
+    "chapterUpdatedAt": "更新时间",
+    "characterStats": "角色统计",
+    "totalCharacters": "总角色数",
+    "mainSecondary": "主要 / 次要",
+    "npcExtra": "NPC / 路人",
+    "moralAxis": "善 / 中 / 恶",
+    "relationLines": "关系连线",
+    "relationStats": "关系统计",
+    "characterCount": "角色数",
+    "totalRelations": "关系总数",
+    "bidirectional": "双向关系",
+    "unidirectional": "单向关系",
+    "topRelationType": "最多类型",
+    "topRelationTypeValue": "{{type}}（{{count}}条）",
+    "geographyStats": "地理统计",
+    "locationTotal": "地点总数",
+    "foreshadowStats": "伏笔统计",
+    "totalForeshadows": "总伏笔",
+    "planned": "计划中",
+    "planted": "已埋设",
+    "echoed": "已呼应",
+    "resolved": "已回收",
+    "unresolved": "未回收",
+    "tips": {
+      "worldview": {
+        "title": "世界观",
+        "items": [
+          "世界观是AI写作的核心上下文",
+          "建议先填写基础设定再开始写作",
+          "功法体系会影响战斗场景的生成质量"
+        ]
+      },
+      "storyCore": {
+        "title": "故事核心",
+        "items": [
+          "故事核心定义主线冲突与主题",
+          "清晰的主角动机有助于AI保持人物一致性"
+        ]
+      },
+      "powerSystem": {
+        "title": "力量体系",
+        "items": [
+          "力量体系的层次越清晰，战斗场景越合理",
+          "建议列出主角所在等级与突破条件"
+        ]
+      },
+      "history": {
+        "title": "历史年表",
+        "items": [
+          "历史事件会为伏笔提供时间参考",
+          "标注影响当前剧情的关键节点"
+        ]
+      },
+      "rules": {
+        "title": "创作规则",
+        "items": [
+          "创作规则会作为system prompt附加到所有AI请求",
+          "规则越简洁越有效"
+        ]
+      },
+      "backup": {
+        "title": "版本历史",
+        "items": [
+          "每5分钟自动备份一次",
+          "可手动创建快照保存重要版本"
+        ]
+      },
+      "export": {
+        "title": "导出",
+        "items": [
+          "支持 Markdown、TXT、JSON 三种格式",
+          "JSON格式可完整还原项目数据"
+        ]
+      },
+      "settings": {
+        "title": "设置",
+        "items": [
+          "推荐使用 DeepSeek 以降低成本",
+          "API Key 默认仅保存本次会话；勾选记住本机才写入 localStorage，AI 请求会发送到所选模型服务"
+        ]
+      },
+      "info": {
+        "title": "基本信息",
+        "items": [
+          "项目信息会附加在AI上下文中",
+          "目标字数用于追踪写作进度"
+        ]
+      }
+    }
+  }
+}

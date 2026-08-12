@@ -1,0 +1,1882 @@
+{
+  "page": {
+    "title": "设置",
+    "otherSection": "其他",
+    "guideTitle": "新手引导",
+    "guideDescription": "重新显示首次使用时的新手引导教程",
+    "guideResetDone": "已重置（刷新生效）",
+    "guideResetAction": "重新引导"
+  },
+  "aiConfig": {
+    "sectionTitle": "AI 模型配置",
+    "apiKeyNotice": "API Key 默认仅保存在本次浏览器会话；勾选“记住在本机”才会写入 localStorage。发起 AI 生成、测试连接或使用自定义 baseUrl 时，相关提示词和上下文会发送到你配置的模型服务。",
+    "providerLabel": "提供商",
+    "apiKeyLabel": "API Key",
+    "apiKeyPlaceholder": "输入 API Key...",
+    "ollamaNoKeyPlaceholder": "不需要 Key",
+    "rememberApiKey": "在本机记住 API Key（写入 localStorage）。不勾选时仅本次浏览器会话有效。",
+    "baseUrlLabel": "Base URL",
+    "lmStudioButton": "LM Studio",
+    "localOllamaButton": "本地 Ollama",
+    "localModelHint": "本地模型请选择 OpenAI 兼容接口，Base URL 填到 /v1；Ollama 常用 :11434/v1，LM Studio 常用 :1234/v1。不要填 /v1/models 或 /chat/completions，测试时会自动修正常见误填。",
+    "switchToProxy": "🔄 切换到本地代理",
+    "restoreDirect": "🔗 恢复直连",
+    "modelLabel": "模型",
+    "refreshModelsTitle": "从当前服务刷新模型列表",
+    "refreshing": "刷新中",
+    "refreshModels": "刷新模型",
+    "fetchedModelsAria": "服务返回的模型列表",
+    "selectFetchedModel": "选择服务返回的模型（{{count}}）",
+    "manualModelPlaceholder": "或手动输入模型名（列表中没有的型号）",
+    "manualModelFallbackPlaceholder": "手动输入模型名",
+    "emptyModelListError": "服务返回了空模型列表；仍可手动填写模型名",
+    "refreshModelError": "刷新模型列表失败",
+    "ollamaPullHint": "未安装的模型请先在 Ollama 中拉取，完成后回到这里刷新。",
+    "maxTokensUnlimited": "不限制（模型最大）",
+    "maxTokensApprox": "≈{{count}}字",
+    "maxTokensUnlimitedToggle": "不限",
+    "contextWindowLabel": "上下文窗口",
+    "contextWindowAdvanced": "高级 · 可选",
+    "contextWindowPreset": "按模型预设",
+    "contextWindowPlaceholder": "本地/自定义模型请按实际填写，如 131072；留空 = 用内置预设",
+    "contextWindowResetTitle": "重置为模型预设",
+    "contextWindowResetAria": "重置上下文窗口为模型预设",
+    "autoSavedCurrent": "已自动保存到当前配置",
+    "autoSavedPendingPreset": "已自动保存到当前配置，尚未写回「{{name}}」",
+    "contextWindowHint": "识别不到的模型默认按 8K 计算,会误报「上下文超出窗口」。本地模型(LM Studio / Ollama)请在此填真实窗口,如 128000 / 262144。",
+    "renamePresetTitle": "重命名预设",
+    "renamePresetPlaceholder": "输入新的预设名称",
+    "deletePresetTitle": "删除预设「{{name}}」？",
+    "deletePresetMessage": "此操作不可恢复。",
+    "modelDesc": {
+      "deepseekV4Flash": "快速，性价比高",
+      "deepseekV4Pro": "最强，支持深度思考",
+      "gemini25Flash": "推荐，稳定且免费额度高",
+      "gemini25FlashLite": "轻量稳定版",
+      "gemini25Pro": "最强稳定版，支持思考",
+      "gemini3FlashPreview": "⚠️ 预览版，高峰期可能 503",
+      "gemini31FlashLite": "⚠️ 预览版",
+      "gemini3ProPreview": "⚠️ 预览版，可能不稳定",
+      "gemini31ProPreview": "⚠️ 预览版，可能不稳定",
+      "gemini20Flash": "老版",
+      "llama33_70b": "最新 Llama，推荐",
+      "llama31_405b": "最强开源模型",
+      "llama31_70b": "高性能",
+      "deepseekR1": "推理模型",
+      "qwen25_72b": "通义千问",
+      "gemma2_27b": "Google 开源",
+      "mistralLarge2": "Mistral 旗舰",
+      "qwen3_235b": "最强 MoE 模型",
+      "qwen3_32b": "高性能密集模型",
+      "qwen3_30b": "轻量 MoE，性价比高",
+      "qwen3_14b": "中等规模密集模型",
+      "qwen3_8b": "轻量密集模型",
+      "qwen3_4b": "超轻量",
+      "agnes15Flash": "清华系免费·稳定可用·推荐",
+      "agnes20Flash": "1M 上下文·部分时段维护中",
+      "longcat20": "美团 LongCat · OpenAI 兼容 · 1M 上下文"
+    }
+  },
+  "providerHints": {
+    "deepseek": "获取 Key: platform.deepseek.com → API Keys（需点击下方「切换到本地代理」）",
+    "qwen": "获取 Key: dashscope.console.aliyun.com → API-KEY 管理",
+    "doubao": "获取 Key: console.volcengine.com → 模型推理 → API Key（火山引擎不支持浏览器直连，需点击下方「切换到本地代理」）",
+    "minimax": "获取 Key: platform.minimaxi.com → API Keys",
+    "glm": "获取 Key: open.bigmodel.cn → API Keys",
+    "wenxin": "获取 Key: console.bce.baidu.com → 千帆大模型 → API Key",
+    "gemini": "获取 Key: aistudio.google.com → API Keys",
+    "poe": "获取 Key: poe.com → Settings → API → API Key",
+    "openai": "获取 Key: platform.openai.com → API Keys（需点击下方「切换到本地代理」）",
+    "kimi": "获取 Key: platform.moonshot.cn → API Key 管理（需点击下方「切换到本地代理」）",
+    "claude": "获取 Key: console.anthropic.com → API Keys（需点击下方「切换到本地代理」）",
+    "nvidia": "获取 Key: build.nvidia.com → 登录后获取 API Key（需点击下方「切换到本地代理」）",
+    "modelscope": "获取 Key: modelscope.cn → 我的 → Access Token",
+    "agnes": "清华系免费全模态 · 获取 Key: platform.agnes-ai.com（若连不上可点下方「切换到本地代理」）",
+    "longcat": "获取 Key: longcat.chat 平台控制台；OpenAI 兼容接口（若浏览器直连 CORS 失败可切换本地代理）",
+    "opencode": "获取 Key: opencode.ai → Zen → Go API Key（需点击下方「切换到本地代理」）",
+    "ollama": "本地 OpenAI-compatible /v1 接口；Ollama 常用 http://localhost:11434/v1，LM Studio 常用 http://localhost:1234/v1；通常无需 API Key。",
+    "custom": "填写任何兼容 OpenAI 格式的 API"
+  },
+  "connectionTest": {
+    "testing": "测试中...",
+    "testConnection": "测试连接",
+    "logs": "日志",
+    "duration": "耗时 {{ms}}ms",
+    "corsHintDev": "💡 本地运行时，可点击「切换到本地代理」解决此问题",
+    "corsHintProd": "💡 建议改用 Gemini（支持浏览器直调）或在本地运行此工具"
+  },
+  "connectionLog": {
+    "title": "连接日志",
+    "clear": "清空",
+    "empty": "暂无日志，点击「测试连接」生成"
+  },
+  "preset": {
+    "label": "配置预设",
+    "saveChangesTo": "保存修改到「{{name}}」",
+    "saveChangesTitle": "用当前表单内容覆盖「{{name}}」",
+    "saveAsNew": "另存为新预设",
+    "namePlaceholder": "预设名称，如「DeepSeek 主力」",
+    "saveCurrent": "＋ 保存当前为预设",
+    "empty": "还没有预设。配好一套 API 后点「保存当前为预设」，之后可一键切换。",
+    "updateTitle": "用当前配置覆盖此预设",
+    "renameAria": "重命名预设 {{name}}",
+    "deleteAria": "删除预设 {{name}}",
+    "hint": "点击预设会应用整套配置，包括上下文窗口；修改表单后需点击上方按钮才会写回该预设。"
+  },
+  "taskRouting": {
+    "title": "任务模型路由",
+    "description": "按任务自动使用已保存预设；未绑定、预设被删除或专用预设缺少 API Key 时，回退到当前全局模型。云端预设会接收对应任务的提示词与上下文。",
+    "useGlobalModel": "使用当前全局模型",
+    "routeAria": "{{label}}模型预设",
+    "agentTeamTitle": "主 Agent 团队角色",
+    "agentTeamDescription": "只影响主 Agent 幕后执行；手工面板仍使用上方四类路由。未绑定的角色沿用当前全局模型。五个领域还可独立收窄登记源预算；“完整”保持原上下文上限。",
+    "teamBudgetLabel": "本轮团队总预算",
+    "teamBudgetDescription": "覆盖主 Agent、领域生成和一次受控 Canon 打回；达到上限会在下一次调用前停止。",
+    "teamBudgetAria": "主 Agent 团队总预算",
+    "contextTierLabel": "上下文输入档位",
+    "contextTierAria": "{{label}}上下文输入档位",
+    "noPresetsWarning": "先保存至少一个配置预设，才能给任务绑定专用模型。",
+    "tasks": {
+      "creation": {
+        "label": "创作生成",
+        "description": "正文、大纲、细纲、世界观与角色生成"
+      },
+      "extraction": {
+        "label": "结构提取",
+        "description": "状态、事实、物品、关系、词条与导入解析"
+      },
+      "analysis": {
+        "label": "分析总结",
+        "description": "参考资料、摘要、文风学习与检索分析"
+      },
+      "review": {
+        "label": "审查校验",
+        "description": "章节审校、一致性检查、场景与历史考证"
+      },
+      "agentOrchestrator": {
+        "label": "主 Agent 编排",
+        "description": "理解目标、拆分任务和安排依赖；不直接生成作品"
+      },
+      "agentWorldOrigin": {
+        "label": "世界领域 Agent",
+        "description": "主 Agent 幕后的世界来源与文明起点生成"
+      },
+      "agentCharacter": {
+        "label": "角色领域 Agent",
+        "description": "主 Agent 幕后的新角色设计"
+      },
+      "agentInspiration": {
+        "label": "灵感领域 Agent",
+        "description": "主 Agent 幕后的项目灵感反推"
+      },
+      "agentOutline": {
+        "label": "大纲领域 Agent",
+        "description": "主 Agent 幕后的卷纲与章纲生成"
+      },
+      "agentProse": {
+        "label": "正文领域 Agent",
+        "description": "主 Agent 幕后的空白章生成与显式续写"
+      }
+    },
+    "contextProfiles": {
+      "lean": {
+        "label": "精简",
+        "description": "约 45% 登记源预算，优先节省输入"
+      },
+      "balanced": {
+        "label": "均衡（推荐）",
+        "description": "约 72% 登记源预算，兼顾质量与成本"
+      },
+      "full": {
+        "label": "完整",
+        "description": "沿用登记源完整预算，适合高风险长上下文任务"
+      }
+    },
+    "teamBudgets": {
+      "economy": {
+        "label": "节省",
+        "description": "每轮最多约 80K tokens"
+      },
+      "balanced": {
+        "label": "均衡（推荐）",
+        "description": "每轮最多约 160K tokens"
+      },
+      "expanded": {
+        "label": "充分",
+        "description": "每轮最多约 240K tokens"
+      }
+    }
+  },
+  "embedding": {
+    "title": "语义检索(embedding)",
+    "enable": "启用",
+    "description": "关闭时,远距前文检索只走<strong>关键词通道</strong>(纯本机、零成本)。开启后叠加<strong>语义向量</strong>召回——更擅长“几百章前靠近义/语义命中的伏笔”,与关键词混合打分,失败自动退回关键词、不阻断生成。<strong>云端模型会把正文发往该服务商;选本地 Ollama 则一个字都不出本机。</strong>",
+    "buildIndex": "为当前项目历史章节建立检索索引",
+    "building": "建立中… {{progress}}",
+    "noProjectHint": "打开一个项目后,这里可为其历史章节批量建索引。",
+    "indexExplanation": "先按章节正文重建关键词块与章→卷→全书摘要树;若已启用并配置 embedding,再只嵌入“缺向量或换了模型”的块。未启用 embedding 时,远距召回仍可走层级摘要+纯关键词通道。",
+    "proxyNote": "国内预设默认走<strong>本地代理</strong>(本地运行工具时自动绕过浏览器 CORS);线上部署版请把 Base URL 改成服务商直连地址。没显卡选<strong>硅基流动/通义/智谱</strong>即可,云端算力、填 key 就能用。",
+    "baseUrlLabel": "Base URL",
+    "switchToDirect": "🔗 切换到直连(线上部署用)",
+    "switchToProxy": "🔄 切换到本地代理(本地运行用)",
+    "modelLabel": "嵌入模型",
+    "apiKeyLabel": "API Key",
+    "apiKeyHint": "(本地 Ollama 可留空)",
+    "idempotentNote": "语义向量幂等可续跑;新写章节在接受时会自动建索引。约百万字嵌一次,云端约 ¥0.2、本地免费。",
+    "presets": {
+      "siliconflow": {
+        "label": "硅基流动 · bge-m3",
+        "note": "无需显卡 · 国内可用 · 有免费额度(推荐)"
+      },
+      "qwen": {
+        "label": "通义 · v3",
+        "note": "阿里大厂 · 便宜稳 · 中文强"
+      },
+      "glm": {
+        "label": "智谱 · embedding-3",
+        "note": "国内大厂 · OpenAI 兼容"
+      },
+      "ollama": {
+        "label": "本地 Ollama · bge-m3",
+        "note": "免费离线 · 手稿不出本机 · 需显卡"
+      },
+      "openai": {
+        "label": "OpenAI · 3-small",
+        "note": "需外网 · 1536维"
+      }
+    },
+    "progress": {
+      "preparing": "准备中…",
+      "chunking": "切块 {{done}}/{{total}} 章",
+      "summarizing": "摘要 {{done}}/{{total}} 章",
+      "embedding": "嵌入 {{done}}/{{total}} 块"
+    },
+    "messages": {
+      "readyWithoutEmbedding": "检索索引已就绪:扫描 {{chapters}} 章,重建 {{rebuiltChapters}} 章 / {{chunks}} 块;摘要树 {{summaryChapters}} 章、{{summaryVolumes}} 卷、{{summaryBooks}} 全书。未配置 embedding,将使用层级摘要+关键词检索。",
+      "readyWithEmbedding": "检索索引已就绪:扫描 {{chapters}} 章,当前 {{chunks}} 块;摘要树 {{summaryChapters}} 章、{{summaryVolumes}} 卷、{{summaryBooks}} 全书;语义向量已全部就绪。",
+      "completed": "完成:扫描 {{chapters}} 章,重建 {{rebuiltChapters}} 章 / {{chunks}} 块;摘要树 {{summaryChapters}} 章、{{summaryVolumes}} 卷、{{summaryBooks}} 全书;本次嵌入 {{embedded}} 块,跳过已就绪 {{skipped}} 块",
+      "failed": "建立索引失败:{{error}}（已有索引仍可用;embedding 失败会自动退回关键词检索）"
+    }
+  },
+  "modelList": {
+    "fetchFailed": "模型列表请求失败（HTTP {{status}}）",
+    "invalidResponse": "模型列表响应格式无效，服务需兼容 OpenAI /v1/models",
+    "timeout": "刷新模型列表超时，请确认本地模型服务已启动",
+    "connectionFailed": "无法连接模型服务，请检查 Base URL、服务状态或 CORS 设置"
+  },
+  "theme": {
+    "title": "主题",
+    "currentAria": "当前主题",
+    "themes": {
+      "warm": {
+        "label": "暖白编辑室",
+        "desc": "长时间写作 · 层级清楚 · 默认推荐"
+      },
+      "jade": {
+        "label": "墨玉青",
+        "desc": "深色沉浸 · 暗绿书房 · 白纸正文"
+      },
+      "slate": {
+        "label": "冷灰银蓝",
+        "desc": "生产力管理 · 冷静清晰 · 适合设定库"
+      },
+      "forge": {
+        "label": "熔炉",
+        "desc": "暗夜琥珀 · 火光余烬"
+      },
+      "scroll": {
+        "label": "古卷",
+        "desc": "旧纸染黄 · 铁胆墨香"
+      },
+      "paper": {
+        "label": "纸与墨",
+        "desc": "素纸如雪 · 墨迹清朗"
+      }
+    }
+  },
+  "usageStats": {
+    "title": "消耗统计",
+    "callsCount": "（{{count}} 次调用）",
+    "exchangeRate": "汇率 1$ =",
+    "currentProjectOnly": "仅当前项目",
+    "refresh": "刷新",
+    "clear": "清空",
+    "clearTitle": "清空消耗记录？",
+    "clearMessage": "此操作不可撤销。",
+    "totalInputTokens": "总输入 Token",
+    "totalOutputTokens": "总输出 Token",
+    "totalCost": "总花费",
+    "timeColumn": "时间",
+    "categoryColumn": "消耗类型",
+    "modelColumn": "模型",
+    "inputColumn": "输入",
+    "outputColumn": "输出",
+    "costColumn": "花费",
+    "loading": "加载中…",
+    "empty": "暂无消耗记录。使用任意 AI 生成功能后，这里会自动记录。",
+    "footer": "说明：费用按模型估算单价 × token 计算（不同中转站实际价格不同，仅供参考）；可上方调整美元→人民币汇率。消耗类型来自各 AI 行为标识，未标注的归「其他」（将随统一执行层逐步补全）。",
+    "taskKindLabels": {
+      "creation": "创作",
+      "extraction": "提取",
+      "analysis": "分析",
+      "review": "审查",
+      "agentOrchestrator": "主 Agent",
+      "agentWorldOrigin": "世界 Agent",
+      "agentCharacter": "角色 Agent",
+      "agentInspiration": "灵感 Agent",
+      "agentOutline": "大纲 Agent",
+      "agentProse": "正文 Agent"
+    }
+  },
+  "ns0Eval": {
+    "title": "NS-0 长期一致性基线（仅开发环境）",
+    "description": "普通按钮运行 development 样例；NS-1 最终按钮运行冻结 held-out，并用独立语义裁判评分。最终盲测只展示 aggregate，不展开逐例输出。",
+    "runDevelopment": "运行 development 集",
+    "running": "运行中 {{progress}}",
+    "ns1FinalLocked": "NS-1 最终盲测已锁定",
+    "ns1PairedAB": "NS-1 最终配对 A/B",
+    "factRecall": "事实召回：{{value}}%",
+    "constraintRecall": "约束召回：{{value}}%",
+    "futureLeakage": "未来泄漏：{{value}}%",
+    "wrongWorldLeakage": "错世界泄漏：{{value}}%",
+    "estimatedInput": "估算输入：{{value}} tokens",
+    "estimatedOutput": "估算输出：{{value}} tokens",
+    "tableBudget": "预算",
+    "tableVariant": "变体",
+    "tableFact": "事实",
+    "tableConstraint": "约束",
+    "tableFuture": "未来",
+    "tableWrongWorld": "错世界",
+    "tableInOut": "输入/输出",
+    "fixedGate": "fixed 硬门：{{result}}",
+    "naturalGate": "natural 硬门：{{result}}",
+    "perCaseSummary": "{{budgetMode}} · {{variant}} 逐例结果",
+    "caseScore": "{{fixtureId}} · 事实 {{fact}}% · 约束 {{constraint}}%",
+    "matchedConstraints": "命中约束：{{list}}",
+    "matchedConstraintsEmpty": "无",
+    "groupsUnit": "组",
+    "casesUnit": "例",
+    "progressPaired": "{{completed}}/{{total}} 组",
+    "progressCase": "{{completedRuns}}/{{totalRuns}} 组 · {{completedCases}}/{{totalCases}} 例",
+    "judgeParseError": "语义裁判返回无法解析：{{id}}"
+  },
+  "promptManager": {
+    "tabTemplates": "模板",
+    "tabWorkflows": "工作流",
+    "genrePackLabel": "题材包",
+    "scopeLabel": "作用域",
+    "scopeAll": "全部",
+    "scopeSystem": "系统内置",
+    "scopeUser": "我的",
+    "countSuffix": "共 {{count}} 条",
+    "newTemplate": "新建",
+    "import": "导入",
+    "exportAll": "导出全部",
+    "importSuccess": "成功导入 {{count}} 条模板",
+    "importError": "导入失败：{{error}}",
+    "untitledTemplate": "未命名模板",
+    "importedTemplateName": "导入的模板",
+    "emptyFilter": "当前筛选下没有模板"
+  },
+  "promptEditor": {
+    "selectPrompt": "从左侧选择一个模板查看 / 编辑",
+    "systemBadge": "系统",
+    "userBadge": "我的",
+    "defaultBadge": "★ 默认",
+    "activeBadge": "激活",
+    "descriptionPlaceholder": "模板描述...",
+    "moduleLabel": "所属模块",
+    "continuityLabel": "连续性上下文",
+    "continuityInherit": "继承默认注入",
+    "continuityRequired": "强制注入",
+    "continuityOff": "关闭注入",
+    "setActive": "设为激活",
+    "clone": "克隆",
+    "export": "导出",
+    "cloneSuccess": "已克隆为「我的」模板（id={{id}}），请在左侧列表中查看。",
+    "deleteTitle": "删除模板「{{name}}」？",
+    "deleteMessage": "此操作不可恢复。",
+    "variablesTitle": "声明的变量（自描述用，不影响渲染）",
+    "addVariable": "添加",
+    "noVariables": "（暂无）",
+    "variableBindingsTitle": "变量字段绑定",
+    "bindingRequired": "必填",
+    "bindingManual": "可人工补充",
+    "bindingProjectField": "项目字段：{{field}}",
+    "bindingSourceKey": "上下文：{{key}}",
+    "bindingManualInput": "人工输入",
+    "previewTitle": "实时预览（用样例变量字典渲染）",
+    "previewHint": "编辑模板时同步更新",
+    "renderError": "渲染错误：{{error}}",
+    "exampleVarPlaceholder": "（示例：{{label}}）",
+    "newVariableTitle": "新增变量",
+    "newVariableMessage": "变量名仅支持字母、数字、下划线。",
+    "userPromptTemplateLabel": "User Prompt 模板",
+    "templateSyntaxHint": "支持 <code>{{var}}</code> 和 <code>{{#if var}}...{{/if}}</code>"
+  },
+  "promptParameters": {
+    "title": "可调参数",
+    "add": "新增参数",
+    "empty": "尚无参数。声明参数后，模板里可用 <code>{{key}}</code> 引用，可选参数支持 <code>{{#if usesKey}}...{{/if}}</code> 包住。",
+    "keyPlaceholder": "key（用于 {{key}}）",
+    "labelPlaceholder": "UI 显示名",
+    "defaultPlaceholder": "默认值",
+    "optionalToggle": "允许关闭",
+    "selectOptionsPlaceholder": "选项，逗号分隔（如：严肃,轻松,幽默）",
+    "descriptionPlaceholder": "说明（鼠标悬停显示）",
+    "newParameterLabel": "新参数",
+    "typeLabels": {
+      "select": "下拉",
+      "slider": "滑块",
+      "number": "数字",
+      "text": "文本",
+      "boolean": "开关"
+    }
+  },
+  "promptExamples": {
+    "title": "示例 / 反例",
+    "titleHint": "few-shot，自动拼到 user prompt 末尾",
+    "sourceLegend": "🤖 AI 生成 · 👤 用户标记 · ✍️ 手动添加",
+    "goodLabel": "好示例",
+    "badLabel": "反例",
+    "manualAdd": "手动",
+    "aiGenerate": "AI 生成",
+    "manualAddTitle": "手动添加一条",
+    "aiGenerateTitle": "让 AI 基于模板自动生成几条",
+    "emptyGood": "暂无好示例。",
+    "emptyBad": "暂无反例。",
+    "emptyEditableSuffix": "点击右上角「手动」或「AI 生成」添加。",
+    "addGoodTitle": "添加好示例",
+    "addBadTitle": "添加反例",
+    "addMessage": "粘贴一条完整示例文本。",
+    "addPlaceholder": "粘贴示例内容",
+    "noExamplesError": "AI 输出未识别到示例，请重试或手动添加",
+    "generateError": "生成失败：{{error}}",
+    "tip": "提示：好示例最多取前 3 条、反例最多前 2 条拼入 prompt（避免 token 浪费）。"
+  },
+  "promptModuleKeys": {
+    "worldviewDimension": "世界观 · 维度生成",
+    "worldviewGenerate": "世界观 · 完整生成（待启用）",
+    "worldviewWorldbuilding": "世界观 · 阶段任务",
+    "characterGenerate": "角色 · 完整设计",
+    "characterDimension": "角色 · 维度补全",
+    "characterDesign": "角色 · 创作阶段",
+    "storyGenerate": "故事 · 整体生成（待启用）",
+    "storyBrief": "故事 · 立项简报",
+    "storyIdeation": "故事 · 灵感",
+    "storyPositioning": "故事 · 定位",
+    "storyCore": "故事 · 故事核心",
+    "storyPackaging": "故事 · 作品包装",
+    "rulesGenerate": "创作规则 · 生成（待启用）",
+    "researchMethod": "研究考证 · 研究方法",
+    "promptOperations": "Prompt · 管理与评测",
+    "outlineVolume": "大纲 · 卷级",
+    "outlineChapter": "大纲 · 章节级",
+    "outlinePlot": "大纲 · 剧情设计",
+    "outlineStructure": "大纲 · 结构设计",
+    "outlineLongForm": "大纲 · 长篇架构",
+    "outlineShortStory": "大纲 · 短篇架构",
+    "outlineSerialization": "大纲 · 连载架构",
+    "detailScene": "细纲 · 场景（待启用）",
+    "detailChapterPlanning": "细纲 · 章场规划",
+    "chapterContent": "章节 · 正文生成",
+    "chapterContinue": "章节 · 续写",
+    "chapterDrafting": "章节 · 正文创作",
+    "chapterContinuity": "章节 · 连续性",
+    "chapterLineEditing": "章节 · 语言修订",
+    "chapterMemory": "章节 · 连续性记忆抽取",
+    "chapterPolish": "章节 · 润色",
+    "chapterExpand": "章节 · 扩写",
+    "chapterDeAi": "章节 · 去 AI 味",
+    "reviewDevelopmental": "审校 · 宏观修订",
+    "reviewLineEditing": "审校 · 语言修订",
+    "reviewReaderValidation": "审校 · 读者验证",
+    "foreshadowGenerate": "伏笔 · 建议",
+    "geographyConceptMap": "地理 · 概念地图 SVG",
+    "geographyImageMapPrompt": "地理 · 图像 Prompt",
+    "importParseAll": "导入 · 智能统一解析",
+    "importParseCharacter": "导入 · 角色解析（旧版）",
+    "importParseWorldview": "导入 · 世界观解析（旧版）",
+    "importParseOutline": "导入 · 大纲解析（旧版）",
+    "styleLearn": "文风 · 画像学习",
+    "styleCalibrate": "文风 · 互动校准"
+  },
+  "promptGroupLabels": {
+    "worldview": "世界观",
+    "research": "研究考证",
+    "character": "角色",
+    "outline": "大纲",
+    "chapter": "章节",
+    "detail": "细纲",
+    "review": "审校",
+    "foreshadow": "伏笔",
+    "geography": "地理",
+    "story": "故事",
+    "rules": "创作规则",
+    "prompt": "Prompt 管理",
+    "import": "导入解析"
+  },
+  "promptSubLabels": {
+    "dimension": "维度生成",
+    "generate": "完整生成",
+    "volume": "卷级",
+    "chapter": "章节级",
+    "content": "正文生成",
+    "continue": "续写",
+    "polish": "润色",
+    "expand": "扩写",
+    "deAi": "去 AI 味",
+    "conceptMap": "概念地图 SVG",
+    "imageMapPrompt": "图像 Prompt",
+    "parseCharacter": "角色解析",
+    "parseWorldview": "世界观解析",
+    "parseOutline": "大纲解析",
+    "parseAll": "全文解析",
+    "scene": "场景",
+    "brief": "立项简报",
+    "ideation": "灵感",
+    "positioning": "定位",
+    "core": "故事核心",
+    "packaging": "作品包装",
+    "method": "研究考证",
+    "operations": "Prompt 管理",
+    "worldbuilding": "世界观阶段",
+    "design": "人物设计",
+    "plot": "剧情",
+    "structure": "结构",
+    "longForm": "长篇架构",
+    "shortStory": "短篇架构",
+    "serialization": "连载架构",
+    "drafting": "正文创作",
+    "continuity": "连续性",
+    "chapterPlanning": "章场规划",
+    "lineEditing": "语言修订",
+    "developmental": "宏观修订",
+    "readerValidation": "读者验证"
+  },
+  "workflow": {
+    "panelTitle": "节点模式",
+    "panelDescription": "ComfyUI 式创作模式：连接节点组成流程；每步仍可暂停、编辑和确认。",
+    "newWorkflow": "新建",
+    "newWorkflowName": "新建工作流",
+    "import": "导入",
+    "exportAll": "导出全部",
+    "importSuccess": "成功导入 {{count}} 个工作流",
+    "importError": "导入失败：{{error}}",
+    "deleteTitle": "删除工作流「{{name}}」？",
+    "deleteMessage": "此操作不可恢复。",
+    "systemBadge": "系统",
+    "userBadge": "我的",
+    "defaultBadge": "★ 默认",
+    "run": "运行",
+    "edit": "编辑",
+    "clone": "克隆",
+    "runAria": "运行工作流 {{name}}",
+    "editAria": "编辑工作流 {{name}}",
+    "cloneAria": "克隆工作流 {{name}}",
+    "deleteAria": "删除工作流 {{name}}",
+    "stepsSummary": "共 {{total}} 步 · {{confirm}} 步需用户确认",
+    "loading": "加载中...",
+    "editorTitle": "节点模式 · {{name}}",
+    "editorSubtitle": "FLOW-1 第一阶段 · DAG 编排会复用现有 GenerationNode 和作者确认写回",
+    "canvasTab": "画布",
+    "sequenceTab": "顺序",
+    "back": "返回",
+    "graphIssuesPrefix": "请先修复工作流图错误。",
+    "savedToast": "节点模式已保存",
+    "discardTitle": "放弃未保存的更改？",
+    "discardMessage": "当前节点、连线或参数尚未保存，返回后会丢失。",
+    "discardConfirm": "放弃并返回",
+    "deleteFullMessage": "节点布局和连线也会一并删除，此操作不可恢复。",
+    "authorOrderTitle": "作者顺序",
+    "authorOrderHint": "拓扑排序并列时使用这里的顺序；真实依赖仍由画布连线决定。",
+    "addNode": "添加节点",
+    "moveUpAria": "上移节点 {{label}}",
+    "moveDownAria": "下移节点 {{label}}",
+    "deleteNodeAria": "删除节点 {{label}}",
+    "inspectorTitle": "节点检查器",
+    "workflowNameLabel": "工作流名称",
+    "descriptionLabel": "说明",
+    "nodeLabel": "节点名称",
+    "promptModuleLabel": "Prompt 模块",
+    "userHintLabel": "给 AI 的提示",
+    "saveTargetLabel": "作者确认后的保存目标",
+    "pauseForConfirmation": "本节点完成后暂停，等待作者确认",
+    "inputPortsTitle": "输入端口",
+    "fromPrefix": "来自：{{label}}",
+    "edgeVariableAria": "连线变量 {{label}}",
+    "templateFieldsHint": "模板字段会先读取登记项目资料；这里是作者补充，不会覆盖图入边。",
+    "selectNodeHint": "添加或选择一个节点后编辑参数。",
+    "deleteEntireWorkflow": "删除整个工作流",
+    "newNodeLabel": "节点 {{index}}",
+    "canvasAddNode": "添加节点",
+    "connectingHint": "正在连接「{{label}}」：请选择目标节点左侧输入端口",
+    "dragHint": "拖动节点调整布局；点击右侧输出端口，再点目标输入端口建立连线",
+    "cancelConnection": "取消连线",
+    "zoomOutAria": "缩小画布",
+    "zoomInAria": "放大画布",
+    "resetZoomAria": "重置画布缩放",
+    "connectToAria": "连接到 {{label}}",
+    "inputPortTitle": "输入端口",
+    "outputFromAria": "从 {{label}} 输出",
+    "outputPortTitle": "输出端口",
+    "inputsCount": "输入 {{count}}",
+    "outputsCount": "输出 {{count}}",
+    "needsConfirmation": "需确认",
+    "autoAdvance": "自动推进",
+    "confirmWriteTarget": "可确认写入：{{type}}",
+    "edgesPanelTitle": "连线",
+    "removeEdgeAria": "删除连线 {{edgeId}}",
+    "executionGraphTitle": "执行图",
+    "executionGraphHint": "连线决定数据依赖；实际调用按稳定拓扑顺序逐个执行。",
+    "executionGraphStats": "{{nodes}} 节点 · {{edges}} 连线",
+    "statusPending": "等待",
+    "statusRunning": "运行中",
+    "statusDone": "候选完成",
+    "statusFailed": "失败",
+    "statusSkipped": "已跳过",
+    "noCandidateYet": "尚未生成候选",
+    "runnerTitle": "▶ 运行：{{name}}",
+    "start": "开始",
+    "abort": "中止",
+    "continue": "继续",
+    "backToList": "返回列表",
+    "graphExecutionError": "工作流图无法执行：{{error}}",
+    "runningProgress": "▶ 正在运行第 {{current}} / {{total}} 步...",
+    "pausedStatus": "⏸ 已暂停（第 {{current}} 步等待你审核）",
+    "completedStatus": "✓ 工作流完成",
+    "abortedStatus": "✗ 已中止",
+    "allCompletedTitle": "✓ 全部完成",
+    "allCompletedBody": "可以把每步输出复制到对应模块（角色 / 大纲 / 章节正文等）。后续 Phase 可以做“一键写入”自动化。",
+    "noProjectError": "未关联项目，无法自动保存。请进入某个项目后再运行。",
+    "invalidJsonArrayError": "AI 输出不是 JSON 数组",
+    "charactersWritten": "已写入 {{written}} 个角色",
+    "charactersWrittenWithSkipped": "已写入 {{written}} 个角色，跳过 {{skipped}} 个",
+    "outlineNodesWritten": "已写入 {{count}} 个大纲节点",
+    "foreshadowsWritten": "已写入 {{written}} 个伏笔",
+    "foreshadowsWrittenWithSkipped": "已写入 {{written}} 个伏笔，跳过 {{skipped}} 个",
+    "saveFailed": "保存失败：{{error}}。角色/大纲/伏笔类目标需 AI 输出 JSON。可用 import.parse-* 类提示词预先调好。",
+    "missingScopesError": "当前模板需要{{scopes}}范围，请先补齐对应项目/章节选择",
+    "missingVariablesError": "请填写必填字段：{{variables}}",
+    "title": "执行图",
+    "subtitle": "工作流节点执行状态",
+    "stats": "{{nodes}} 节点 · {{edges}} 边",
+    "deleteEdgeAria": "删除边 {{id}}"
+  },
+  "workflowStep": {
+    "needsConfirmBadge": "⏸ 需确认",
+    "charsCount": "{{count}} 字",
+    "failed": "失败",
+    "skipped": "已跳过",
+    "userInputPlaceholder": "你的输入(可选)：在此写本步内容,AI 会在你写的基础上生成/扩展",
+    "pending": "待执行",
+    "generating": "AI 生成中...",
+    "editableOutputHint": "AI 输出可直接编辑,保存/复制将使用编辑后的内容。",
+    "regenerate": "重新生成",
+    "copy": "复制",
+    "saveTo": "保存到 {{target}}",
+    "savedTo": "已存到 {{target}}",
+    "saveTitle": "自动写入 {{target}}",
+    "needProjectTitle": "需先进入项目",
+    "skip": "跳过此步"
+  },
+  "saveTargets": {
+    "none": "不自动保存（仅复制）",
+    "worldviewField": "世界观.{{field}}",
+    "storyCoreField": "故事.{{field}}",
+    "creativeRulesField": "创作规则.{{field}}",
+    "createCharacters": "角色库（批量创建）",
+    "createOutlineNodes": "大纲（批量创建）",
+    "createForeshadows": "伏笔库（批量创建）",
+    "fields": {
+      "worldOrigin": "世界起源",
+      "powerHierarchy": "力量体系",
+      "historyLine": "世界历史线",
+      "summary": "世界观摘要",
+      "logline": "一句话故事",
+      "concept": "故事概念",
+      "theme": "主题",
+      "centralConflict": "核心冲突",
+      "mainPlot": "故事主线",
+      "writingStyle": "写作风格",
+      "toneAndMood": "基调氛围"
+    }
+  },
+  "providerLabels": {
+    "deepseek": "DeepSeek",
+    "qwen": "通义千问",
+    "doubao": "豆包",
+    "minimax": "MiniMax",
+    "glm": "智谱 GLM",
+    "wenxin": "文心一言",
+    "gemini": "Gemini",
+    "poe": "Poe",
+    "openai": "OpenAI",
+    "kimi": "Kimi",
+    "claude": "Claude",
+    "nvidia": "NVIDIA NIM",
+    "modelscope": "魔搭社区",
+    "agnes": "Agnes AI（免费）",
+    "longcat": "LongCat（美团）",
+    "opencode": "OpenCode Go（月付）",
+    "ollama": "本地模型 (Ollama / LM Studio 等)",
+    "custom": "自定义"
+  },
+  "promptParams": {
+    "pace": {
+      "label": "整体节奏",
+      "chapterLabel": "节奏",
+      "description": "影响每卷信息密度",
+      "chapterDescription": "快=多动作少铺垫；慢=多心理多环境",
+      "options": {
+        "slow": "慢",
+        "medium": "中",
+        "fast": "快",
+        "veryFast": "极快"
+      }
+    },
+    "volumeCount": {
+      "label": "建议卷数",
+      "description": "不指定则按目标字数自动估算"
+    },
+    "tone": {
+      "label": "基调",
+      "worldviewDescription": "影响世界观叙述风格",
+      "styleDescription": "影响整体语言风格",
+      "options": {
+        "serious": "严肃",
+        "epic": "史诗",
+        "lyrical": "抒情",
+        "hardcore": "硬核",
+        "lightFantasy": "轻奇幻",
+        "relaxed": "轻松",
+        "humorous": "幽默",
+        "heavy": "沉重",
+        "tense": "紧张",
+        "passionate": "热血",
+        "dark": "黑暗",
+        "warm": "温情",
+        "fateful": "宿命",
+        "ethereal": "空灵",
+        "frigid": "清冷",
+        "vast": "苍茫",
+        "zen": "禅意",
+        "archaic": "古朴",
+        "sweet": "甜",
+        "angst": "虐",
+        "bittersweet": "甜虐交织",
+        "healing": "治愈",
+        "restrained": "克制",
+        "burning": "炽热",
+        "bleak": "苍凉",
+        "absurd": "荒诞",
+        "detached": "冷静",
+        "nostalgic": "怀旧",
+        "grim": "冷峻",
+        "eerie": "诡谲",
+        "taut": "紧绷",
+        "gloomy": "阴郁",
+        "repartee": "机锋",
+        "weighty": "厚重",
+        "intrigue": "权谋",
+        "mournful": "悲凉",
+        "classical": "古雅",
+        "rousing": "激昂",
+        "domineering": "霸气",
+        "mysterious": "神秘",
+        "comedic": "搞笑",
+        "heroic": "豪迈",
+        "tragic": "悲壮",
+        "dashing": "潇洒",
+        "scheming": "阴谋",
+        "tender": "柔情",
+        "corporate": "商战",
+        "darkGritty": "暗黑",
+        "solemn": "庄重",
+        "witty": "诙谐",
+        "somber": "沉郁",
+        "cyber": "赛博",
+        "spaceOpera": "太空歌剧",
+        "apocalyptic": "末日",
+        "philosophical": "哲思",
+        "oppressive": "压抑",
+        "heartwarming": "温暖",
+        "horrific": "恐怖",
+        "satirical": "讽刺",
+        "farming": "种田",
+        "vengeful": "复仇",
+        "cozy": "温馨",
+        "campus": "校园",
+        "longGame": "布局",
+        "cathartic": "爽快",
+        "strategic": "策略",
+        "mindBending": "烧脑",
+        "filmNoir": "黑色电影",
+        "dystopian": "反乌托邦",
+        "uncanny": "诡异",
+        "frenzied": "疯狂",
+        "desperate": "绝望",
+        "grotesque": "猎奇",
+        "pastoral": "田园",
+        "commercial": "商业",
+        "grand": "宏大",
+        "cunning": "谋略",
+        "romantic": "浪漫",
+        "whimsical": "奇诡",
+        "competitive": "竞技",
+        "adventurous": "冒险"
+      }
+    },
+    "pov": {
+      "label": "视角",
+      "options": {
+        "femalePov": "女主单视角",
+        "malePov": "男主单视角",
+        "dualPov": "双视角",
+        "omniscient": "全知"
+      }
+    },
+    "sceneCount": {
+      "label": "场景数",
+      "description": "每章拆分的场景数量"
+    },
+    "detailLevel": {
+      "label": "详尽度",
+      "lengthDescription": "影响输出长度",
+      "options": {
+        "oneLiner": "一句话",
+        "brief": "简略",
+        "medium": "中等",
+        "detailed": "详尽"
+      }
+    },
+    "archetype": {
+      "label": "原型",
+      "description": "角色的性格基底类型",
+      "options": {
+        "ordinary": "普通人",
+        "genius": "天才",
+        "antiHero": "反英雄",
+        "underdog": "小人物逆袭",
+        "patient": "隐忍蛰伏",
+        "noble": "世家子弟",
+        "reborn": "废柴重生",
+        "mysterious": "神秘高人"
+      }
+    },
+    "chapterLength": {
+      "label": "目标字数",
+      "description": "⚠ 上限=所选模型最大输出。字数越大越慢越贵、过长易注水/偏题；不勾选=AI按内容自然长度。"
+    },
+    "style": {
+      "label": "风格",
+      "options": {
+        "colloquial": "口语化",
+        "literary": "文艺",
+        "concise": "精炼",
+        "ornate": "华丽",
+        "cold": "冷峻",
+        "gentle": "温润"
+      }
+    },
+    "expandRatio": {
+      "label": "扩写倍数",
+      "description": "相对原文的字数倍数"
+    },
+    "addType": {
+      "label": "主要增加",
+      "options": {
+        "psychology": "心理描写",
+        "atmosphere": "环境氛围",
+        "dialogue": "对话铺陈",
+        "action": "动作细节",
+        "sensory": "感官描写"
+      }
+    },
+    "aggressiveness": {
+      "label": "改写力度",
+      "description": "激进=可能改变句式结构；轻度=只换用词",
+      "options": {
+        "light": "轻度",
+        "moderate": "中度",
+        "aggressive": "激进"
+      }
+    },
+    "density": {
+      "label": "密度",
+      "description": "稀疏=只埋核心；密集=每条线都呼应",
+      "options": {
+        "sparse": "稀疏",
+        "medium": "中等",
+        "dense": "密集"
+      }
+    },
+    "count": {
+      "label": "建议数量",
+      "description": "不指定则默认 3-5 个"
+    },
+    "strictness": {
+      "label": "约束力度",
+      "description": "严格=禁忌多 / 宽松=以建议为主",
+      "options": {
+        "lenient": "宽松",
+        "medium": "中等",
+        "strict": "严格"
+      }
+    }
+  },
+  "workflowSeeds": {
+    "fastStart": {
+      "name": "极速起书 · 通用",
+      "description": "从零到第一章：故事核心 → 世界观 → 主要角色 → 卷大纲 → 第一章正文。每步可暂停审核。",
+      "steps": {
+        "logline": "一句话故事",
+        "worldOrigin": "世界起源",
+        "mainCharacter": "主要角色",
+        "volumeOutline": "卷级大纲",
+        "firstChapter": "第一章正文"
+      },
+      "hints": {
+        "logline": "请用一句话讲清楚这部小说要讲什么",
+        "worldOrigin": "基于上一步的故事核心，构思世界的来源和力量体系",
+        "mainCharacter": "设计一位与该世界观契合的主角",
+        "volumeOutline": "基于上面的设定生成 3-5 卷的大纲",
+        "firstChapter": "写第一卷第一章的正文，约 2500 字"
+      }
+    },
+    "deepChapter": {
+      "name": "单章深度生成",
+      "description": "把一个章节大纲展开为细纲场景 → 写正文 → 润色 → 去 AI 味。适合精雕细琢一章。",
+      "steps": {
+        "sceneBreakdown": "细纲拆场景",
+        "writeProse": "写正文",
+        "polish": "润色",
+        "deAi": "去 AI 味"
+      },
+      "hints": {
+        "sceneBreakdown": "把章节大纲拆成 4-5 个场景节拍",
+        "polish": "让节奏更紧凑，去掉冗余描写"
+      }
+    },
+    "foreshadowSystem": {
+      "name": "伏笔体系搭建",
+      "description": "基于已有世界观和角色，建议一套精心设计的伏笔。",
+      "steps": {
+        "worldSummary": "世界观摘要",
+        "foreshadowSuggest": "伏笔建议"
+      },
+      "hints": {
+        "worldSummary": "生成 200-400 字的世界观精华摘要，用于后续 AI 上下文",
+        "foreshadowSuggest": "基于世界观和角色，建议 5-8 个层次分明的伏笔"
+      }
+    }
+  },
+  "promptTemplates": {
+    "worldviewDimension": {
+      "name": "内置-世界观维度生成",
+      "description": "为世界观的单个维度（地理/历史/社会/文化/经济/规则/摘要）生成内容。"
+    },
+    "characterGenerate": {
+      "name": "内置-角色完整设计",
+      "description": "基于世界观和已有角色，设计一个新角色的完整资料。"
+    },
+    "characterDimension": {
+      "name": "内置-角色维度补全",
+      "description": "为指定角色的某个维度（背景/性格/能力等）补充约 200-400 字的细节。"
+    },
+    "outlineVolume": {
+      "name": "内置-卷级大纲生成",
+      "description": "基于世界观与故事核心生成全书的卷级大纲。"
+    },
+    "outlineChapter": {
+      "name": "内置-章节大纲展开",
+      "description": "将单卷展开为 15-25 章的章节大纲。"
+    },
+    "chapterContent": {
+      "name": "内置-长篇连载（默认）",
+      "description": "通用男频网文风格的章节正文生成，支持基调/节奏/字数三个可调参数。"
+    },
+    "chapterContinue": {
+      "name": "内置-章节续写",
+      "description": "从已有正文末尾继续往下写约 1000-2000 字。"
+    },
+    "chapterMemory": {
+      "name": "内置-章节连续性记忆",
+      "description": "一次调用同时提取章节摘要、下一章承接 handoff 与计划正文对账；引文 offset 由系统回查，不信任模型位置。"
+    },
+    "chapterPolish": {
+      "name": "内置-文本润色",
+      "description": "按用户指令润色文本，保持原意不变。"
+    },
+    "chapterExpand": {
+      "name": "内置-文本扩写",
+      "description": "将文本扩展丰富，增加细节、心理与环境，情节走向不变。"
+    },
+    "chapterDeAi": {
+      "name": "内置-去 AI 味改写",
+      "description": "把 AI 味重的文本改写得更像真人写的。"
+    },
+    "foreshadowGenerate": {
+      "name": "内置-伏笔建议",
+      "description": "基于世界观、角色和已有伏笔，建议 3-5 个新伏笔。"
+    },
+    "relationExtract": {
+      "name": "内置-角色关系提取",
+      "description": "从大纲摘要和章节正文中自动提取角色间的关系。"
+    },
+    "geographyConceptMap": {
+      "name": "内置-概念地图 SVG",
+      "description": "基于地点列表生成奇幻风格的 SVG 概念地图。"
+    },
+    "geographyImageMapPrompt": {
+      "name": "内置-地图图像 Prompt",
+      "description": "生成 Midjourney/DALL-E/SD 的世界地图绘图 prompt。"
+    },
+    "storyGenerate": {
+      "name": "内置-故事核心生成",
+      "description": "基于已有世界观和用户提示，生成故事的某个维度（一句话/概念/主题/核心冲突等）。"
+    },
+    "rulesGenerate": {
+      "name": "内置-创作规则生成",
+      "description": "基于项目类型和世界观，建议适配的创作规则（风格/视角/基调/禁忌等）。"
+    },
+    "importParseCharacter": {
+      "name": "内置-角色文档解析",
+      "description": "从用户上传的角色设定文档中抽取结构化角色数据（JSON）。"
+    },
+    "importParseWorldview": {
+      "name": "内置-世界观文档解析",
+      "description": "从世界观设定文档中抽取结构化字段（JSON）。"
+    },
+    "importParseOutline": {
+      "name": "内置-大纲文档解析",
+      "description": "从大纲文档中抽取结构化卷/章节树（JSON 数组）。"
+    },
+    "importParseAll": {
+      "name": "内置-智能统一解析",
+      "description": "一次性从任意文档（设定文档或成品小说）中提取世界观 / 角色 / 大纲章节三类结构化数据。"
+    },
+    "importParseChunk": {
+      "name": "内置-分块解析（大文档流水线）",
+      "description": "针对百万字级小说，把原文切成多块后逐块抽取世界观 / 角色 / 大纲，可带已识别上下文。"
+    },
+    "importMergeCharacters": {
+      "name": "内置-角色跨块合并",
+      "description": "检查分块导出的角色清单，判断哪些是同一人（别名 / 尊称 / 昵称）应合并。"
+    },
+    "detailScene": {
+      "name": "内置-细纲场景生成",
+      "description": "把单章大纲展开为若干场景（每个场景含人物 / 地点 / 冲突 / 节奏）。"
+    },
+    "plotCharacterDriven": {
+      "name": "内置-角色驱动剧情",
+      "description": "根据角色初始状态与目标状态，AI 生成中间情节推演（卷/章大纲结构）。"
+    },
+    "plotCharacterRevision": {
+      "name": "内置-角色变更影响分析",
+      "description": "分析创作中途的角色变化，把已写区、过渡区和未写区分开，并输出可审查的大纲 patch。"
+    },
+    "inspirationReverse": {
+      "name": "内置-灵感反推",
+      "description": "用户写碎片想法，AI 反向生成世界观草稿、故事核心、初始角色卡。"
+    },
+    "inspirationReverseMultiworld": {
+      "name": "内置-多世界灵感反推",
+      "description": "多世界题材：用户给出带有多个世界意图的灵感，AI 顺着思路反推故事主线 + 多个世界 + 角色。"
+    },
+    "worldGroupSuggest": {
+      "name": "内置-AI建议世界",
+      "description": "诸天流/无限流等多世界题材，根据故事概念和已有世界建议新的世界组。"
+    },
+    "worldGroupExpand": {
+      "name": "内置-AI扩写世界",
+      "description": "根据世界的草稿描述，扩展出完整的世界观设定。"
+    },
+    "codexExtract": {
+      "name": "内置-词条拆分提取",
+      "description": "把整段世界观内容拆成当前分类下可确认写入的结构化词条。"
+    },
+    "locationExtract": {
+      "name": "内置-重要地点提取",
+      "description": "从已写正文中提取反复出现或推动剧情的重要地点候选。"
+    },
+    "inventoryExtract": {
+      "name": "内置-物品栏提取",
+      "description": "从章节正文提取各角色的物品获得/消耗事件，构建按角色归属的物品栏。"
+    },
+    "storyTimelineExtract": {
+      "name": "内置-故事年表提取",
+      "description": "从章节正文提取剧情大事，构建故事进程年表（区别于世界背景历史）。"
+    },
+    "sceneVerify": {
+      "name": "内置-场景考证",
+      "description": "用户描述当前场景，AI 结合世界观/历史年表/世界规则给出符合背景的细节、时代错乱警示与情节灵感。"
+    },
+    "styleLearn": {
+      "name": "内置-文风学习",
+      "description": "从用户已定稿/润色的章节中,总结出其个人写作文风画像,供后续章节生成参考。"
+    },
+    "styleCalibrate": {
+      "name": "内置-文风互动校准",
+      "description": "按现有文风画像和作者认可的改稿对照重写一段短文，供作者比较、反馈并沉淀新样本。"
+    },
+    "historyConsult": {
+      "name": "内置-历史考据 agent",
+      "description": "历史年表条目的考据 agent。挑剔但合作，绝不顺着作者的错误假设编造细节；尊重作者已声明的艺术改造/架空范围。"
+    },
+    "historyStorm": {
+      "name": "内置-头脑风暴 agent",
+      "description": "历史年表条目的头脑风暴 agent。围绕作者已设定的方向发散可写素材，尊重作者声明的艺术改造范围。"
+    },
+    "xianxiaChapterContent": {
+      "name": "仙侠包-章节正文",
+      "description": "飞升体系、人间道义、正邪较量。文笔较古典，注重心境。"
+    },
+    "xianxiaVolumeOutline": {
+      "name": "仙侠包-卷级大纲",
+      "description": "修行境界为节点；每卷一个心境蜕变。"
+    },
+    "xianxiaCharacterDesign": {
+      "name": "仙侠包-角色设计",
+      "description": "注重道心、师承、心结。"
+    },
+    "xianxiaStoryCore": {
+      "name": "仙侠包-故事核心",
+      "description": "冲突常在\"道与情\"、\"凡与仙\"、\"逆天与守心\"之间。"
+    },
+    "xianxiaWorldviewDimension": {
+      "name": "仙侠包-世界观维度",
+      "description": "飞升体系、宗门法度、洞天福地。"
+    },
+    "xianxiaChapterContinue": {
+      "name": "仙侠包-章节续写",
+      "description": "保持文风古典、心境优先的续写。"
+    },
+    "yanqingChapterContent": {
+      "name": "言情包-章节正文",
+      "description": "情感张力、双视角心理戏、CP 互动密度高。"
+    },
+    "yanqingVolumeOutline": {
+      "name": "言情包-卷级大纲",
+      "description": "感情线为骨，事业/家庭/外部冲突为肉。"
+    },
+    "yanqingCharacterDesign": {
+      "name": "言情包-角色设计",
+      "description": "CP 互动张力优先，避免霸总/玛丽苏标签化。"
+    },
+    "yanqingStoryCore": {
+      "name": "言情包-故事核心",
+      "description": "关于\"如何爱\"和\"如何被爱\"。"
+    },
+    "yanqingWorldviewDimension": {
+      "name": "言情包-世界观维度",
+      "description": "现代/古言/民国/校园等场景的细节真实感。"
+    },
+    "yanqingChapterContinue": {
+      "name": "言情包-章节续写",
+      "description": "保持心理戏 + CP 互动张力的续写。"
+    },
+    "realismChapterContent": {
+      "name": "现实主义包-章节正文",
+      "description": "日常感、内心戏、克制叙述。不回避琐碎。"
+    },
+    "realismVolumeOutline": {
+      "name": "现实主义包-卷级大纲",
+      "description": "人物命运为线，时代变化为底。"
+    },
+    "realismCharacterDesign": {
+      "name": "现实主义包-角色设计",
+      "description": "复杂、矛盾、不完美 — 像活生生的人。"
+    },
+    "realismStoryCore": {
+      "name": "现实主义包-故事核心",
+      "description": "一代人的命运、一个群体的处境、一段时代的注脚。"
+    },
+    "realismWorldviewDimension": {
+      "name": "现实主义包-世界观维度",
+      "description": "不需要架空 — 而是把真实世界写到细节扎实。"
+    },
+    "realismChapterContinue": {
+      "name": "现实主义包-章节续写",
+      "description": "保持日常感和克制叙述的续写。"
+    },
+    "suspenseChapterContent": {
+      "name": "悬疑推理包-章节正文",
+      "description": "信息控制 + 不可靠叙事 + 每章必有进展。"
+    },
+    "suspenseVolumeOutline": {
+      "name": "悬疑推理包-卷级大纲",
+      "description": "案件层层递进，每卷揭一层假象。"
+    },
+    "suspenseCharacterDesign": {
+      "name": "悬疑推理包-角色设计",
+      "description": "每个人都有秘密、有动机、有可疑面。"
+    },
+    "suspenseStoryCore": {
+      "name": "悬疑推理包-故事核心",
+      "description": "不只是\"谁干的\"，更是\"为什么\"。"
+    },
+    "suspenseWorldviewDimension": {
+      "name": "悬疑推理包-世界观维度",
+      "description": "信息控制、不可靠叙事、伏笔密度高。"
+    },
+    "suspenseForeshadow": {
+      "name": "悬疑推理包-伏笔建议",
+      "description": "密度更高、结构更复杂、必须可逆推。"
+    },
+    "suspenseChapterContinue": {
+      "name": "悬疑推理包-章节续写",
+      "description": "保持信息控制 + 反转节奏的续写。"
+    },
+    "lishiChapterContent": {
+      "name": "历史包-章节正文",
+      "description": "历史背景、朝堂权谋、架空或考据。含史实标注机制。"
+    },
+    "lishiVolumeOutline": {
+      "name": "历史包-卷级大纲",
+      "description": "围绕历史大势、政治斗争、社会变革展开。"
+    },
+    "lishiCharacterDesign": {
+      "name": "历史包-角色设计",
+      "description": "注重历史身份、政治立场、家族背景、时代局限性。"
+    },
+    "lishiStoryCore": {
+      "name": "历史包-故事核心",
+      "description": "关于\"大势与个人\"、\"权谋与道义\"、\"历史重力下的抉择\"。"
+    },
+    "lishiWorldviewDimension": {
+      "name": "历史包-世界观维度",
+      "description": "考证真实地理、官制、赋税、科技与生产力。"
+    },
+    "lishiChapterContinue": {
+      "name": "历史包-章节续写",
+      "description": "保持历史厚重感与权谋张力的续写。"
+    },
+    "lishiVolumeOutlineExt": {
+      "name": "历史包-卷大纲",
+      "description": "历史题材卷级大纲，含史实风险提示。"
+    },
+    "xuanhuanChapterContent": {
+      "name": "玄幻包-章节正文",
+      "description": "宏大世界观、天赋体系、热血升级。"
+    },
+    "xuanhuanVolumeOutline": {
+      "name": "玄幻包-卷级大纲",
+      "description": "境界体系驱动的卷级结构。"
+    },
+    "wuxiaChapterContent": {
+      "name": "武侠包-章节正文",
+      "description": "江湖恩怨、侠义精神、门派纷争。"
+    },
+    "dushiChapterContent": {
+      "name": "都市包-章节正文",
+      "description": "现代都市背景、职场/商战/生活。"
+    },
+    "scifiChapterContent": {
+      "name": "科幻包-章节正文",
+      "description": "科学设定、未来社会、星际探索。"
+    },
+    "moshiChapterContent": {
+      "name": "末世包-章节正文",
+      "description": "末日求生、人性考验、废土探索。"
+    },
+    "chuanyueChapterContent": {
+      "name": "穿越包-章节正文",
+      "description": "穿越时空、先知优势、改变命运。"
+    },
+    "chongshengChapterContent": {
+      "name": "重生包-章节正文",
+      "description": "重回过去、弥补遗憾、逆转人生。"
+    },
+    "xitongChapterContent": {
+      "name": "系统流包-章节正文",
+      "description": "获得系统辅助、任务升级、数值成长。"
+    },
+    "wuxianChapterContent": {
+      "name": "无限流包-章节正文",
+      "description": "穿越副本、团队协作、生存挑战。"
+    },
+    "cyberpunkChapterContent": {
+      "name": "赛博朋克包-章节正文",
+      "description": "高科技低生活、义体改造、公司阴谋。"
+    },
+    "cthulhuChapterContent": {
+      "name": "克苏鲁包-章节正文",
+      "description": "未知恐惧、理智崩溃、不可名状之物。"
+    },
+    "zhongtianChapterContent": {
+      "name": "种田包-章节正文",
+      "description": "经营建设、发展壮大、慢节奏成长。"
+    },
+    "zhengbaChapterContent": {
+      "name": "争霸包-章节正文",
+      "description": "权谋争斗、势力扩张、天下争霸。"
+    },
+    "xifanChapterContent": {
+      "name": "西幻包-章节正文",
+      "description": "魔法世界、种族纷争、史诗冒险。"
+    },
+    "youxiChapterContent": {
+      "name": "游戏包-章节正文",
+      "description": "游戏世界、副本挑战、竞技对抗。"
+    },
+    "novelP00AProjectBrief": {
+      "name": "小说内容-P00-A-小说立项：创作任务简报与缺口诊断",
+      "description": "立项 · 立项 · 小说立项：创作任务简报与缺口诊断。 使用现有模板或工作流运行。"
+    },
+    "novelP01AInspirationCards": {
+      "name": "小说内容-P01-A-灵感阶段：混杂素材净化与原创灵感卡",
+      "description": "灵感 · 灵感 · 灵感阶段：混杂素材净化与原创灵感卡。 使用现有模板或工作流运行。"
+    },
+    "novelP02APositioning": {
+      "name": "小说内容-P02-A-定位阶段：题材、读者承诺与差异化",
+      "description": "定位 · 定位 · 定位阶段：题材、读者承诺与差异化。 使用现有模板或工作流运行。"
+    },
+    "novelP03AConceptSelection": {
+      "name": "小说内容-P03-A-故事核心：概念筛选与前提压力测试",
+      "description": "故事核心 · 故事核心 · 故事核心：概念筛选与前提压力测试。 使用现有模板或工作流运行。"
+    },
+    "novelP04AResearchPlan": {
+      "name": "小说内容-P04-A-研究问题树与最小考证计划",
+      "description": "研究考证 · 研究考证 · 研究问题树与最小考证计划。 使用现有模板或工作流运行。"
+    },
+    "novelP04BSourceConflict": {
+      "name": "小说内容-P04-B-来源冲突与事实边界裁决",
+      "description": "研究考证 · 研究考证 · 来源冲突与事实边界裁决。 使用现有模板或工作流运行。"
+    },
+    "novelP04CFactsToPlot": {
+      "name": "小说内容-P04-C-事实转化为剧情条件",
+      "description": "研究考证 · 研究考证 · 事实转化为剧情条件。 使用现有模板或工作流运行。"
+    },
+    "novelP05AMinimalWorld": {
+      "name": "小说内容-P05-A-叙事最小世界规格",
+      "description": "世界观 · 世界观 · 叙事最小世界规格。 使用现有模板或工作流运行。"
+    },
+    "novelP05BGeographyCausalChain": {
+      "name": "小说内容-P05-B-地理—资源—社会—冲突因果链",
+      "description": "世界观 · 世界观 · 地理—资源—社会—冲突因果链。 使用现有模板或工作流运行。"
+    },
+    "novelP05CCultureTexture": {
+      "name": "小说内容-P05-C-文化与日常生活纹理",
+      "description": "世界观 · 世界观 · 文化与日常生活纹理。 使用现有模板或工作流运行。"
+    },
+    "novelP05DWorldviewAudit": {
+      "name": "小说内容-P05-D-世界观矛盾与漏洞审计",
+      "description": "世界观 · 世界观 · 世界观矛盾与漏洞审计。 使用现有模板或工作流运行。"
+    },
+    "novelP06ACharacterPressure": {
+      "name": "小说内容-P06-A-核心人物压力模型",
+      "description": "人物 · 人物 · 核心人物压力模型。 使用现有模板或工作流运行。"
+    },
+    "novelP06BAntagonist": {
+      "name": "小说内容-P06-B-对抗力量与反派正当性",
+      "description": "人物 · 人物 · 对抗力量与反派正当性。 使用现有模板或工作流运行。"
+    },
+    "novelP06CSupportingNetwork": {
+      "name": "小说内容-P06-C-配角网络与关系动力",
+      "description": "人物 · 人物 · 配角网络与关系动力。 使用现有模板或工作流运行。"
+    },
+    "novelP06DCharacterArc": {
+      "name": "小说内容-P06-D-人物弧与阶段状态",
+      "description": "人物 · 人物 · 人物弧与阶段状态。 使用现有模板或工作流运行。"
+    },
+    "novelP07APlotEngine": {
+      "name": "小说内容-P07-A-目标—动机—冲突发动机",
+      "description": "剧情 · 剧情 · 目标—动机—冲突发动机。 使用现有模板或工作流运行。"
+    },
+    "novelP07BEscalationLadder": {
+      "name": "小说内容-P07-B-升级阶梯与尝试—失败循环",
+      "description": "剧情 · 剧情 · 升级阶梯与尝试—失败循环。 使用现有模板或工作流运行。"
+    },
+    "novelP07CInfoRelease": {
+      "name": "小说内容-P07-C-信息释放与悬念管理",
+      "description": "剧情 · 剧情 · 信息释放与悬念管理。 使用现有模板或工作流运行。"
+    },
+    "novelP07DSubplotWeave": {
+      "name": "小说内容-P07-D-复线编织与碰撞",
+      "description": "剧情 · 剧情 · 复线编织与碰撞。 使用现有模板或工作流运行。"
+    },
+    "novelP08AStructureModel": {
+      "name": "小说内容-P08-A-结构阶段：结构模型选择与全书转折",
+      "description": "结构 · 结构 · 结构阶段：结构模型选择与全书转折。 使用现有模板或工作流运行。"
+    },
+    "novelP09LAVolumeArchitecture": {
+      "name": "小说内容-P09L-A-全书阶段与卷级架构",
+      "description": "长篇架构 · 长篇架构 · 全书阶段与卷级架构。 使用现有模板或工作流运行。"
+    },
+    "novelP09LBPromiseLedger": {
+      "name": "小说内容-P09L-B-卷级承诺—兑现账本",
+      "description": "长篇架构 · 长篇架构 · 卷级承诺—兑现账本。 使用现有模板或工作流运行。"
+    },
+    "novelP09LCMidsectionDiagnose": {
+      "name": "小说内容-P09L-C-长篇中段疲软诊断与重构",
+      "description": "长篇架构 · 长篇架构 · 长篇中段疲软诊断与重构。 使用现有模板或工作流运行。"
+    },
+    "novelP09LDClimaxLadder": {
+      "name": "小说内容-P09L-D-高潮阶梯与结局汇流",
+      "description": "长篇架构 · 长篇架构 · 高潮阶梯与结局汇流。 使用现有模板或工作流运行。"
+    },
+    "novelP09SACoreChange": {
+      "name": "小说内容-P09S-A-短篇核心变化设计",
+      "description": "短篇架构 · 短篇架构 · 短篇核心变化设计。 使用现有模板或工作流运行。"
+    },
+    "novelP09SBCompression": {
+      "name": "小说内容-P09S-B-短篇压缩与人物合并",
+      "description": "短篇架构 · 短篇架构 · 短篇压缩与人物合并。 使用现有模板或工作流运行。"
+    },
+    "novelP09SCOpening": {
+      "name": "小说内容-P09S-C-开场进入点与叙事范围",
+      "description": "短篇架构 · 短篇架构 · 开场进入点与叙事范围。 使用现有模板或工作流运行。"
+    },
+    "novelP09SDEnding": {
+      "name": "小说内容-P09S-D-短篇结尾与余震",
+      "description": "短篇架构 · 短篇架构 · 短篇结尾与余震。 使用现有模板或工作流运行。"
+    },
+    "novelP09RASerialPayoff": {
+      "name": "小说内容-P09R-A-阶段阅读回报规划",
+      "description": "连载架构 · 连载架构 · 阶段阅读回报规划。 使用现有模板或工作流运行。"
+    },
+    "novelP09RBChapterBreaks": {
+      "name": "小说内容-P09R-B-章节断点设计",
+      "description": "连载架构 · 连载架构 · 章节断点设计。 使用现有模板或工作流运行。"
+    },
+    "novelP09RCSerialSchedule": {
+      "name": "小说内容-P09R-C-连载生产缓冲与卷级排期",
+      "description": "连载架构 · 连载架构 · 连载生产缓冲与卷级排期。 使用现有模板或工作流运行。"
+    },
+    "novelP09RDFeedbackDenoise": {
+      "name": "小说内容-P09R-D-读者反馈去噪",
+      "description": "连载架构 · 连载架构 · 读者反馈去噪。 使用现有模板或工作流运行。"
+    },
+    "novelP10AChapterTask": {
+      "name": "小说内容-P10-A-章节任务单",
+      "description": "章场规划 · 章场规划 · 章节任务单。 使用现有模板或工作流运行。"
+    },
+    "novelP10BSceneCard": {
+      "name": "小说内容-P10-B-场景卡与变化证明",
+      "description": "章场规划 · 章场规划 · 场景卡与变化证明。 使用现有模板或工作流运行。"
+    },
+    "novelP10CSceneSequel": {
+      "name": "小说内容-P10-C-场景—反应—决定节奏选择",
+      "description": "章场规划 · 章场规划 · 场景—反应—决定节奏选择。 使用现有模板或工作流运行。"
+    },
+    "novelP10DEmotionBeats": {
+      "name": "小说内容-P10-D-章节情绪节拍",
+      "description": "章场规划 · 章场规划 · 章节情绪节拍。 使用现有模板或工作流运行。"
+    },
+    "novelP10EChapterTitle": {
+      "name": "小说内容-P10-E-章节标题生成与筛选",
+      "description": "章场规划 · 章场规划 · 章节标题生成与筛选。 使用现有模板或工作流运行。"
+    },
+    "novelP11AFirstChapter": {
+      "name": "小说内容-P11-A-首章草稿",
+      "description": "正文 · 正文 · 首章草稿。 使用现有模板或工作流运行。"
+    },
+    "novelP11BTaskDrafting": {
+      "name": "小说内容-P11-B-按章场任务写正文",
+      "description": "正文 · 正文 · 按章场任务写正文。 使用现有模板或工作流运行。"
+    },
+    "novelP11CContinuousDraft": {
+      "name": "小说内容-P11-C-连续续写",
+      "description": "正文 · 正文 · 连续续写。 使用现有模板或工作流运行。"
+    },
+    "novelP11DDialogue": {
+      "name": "小说内容-P11-D-对白与潜台词",
+      "description": "正文 · 正文 · 对白与潜台词。 使用现有模板或工作流运行。"
+    },
+    "novelP11EActionSpace": {
+      "name": "小说内容-P11-E-动作与空间连续性",
+      "description": "正文 · 正文 · 动作与空间连续性。 使用现有模板或工作流运行。"
+    },
+    "novelP11FProseBalance": {
+      "name": "小说内容-P11-F-描述、内心与转场配比",
+      "description": "正文 · 正文 · 描述、内心与转场配比。 使用现有模板或工作流运行。"
+    },
+    "novelP12AChapterMemory": {
+      "name": "小说内容-P12-A-章节记忆与结尾交接",
+      "description": "连续性 · 连续性 · 章节记忆与结尾交接。 使用现有模板或工作流运行。"
+    },
+    "novelP12BCharacterStateDiff": {
+      "name": "小说内容-P12-B-人物与关系状态差分",
+      "description": "连续性 · 连续性 · 人物与关系状态差分。 使用现有模板或工作流运行。"
+    },
+    "novelP12CContinuityLedger": {
+      "name": "小说内容-P12-C-时间线、地点与物品账本",
+      "description": "连续性 · 连续性 · 时间线、地点与物品账本。 使用现有模板或工作流运行。"
+    },
+    "novelP12DForeshadowLifecycle": {
+      "name": "小说内容-P12-D-伏笔生命周期更新",
+      "description": "连续性 · 连续性 · 伏笔生命周期更新。 使用现有模板或工作流运行。"
+    },
+    "novelP12EPlanReconcile": {
+      "name": "小说内容-P12-E-计划—正文对账",
+      "description": "连续性 · 连续性 · 计划—正文对账。 使用现有模板或工作流运行。"
+    },
+    "novelP12FCrossChapterAudit": {
+      "name": "小说内容-P12-F-跨章连续性审计",
+      "description": "连续性 · 连续性 · 跨章连续性审计。 使用现有模板或工作流运行。"
+    },
+    "novelP13ADevelopmentalDiagnose": {
+      "name": "小说内容-P13-A-全稿发展性诊断",
+      "description": "宏观修订 · 宏观修订 · 全稿发展性诊断。 使用现有模板或工作流运行。"
+    },
+    "novelP13BPlotHoleAudit": {
+      "name": "小说内容-P13-B-因果链与情节漏洞审计",
+      "description": "宏观修订 · 宏观修订 · 因果链与情节漏洞审计。 使用现有模板或工作流运行。"
+    },
+    "novelP13CArcDrift": {
+      "name": "小说内容-P13-C-人物弧漂移与角色功能重构",
+      "description": "宏观修订 · 宏观修订 · 人物弧漂移与角色功能重构。 使用现有模板或工作流运行。"
+    },
+    "novelP13DRevisionRoadmap": {
+      "name": "小说内容-P13-D-删改移补修订路线图",
+      "description": "宏观修订 · 宏观修订 · 删改移补修订路线图。 使用现有模板或工作流运行。"
+    },
+    "novelP13EClimaxPayoffAudit": {
+      "name": "小说内容-P13-E-高潮与结局兑现审计",
+      "description": "宏观修订 · 宏观修订 · 高潮与结局兑现审计。 使用现有模板或工作流运行。"
+    },
+    "novelP14ASceneRevision": {
+      "name": "小说内容-P14-A-场景级诊断与定向修订",
+      "description": "语言修订 · 语言修订 · 场景级诊断与定向修订。 使用现有模板或工作流运行。"
+    },
+    "novelP14BDialogueRevision": {
+      "name": "小说内容-P14-B-对白去说明化与潜台词修订",
+      "description": "语言修订 · 语言修订 · 对白去说明化与潜台词修订。 使用现有模板或工作流运行。"
+    },
+    "novelP14CPovDistance": {
+      "name": "小说内容-P14-C-视角、叙事距离与知识边界",
+      "description": "语言修订 · 语言修订 · 视角、叙事距离与知识边界。 使用现有模板或工作流运行。"
+    },
+    "novelP14DPacingDensity": {
+      "name": "小说内容-P14-D-节奏、句群与信息密度",
+      "description": "语言修订 · 语言修订 · 节奏、句群与信息密度。 使用现有模板或工作流运行。"
+    },
+    "novelP14EShowTellBalance": {
+      "name": "小说内容-P14-E-展示、概述、解释与省略平衡",
+      "description": "语言修订 · 语言修订 · 展示、概述、解释与省略平衡。 使用现有模板或工作流运行。"
+    },
+    "novelP14FFaithfulPolish": {
+      "name": "小说内容-P14-F-保真润色、扩写与压缩",
+      "description": "语言修订 · 语言修订 · 保真润色、扩写与压缩。 使用现有模板或工作流运行。"
+    },
+    "novelP15ABlindRead": {
+      "name": "小说内容-P15-A-首章盲读轨迹",
+      "description": "读者验证 · 读者验证 · 首章盲读轨迹。 使用现有模板或工作流运行。"
+    },
+    "novelP15BGenrePromiseTest": {
+      "name": "小说内容-P15-B-体裁期待—兑现测试",
+      "description": "读者验证 · 读者验证 · 体裁期待—兑现测试。 使用现有模板或工作流运行。"
+    },
+    "novelP15CBetaSimulation": {
+      "name": "小说内容-P15-C-多视角贝塔读者模拟",
+      "description": "读者验证 · 读者验证 · 多视角贝塔读者模拟。 使用现有模板或工作流运行。"
+    },
+    "novelP15DSuspenseExperience": {
+      "name": "小说内容-P15-D-悬念与问题链体验",
+      "description": "读者验证 · 读者验证 · 悬念与问题链体验。 使用现有模板或工作流运行。"
+    },
+    "novelP15EAbComparison": {
+      "name": "小说内容-P15-E-修改后 A/B 体验对比",
+      "description": "读者验证 · 读者验证 · 修改后 A/B 体验对比。 使用现有模板或工作流运行。"
+    },
+    "novelP16ATitleBrainstorm": {
+      "name": "小说内容-P16-A-书名发散与筛选",
+      "description": "包装 · 包装 · 书名发散与筛选。 使用现有模板或工作流运行。"
+    },
+    "novelP16BSpoilerFreeBlurb": {
+      "name": "小说内容-P16-B-无剧透作品简介",
+      "description": "包装 · 包装 · 无剧透作品简介。 使用现有模板或工作流运行。"
+    },
+    "novelP16CFullSynopsis": {
+      "name": "小说内容-P16-C-完整剧情梗概",
+      "description": "包装 · 包装 · 完整剧情梗概。 使用现有模板或工作流运行。"
+    },
+    "novelP16DTagsKeywords": {
+      "name": "小说内容-P16-D-标签、关键词与内容提示",
+      "description": "包装 · 包装 · 标签、关键词与内容提示。 使用现有模板或工作流运行。"
+    },
+    "novelP16EQueryLetter": {
+      "name": "小说内容-P16-E-投稿说明/查询信素材",
+      "description": "包装 · 包装 · 投稿说明/查询信素材。 使用现有模板或工作流运行。"
+    },
+    "novelP17ARunReview": {
+      "name": "小说内容-P17-A-Prompt 运行复盘与差异归因",
+      "description": "Prompt 管理 · Prompt 管理 · Prompt 运行复盘与差异归因。 使用现有模板或工作流运行。"
+    },
+    "novelP17BAbEvaluation": {
+      "name": "小说内容-P17-B-Prompt 版本 A/B 评测设计",
+      "description": "Prompt 管理 · Prompt 管理 · Prompt 版本 A/B 评测设计。 使用现有模板或工作流运行。"
+    },
+    "novelP17CPromptGenerator": {
+      "name": "小说内容-P17-C-小说阶段 Prompt 生成器",
+      "description": "Prompt 管理 · Prompt 管理 · 小说阶段 Prompt 生成器。 使用现有模板或工作流运行。"
+    },
+    "novelP17DLibraryDedup": {
+      "name": "小说内容-P17-D-全库语义查重与合并决策",
+      "description": "Prompt 管理 · Prompt 管理 · 全库语义查重与合并决策。 使用现有模板或工作流运行。"
+    },
+    "novelP17EReleaseAcceptance": {
+      "name": "小说内容-P17-E-发布前资产验收",
+      "description": "Prompt 管理 · Prompt 管理 · 发布前资产验收。 使用现有模板或工作流运行。"
+    },
+    "novelMysteryAReverseSolution": {
+      "name": "小说内容-G-MYSTERY-A-从谜底反推完整事实",
+      "description": "剧情 · 剧情 · 从谜底反推完整事实。 使用现有模板或工作流运行。"
+    },
+    "novelMysteryBClueMatrix": {
+      "name": "小说内容-G-MYSTERY-B-公平线索矩阵",
+      "description": "剧情 · 剧情 · 公平线索矩阵。 使用现有模板或工作流运行。"
+    },
+    "novelMysteryCSuspects": {
+      "name": "小说内容-G-MYSTERY-C-嫌疑人与红鲱鱼",
+      "description": "剧情 · 剧情 · 嫌疑人与红鲱鱼。 使用现有模板或工作流运行。"
+    },
+    "novelMysteryDInvestigationBeats": {
+      "name": "小说内容-G-MYSTERY-D-调查节拍与揭示顺序",
+      "description": "剧情 · 剧情 · 调查节拍与揭示顺序。 使用现有模板或工作流运行。"
+    },
+    "novelMysteryEFairnessAudit": {
+      "name": "小说内容-G-MYSTERY-E-推理公平性审计",
+      "description": "剧情 · 剧情 · 推理公平性审计。 使用现有模板或工作流运行。"
+    },
+    "novelHistoryAFactAnchors": {
+      "name": "小说内容-G-HISTORY-A-史实锚点与虚构空间",
+      "description": "研究考证 · 研究考证 · 史实锚点与虚构空间。 使用现有模板或工作流运行。"
+    },
+    "novelHistoryBEraKnowledge": {
+      "name": "小说内容-G-HISTORY-B-时代生活与身份知识边界",
+      "description": "研究考证 · 研究考证 · 时代生活与身份知识边界。 使用现有模板或工作流运行。"
+    },
+    "novelHistoryCMixedCast": {
+      "name": "小说内容-G-HISTORY-C-历史人物与虚构人物共场",
+      "description": "研究考证 · 研究考证 · 历史人物与虚构人物共场。 使用现有模板或工作流运行。"
+    },
+    "novelHistoryDAnachronismAudit": {
+      "name": "小说内容-G-HISTORY-D-时代错置与现代价值投射审计",
+      "description": "研究考证 · 研究考证 · 时代错置与现代价值投射审计。 使用现有模板或工作流运行。"
+    },
+    "novelComedyAEngine": {
+      "name": "小说内容-G-COMEDY-A-喜剧发动机",
+      "description": "剧情 · 剧情 · 喜剧发动机。 使用现有模板或工作流运行。"
+    },
+    "novelComedyBFairMisunderstanding": {
+      "name": "小说内容-G-COMEDY-B-误会喜剧的公平信息",
+      "description": "剧情 · 剧情 · 误会喜剧的公平信息。 使用现有模板或工作流运行。"
+    },
+    "novelComedyCTimingCallbacks": {
+      "name": "小说内容-G-COMEDY-C-喜剧节奏与回调",
+      "description": "剧情 · 剧情 · 喜剧节奏与回调。 使用现有模板或工作流运行。"
+    },
+    "novelComedyDDignityAudit": {
+      "name": "小说内容-G-COMEDY-D-喜剧边界与人物尊严审计",
+      "description": "剧情 · 剧情 · 喜剧边界与人物尊严审计。 使用现有模板或工作流运行。"
+    },
+    "novelFantasyAMagicRules": {
+      "name": "小说内容-G-FANTASY-A-魔法/超自然规则与叙事边界",
+      "description": "世界观 · 世界观 · 魔法/超自然规则与叙事边界。 使用现有模板或工作流运行。"
+    },
+    "novelFantasyBMythFunction": {
+      "name": "小说内容-G-FANTASY-B-神话、宗教与仪式的社会功能",
+      "description": "世界观 · 世界观 · 神话、宗教与仪式的社会功能。 使用现有模板或工作流运行。"
+    },
+    "novelFantasyCSpectacle": {
+      "name": "小说内容-G-FANTASY-C-奇观场景与因果功能",
+      "description": "世界观 · 世界观 · 奇观场景与因果功能。 使用现有模板或工作流运行。"
+    },
+    "novelFantasyDMagicLoopholes": {
+      "name": "小说内容-G-FANTASY-D-魔法漏洞与万能解法审计",
+      "description": "世界观 · 世界观 · 魔法漏洞与万能解法审计。 使用现有模板或工作流运行。"
+    },
+    "novelHorrorAFearSource": {
+      "name": "小说内容-G-HORROR-A-恐怖来源与边界",
+      "description": "剧情 · 剧情 · 恐怖来源与边界。 使用现有模板或工作流运行。"
+    },
+    "novelHorrorBThreatReveal": {
+      "name": "小说内容-G-HORROR-B-威胁显露与升级",
+      "description": "剧情 · 剧情 · 威胁显露与升级。 使用现有模板或工作流运行。"
+    },
+    "novelHorrorCSubjectivePerception": {
+      "name": "小说内容-G-HORROR-C-恐怖场景的主观感知",
+      "description": "剧情 · 剧情 · 恐怖场景的主观感知。 使用现有模板或工作流运行。"
+    },
+    "novelHorrorDRevealAftermath": {
+      "name": "小说内容-G-HORROR-D-揭示程度与结尾余悸",
+      "description": "剧情 · 剧情 · 揭示程度与结尾余悸。 使用现有模板或工作流运行。"
+    },
+    "novelProgressionAGrowthSystem": {
+      "name": "小说内容-G-PROGRESSION-A-成长系统与边界",
+      "description": "剧情 · 剧情 · 成长系统与边界。 使用现有模板或工作流运行。"
+    },
+    "novelProgressionBResourceEconomy": {
+      "name": "小说内容-G-PROGRESSION-B-资源经济与稀缺性",
+      "description": "剧情 · 剧情 · 资源经济与稀缺性。 使用现有模板或工作流运行。"
+    },
+    "novelProgressionCChallengeLadder": {
+      "name": "小说内容-G-PROGRESSION-C-挑战阶梯与能力证明",
+      "description": "剧情 · 剧情 · 挑战阶梯与能力证明。 使用现有模板或工作流运行。"
+    },
+    "novelProgressionDTrainingBeats": {
+      "name": "小说内容-G-PROGRESSION-D-训练、突破与奖励节拍",
+      "description": "剧情 · 剧情 · 训练、突破与奖励节拍。 使用现有模板或工作流运行。"
+    },
+    "novelProgressionEPowerInflation": {
+      "name": "小说内容-G-PROGRESSION-E-升级通胀与后期失控审计",
+      "description": "剧情 · 剧情 · 升级通胀与后期失控审计。 使用现有模板或工作流运行。"
+    },
+    "novelRomanceARelationshipEngine": {
+      "name": "小说内容-G-ROMANCE-A-双主角关系发动机",
+      "description": "人物 · 人物 · 双主角关系发动机。 使用现有模板或工作流运行。"
+    },
+    "novelRomanceBRelationshipBeats": {
+      "name": "小说内容-G-ROMANCE-B-关系节拍与新平衡",
+      "description": "人物 · 人物 · 关系节拍与新平衡。 使用现有模板或工作流运行。"
+    },
+    "novelRomanceCConflictRepair": {
+      "name": "小说内容-G-ROMANCE-C-可信阻力与冲突修复",
+      "description": "人物 · 人物 · 可信阻力与冲突修复。 使用现有模板或工作流运行。"
+    },
+    "novelRomanceDIntimacy": {
+      "name": "小说内容-G-ROMANCE-D-亲密场景的同意、脆弱与后果",
+      "description": "人物 · 人物 · 亲密场景的同意、脆弱与后果。 使用现有模板或工作流运行。"
+    },
+    "novelRomanceEHappilyEverAfter": {
+      "name": "小说内容-G-ROMANCE-E-关系高潮与乐观结局兑现",
+      "description": "人物 · 人物 · 关系高潮与乐观结局兑现。 使用现有模板或工作流运行。"
+    },
+    "novelLiteraryAStructuralPressure": {
+      "name": "小说内容-G-LITERARY-A-日常处境中的结构压力",
+      "description": "故事核心 · 故事核心 · 日常处境中的结构压力。 使用现有模板或工作流运行。"
+    },
+    "novelLiteraryBPlotlessStructure": {
+      "name": "小说内容-G-LITERARY-B-弱情节/内在变化结构",
+      "description": "故事核心 · 故事核心 · 弱情节/内在变化结构。 使用现有模板或工作流运行。"
+    },
+    "novelLiteraryCDetailSelection": {
+      "name": "小说内容-G-LITERARY-C-细节选择与避免苦难消费",
+      "description": "故事核心 · 故事核心 · 细节选择与避免苦难消费。 使用现有模板或工作流运行。"
+    },
+    "novelLiteraryDOpenEnding": {
+      "name": "小说内容-G-LITERARY-D-开放结局与主题余义",
+      "description": "故事核心 · 故事核心 · 开放结局与主题余义。 使用现有模板或工作流运行。"
+    },
+    "novelScifiACoreNovum": {
+      "name": "小说内容-G-SCIFI-A-核心新设定与最小改变",
+      "description": "世界观 · 世界观 · 核心新设定与最小改变。 使用现有模板或工作流运行。"
+    },
+    "novelScifiBCascadeExtrapolation": {
+      "name": "小说内容-G-SCIFI-B-技术—制度—日常连锁推演",
+      "description": "世界观 · 世界观 · 技术—制度—日常连锁推演。 使用现有模板或工作流运行。"
+    },
+    "novelScifiCPlausibilityAudit": {
+      "name": "小说内容-G-SCIFI-C-科学可信度与不确定性审计",
+      "description": "世界观 · 世界观 · 科学可信度与不确定性审计。 使用现有模板或工作流运行。"
+    },
+    "novelScifiDTechToConflict": {
+      "name": "小说内容-G-SCIFI-D-技术问题转化为人物冲突",
+      "description": "世界观 · 世界观 · 技术问题转化为人物冲突。 使用现有模板或工作流运行。"
+    },
+    "novelEnsembleAWeighting": {
+      "name": "小说内容-G-ENSEMBLE-A-群像中心与角色权重",
+      "description": "人物 · 人物 · 群像中心与角色权重。 使用现有模板或工作流运行。"
+    },
+    "novelEnsembleBPovAllocation": {
+      "name": "小说内容-G-ENSEMBLE-B-多视角分配与切换",
+      "description": "人物 · 人物 · 多视角分配与切换。 使用现有模板或工作流运行。"
+    },
+    "novelEnsembleCInfoPuzzle": {
+      "name": "小说内容-G-ENSEMBLE-C-信息拼图与视角偏差",
+      "description": "人物 · 人物 · 信息拼图与视角偏差。 使用现有模板或工作流运行。"
+    },
+    "novelEnsembleDConvergence": {
+      "name": "小说内容-G-ENSEMBLE-D-群像汇流与离场审计",
+      "description": "人物 · 人物 · 群像汇流与离场审计。 使用现有模板或工作流运行。"
+    }
+  },
+  "genrePacks": {
+    "general": {
+      "label": "通用 / 玄幻爽文（默认）",
+      "description": "默认包，长篇连载向，男频玄幻爽文风格基底。"
+    },
+    "lishi": {
+      "label": "历史",
+      "description": "历史背景、朝堂权谋、架空或考据。"
+    },
+    "xianxia": {
+      "label": "仙侠修真",
+      "description": "飞升体系、人间道义、正邪较量。文笔典雅。"
+    },
+    "yanqing": {
+      "label": "言情",
+      "description": "情感细腻、双视角心理戏、CP 张力为骨。"
+    },
+    "realism": {
+      "label": "现实主义",
+      "description": "日常感、不回避琐碎、内心戏与时代切片。"
+    },
+    "suspense": {
+      "label": "悬疑推理",
+      "description": "信息控制、不可靠叙事、伏笔密度高。"
+    },
+    "xuanhuan": {
+      "label": "玄幻",
+      "description": "宏大世界观、天赋体系、热血升级。"
+    },
+    "wuxia": {
+      "label": "武侠",
+      "description": "江湖恩怨、侠义精神、门派纷争。"
+    },
+    "dushi": {
+      "label": "都市",
+      "description": "现代都市背景、职场/商战/生活。"
+    },
+    "scifi": {
+      "label": "科幻",
+      "description": "科学设定、未来社会、星际探索。"
+    },
+    "moshi": {
+      "label": "末世",
+      "description": "末日求生、人性考验、废土探索。"
+    },
+    "chuanyue": {
+      "label": "穿越",
+      "description": "穿越时空、利用先知优势、改变命运。"
+    },
+    "chongsheng": {
+      "label": "重生",
+      "description": "重回过去、弥补遗憾、逆转人生。"
+    },
+    "xitong": {
+      "label": "系统流",
+      "description": "获得系统辅助、任务升级、数值成长。"
+    },
+    "wuxian": {
+      "label": "无限流",
+      "description": "穿越不同世界/副本、团队协作、生存挑战。"
+    },
+    "cyberpunk": {
+      "label": "赛博朋克",
+      "description": "高科技低生活、义体改造、公司阴谋。"
+    },
+    "cthulhu": {
+      "label": "克苏鲁",
+      "description": "未知恐惧、理智崩溃、不可名状之物。"
+    },
+    "zhongtian": {
+      "label": "种田",
+      "description": "经营建设、发展壮大、慢节奏成长。"
+    },
+    "zhengba": {
+      "label": "争霸",
+      "description": "权谋争斗、势力扩张、天下争霸。"
+    },
+    "xifan": {
+      "label": "西幻/奇幻",
+      "description": "魔法世界、种族纷争、史诗冒险。"
+    },
+    "youxi": {
+      "label": "游戏",
+      "description": "游戏世界、副本挑战、竞技对抗。"
+    }
+  }
+}

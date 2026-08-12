@@ -1,0 +1,31 @@
+{
+  "panel": {
+    "title": "故事进程年表",
+    "subtitle": "AI 从已写正文中提取剧情大事，按故事进程排列。区别于「历史年表」（世界背景）和「故事线」（结构）。"
+  },
+  "actions": {
+    "manualAdd": "手动添加",
+    "extractFromText": "从正文提取年表",
+    "extracting": "提取中 {{done}}/{{total}}",
+    "newEventTitle": "新事件"
+  },
+  "progress": {
+    "extracting": "正在逐章提取剧情大事…（{{done}}/{{total}}）"
+  },
+  "empty": {
+    "loading": "加载中...",
+    "noTimeline": "还没有故事年表",
+    "noTimelineHint": "写完一些章节后，点「从正文提取年表」让 AI 自动梳理剧情大事"
+  },
+  "errors": {
+    "noWrittenChapters": "还没有已写正文的章节，先去写作再提取"
+  },
+  "importance": {
+    "minor": "次要",
+    "important": "重要",
+    "critical": "关键"
+  },
+  "event": {
+    "jumpToChapter": "跳转到关联章节"
+  }
+}

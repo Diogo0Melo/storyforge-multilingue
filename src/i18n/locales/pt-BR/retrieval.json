@@ -1,0 +1,176 @@
+{
+  "library": {
+    "title": "Fontes e Biblioteca de Recuperação",
+    "subtitle": "Esta é uma projeção ao vivo do Canon do projeto — sem segunda cópia da verdade. Inspecione cada entrada, controle se os campos participam da escrita, ajuste prioridade e orçamento e veja o que o runtime do nó realmente recuperou.",
+    "rebuildButton": "Reconstruir Índice Derivado",
+    "clearButton": "Excluir Índice Derivado",
+    "statVisibleRecords": "Registros Visíveis",
+    "statVisibleFields": "Campos Visíveis",
+    "statEnabledTokens": "Estimativa de Conteúdo Habilitado",
+    "statChunks": "Blocos de Recuperação de Capítulos",
+    "inputSectionTitle": "Fontes de Entrada",
+    "inputSectionHint": "As alterações afetam apenas a estratégia de recuperação; nunca reescrevem prosa ou conteúdo canônico.",
+    "searchPlaceholder": "Buscar fontes, registros, campos ou texto",
+    "searchAria": "Buscar na biblioteca",
+    "loadingEntries": "Carregando fontes do projeto…",
+    "emptyWorld": "Nenhuma fonte visível corresponde a este mundo.",
+    "fieldCount": "{{count}} campos",
+    "chunkCount": "{{count}} blocos",
+    "updatedAt": "Atualizado em {{date}}",
+    "updatedAtUnknown": "desconhecido",
+    "enableDocumentAria": "Habilitar fonte {{title}}",
+    "defaultWeightLabel": "Peso padrão",
+    "fieldCapLabel": "Limite do campo",
+    "enableFieldAria": "Habilitar campo {{label}}",
+    "fieldMeta": "{{tokens}} tokens · peso {{weight}} · limite {{cap}}",
+    "recallSectionTitle": "Recuperações Reais Recentes",
+    "recallSectionHint": "De snapshots salvos de execução de nós; não recalcula se as fontes mudarem depois.",
+    "recallEmpty": "Nenhuma execução de nó com fontes precisas registrada ainda.",
+    "recallSummary": "incluídos {{included}} / omitidos {{omitted}} / aparados {{trimmed}}",
+    "recallIncluded": "Incluídos",
+    "recallOmitted": "Omitidos",
+    "recallTrimmed": "Aparados",
+    "recallNone": "nenhum",
+    "toastRebuildSuccess": "Índice reconstruído: {{chunks}} blocos de texto, {{summaries}} resumos narrativos.",
+    "toastRebuildFailed": "Falha ao reconstruir: {{message}}",
+    "confirmClearTitle": "Excluir cache de recuperação reconstruível?",
+    "confirmClearMessage": "Apenas blocos de capítulos, vetores e caches de resumo narrativo serão excluídos; texto dos capítulos, personagens, configurações e políticas de fontes permanecem intactos.",
+    "confirmClearConfirmText": "Excluir cache derivado",
+    "toastClearSuccess": "Excluídos {{chunks}} blocos de recuperação e {{summaries}} resumos derivados; Canon inalterado.",
+    "toastClearFailed": "Falha ao excluir: {{message}}"
+  },
+  "vectorState": {
+    "none": "Sem índice de capítulo",
+    "keyword": "Palavras-chave locais",
+    "partial": "Vetores parciais",
+    "ready": "Vetores prontos"
+  },
+  "selector": {
+    "title": "Campos de Fonte Precisos",
+    "hint": "{{count}} selecionados; na execução, a recuperação real é congelada pelos pesos e orçamento da biblioteca.",
+    "refreshTitle": "Atualizar fontes",
+    "searchPlaceholder": "Buscar personagens, capítulos, configurações ou campos",
+    "searchAria": "Buscar campos de fonte",
+    "loadingProjection": "Construindo projeção de fontes visíveis…",
+    "emptyWorld": "Nenhum campo de fonte correspondente para este mundo.",
+    "disabledTooltip": "Este campo está desabilitado na biblioteca",
+    "enabledMeta": "{{tokens}} tokens · peso {{weight}} · limite {{cap}}",
+    "stateReady": "Vetores prontos",
+    "stateKeyword": "Palavras-chave locais",
+    "stateNone": "Sem índice"
+  },
+  "sourceLabels": {
+    "worldview": "Visão de mundo",
+    "storyCore": "Núcleo da história",
+    "characters": "Fichas de personagens",
+    "characterRelations": "Relações de personagens",
+    "chapterContent": "Capítulos e texto anterior",
+    "codex": "Entradas de configuração",
+    "locations": "Locais importantes",
+    "historical": "História",
+    "foreshadows": "Prenúncios",
+    "references": "Referências do projeto",
+    "itemLedger": "Movimentação de itens"
+  },
+  "fieldLabels": {
+    "worldview": {
+      "summary": "Resumo do mundo",
+      "worldOrigin": "Origem do mundo",
+      "powerHierarchy": "Sistema de poder",
+      "worldStructure": "Estrutura do mundo",
+      "worldDimensions": "Dimensões do mundo",
+      "continentLayout": "Distribuição continental",
+      "mountainsRivers": "Montanhas e rios",
+      "climateByRegion": "Clima por região",
+      "naturalResourceOverview": "Recursos naturais",
+      "historyLine": "Linha histórica do mundo",
+      "worldEvents": "Grandes eventos mundiais",
+      "races": "Definições raciais",
+      "factionLayout": "Distribuição de facções",
+      "politicsOverview": "Sistema político",
+      "economyOverview": "Sistema econômico",
+      "cultureOverview": "Sistema cultural",
+      "internalConflicts": "Conflitos internos",
+      "itemDesign": "Design de itens",
+      "rules": "Regras do mundo (campo legado)"
+    },
+    "storyCore": {
+      "logline": "Logline",
+      "concept": "Conceito da história",
+      "theme": "Tema da história",
+      "centralConflict": "Conflito central",
+      "plotPattern": "Padrão narrativo",
+      "mainPlot": "Enredo principal",
+      "subPlots": "Sub-enredos"
+    },
+    "characters": {
+      "shortDescription": "Descrição em uma frase",
+      "identity": "Identidade",
+      "profile": "Perfil básico",
+      "appearance": "Aparência",
+      "personality": "Personalidade",
+      "background": "Histórico",
+      "motivation": "Motivação",
+      "values": "Valores",
+      "strengths": "Pontos fortes",
+      "weaknesses": "Fraquezas",
+      "fears": "Medos",
+      "goals": "Objetivos",
+      "innerConflict": "Conflito interior",
+      "abilities": "Habilidades",
+      "powerLevel": "Nível de poder",
+      "relationships": "Relações",
+      "arc": "Arco",
+      "keyEvents": "Eventos-chave",
+      "speechStyle": "Estilo de fala",
+      "habits": "Hábitos",
+      "signatureItem": "Item marcante"
+    },
+    "characterRelations": {
+      "relationType": "Tipo de relação",
+      "label": "Rótulo da relação",
+      "description": "Descrição da relação",
+      "isBidirectional": "Bidirecional"
+    },
+    "chapterContent": {
+      "content": "Manuscrito",
+      "summary": "Resumo do capítulo",
+      "notes": "Notas do autor"
+    },
+    "codex": {
+      "summary": "Resumo",
+      "description": "Descrição detalhada",
+      "tags": "Tags"
+    },
+    "locations": {
+      "description": "Descrição",
+      "significance": "Importância na trama",
+      "tags": "Tags do local"
+    },
+    "historical": {
+      "overview": "Visão geral histórica",
+      "eraSystem": "Sistema de calendário",
+      "events": "Eventos históricos"
+    },
+    "foreshadows": {
+      "description": "Descrição do prenúncio",
+      "notes": "Observações",
+      "status": "Status"
+    },
+    "references": {
+      "note": "Pontos-chave",
+      "analysisSummary": "Resumo da análise",
+      "importedData": "Referência estruturada"
+    },
+    "itemLedger": {
+      "event": "Evento de item",
+      "note": "Observação"
+    }
+  },
+  "titles": {
+    "worldviewPrimary": "Visão de mundo principal",
+    "worldviewCurrent": "Visão de mundo atual",
+    "historicalPrimary": "História do mundo principal",
+    "historicalCurrent": "História do mundo atual"
+  }
+}

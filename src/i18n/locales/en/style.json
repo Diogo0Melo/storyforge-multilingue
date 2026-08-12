@@ -1,0 +1,62 @@
+{
+  "learning": {
+    "title": "Style Learning",
+    "subtitle": "Let AI read chapters you've polished to build a personal style profile. When enabled, future chapter generation will mirror your voice.",
+    "corpusLabel": "Learning Corpus",
+    "selectedStats_one": "{{count}} chapter selected · ~{{words}} words",
+    "selectedStats_other": "{{count}} chapters selected · ~{{words}} words",
+    "emptyCorpus": "No learnable chapters yet. Write a few chapters and set their status to \"Revised / Polished / Final\" (these are the ones you shaped by hand and best represent your style), or save a revision pair first.",
+    "chapterWords": "{{count}} words",
+    "learnButtonRunning": "Learning your style…",
+    "learnButtonRelearn": "Re-learn My Style",
+    "learnButtonFirst": "Learn My Style",
+    "learnHint": "Reads up to {{maxChapters}} chapters at a time, {{maxChars}} characters each; revision pairs inject at most 3 short excerpts instead of full chapters.",
+    "errorMaxChapters": "To keep input costs in check, select at most {{max}} chapters at a time. Deselect one before adding more.",
+    "errorEmptyResponse": "AI returned no content. Please try again.",
+    "errorLearnFailed": "Learning failed. Please try again.",
+    "profileTitle": "My Style Profile",
+    "profileStats": "Profile learned from {{chapters}} chapters (~{{words}} words). Edit below; changes auto-save on blur.",
+    "profilePlaceholder": "Style profile (editable; auto-saves on blur)",
+    "toggleEnabled": "On: injected during generation",
+    "toggleDisabled": "Off: not injected",
+    "toggleOn": "Injecting",
+    "toggleOff": "Off",
+    "revisionPairsSectionTitle": "Revision Pairs",
+    "revisionPairsSectionHint": "{{count}} / 8 pairs saved; samples with author notes take priority during learning."
+  },
+  "calibration": {
+    "title": "Interactive Calibration",
+    "subtitle": "Test the current profile with a short passage. AI rewrites only this text; confirm and edit before saving so unconfirmed output never contaminates your style samples.",
+    "sourcePlaceholder": "Paste a short passage to calibrate (up to {{max}} characters)",
+    "charCount": "{{used}} / {{max}} characters",
+    "generateRunning": "Generating…",
+    "generateButton": "Generate Calibration Draft",
+    "resultLabel": "Calibration draft (you can keep editing)",
+    "judgmentLabel": "Your judgment",
+    "feedbackPlaceholder": "Optional: what felt right / what still misses",
+    "verdictCloser": "Closer to my style",
+    "verdictAdjust": "Still needs adjustment",
+    "savePairButton": "Save as Revision Pair",
+    "errorEmptyResult": "AI returned no calibration draft. Please try again.",
+    "errorGenerateFailed": "Generation failed. Please try again.",
+    "toastRecordedCloser": "Recorded: closer to your style",
+    "toastRecordedAdjust": "Recorded: still needs adjustment",
+    "errorFeedbackSaveFailed": "Failed to save feedback: {{message}}",
+    "toastPairSaved": "Before/after pair saved; it will be prioritized next time you re-learn the profile",
+    "errorPairSaveFailed": "Failed to save pair: {{message}}",
+    "pairChapterTitle": "Interactive Calibration Sample"
+  },
+  "revisionPairs": {
+    "empty": "No revision pairs yet. Use \"Compare & Polish\" in the chapter editor and save, or run an interactive calibration below to start collecting samples.",
+    "deleteTitle": "Delete this style sample",
+    "deleteAria": "Delete style sample: {{title}}",
+    "beforeLabel": "Before",
+    "afterLabel": "After",
+    "notePlaceholder": "Explain why you rewrote it this way (auto-saves on blur; noted samples are prioritized during learning)"
+  },
+  "status": {
+    "revised": "Revised",
+    "polished": "Polished",
+    "final": "Final"
+  }
+}

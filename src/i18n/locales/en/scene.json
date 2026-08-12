@@ -1,0 +1,23 @@
+{
+  "panel": {
+    "title": "Scene verification",
+    "subtitle": "Describe the scene you're conceiving; the AI combines this work's worldview, historical timeline, and \"Reality & Fantasy\" rules to suggest background-faithful details, setting checks, and plot inspiration."
+  },
+  "form": {
+    "sceneLabel": "Current scene",
+    "scenePlaceholder": "Describe the scene you're writing or conceiving — the more specific, the better.\n\nE.g.: The protagonist is in a Song-dynasty tavern in Bianjing, haggling with a silk merchant to drive down the purchase price of Jiangnan satin.",
+    "eraLabel": "Era / time context (optional)",
+    "eraPlaceholder": "E.g.: Northern Song, Renzong era / Year three after transmigration",
+    "locationLabel": "Location (optional)",
+    "locationPlaceholder": "E.g.: Fanlou in Bianjing / Wutan City on the Dou Qi continent"
+  },
+  "action": {
+    "building": "Loading settings...",
+    "streaming": "Verifying...",
+    "button": "Verify scene",
+    "stop": "Stop"
+  },
+  "output": {
+    "placeholder": "Verification results will appear here..."
+  }
+}

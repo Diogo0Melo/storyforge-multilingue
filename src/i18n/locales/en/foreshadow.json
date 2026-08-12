@@ -1,0 +1,82 @@
+{
+  "panel": {
+    "sectionLabel": "Creation area",
+    "pageTitle": "Foreshadowing tracker",
+    "summaryLine": "{{count}} foreshadowings · {{plantedCount}} planted · {{echoedCount}} echoed · {{resolvedCount}} resolved",
+    "aiSuggestButtonTitle": "AI foreshadowing suggestions",
+    "aiSuggestButtonLabel": "AI suggest",
+    "addButtonLabel": "New foreshadowing",
+    "scopeNoticeStrong": "Foreshadowings do not automatically rewrite text you have already written",
+    "scopeNoticeWhen": "when generating or continuing that chapter",
+    "scopeNoticeBody1": "Foreshadowings <strong>do not automatically rewrite text you have already written</strong>. After assigning plant / echo / resolve chapters, <strong>{{when}}</strong>, the AI injects them as writing-task reminders into the context.",
+    "scopeNoticeBody2": "There is no one-click button to insert foreshadowings into finished prose; to add clues to existing text, edit manually or use the review / rewrite tools.",
+    "guideStrong": "Foreshadowings do not auto-rewrite prose.",
+    "guideBody1": "This panel manages planting, echoing, and resolving tasks so your finished manuscript stays untouched.",
+    "guideBody2": "Once you set «plant chapter / echo chapter / resolve chapter», those tasks enter the context for chapter generation, continuation, and quality review.",
+    "guideBody3": "If the chapter is already complete, return to the prose page and manually fill in or continue writing per task, or regenerate, then advance the foreshadowing status to «planted / echoed / resolved».",
+    "viewListTitle": "List view",
+    "viewListLabel": "List",
+    "viewKanbanTitle": "Kanban view",
+    "viewKanbanLabel": "Kanban",
+    "filterAll": "All",
+    "aiSectionTitle": "AI foreshadowing suggestions",
+    "adoptStreamingHint": "AI is organizing suggestions into foreshadowing entries and saving…",
+    "advanceStatusButton": "Advance status",
+    "typeLabel": "Type",
+    "statusLabel": "Status",
+    "descriptionLabel": "Foreshadowing description",
+    "chapterRelationHeading": "📌 Chapter links",
+    "plantChapterLabel": "Plant chapter (where the foreshadowing is planted)",
+    "echoChaptersLabel": "Echo chapters (where the foreshadowing echoes; multi-select)",
+    "noChaptersHint": "No chapters yet; create chapters in the outline first",
+    "removeStaleEchoTitle": "Click to remove this stale/non-canonical chapter reference",
+    "resolveChapterLabel": "Resolve chapter (where the foreshadowing resolves)",
+    "notesLabel": "Notes",
+    "emptySelection": "← Select or add a foreshadowing"
+  },
+  "kanban": {
+    "emptyColumn": "No foreshadowings",
+    "revertButtonTitle": "Revert status",
+    "revertButtonLabel": "← Revert",
+    "advanceButtonTitle": "Advance status",
+    "advanceButtonLabel": "Advance →"
+  },
+  "status": {
+    "planned": "📋 Planned",
+    "planted": "🌱 Planted",
+    "echoed": "🔔 Echoed",
+    "resolved": "✅ Resolved"
+  },
+  "statusColumn": {
+    "planned": "Planned",
+    "planted": "Planted",
+    "echoed": "Echoed",
+    "resolved": "Resolved"
+  },
+  "type": {
+    "chekhov": "🔫 Chekhov's gun",
+    "prophecy": "🔮 Prophetic hint",
+    "symbol": "🎭 Symbolic foreshadowing",
+    "character": "👤 Character foreshadowing",
+    "dialogue": "💬 Dialogue foreshadowing",
+    "environment": "🌿 Environmental foreshadowing",
+    "timeline": "⏰ Timeline",
+    "red-herring": "🐟 Red herring",
+    "parallel": "🔄 Parallel foreshadowing",
+    "callback": "↩️ Callback"
+  },
+  "messages": {
+    "parseFailed": "Could not parse foreshadowing entries; please retry or add manually",
+    "adoptSuccess_one": "Wrote {{count}} foreshadowing",
+    "adoptSuccess_other": "Wrote {{count}} foreshadowings",
+    "adoptSuccessSkippedSuffix": ", skipped {{count}}",
+    "adoptFailed": "Adoption failed: {{message}}",
+    "unknownError": "Unknown error",
+    "defaultNewName": "New foreshadowing",
+    "chapterRefFallback": "Chapter #{{id}}",
+    "chapterOutlineSuffix": "(outline: {{outlineTitle}})",
+    "staleChapterRef": "Chapter #{{id}} (reference may be stale)",
+    "nonCanonicalChapterRef": "{{title}} (non-canonical/duplicate record)",
+    "unspecifiedOption": "Unspecified"
+  }
+}

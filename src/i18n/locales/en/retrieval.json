@@ -1,0 +1,176 @@
+{
+  "library": {
+    "title": "Sources & Retrieval Library",
+    "subtitle": "This is a live projection of the project Canon — no second copy of the truth. Inspect each input, control whether fields participate in writing, tune priority and budget, and see what the node runtime actually recalled.",
+    "rebuildButton": "Rebuild Derived Index",
+    "clearButton": "Delete Derived Index",
+    "statVisibleRecords": "Visible Records",
+    "statVisibleFields": "Visible Fields",
+    "statEnabledTokens": "Enabled Content Estimate",
+    "statChunks": "Chapter Retrieval Chunks",
+    "inputSectionTitle": "Input Sources",
+    "inputSectionHint": "Changes only affect retrieval strategy; they never rewrite prose or canon content.",
+    "searchPlaceholder": "Search sources, records, fields, or body text",
+    "searchAria": "Search library",
+    "loadingEntries": "Loading project sources…",
+    "emptyWorld": "No visible sources match this world.",
+    "fieldCount": "{{count}} fields",
+    "chunkCount": "{{count}} chunks",
+    "updatedAt": "Updated {{date}}",
+    "updatedAtUnknown": "unknown",
+    "enableDocumentAria": "Enable source {{title}}",
+    "defaultWeightLabel": "Default weight",
+    "fieldCapLabel": "Field cap",
+    "enableFieldAria": "Enable field {{label}}",
+    "fieldMeta": "{{tokens}} tokens · weight {{weight}} · cap {{cap}}",
+    "recallSectionTitle": "Recent Actual Recalls",
+    "recallSectionHint": "From saved node-run snapshots; won't recalculate if sources change later.",
+    "recallEmpty": "No precise-source node runs recorded yet.",
+    "recallSummary": "included {{included}} / omitted {{omitted}} / trimmed {{trimmed}}",
+    "recallIncluded": "Included",
+    "recallOmitted": "Omitted",
+    "recallTrimmed": "Trimmed",
+    "recallNone": "none",
+    "toastRebuildSuccess": "Index rebuilt: {{chunks}} body chunks, {{summaries}} narrative summaries.",
+    "toastRebuildFailed": "Rebuild failed: {{message}}",
+    "confirmClearTitle": "Delete rebuildable retrieval cache?",
+    "confirmClearMessage": "Only chapter chunks, vectors, and narrative summary caches will be deleted; chapter body text, characters, settings, and source policies stay intact.",
+    "confirmClearConfirmText": "Delete derived cache",
+    "toastClearSuccess": "Deleted {{chunks}} retrieval chunks and {{summaries}} derived summaries; Canon unchanged.",
+    "toastClearFailed": "Delete failed: {{message}}"
+  },
+  "vectorState": {
+    "none": "No chapter index",
+    "keyword": "Local keywords",
+    "partial": "Partial vectors",
+    "ready": "Vectors ready"
+  },
+  "selector": {
+    "title": "Precise Source Fields",
+    "hint": "{{count}} selected; at run time the real recall is frozen by library weights and budget.",
+    "refreshTitle": "Refresh sources",
+    "searchPlaceholder": "Search characters, chapters, settings, or fields",
+    "searchAria": "Search source fields",
+    "loadingProjection": "Building visible source projection…",
+    "emptyWorld": "No matching source fields for this world.",
+    "disabledTooltip": "This field is disabled in the library",
+    "enabledMeta": "{{tokens}} tokens · weight {{weight}} · cap {{cap}}",
+    "stateReady": "Vectors ready",
+    "stateKeyword": "Local keywords",
+    "stateNone": "No index"
+  },
+  "sourceLabels": {
+    "worldview": "Worldview",
+    "storyCore": "Story core",
+    "characters": "Character profiles",
+    "characterRelations": "Character relationships",
+    "chapterContent": "Chapters & prior text",
+    "codex": "Codex entries",
+    "locations": "Important locations",
+    "historical": "History",
+    "foreshadows": "Foreshadowing",
+    "references": "Project references",
+    "itemLedger": "Item ledger"
+  },
+  "fieldLabels": {
+    "worldview": {
+      "summary": "World summary",
+      "worldOrigin": "World origin",
+      "powerHierarchy": "Power system",
+      "worldStructure": "World structure",
+      "worldDimensions": "World dimensions",
+      "continentLayout": "Continent layout",
+      "mountainsRivers": "Mountains & rivers",
+      "climateByRegion": "Regional climate",
+      "naturalResourceOverview": "Natural resources",
+      "historyLine": "World history timeline",
+      "worldEvents": "Major world events",
+      "races": "Race definitions",
+      "factionLayout": "Faction distribution",
+      "politicsOverview": "Political system",
+      "economyOverview": "Economic system",
+      "cultureOverview": "Cultural system",
+      "internalConflicts": "Internal conflicts",
+      "itemDesign": "Item design",
+      "rules": "World rules (legacy field)"
+    },
+    "storyCore": {
+      "logline": "Logline",
+      "concept": "Story concept",
+      "theme": "Story theme",
+      "centralConflict": "Central conflict",
+      "plotPattern": "Plot pattern",
+      "mainPlot": "Main plot",
+      "subPlots": "Subplots"
+    },
+    "characters": {
+      "shortDescription": "One-line description",
+      "identity": "Identity",
+      "profile": "Basic profile",
+      "appearance": "Appearance",
+      "personality": "Personality",
+      "background": "Background",
+      "motivation": "Motivation",
+      "values": "Values",
+      "strengths": "Strengths",
+      "weaknesses": "Weaknesses",
+      "fears": "Fears",
+      "goals": "Goals",
+      "innerConflict": "Inner conflict",
+      "abilities": "Abilities",
+      "powerLevel": "Power level",
+      "relationships": "Relationships",
+      "arc": "Arc",
+      "keyEvents": "Key events",
+      "speechStyle": "Speech style",
+      "habits": "Habits",
+      "signatureItem": "Signature item"
+    },
+    "characterRelations": {
+      "relationType": "Relation type",
+      "label": "Relation label",
+      "description": "Relation description",
+      "isBidirectional": "Bidirectional"
+    },
+    "chapterContent": {
+      "content": "Manuscript",
+      "summary": "Chapter summary",
+      "notes": "Author notes"
+    },
+    "codex": {
+      "summary": "Summary",
+      "description": "Detailed description",
+      "tags": "Tags"
+    },
+    "locations": {
+      "description": "Description",
+      "significance": "Plot significance",
+      "tags": "Location tags"
+    },
+    "historical": {
+      "overview": "Historical overview",
+      "eraSystem": "Calendar system",
+      "events": "Historical events"
+    },
+    "foreshadows": {
+      "description": "Foreshadowing description",
+      "notes": "Notes",
+      "status": "Status"
+    },
+    "references": {
+      "note": "Key takeaways",
+      "analysisSummary": "Analysis summary",
+      "importedData": "Structured reference"
+    },
+    "itemLedger": {
+      "event": "Item event",
+      "note": "Note"
+    }
+  },
+  "titles": {
+    "worldviewPrimary": "Primary worldview",
+    "worldviewCurrent": "Current worldview",
+    "historicalPrimary": "Primary world history",
+    "historicalCurrent": "Current world history"
+  }
+}

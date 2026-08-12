@@ -1,0 +1,69 @@
+{
+  "panel": {
+    "title": "Inventory",
+    "subtitle": "AI extracts item gains and losses per character from written chapters, automatically tallying holdings and history."
+  },
+  "roleWeight": {
+    "main": "Main characters",
+    "secondary": "Secondary characters",
+    "npc": "NPCs",
+    "extra": "Extras"
+  },
+  "controls": {
+    "manualAdd": "Manual add",
+    "manualAddTitleWithChar": "Add item to {{name}}",
+    "manualAddTitleEmpty": "Select a character first",
+    "extractButton": "Extract inventory from text",
+    "extractingProgress": "Extracting {{done}}/{{total}}",
+    "viewCharacterLabel": "View character:",
+    "allCharacters": "All characters",
+    "currentBackpack": "Current: {{name}}'s backpack",
+    "mainTag": " · main",
+    "extractRangeLabel": "Extraction range:",
+    "extractRangeAll": "All written chapters",
+    "extractRangeCustom": "Custom start/end chapter",
+    "rangeTo": "to",
+    "chapterOptionNoContent": "(no text)",
+    "chapterOption": "Chapter {{ordinal}} · {{title}}"
+  },
+  "stats": {
+    "activeKinds": "Active kinds",
+    "totalHeld": "Total held",
+    "movements": "Ledger entries"
+  },
+  "extracting": {
+    "progress": "Extracting item ledger chapter by chapter… ({{done}}/{{total}})"
+  },
+  "list": {
+    "loading": "Loading...",
+    "emptyTitle": "Inventory is empty",
+    "emptyHint": "After writing a few chapters, click \"Extract inventory from text\" to let AI organize it",
+    "cumulativeStats": "Gained {{gained}} · Consumed {{consumed}}",
+    "statusHolding": "Holding",
+    "statusExhausted": "Exhausted",
+    "statusCheckNeeded": "Needs review",
+    "timelineTitle": "Gain / consume timeline",
+    "editItemNameTitle": "Edit item name",
+    "editItemNameAria": "Edit item name",
+    "holderPlaceholder": "Holder",
+    "editHolderTitle": "Edit holder",
+    "editHolderAria": "Edit holder",
+    "editQuantityTitle": "Edit quantity",
+    "editQuantityAria": "Edit quantity",
+    "actionGain": "Gain",
+    "actionConsume": "Consume",
+    "deleteEntryTitle": "Delete entry",
+    "deleteEntryAria": "Delete entry",
+    "notePlaceholder": "Note",
+    "editNoteTitle": "Edit note",
+    "editNoteAria": "Edit note"
+  },
+  "unclaimed": {
+    "hint": "Unassigned items (legacy data). Claim them for a character here; original records are preserved.",
+    "claimAria": "Claim {{name}}",
+    "selectCharacterToClaim": "Select a character to claim…"
+  },
+  "error": {
+    "selectCharacterFirst": "Select a character before manually adding their items"
+  }
+}

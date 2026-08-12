@@ -1,0 +1,54 @@
+{
+  "transition": {
+    "enter": "Primeira confirmação",
+    "advance": "Avanço",
+    "regress": "Regressão",
+    "switch": "Mudança de caminho"
+  },
+  "analyze": {
+    "noLinkedCharacter": "O mundo deste capítulo não tem personagens vinculados a um sistema de cultivo. Defina primeiro um sistema principal no cartão do personagem.",
+    "candidatesFound": "Encontrados {{count}} candidatos confiáveis; confirme-os um a um.",
+    "noCandidates": "Nenhuma mudança de reino confirmável com segurança foi encontrada.",
+    "failed": "Falha na análise"
+  },
+  "accept": {
+    "success": "Confirmado e gravado na linha do tempo de cultivo.",
+    "failed": "Falha na confirmação"
+  },
+  "delete": {
+    "confirmTitle": "Excluir este evento de cultivo confirmado?",
+    "confirmMessage": "Após a exclusão, o reino atual e o caminho real serão reprojetados a partir dos eventos restantes.",
+    "confirmButton": "Excluir"
+  },
+  "panel": {
+    "title": "Progresso de cultivo",
+    "subtitle": "Esta é a linha do tempo downstream confirmada pelo texto da obra; o \"reino definido atual\" no cartão do personagem continua sendo uma predefinição upstream, e ambos não se sobrepõem.",
+    "feedbackToggle": "Retroalimentar escrita futura (desativado por padrão)",
+    "selectChapterLabel": "Selecionar capítulo escrito",
+    "sourceChapterAria": "Capítulo de origem do progresso de cultivo",
+    "noWrittenChapters": "Nenhum capítulo escrito ainda",
+    "analyzing": "Analisando",
+    "analyzeButton": "Analisar este capítulo",
+    "confirmCandidateAria": "Confirmar candidato de cultivo",
+    "ignoreCandidateAria": "Ignorar candidato de cultivo",
+    "noTrackableCharacters": "Nenhum personagem está vinculado a um sistema de cultivo principal ainda. Vá até \"Geração de personagens\" para definir um.",
+    "mainRoleSuffix": "Principal",
+    "unlinkedSystem": "Sistema não vinculado",
+    "currentStage": "Atual no texto: {{stage}}",
+    "noConfirmedStage": "Nenhum reino confirmado no texto ainda",
+    "characterCardSetting": "Configuração do cartão: {{stage}}",
+    "invalidStage": "Inválido",
+    "tierLabel": "Camada {{tier}}",
+    "noConfirmedEvents": "Nenhum evento de cultivo confirmado pelo autor no texto ainda",
+    "deleteEventAria": "Excluir evento de cultivo"
+  },
+  "validation": {
+    "missingId": "Existe um estágio sem ID",
+    "duplicateId": "ID de estágio duplicado: {{id}}",
+    "missingName": "O estágio {{id}} está sem nome",
+    "unnamed": "(sem nome)",
+    "selfReference": "O estágio \"{{name}}\" não pode usar a si mesmo como pré-requisito",
+    "danglingParent": "O estágio \"{{name}}\" referencia o pré-requisito inexistente {{parentId}}",
+    "hasCycle": "Há um ciclo direcionado nos relacionamentos de estágios; o caminho de cultivo deve ser um DAG"
+  }
+}

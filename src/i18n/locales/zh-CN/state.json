@@ -1,0 +1,55 @@
+{
+  "panel": {
+    "title": "角色状态卡",
+    "subtitle": "以角色为中心聚合当前状态、地点、剧情进度、持有物与势力。章节编辑器的“提取状态”只会更新已登记角色。",
+    "exportButton": "导出",
+    "summaryTotalCharacters": "角色总数",
+    "summaryWithState": "已建立状态",
+    "summaryMissingState": "待补状态",
+    "loading": "加载中…",
+    "emptyTitle": "还没有角色",
+    "emptyHint": "先在“角色设计”登记角色，再从章节正文提取动态状态。"
+  },
+  "card": {
+    "pendingExtraction": "待提取",
+    "noShortDescription": "暂无角色简介",
+    "editStateTitle": "编辑状态",
+    "fieldPlaceholder": "字段",
+    "valuePlaceholder": "当前值",
+    "addField": "+ 添加字段",
+    "save": "保存",
+    "labelLocation": "所在地点",
+    "labelFaction": "所属势力",
+    "labelPlotProgress": "剧情进度",
+    "currentStateHeader": "当前状态",
+    "fieldSuffix": "{{key}}：",
+    "noDynamicState": "尚无动态状态。可在章节编辑器中点击“提取状态”。",
+    "defaultFieldKey": "当前状态",
+    "unrecorded": "未记录"
+  },
+  "inventoryFact": {
+    "label": "持有物",
+    "sourceInventory": "来自物品栏",
+    "sourceState": "来自状态字段",
+    "goToInventoryTitle": "去物品栏",
+    "goToInventoryAria": "去物品栏"
+  },
+  "diffModal": {
+    "noChanges": "本章未检测到状态变更",
+    "close": "关闭",
+    "reviewTitle": "📋 状态变更审核",
+    "reviewSubtitle": "章节「{{chapterTitle}}」生成了 {{count}} 条变更，请勾选要写入状态表的项目。",
+    "selectedCount": "已选 {{selected}}/{{total}} 条",
+    "skipThisTime": "跳过本次",
+    "cancel": "取消",
+    "confirmWrite": "写入状态表（{{count}}）",
+    "consoleConfirm": "[StateDiff] 用户确认：{{accepted}}/{{total}} 条变更"
+  },
+  "categoryLabels": {
+    "character": "角色",
+    "location": "地点",
+    "item": "物品",
+    "faction": "势力",
+    "event": "事件"
+  }
+}

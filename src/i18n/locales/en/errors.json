@@ -1,0 +1,78 @@
+{
+  "simulation": {
+    "selectChatSessionFirst": "Please select a character chat session first.",
+    "selectRuntimeSessionFirst": "Please select a runtime session first.",
+    "currentSessionMissing": "The current runtime session does not exist.",
+    "checkpointMissing": "The checkpoint to restore does not exist.",
+    "checkpointVerifyFailed": "Checkpoint content verification failed; cannot restore."
+  },
+  "characterDrivenPlan": {
+    "sourcePlanMissing": "Source plan does not exist",
+    "planMissing": "Plan does not exist",
+    "noValidVolumes": "Generated result has no valid volumes to save",
+    "crossProjectActivation": "Cannot activate a character-driven plan from another project",
+    "defaultNamePrefix": "Character-driven plan"
+  },
+  "backup": {
+    "snapshotMissing": "Snapshot does not exist"
+  },
+  "workflow": {
+    "graphInvalid": "Workflow graph is invalid: {{details}}",
+    "cloneSuffix": "copy"
+  },
+  "gist": {
+    "connectFailed": "Connection failed",
+    "notConnected": "Not connected to GitHub",
+    "backupFailed": "Backup failed",
+    "restoreFailed": "Restore failed"
+  },
+  "worldRules": {
+    "migrationNote": "[Auto-migration notice] This project previously used the \"Historical Research\" mode. It has been upgraded to a dimension-level \"Reality vs Fantasy\" rule system. Please configure which content is based on reality and which is fictional in each dimension on the left."
+  },
+  "project": {
+    "deleteOperation": "Delete project",
+    "deleteDetails": "This will permanently erase all project data (chapters, worldview, characters, codex entries, state cards, etc.). This cannot be undone.",
+    "enableMultiWorldOperation": "Enable multi-world mode",
+    "enableMultiWorldDetails": "This will migrate existing project data (worldview, power system, outline, codex, etc.) under the \"Primary World\". We recommend exporting a backup first.",
+    "deleteGroupOperation": "Delete world \"{{name}}\"",
+    "deleteGroupDetails": "This will permanently erase all settings for this world (worldview, power system, geography, history, codex, etc.). This cannot be undone."
+  },
+  "inspiration": {
+    "parseFailed": "Unable to parse Agnes output. Please check the raw output and try again.",
+    "fragmentTooLong": "Each fragment allows up to {{limit}} characters. Please split into multiple fragments.",
+    "fragmentSaveFailed": "Failed to save inspiration fragment",
+    "fusionSaveFailed": "Failed to save fused version",
+    "fragmentDeleteFailed": "Failed to delete inspiration fragment"
+  },
+  "beforeUnload": {
+    "unsavedWarning": "You have unsaved changes. Are you sure you want to leave?"
+  },
+  "autoBackup": {
+    "labelPrefix": "Auto backup"
+  },
+  "aiConfig": {
+    "status401": "API Key is invalid or has expired",
+    "status402": "Insufficient account balance; please top up before continuing",
+    "status403": "API Key lacks permission to access this model",
+    "status404": "API endpoint or model name is incorrect; please verify the Base URL and model",
+    "status429": "Rate limit exceeded; please try again later",
+    "status500": "Internal server error; please try again later",
+    "status502": "Gateway error; service temporarily unavailable",
+    "status503": "Service temporarily unavailable; may be under maintenance",
+    "insufficientBalance": "Insufficient account balance; please top up",
+    "invalidApiKey": "Invalid API Key; please check your entry",
+    "authenticationFailed": "Authentication failed; API Key is invalid or expired",
+    "rateLimit": "Rate limit exceeded; please try again later",
+    "modelNotFound": "Model does not exist; please verify the model name",
+    "contextLengthExceeded": "Input exceeds the model's maximum context length",
+    "quotaExceeded": "Quota exhausted",
+    "serverError": "Internal server error",
+    "timeout": "Request timed out",
+    "badRequest": "Malformed request; please check parameters",
+    "notFound": "Endpoint not found; please verify the Base URL",
+    "permissionDenied": "Permission denied",
+    "billingIssue": "Billing or payment issue; please review your account",
+    "serviceOverloaded": "Service overloaded; please try again later",
+    "thinkingBudgetConflict": "Thinking-mode parameter conflict; do not pass thinking-related parameters manually"
+  }
+}

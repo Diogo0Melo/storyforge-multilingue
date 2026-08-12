@@ -1,0 +1,55 @@
+{
+  "panel": {
+    "title": "📍 Locais importantes",
+    "subtitle": "Gerencie locais-chave da história com combinações de tags e hierarquia em árvore"
+  },
+  "toolbar": {
+    "count": "{{count}} locais no total",
+    "viewTree": "Árvore",
+    "viewList": "Lista",
+    "addLocation": "Adicionar local",
+    "extractAi": "Extrair do texto com IA",
+    "extracting": "Analisando texto…"
+  },
+  "extraction": {
+    "noWrittenChapters": "Nenhum capítulo com texto escrito ainda",
+    "failed": "Falha ao extrair locais",
+    "candidatesTitle": "Candidatos a local"
+  },
+  "list": {
+    "childCount": "{{count}} sublocais",
+    "labelName": "Nome",
+    "labelParent": "Local pai",
+    "parentTopLevel": "(nível superior)",
+    "labelTags": "Tags do local (combine conforme necessário)",
+    "labelDescription": "Descrição",
+    "placeholderDescription": "Descrição detalhada, aparência, atmosfera…",
+    "labelSignificance": "Importância na trama",
+    "placeholderSignificance": "Papel na história, eventos-chave, vínculos com personagens…",
+    "addChild": "Adicionar sublocal",
+    "confirmDeletePrompt": "Confirmar exclusão? Sublocais também serão removidos",
+    "confirmDelete": "Confirmar",
+    "cancelDelete": "Cancelar",
+    "deleteLocation": "Excluir local",
+    "empty": "Nenhum local ainda",
+    "addFirst": "Adicionar o primeiro local",
+    "treeJumpHint": "Clique em um nó para ir à edição em lista"
+  },
+  "tagPicker": {
+    "emptyHint": "Clique abaixo para adicionar tags…",
+    "collapse": "Recolher tags",
+    "expand": "Expandir seletor de tags"
+  },
+  "treeView": {
+    "rootName": "Mundo",
+    "empty": "Nenhum dado de local ainda; adicione locais",
+    "invalidHierarchy": "Hierarquia de locais inválida; verifique as relações de pai"
+  },
+  "defaults": {
+    "newLocationName": "Novo local"
+  },
+  "tagCategories": {
+    "terrain": "Terreno Natural",
+    "place": "Locais Culturais"
+  }
+}

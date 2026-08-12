@@ -1,0 +1,82 @@
+{
+  "panel": {
+    "sectionLabel": "Área de criação",
+    "pageTitle": "Rastreamento de prenúncios",
+    "summaryLine": "{{count}} prenúncios · {{plantedCount}} plantados · {{echoedCount}} ecoados · {{resolvedCount}} resolvidos",
+    "aiSuggestButtonTitle": "Sugestões de prenúncios por IA",
+    "aiSuggestButtonLabel": "Sugerir com IA",
+    "addButtonLabel": "Novo prenúncio",
+    "scopeNoticeStrong": "Prenúncios não reescrevem automaticamente o texto já escrito",
+    "scopeNoticeWhen": "ao gerar ou continuar aquele capítulo",
+    "scopeNoticeBody1": "Prenúncios <strong>não reescrevem automaticamente o texto já escrito</strong>. Depois de definir capítulos de plantio / eco / resolução, <strong>{{when}}</strong>, a IA os injeta como lembretes de escrita no contexto.",
+    "scopeNoticeBody2": "Não há botão para “inserir prenúncios no texto pronto com um clique”; para adicionar pistas ao texto existente, edite manualmente ou use as ferramentas de revisão / reescrita.",
+    "guideStrong": "Prenúncios não reescrevem o texto automaticamente.",
+    "guideBody1": "Aqui você gerencia tarefas de plantio, eco e resolução, evitando alterações diretas no manuscrito já escrito.",
+    "guideBody2": "Ao definir «capítulo de plantio / capítulo de eco / capítulo de resolução», as tarefas entram no contexto da geração, continuação e revisão de qualidade do capítulo.",
+    "guideBody3": "Se o capítulo já estiver concluído, volte à página de texto e preencha ou continue escrevendo manualmente conforme a tarefa, ou regenere, depois avance o status do prenúncio para «plantado / ecoado / resolvido».",
+    "viewListTitle": "Visualização em lista",
+    "viewListLabel": "Lista",
+    "viewKanbanTitle": "Visualização em kanban",
+    "viewKanbanLabel": "Kanban",
+    "filterAll": "Todos",
+    "aiSectionTitle": "Sugestões de prenúncios por IA",
+    "adoptStreamingHint": "A IA está organizando as sugestões em entradas de prenúncio e gravando…",
+    "advanceStatusButton": "Avançar status",
+    "typeLabel": "Tipo",
+    "statusLabel": "Status",
+    "descriptionLabel": "Descrição do prenúncio",
+    "chapterRelationHeading": "📌 Vínculos com capítulos",
+    "plantChapterLabel": "Capítulo de plantio (onde o prenúncio é inserido)",
+    "echoChaptersLabel": "Capítulos de eco (onde o prenúncio ecoa; múltipla escolha)",
+    "noChaptersHint": "Nenhum capítulo ainda; crie capítulos no esboço primeiro",
+    "removeStaleEchoTitle": "Clique para remover esta referência de capítulo inválida/não canônica",
+    "resolveChapterLabel": "Capítulo de resolução (onde o prenúncio se resolve)",
+    "notesLabel": "Observações",
+    "emptySelection": "← Selecione ou adicione um prenúncio"
+  },
+  "kanban": {
+    "emptyColumn": "Nenhum prenúncio",
+    "revertButtonTitle": "Reverter status",
+    "revertButtonLabel": "← Reverter",
+    "advanceButtonTitle": "Avançar status",
+    "advanceButtonLabel": "Avançar →"
+  },
+  "status": {
+    "planned": "📋 Planejado",
+    "planted": "🌱 Plantado",
+    "echoed": "🔔 Ecoado",
+    "resolved": "✅ Resolvido"
+  },
+  "statusColumn": {
+    "planned": "Planejados",
+    "planted": "Plantados",
+    "echoed": "Ecoados",
+    "resolved": "Resolvidos"
+  },
+  "type": {
+    "chekhov": "🔫 Arma de Tchekhov",
+    "prophecy": "🔮 Profecia sugerida",
+    "symbol": "🎭 Prenúncio simbólico",
+    "character": "👤 Prenúncio de personagem",
+    "dialogue": "💬 Prenúncio de diálogo",
+    "environment": "🌿 Prenúncio ambiental",
+    "timeline": "⏰ Linha do tempo",
+    "red-herring": "🐟 Pista falsa",
+    "parallel": "🔄 Prenúncio paralelo",
+    "callback": "↩️ Callback"
+  },
+  "messages": {
+    "parseFailed": "Não foi possível extrair entradas de prenúncio; tente novamente ou adicione manualmente",
+    "adoptSuccess_one": "{{count}} prenúncio gravado",
+    "adoptSuccess_other": "{{count}} prenúncios gravados",
+    "adoptSuccessSkippedSuffix": ", {{count}} ignorados",
+    "adoptFailed": "Falha ao adotar: {{message}}",
+    "unknownError": "Erro desconhecido",
+    "defaultNewName": "Novo prenúncio",
+    "chapterRefFallback": "Capítulo #{{id}}",
+    "chapterOutlineSuffix": "(esboço: {{outlineTitle}})",
+    "staleChapterRef": "Capítulo #{{id}} (referência possivelmente obsoleta)",
+    "nonCanonicalChapterRef": "{{title}} (registro não canônico/duplicado)",
+    "unspecifiedOption": "Não especificado"
+  }
+}
