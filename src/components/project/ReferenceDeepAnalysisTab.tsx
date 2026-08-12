@@ -18,7 +18,7 @@ import type {
   ReferenceSourceKind,
   ReferenceUsageScope,
 } from '../../lib/types'
-import { DIMENSION_LABELS } from '../../lib/types/reference'
+import { DIMENSION_LABELS, DIMENSION_LABEL_KEYS } from '../../lib/types/reference'
 import {
   cancelRefAnalysisPipeline,
   getActiveRefAnalysisRunId,
@@ -59,7 +59,9 @@ const STATUS_KEY: Record<RunStatus, StatusKey> = {
 }
 
 export default function ReferenceDeepAnalysisTab({ reference }: Props) {
-  const { t } = useDomainT('project')
+  const { t, lang } = useDomainT('project')
+  // 维度差异清单的语言感知连接（替代硬编码 '、'）
+  const dimensionListFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const { getChunkAnalyses, loadAll } = useReferenceStore()
   const [runs, setRuns] = useState<ReferenceAnalysisRun[]>([])
   const [selectedRunId, setSelectedRunId] = useState<number>()
@@ -348,7 +350,7 @@ export default function ReferenceDeepAnalysisTab({ reference }: Props) {
           </p>
           {(diff.added.length + diff.changed.length + diff.removed.length) > 0 && (
             <p className="mt-1 text-text-primary">
-              {[...diff.added, ...diff.changed, ...diff.removed].map(dim => DIMENSION_LABELS[dim]).join('、')}
+              {dimensionListFormat.format([...diff.added, ...diff.changed, ...diff.removed].map(dim => t(DIMENSION_LABEL_KEYS[dim], { defaultValue: DIMENSION_LABELS[dim] })))}
             </p>
           )}
         </div>

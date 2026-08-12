@@ -14,7 +14,7 @@ import {
   Users2,
 } from 'lucide-react'
 import type { Reference, ReferenceAnalysisRun, ReferenceChunkAnalysis, AnalysisDimension } from '../../lib/types'
-import { DIMENSION_LABELS } from '../../lib/types/reference'
+import { DIMENSION_LABELS, DIMENSION_LABEL_KEYS } from '../../lib/types/reference'
 import {
   mergeAnalysisResults, buildSummaryPrompt,
   collectCharacterCraftTexts, buildCharacterMergePrompt, parseCharacterMergeOutput,
@@ -506,7 +506,7 @@ function ChunkListView({ chunks, isHistorical }: { chunks: ReferenceChunkAnalysi
             <div key={dim} className="border border-border/40 rounded-lg overflow-hidden">
               <div className="px-3 py-2">
                 <span className={`text-xs font-medium ${DIM_COLORS[dim] || 'text-text-muted'}`}>
-                  {DIMENSION_LABELS[dim]}
+                  {t(DIMENSION_LABEL_KEYS[dim], { defaultValue: DIMENSION_LABELS[dim] })}
                 </span>
               </div>
               <div className="px-3 pb-3 text-sm text-text-primary leading-relaxed whitespace-pre-wrap">

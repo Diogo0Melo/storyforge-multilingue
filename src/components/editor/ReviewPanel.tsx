@@ -9,9 +9,9 @@ import { useDomainT } from '../../i18n'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
 import { useReviewResultStore, selectChapterReview, type ReviewTab } from '../../stores/review-result'
-import { buildReviewPrompt, parseReviewResult, REVIEW_DIMENSION_LABELS, type ReviewResult } from '../../lib/ai/adapters/review-adapter'
-import { buildAntiAIPrompt, parseAntiAIResult, ANTI_AI_DIMENSION_LABELS, extractHighFreqWords, type AntiAIResult } from '../../lib/ai/adapters/anti-ai-adapter'
-import { buildReadabilityPrompt, parseReadabilityResult, READABILITY_DIMENSION_LABELS, type ReadabilityResult } from '../../lib/ai/adapters/readability-adapter'
+import { buildReviewPrompt, parseReviewResult, REVIEW_DIMENSION_LABELS, REVIEW_DIMENSION_LABEL_KEYS, type ReviewResult } from '../../lib/ai/adapters/review-adapter'
+import { buildAntiAIPrompt, parseAntiAIResult, ANTI_AI_DIMENSION_LABELS, ANTI_AI_DIMENSION_LABEL_KEYS, extractHighFreqWords, type AntiAIResult } from '../../lib/ai/adapters/anti-ai-adapter'
+import { buildReadabilityPrompt, parseReadabilityResult, READABILITY_DIMENSION_LABELS, READABILITY_DIMENSION_LABEL_KEYS, type ReadabilityResult } from '../../lib/ai/adapters/readability-adapter'
 import {
   type ConsistencyAuditMode,
   type ConsistencyAuditResult,
@@ -376,7 +376,7 @@ function ReviewResultView({ result, t }: { result: ReviewResult; t: (...args: an
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] px-1.5 py-0.5 bg-bg-elevated rounded text-text-muted">
-                    {REVIEW_DIMENSION_LABELS[issue.dimension] || issue.dimension}
+                    {t(REVIEW_DIMENSION_LABEL_KEYS[issue.dimension], { defaultValue: REVIEW_DIMENSION_LABELS[issue.dimension] || issue.dimension })}
                   </span>
                 </div>
                 <p className="text-xs text-text-primary mt-1">{issue.description}</p>
@@ -423,7 +423,7 @@ function AntiAIResultView({ result, t }: { result: AntiAIResult; t: (...args: an
             <div key={idx} className="bg-bg-base rounded-lg p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-medium text-text-primary">
-                  {ANTI_AI_DIMENSION_LABELS[dim.dimension] || dim.dimension}
+                  {t(ANTI_AI_DIMENSION_LABEL_KEYS[dim.dimension], { defaultValue: ANTI_AI_DIMENSION_LABELS[dim.dimension] || dim.dimension })}
                 </span>
                 <ScoreBadge score={dim.score} size="sm" />
               </div>
@@ -470,11 +470,12 @@ function ReadabilityResultView({ result, t }: { result: ReadabilityResult; t: (.
         <div className="grid grid-cols-2 gap-2">
           {result.dimensions.map((dim, idx) => {
             const meta = READABILITY_DIMENSION_LABELS[dim.dimension]
+            const labelKey = READABILITY_DIMENSION_LABEL_KEYS[dim.dimension]
             return (
               <div key={idx} className="bg-bg-base rounded-lg p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-text-primary">
-                    {meta?.emoji} {t(`review.readabilityDimensions.${dim.dimension}`, meta?.label || dim.dimension)}
+                    {meta?.emoji} {t(labelKey, { defaultValue: meta?.label || dim.dimension })}
                   </span>
                   <ScoreBadge score={dim.score} size="sm" />
                 </div>

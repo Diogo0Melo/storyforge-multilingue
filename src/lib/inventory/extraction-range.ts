@@ -1,6 +1,7 @@
 import type { Chapter, OutlineNode } from '../types'
 import { resolveCanonicalChapterSequence } from '../ai/chapter-memory/canonical-chapter-sequence'
 import { htmlToPlainText } from '../utils/html'
+import { getT } from '../../i18n'
 
 export type InventoryExtractionMode = 'all' | 'range'
 
@@ -35,24 +36,27 @@ export function selectInventoryExtractionChapters(input: {
   endOrdinal?: number
 }): InventoryExtractionSelection {
   const available = listInventoryExtractionChapters(input.chapters, input.outlineNodes)
+  // 错误文案在 lib 侧经 getT() 解析（与 getAIConfigRequiredMessage 同一消费路径：
+  // InventoryPanel 直接把返回字符串塞进 setExtractError，渲染侧不再翻译）。
+  const t = getT()
 
   if (input.mode === 'range') {
     const start = input.startOrdinal ?? 0
     const end = input.endOrdinal ?? 0
-    if (start < 1 || end < 1) return { chapters: [], error: '请选择有效的起止章节' }
-    if (start > end) return { chapters: [], error: '起始章不能大于结束章' }
+    if (start < 1 || end < 1) return { chapters: [], error: t('timeline:errors.invalidRange') }
+    if (start > end) return { chapters: [], error: t('timeline:errors.startAfterEnd') }
     const chapters = available
       .filter(item => item.ordinal >= start && item.ordinal <= end && item.hasWrittenContent)
       .map(item => item.chapter)
     return {
       chapters,
-      error: chapters.length > 0 ? null : '所选范围内没有可提取的已写正文',
+      error: chapters.length > 0 ? null : t('timeline:errors.noWrittenInRange'),
     }
   }
 
   const chapters = available.filter(item => item.hasWrittenContent).map(item => item.chapter)
   return {
     chapters,
-    error: chapters.length > 0 ? null : '还没有已写正文的章节，先去写作再提取',
+    error: chapters.length > 0 ? null : t('timeline:errors.noWrittenChapters'),
   }
 }
