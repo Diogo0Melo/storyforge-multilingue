@@ -5,7 +5,7 @@ import { useProjectStore } from '../../stores/project'
 import { useWorldGroupStore } from '../../stores/world-group'
 import type { Project } from '../../lib/types'
 import { GENRE_OPTIONS } from '../../lib/types'
-import { useDomainT, SUPPORTED_LANGS } from '../../i18n'
+import { useDomainT, SUPPORTED_LANGS, getSupportedUiLang } from '../../i18n'
 import type { SupportedLang } from '../../i18n'
 import { resolveProjectContentLanguage } from '../../lib/ai/content-language'
 
@@ -24,9 +24,9 @@ interface ProjectInfoPanelProps {
 }
 
 export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanelProps) {
-  const { t, lang } = useDomainT('project')
+  const { t } = useDomainT('project')
   const { updateProject } = useProjectStore()
-  const uiLocale = (SUPPORTED_LANGS.some(l => l.code === lang) ? lang : 'pt-BR') as SupportedLang
+  const uiLocale = getSupportedUiLang()
   const resolvedLang = resolveProjectContentLanguage(project, uiLocale)
   const [form, setForm] = useState({
     name: project.name,

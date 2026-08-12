@@ -350,7 +350,7 @@ export default function ReferenceDeepAnalysisTab({ reference }: Props) {
           </p>
           {(diff.added.length + diff.changed.length + diff.removed.length) > 0 && (
             <p className="mt-1 text-text-primary">
-              {dimensionListFormat.format([...diff.added, ...diff.changed, ...diff.removed].map(dim => t(DIMENSION_LABEL_KEYS[dim], { defaultValue: DIMENSION_LABELS[dim] })))}
+              {dimensionListFormat.format([...diff.added, ...diff.changed, ...diff.removed].map(dim => DIMENSION_LABEL_KEYS[dim] ? t(DIMENSION_LABEL_KEYS[dim], { defaultValue: DIMENSION_LABELS[dim] }) : (DIMENSION_LABELS[dim] || dim)))}
             </p>
           )}
         </div>

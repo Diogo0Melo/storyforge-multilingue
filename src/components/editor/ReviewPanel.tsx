@@ -376,7 +376,7 @@ function ReviewResultView({ result, t }: { result: ReviewResult; t: (...args: an
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] px-1.5 py-0.5 bg-bg-elevated rounded text-text-muted">
-                    {t(REVIEW_DIMENSION_LABEL_KEYS[issue.dimension], { defaultValue: REVIEW_DIMENSION_LABELS[issue.dimension] || issue.dimension })}
+                    {REVIEW_DIMENSION_LABEL_KEYS[issue.dimension] ? t(REVIEW_DIMENSION_LABEL_KEYS[issue.dimension], { defaultValue: REVIEW_DIMENSION_LABELS[issue.dimension] || issue.dimension }) : (REVIEW_DIMENSION_LABELS[issue.dimension] || issue.dimension)}
                   </span>
                 </div>
                 <p className="text-xs text-text-primary mt-1">{issue.description}</p>
@@ -423,7 +423,7 @@ function AntiAIResultView({ result, t }: { result: AntiAIResult; t: (...args: an
             <div key={idx} className="bg-bg-base rounded-lg p-3">
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-xs font-medium text-text-primary">
-                  {t(ANTI_AI_DIMENSION_LABEL_KEYS[dim.dimension], { defaultValue: ANTI_AI_DIMENSION_LABELS[dim.dimension] || dim.dimension })}
+                  {ANTI_AI_DIMENSION_LABEL_KEYS[dim.dimension] ? t(ANTI_AI_DIMENSION_LABEL_KEYS[dim.dimension], { defaultValue: ANTI_AI_DIMENSION_LABELS[dim.dimension] || dim.dimension }) : (ANTI_AI_DIMENSION_LABELS[dim.dimension] || dim.dimension)}
                 </span>
                 <ScoreBadge score={dim.score} size="sm" />
               </div>
@@ -475,7 +475,7 @@ function ReadabilityResultView({ result, t }: { result: ReadabilityResult; t: (.
               <div key={idx} className="bg-bg-base rounded-lg p-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-xs font-medium text-text-primary">
-                    {meta?.emoji} {t(labelKey, { defaultValue: meta?.label || dim.dimension })}
+                    {meta?.emoji} {labelKey ? t(labelKey, { defaultValue: meta?.label || dim.dimension }) : (meta?.label || dim.dimension)}
                   </span>
                   <ScoreBadge score={dim.score} size="sm" />
                 </div>

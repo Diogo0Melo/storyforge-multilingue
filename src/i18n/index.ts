@@ -192,4 +192,14 @@ export function getShortListFormatter(): Intl.ListFormat {
   return new Intl.ListFormat(i18n.language, { type: 'conjunction', style: 'short' })
 }
 
+/**
+ * WS-2/G1: 返回当前 UI 语言,钳位到 SUPPORTED_LANGS;未知值回退 'pt-BR'。
+ * 模块级 i18n 实例,React 内外均可安全调用。
+ */
+export function getSupportedUiLang(): SupportedLang {
+  return (SUPPORTED_LANGS.some(l => l.code === i18n.language)
+    ? i18n.language
+    : 'pt-BR') as SupportedLang
+}
+
 export default i18n

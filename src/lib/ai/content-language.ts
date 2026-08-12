@@ -16,6 +16,18 @@ import type { Project } from '../types'
 const SUPPORTED_CODES: ReadonlySet<string> = new Set(SUPPORTED_LANGS.map(l => l.code))
 
 /**
+ * G1: 校验任意值是否为受支持的内容语言。
+ * 有效 → 返回该值；无效/undefined/null → 返回 undefined。
+ * 用于 createProject 写入前钳位调用方传入的值。
+ */
+export function normalizeContentLanguage(value: unknown): SupportedLang | undefined {
+  if (typeof value === 'string' && SUPPORTED_CODES.has(value)) {
+    return value as SupportedLang
+  }
+  return undefined
+}
+
+/**
  * 解析项目的 AI 内容语言。
  *
  * @param project 项目对象（仅需 contentLanguage 字段）

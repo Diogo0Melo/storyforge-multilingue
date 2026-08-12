@@ -1,9 +1,9 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
-import i18n, { getT, SUPPORTED_LANGS } from '../i18n'
-import type { SupportedLang } from '../i18n'
+import { getT, getSupportedUiLang } from '../i18n'
 import type { Project, CreateProjectInput } from '../lib/types'
 import { migrateGenre } from '../lib/types'
+import { normalizeContentLanguage } from '../lib/ai/content-language'
 import { requireBackupBefore } from '../lib/safety/require-backup-before'
 import { cascadeDeleteProject } from '../lib/registry/lifecycle'
 import {
@@ -72,17 +72,15 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   createProject: async (data: CreateProjectInput) => {
     const now = Date.now()
-    // WS-2: new projects explicitly persist current UI locale as AI content language
-    const uiLang = (SUPPORTED_LANGS.some(l => l.code === i18n.language)
-      ? i18n.language
-      : 'pt-BR') as SupportedLang
+    // WS-2/G1: normalize caller-supplied contentLanguage; never persist unsupported values
+    const contentLanguage = normalizeContentLanguage(data.contentLanguage) ?? getSupportedUiLang()
     const id = await db.projects.add({
       ...data,
       genres: data.genres ?? [],
       status: data.status ?? 'drafting',
       worldCode: data.worldCode ?? generateWorldCode(),
       worldVersion: data.worldVersion ?? 1,
-      contentLanguage: data.contentLanguage ?? uiLang,
+      contentLanguage,
       createdAt: now,
       updatedAt: now,
     } as Project)
