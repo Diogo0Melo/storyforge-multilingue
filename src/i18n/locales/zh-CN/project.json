@@ -276,6 +276,8 @@
     "targetWordCount_other": "目标字数：{{count}} 万字",
     "multiWorldToggle": "🌐 多世界模式",
     "multiWorldDescription": "适用于诸天流/无限流/快穿/修仙多界等题材，开启后可为每个世界创建独立的世界观、力量体系、地理和角色设定",
+    "contentLanguageLabel": "AI 生成内容语言",
+    "contentLanguageHint": "新生成的文本将使用此语言。已有内容不受影响。",
     "timestamps": "创建于 {{created}} · 更新于 {{updated}}"
   },
   "genreGroups": {

@@ -283,6 +283,8 @@
     "targetWordCount_other": "Meta: {{count}}0 mil palavras",
     "multiWorldToggle": "🌐 Modo multimundo",
     "multiWorldDescription": "Ideal para multiversos, viagens entre mundos, transmigração rápida e histórias de cultivo multi-reino. Ao ativar, cada mundo terá construção de mundo, sistema de poder, geografia e personagens independentes.",
+    "contentLanguageLabel": "Idioma do conteúdo gerado pela IA",
+    "contentLanguageHint": "Novos textos gerados usarão este idioma. Conteúdo já existente não é alterado.",
     "timestamps": "Criado em {{created}} · Atualizado em {{updated}}"
   },
   "genreGroups": {

@@ -283,6 +283,8 @@
     "targetWordCount_other": "Target: {{count}}0k words",
     "multiWorldToggle": "🌐 Multi-world mode",
     "multiWorldDescription": "Suited for multiverse, infinite-stream, quick-transmigration, and multi-realm cultivation stories. When enabled, each world gets its own worldview, power system, geography, and character settings.",
+    "contentLanguageLabel": "AI-generated content language",
+    "contentLanguageHint": "Newly generated text will use this language. Existing content is not changed.",
     "timestamps": "Created {{created}} · Updated {{updated}}"
   },
   "genreGroups": {

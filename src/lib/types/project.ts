@@ -130,6 +130,14 @@ export interface Project {
   /** STORY-1：作者明确设为后续 AI 参考的角色驱动方案；不自动猜最近方案。 */
   activeCharacterDrivenPlanId?: number | null
 
+  /**
+   * WS-2：AI 生成内容的目标语言（可选）。
+   * 新项目创建时显式写入当前 UI 语言；旧项目保持 undefined，
+   * 由 resolveProjectContentLanguage() 在调用时回退到当前 UI 语言。
+   * 不做回填、不做迁移、不加 Dexie 版本（非索引可选字段，v44 先例）。
+   */
+  contentLanguage?: 'pt-BR' | 'en' | 'zh-CN'
+
   createdAt: number        // timestamp
   updatedAt: number        // timestamp
 }

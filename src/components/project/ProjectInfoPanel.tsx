@@ -5,7 +5,9 @@ import { useProjectStore } from '../../stores/project'
 import { useWorldGroupStore } from '../../stores/world-group'
 import type { Project } from '../../lib/types'
 import { GENRE_OPTIONS } from '../../lib/types'
-import { useDomainT } from '../../i18n'
+import { useDomainT, SUPPORTED_LANGS } from '../../i18n'
+import type { SupportedLang } from '../../i18n'
+import { resolveProjectContentLanguage } from '../../lib/ai/content-language'
 
 // Group by group
 const GENRE_GROUPS = Array.from(
@@ -22,14 +24,17 @@ interface ProjectInfoPanelProps {
 }
 
 export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanelProps) {
-  const { t } = useDomainT('project')
+  const { t, lang } = useDomainT('project')
   const { updateProject } = useProjectStore()
+  const uiLocale = (SUPPORTED_LANGS.some(l => l.code === lang) ? lang : 'pt-BR') as SupportedLang
+  const resolvedLang = resolveProjectContentLanguage(project, uiLocale)
   const [form, setForm] = useState({
     name: project.name,
     genre: project.genre,
     genres: project.genres?.length ? project.genres : (project.genre ? [project.genre] : []),
     description: project.description,
     targetWordCount: project.targetWordCount,
+    contentLanguage: resolvedLang,
   })
   const [saving, setSaving] = useState(false)
   const [showGenreDropdown, setShowGenreDropdown] = useState(false)
@@ -43,6 +48,7 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
       genres: form.genres,
       description: form.description,
       targetWordCount: form.targetWordCount,
+      contentLanguage: form.contentLanguage,
     }
     await updateProject(project.id, updates)
     onUpdate({ ...project, ...updates, updatedAt: Date.now() })
@@ -176,6 +182,21 @@ export default function ProjectInfoPanel({ project, onUpdate }: ProjectInfoPanel
             onChange={(e) => setForm({ ...form, targetWordCount: Number(e.target.value) })}
             className="w-full accent-accent"
           />
+        </div>
+
+        {/* Content language selector (WS-2) */}
+        <div>
+          <label className="block text-sm text-text-secondary mb-1.5">{t('projectInfo.contentLanguageLabel')}</label>
+          <select
+            value={form.contentLanguage}
+            onChange={(e) => setForm({ ...form, contentLanguage: e.target.value as SupportedLang })}
+            className="w-full px-3 py-2 bg-bg-base border border-border rounded-lg text-text-primary focus:outline-none focus:border-accent transition-colors text-sm"
+          >
+            {SUPPORTED_LANGS.map(l => (
+              <option key={l.code} value={l.code}>{t(`common:languageName.${l.code}`)}</option>
+            ))}
+          </select>
+          <p className="text-xs text-text-muted mt-1">{t('projectInfo.contentLanguageHint')}</p>
         </div>
 
         {/* Multi-world toggle */}
