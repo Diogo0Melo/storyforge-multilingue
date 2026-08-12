@@ -60,7 +60,8 @@ describe('AUDIT-6 · 文档导入视图', () => {
   it('介绍区使用当前切块大小并展示文件限制', async () => {
     const host = await mount(createElement(ImportDocIntro, { chunkSize: 50000 }))
     expect(host.textContent).toContain('AI 分块文档解析')
-    expect(host.textContent).toContain('每块约 50,000 字')
+    // chunkSize formatted via toLocaleString(); assert via the same formatting path (locale-independent)
+    expect(host.textContent).toContain(`每块约 ${(50000).toLocaleString()} 字`)
     expect(host.textContent).toContain('支持的文件格式与大小上限')
   })
 
@@ -87,6 +88,7 @@ describe('AUDIT-6 · 文档导入视图', () => {
     expect(onApplyReference).toHaveBeenNthCalledWith(1, 'quick')
     expect(onApplyReference).toHaveBeenNthCalledWith(2, 'deep')
     expect(onIgnore).toHaveBeenCalledOnce()
+    // Deep fallback notice comes from i18n (system.reusableBanner.deepFallbackNotice); zh-CN renders verbatim
     expect(host.textContent).toContain('原文已不在内存')
   })
 
@@ -151,6 +153,7 @@ describe('AUDIT-6 · 文档导入视图', () => {
     expect(onConfirm).toHaveBeenCalledOnce()
     expect(onConfirm.mock.calls[0][0]).toHaveLength(1)
     expect(onConfirm.mock.calls[0][0][0].name).toBe('新临渊城')
+    // Evidence label comes from i18n (system.codexReview.evidencePrefix); tests pinned zh-CN
     expect(host.textContent).toContain('逐字证据')
   })
 
@@ -165,6 +168,7 @@ describe('AUDIT-6 · 文档导入视图', () => {
       onResume,
       onCancel,
     }))
+    // Labels come from i18n (system.runtime.*); tests pinned zh-CN
     expect(host.textContent).toContain('恢复')
     expect(host.textContent).toContain('取消')
     expect(host.textContent).not.toContain('暂停')
@@ -182,6 +186,7 @@ describe('AUDIT-6 · 文档导入视图', () => {
     const prepare = Array.from(host.querySelectorAll('button')).find(button => button.textContent === '准备解析')!
     await act(async () => load.click())
     await act(async () => prepare.click())
+    // Filename fallback comes from i18n (system.preparation.pasteFilenameFallback); zh-CN renders verbatim
     expect(host.querySelector('[data-testid="state"]')?.textContent).toBe('1|1|粘贴内容.txt')
   })
 })

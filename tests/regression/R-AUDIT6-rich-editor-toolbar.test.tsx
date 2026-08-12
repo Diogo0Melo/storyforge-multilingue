@@ -66,7 +66,8 @@ describe('AUDIT-6 / HEALTH-4 · 富文本格式工具栏', () => {
       fontSize.dispatchEvent(new Event('change', { bubbles: true }))
     })
     expect(props.onTypographyChange).toHaveBeenCalledWith({ fontSize: '20px' })
-    expect(host.textContent).toContain('12,345 字')
+    // 断言与组件同一格式化路径（toLocaleString()），不依赖 OS locale 的固定分隔符。
+    expect(host.textContent).toContain(`${(12345).toLocaleString()} 字`)
   })
 
   it('逐项转发格式命令，并准确禁用重做', async () => {

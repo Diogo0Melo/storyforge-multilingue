@@ -109,4 +109,63 @@ describe('Codex B0 · 内置分类 seed', () => {
     expect(refField).toBeTruthy()             // 矿物有"可炼器物"这种 ref 字段
     expect(refField?.refCategory).toBe('artifact')
   })
+
+  it('B2:老行 fieldSchema 缺键时按内置默认回填 labelKey/optionKeys,不改用户改动', async () => {
+    const projectId = await createProject()
+    const ts = Date.now()
+    const PIN_JI = ['凡品', '下品', '中品', '上品', '极品', '神品']
+    // 模拟 Phase 3 之前播种的 mineral 行:label/options 与默认一致但缺所有 i18n 键
+    const stripped = [
+      { key: 'appearance', label: '外观', type: 'longtext', placeholder: '形状 / 颜色 / 质感' },
+      { key: 'rank', label: '品级品阶', type: 'select', options: [...PIN_JI] },
+      { key: 'rarity', label: '稀有度', type: 'select', options: ['常见', '稀少', '罕见', '珍稀', '绝世'] },
+      // label 被用户改过(与默认「功效作用」不同)→ 不得回填
+      { key: 'effect', label: '效果(已改名)', type: 'longtext' },
+      // 用户自增字段 → 不得回填
+      { key: 'custom', label: '自定义字段', type: 'text' },
+    ]
+    await db.codexCategories.add({
+      projectId, domain: 'natural', parentId: null, name: '矿物灵材',
+      icon: '⛏️', builtInKey: 'mineral', fieldSchema: JSON.stringify(stripped),
+      hidden: false, order: 0, worldGroupId: null, createdAt: ts, updatedAt: ts,
+    } as any)
+
+    await useCodexStore.getState().ensureBuiltIns(projectId)
+
+    const mineral = (await db.codexCategories.where('projectId').equals(projectId).toArray())
+      .find(c => c.builtInKey === 'mineral')!
+    const schema = parseFieldSchema(mineral.fieldSchema)
+    const appearance = schema.find(f => f.key === 'appearance')!
+    const rank = schema.find(f => f.key === 'rank')!
+    const rarity = schema.find(f => f.key === 'rarity')!
+    const effect = schema.find(f => f.key === 'effect')!
+    const custom = schema.find(f => f.key === 'custom')!
+    // 键已回填;原始 label/options 保持不变
+    expect(appearance.labelKey).toBe('fs.mineral.appearance')
+    expect(appearance.placeholderKey).toBe('fs.mineral.appearancePh')
+    expect(appearance.label).toBe('外观')
+    expect(rank.labelKey).toBe('fs.mineral.rank')
+    expect(rank.optionKeys).toEqual([
+      'fso.pinJi.0', 'fso.pinJi.1', 'fso.pinJi.2', 'fso.pinJi.3', 'fso.pinJi.4', 'fso.pinJi.5',
+    ])
+    expect(rank.options).toEqual(PIN_JI)
+    expect(rarity.labelKey).toBe('fs.mineral.rarity')
+    expect(rarity.optionKeys).toEqual(['fso.rarity.0', 'fso.rarity.1', 'fso.rarity.2', 'fso.rarity.3', 'fso.rarity.4'])
+    // 用户改过 label / 自增字段 → 一律不回填
+    expect(effect.labelKey).toBeUndefined()
+    expect(effect.placeholderKey).toBeUndefined()
+    expect(custom.labelKey).toBeUndefined()
+  })
+
+  it('B2 幂等:已含键的内置行重复 ensureBuiltIns 不再改写 fieldSchema', async () => {
+    const projectId = await createProject()
+    await useCodexStore.getState().ensureBuiltIns(projectId)
+    const first = (await db.codexCategories.where('projectId').equals(projectId).toArray())
+      .find(c => c.builtInKey === 'mineral')!
+    await useCodexStore.getState().ensureBuiltIns(projectId)
+    const second = (await db.codexCategories.where('projectId').equals(projectId).toArray())
+      .find(c => c.builtInKey === 'mineral')!
+    expect(second.fieldSchema).toBe(first.fieldSchema)
+    expect(second.updatedAt).toBe(first.updatedAt) // 未触发写库
+  })
 })

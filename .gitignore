@@ -14,7 +14,17 @@ coverage/
 test-results/
 playwright-report/
 
+# i18n residual audit artifacts (report-only, not shipped)
+.i18n-audit/
+
 # Release packaging outputs
 release/
 packaging/desktop-server/web/*
 !packaging/desktop-server/web/placeholder.txt
+
+# Deepwork session state (git-local, OpenCode-readable)
+.slim/deepwork/
+
+# Generated Codemaps
+**/codemap.md
+.slim/

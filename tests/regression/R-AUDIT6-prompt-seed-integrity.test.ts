@@ -11,7 +11,11 @@ describe('AUDIT-6 · 提示词领域拆分完整性', () => {
     expect(SYSTEM_PROMPT_SEEDS).toHaveLength(88)
     // WORLD-1 导入分类、STORY-1 中途重规划、FB-5 互动校准与 CM-1
     // 增量融合边界都属于有序系统模板契约。
-    expect(seedDigest()).toBe('7c99b087293f3a567085100d9f828ed89ce60ef92f7bba6eac75f26c17921986')
+    // 2026-08-08 i18n Phase 7 R2：新增 nameKey/descriptionKey/labelKey/optionLabelKeys
+    // 展示元数据字段（pt-BR 本地化），systemPrompt/userPromptTemplate 正文逐字未变。
+    // 2026-08-10 i18n residual campaign W-seeds：seed-i18n 扩展到全部 内置-* seeds +
+    // genre-packs 展示元数据（3 locales 显示提取）；prompt 正文仍逐字未变（diff 验证）。
+    expect(seedDigest()).toBe('37518da3ad0e1ee7292c9f7abef776e26451a3aa4e1d5363605600210363335e')
   })
 
   it('分块导入把固定分类目录放在变化的块序号和滚动上下文之前，保留可缓存前缀', () => {

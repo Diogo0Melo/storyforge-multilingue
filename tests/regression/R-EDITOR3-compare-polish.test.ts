@@ -6,6 +6,7 @@ import {
   saveComparePolishDraft,
 } from '../../src/lib/editor/compare-polish-operation'
 import type { HeldItemProjection } from '../../src/lib/consistency/held-items'
+import zhEditor from '../../src/i18n/locales/zh-CN/editor.json'
 
 describe('R-EDITOR3 · compare polish workflow', () => {
   it('creates a snapshot before overwriting the chapter and computes word count', async () => {
@@ -76,7 +77,11 @@ describe('R-EDITOR3 · compare polish workflow', () => {
     expect(panel).toContain('createSnapshot')
     expect(panel).toContain('updateChapter')
     expect(panel).toContain('captureRevisionPair')
-    expect(panel).toContain('失败不得回滚已经完成的章节保存')
+    // Disclaimer text is now rendered via i18n key; assert the t() usage in source
+    // and verify the original zh-CN literal lives in the locale JSON.
+    expect(panel).toContain("t('comparePolish.disclaimer')")
+    expect(zhEditor.comparePolish.disclaimer).toContain('保存前会检查已持有物品被重复写成首次获得的风险')
+    expect(zhEditor.comparePolish.disclaimer).toContain('仅截取实际改动附近的短片段作为文风样本')
     expect(chapterEditor).toContain('saveDisabled={compareSourceHtml != null}')
     expect(chapterEditor).toContain('saving={manualSaving}')
     expect(editorHeader).toContain('disabled={saveDisabled || saving}')

@@ -26,7 +26,7 @@ describe('Phase 3.1 · AI 说明书自动生成', () => {
 
   it('generated.md 含全部 moduleKey(动态校验,FB-5 后 36 个)', () => {
     const promptSrc = fs.readFileSync(path.join(root, 'src/lib/types/prompt.ts'), 'utf8')
-    const block = promptSrc.match(/export type PromptModuleKey =([\s\S]*?)(?:\n\nexport|\n\/\*\*|\nexport interface)/)
+    const block = promptSrc.match(/export type PromptModuleKey =([\s\S]*?)(?:\r?\n\r?\nexport|\r?\n\/\*\*|\r?\nexport interface)/)
     const keys = [...(block?.[1] ?? '').matchAll(/\|\s*'([a-zA-Z0-9._-]+)'/g)].map(m => m[1])
     const manual = fs.readFileSync(path.join(root, 'docs/AI-FUNCTIONS-MANUAL.generated.md'), 'utf8')
     for (const k of keys) {
@@ -36,7 +36,7 @@ describe('Phase 3.1 · AI 说明书自动生成', () => {
 
   it('moduleKey 唯一，说明书独立匹配运行时模板元数据与数字预算', () => {
     const promptSrc = fs.readFileSync(path.join(root, 'src/lib/types/prompt.ts'), 'utf8')
-    const block = promptSrc.match(/export type PromptModuleKey =([\s\S]*?)(?:\n\nexport|\n\/\*\*|\nexport interface)/)
+    const block = promptSrc.match(/export type PromptModuleKey =([\s\S]*?)(?:\r?\n\r?\nexport|\r?\n\/\*\*|\r?\nexport interface)/)
     const keys = [...(block?.[1] ?? '').matchAll(/\|\s*'([a-zA-Z0-9._-]+)'/g)].map(m => m[1])
     expect(new Set(keys).size).toBe(keys.length)
 

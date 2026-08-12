@@ -10,6 +10,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { normalizeWorldviewRecord } from '../../src/stores/worldview'
 import type { Worldview } from '../../src/lib/types'
+import zhEditor from '../../src/i18n/locales/zh-CN/editor.json'
 
 const root = process.cwd()
 const read = (file: string) => fs.readFileSync(path.join(root, file), 'utf8')
@@ -56,7 +57,10 @@ describe('R-E-group-ui-and-divine · E 组收尾', () => {
     expect(editorSource).toContain('<ChapterEditorHeader')
     expect(editorSource).toContain('onStatusChange={status =>')
     expect(editorSource).toContain('void updateChapter(currentChapter.id, { status })')
-    expect(headerSource).toContain('aria-label="章节状态"')
+    // Status aria label is now rendered via i18n key; assert the t() usage in source
+    // and verify the original zh-CN literal lives in the locale JSON.
+    expect(headerSource).toContain("t('chapterEditorHeader.statusAriaLabel')")
+    expect(zhEditor.chapterEditorHeader.statusAriaLabel).toBe('章节状态')
     for (const status of ['outline', 'draft', 'revised', 'polished', 'final']) {
       expect(headerSource).toContain(`value: '${status}'`)
     }

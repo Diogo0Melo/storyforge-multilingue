@@ -1,7 +1,18 @@
 import { expect, test, type Page } from '@playwright/test'
 import { readFile } from 'node:fs/promises'
 
+/**
+ * E2E 语言固定:e2e 选择器大量匹配中文文案,必须确保应用启动时 sf_lang=zh-CN。
+ * addInitScript 在页面任何脚本执行前注入 localStorage,优先于 i18next detector。
+ */
+async function pinZhCnLang(page: Page) {
+  await page.addInitScript(() => {
+    localStorage.setItem('sf_lang', 'zh-CN')
+  })
+}
+
 async function openCleanHome(page: Page) {
+  await pinZhCnLang(page)
   await page.addInitScript(() => {
     localStorage.setItem('storyforge_guide_completed', 'e2e')
   })
@@ -24,6 +35,7 @@ function sidebarButton(page: Page, name: string) {
 }
 
 test('产品综合首页提供并列功能入口和真实世界基座', async ({ page }) => {
+  await pinZhCnLang(page)
   await page.addInitScript(() => {
     localStorage.setItem('storyforge_guide_completed', 'e2e')
   })
@@ -39,6 +51,7 @@ test('产品综合首页提供并列功能入口和真实世界基座', async ({
 })
 
 test('产品综合首页可从零创建世界引擎并分配稳定编号', async ({ page }) => {
+  await pinZhCnLang(page)
   await page.addInitScript(() => {
     localStorage.setItem('storyforge_guide_completed', 'e2e')
   })
@@ -72,6 +85,7 @@ test('产品综合首页可从零创建世界引擎并分配稳定编号', async
 })
 
 test('世界引擎可生成并预检本地世界分享包，再导入为新编号副本', async ({ page }) => {
+  await pinZhCnLang(page)
   await page.addInitScript(() => {
     localStorage.setItem('storyforge_guide_completed', 'e2e')
   })
@@ -611,6 +625,7 @@ test('智能实体改名先预览，再原子同步正文与角色主档并可�
 })
 
 test('对照润色沉淀有界样本，并完成文风画像与互动校准闭环', async ({ page }) => {
+  await pinZhCnLang(page)
   await page.addInitScript(() => {
     localStorage.setItem('storyforge-ai-config', JSON.stringify({
       provider: 'ollama',

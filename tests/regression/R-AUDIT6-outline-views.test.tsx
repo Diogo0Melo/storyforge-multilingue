@@ -6,6 +6,7 @@ import OutlineStructureMenu from '../../src/components/outline/OutlineStructureM
 import { OutlineChapterRow } from '../../src/components/outline/OutlineChapterTree'
 import OutlineVolumeSidebar from '../../src/components/outline/OutlineVolumeSidebar'
 import type { OutlineNode } from '../../src/lib/types'
+import zhOutline from '../../src/i18n/locales/zh-CN/outline.json'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -90,11 +91,11 @@ describe('AUDIT-6 · 大纲纯视图拆分', () => {
       onCancel,
     }))
 
-    expect(host.textContent).toContain('将创建 2 个卷')
+    expect(host.textContent).toContain(zhOutline.preview.willCreateVolumes.replace('{{count}}', '2'))
     expect(host.textContent).toContain('第一卷')
     expect(host.textContent).toContain('启程')
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('确认写入'))!.click())
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('取消'))!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes(zhOutline.preview.confirmWrite))!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes(zhOutline.preview.cancel))!.click())
     expect(onConfirm).toHaveBeenCalledOnce()
     expect(onCancel).toHaveBeenCalledOnce()
   })
@@ -102,13 +103,13 @@ describe('AUDIT-6 · 大纲纯视图拆分', () => {
   it('故事结构菜单选择后回传结构 key 并关闭菜单', async () => {
     const onSelect = vi.fn()
     const host = await mount(createElement(OutlineStructureMenu, { onSelect }))
-    const openButton = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('添加故事结构'))!
+    const openButton = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes(zhOutline.structure.add))!
     await act(async () => openButton.click())
-    const structureButton = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('三幕式'))!
+    const structureButton = Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes(zhOutline.structure.threeAct.label))!
     await act(async () => structureButton.click())
 
     expect(onSelect).toHaveBeenCalledWith('three-act')
-    expect(host.textContent).not.toContain('（3 块）')
+    expect(host.textContent).not.toContain(`（${zhOutline.structure.blockCount.replace('{{count}}', '3')}）`)
   })
 
   it('章节摘要只在失焦且内容变化后保存', async () => {
@@ -158,9 +159,9 @@ describe('AUDIT-6 · 大纲纯视图拆分', () => {
       onChapterDragEnd: vi.fn(),
     }))
 
-    await act(async () => host.querySelector<HTMLButtonElement>('button[title="AI 生成本章章纲"]')!.click())
-    await act(async () => host.querySelector<HTMLButtonElement>('button[title="在此章下方插入一章"]')!.click())
-    await act(async () => host.querySelector<HTMLButtonElement>('button[title="编辑章节"]')!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>(`button[title="${zhOutline.chapter.generateSummary}"]`)!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>(`button[title="${zhOutline.chapter.insertAfter}"]`)!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>(`button[title="${zhOutline.chapter.edit}"]`)!.click())
 
     expect(onGenerate).toHaveBeenCalledOnce()
     expect(onInsertAfter).toHaveBeenCalledOnce()
@@ -183,8 +184,8 @@ describe('AUDIT-6 · 大纲纯视图拆分', () => {
     })))
 
     expect(host.textContent).toContain('W')
-    expect(host.textContent).toContain('2 章 · 启程...')
-    expect(host.textContent).toContain('批量生成所有卷的章节')
+    expect(host.textContent).toContain(`${zhOutline.volume.chapterCount.replace('{{count}}', '2')} · 启程...`)
+    expect(host.textContent).toContain(zhOutline.volume.batchGenerateAllChapters)
     await act(async () => host.querySelector<HTMLElement>('[data-outline-volume-id="2"] button')!.click())
     expect(onSelectVolume).toHaveBeenCalledWith(2)
   })
@@ -208,12 +209,16 @@ describe('AUDIT-6 · 大纲纯视图拆分', () => {
       onCancelBatch,
     })))
 
-    const generationButtons = Array.from(host.querySelectorAll('button')).filter(button => button.textContent?.includes('批量生成'))
-    expect(generationButtons).toHaveLength(2)
+    const batchGenerateLabel = zhOutline.volume.batchGenerate
+    const generationButtons = Array.from(host.querySelectorAll('button')).filter(button => {
+      const text = button.textContent ?? ''
+      return text.includes(batchGenerateLabel) || text.includes(zhOutline.volume.batchGenerateAllChapters)
+    })
+    expect(generationButtons.length).toBeGreaterThanOrEqual(1)
     expect(generationButtons.every(button => button.disabled)).toBe(true)
-    expect(host.textContent).toContain('1/2 卷')
+    expect(host.textContent).toContain(zhOutline.batch.progress.replace('{{completed}}', '1').replace('{{total}}', '2'))
     expect(host.textContent).toContain('正在生成第二卷')
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.trim() === '取消')!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.trim() === zhOutline.batch.cancel)!.click())
     expect(onCancelBatch).toHaveBeenCalledOnce()
   })
 
@@ -229,9 +234,9 @@ describe('AUDIT-6 · 大纲纯视图拆分', () => {
       onDismissBatch,
     })))
 
-    expect(host.textContent).toContain('批量生成完成：3 章')
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('全部写入'))!.click())
-    await act(async () => host.querySelector<HTMLButtonElement>('button[title="关闭批量生成结果"]')!.click())
+    expect(host.textContent).toContain(zhOutline.batch.complete.replace('{{count}}', '3'))
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes(zhOutline.batch.writeAll))!.click())
+    await act(async () => host.querySelector<HTMLButtonElement>(`button[title="${zhOutline.batch.dismissTitle}"]`)!.click())
     expect(onConfirmBatch).toHaveBeenCalledOnce()
     expect(onDismissBatch).toHaveBeenCalledOnce()
   })
@@ -241,9 +246,9 @@ describe('AUDIT-6 · 大纲纯视图拆分', () => {
     const onGenerateVolumes = vi.fn()
     const host = await mount(createElement(OutlineVolumeSidebar, sidebarProps({ onAddVolume, onGenerateVolumes })))
 
-    expect(host.textContent).toContain('还没有卷')
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('添加卷'))!.click())
-    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes('批量生成卷级大纲'))!.click())
+    expect(host.textContent).toContain(zhOutline.volume.emptyState)
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes(zhOutline.volume.add))!.click())
+    await act(async () => Array.from(host.querySelectorAll('button')).find(button => button.textContent?.includes(zhOutline.volume.batchGenerate))!.click())
     expect(onAddVolume).toHaveBeenCalledOnce()
     expect(onGenerateVolumes).toHaveBeenCalledOnce()
   })

@@ -94,6 +94,7 @@ vi.mock('../../src/lib/fact-ledger/setting-assertions', async importOriginal => 
 })
 
 import ChapterOutlineWorkshop from '../../src/components/outline/ChapterOutlineWorkshop'
+import zhOutline from '../../src/i18n/locales/zh-CN/outline.json'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -167,8 +168,13 @@ function button(host: HTMLElement, text: string): HTMLButtonElement {
 describe('PIPELINE-2 · 章纲工坊 UI 状态机', () => {
   it('严格按五步确认并在最终作者确认后才请求采纳', async () => {
     const { host, onAdopt, onClose } = await mount()
-    expect(host.textContent).toContain('预计调用 5 次模型')
+    expect(host.textContent).toContain(zhOutline.workshop.subtitle)
     expect(button(host, '2. 动机推演').disabled).toBe(true)
+
+    const currentStagePrefix = zhOutline.workshop.currentStage
+    const generateStepLabel = zhOutline.workshop.generateStep
+    const confirmNextLabel = zhOutline.workshop.confirmNextStep
+    const adoptScenesLabel = zhOutline.workshop.confirmAdoptScenes
 
     const expectedStages = [
       ['现状扫描', '扫描结果'],
@@ -177,28 +183,28 @@ describe('PIPELINE-2 · 章纲工坊 UI 状态机', () => {
       ['质量闸门', '"advisories":[]'],
     ]
     for (const [stage, output] of expectedStages) {
-      expect(host.textContent).toContain(`当前：${stage}`)
+      expect(host.textContent).toContain(`${currentStagePrefix}${stage}`)
       await act(async () => {
-        button(host, '生成本步').click()
+        button(host, generateStepLabel).click()
         await Promise.resolve()
         await Promise.resolve()
       })
       expect((host.querySelector('textarea') as HTMLTextAreaElement).value).toContain(output)
       await act(async () => {
-        button(host, '确认本步并进入下一步').click()
+        button(host, confirmNextLabel).click()
         await Promise.resolve()
       })
     }
 
-    expect(host.textContent).toContain('当前：场景卡')
+    expect(host.textContent).toContain(`${currentStagePrefix}场景卡`)
     await act(async () => {
-      button(host, '生成本步').click()
+      button(host, generateStepLabel).click()
       await Promise.resolve()
       await Promise.resolve()
     })
     expect(onAdopt).not.toHaveBeenCalled()
     await act(async () => {
-      button(host, '确认采纳场景卡').click()
+      button(host, adoptScenesLabel).click()
       await Promise.resolve()
       await Promise.resolve()
     })

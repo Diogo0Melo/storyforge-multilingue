@@ -6,6 +6,7 @@ import {
   syncRelationToCharacterFields,
 } from '../../src/lib/relations/relationship-summary'
 import type { Character, CharacterRelation } from '../../src/lib/types'
+import zhRelations from '../../src/i18n/locales/zh-CN/relations.json'
 
 const panelSource = readFileSync('src/components/relations/CharacterRelationPanel.tsx', 'utf8')
 const graphSource = readFileSync('src/components/relations/RelationGraph.tsx', 'utf8')
@@ -88,7 +89,8 @@ describe('CF-20260703-4/5 · 角色关系保存反馈与角色词条同步', () 
     expect(syncCalls).toHaveLength(1)
     expect(panelSource).toContain('await addRelation(relation)\n        await syncRelationToCharacterFields')
     expect(panelSource).not.toContain("toast.success('关系已保存，并同步到角色词条。')")
-    expect(panelSource).toContain("toast.success('关系已保存。')")
+    expect(panelSource).toMatch(/t\(['"]messages\.saveSuccessToast['"]\)/)
+    expect(zhRelations.messages.saveSuccessToast).toBe('关系已保存。')
   })
 
   it('构建角色卡人物关系补丁时保留手写内容、双向追加、重复关系不重复写', async () => {

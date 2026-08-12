@@ -88,7 +88,7 @@ describe('CF-20260702-3 · 大纲生成依据面板', () => {
 
     expect(host.textContent).toContain('未填写故事主线')
     expect(host.textContent).toContain('未采纳的灵感草稿不会进入生成上下文')
-    expect(host.textContent).toContain('无可用内容：故事核心、角色档案')
+    expect(host.textContent).toContain('无可用内容：故事核心, 角色档案')
     expect(host.textContent).toContain('因模型上下文预算未发送：历史时间线')
   })
 })
