@@ -79,7 +79,7 @@ export default function CharacterSupplementAction({ character, projectId, worldG
       worldContext: assembled.text,
       evidenceContext,
     })
-    const text = await ai.start(messages, undefined, { category: 'character.supplement', projectId })
+    const text = await ai.start(messages, undefined, { category: 'character.supplement', projectId, outputKind: 'mixed' })
     if (!text) return
     const patch = parseCharacterSupplement(text, dims)
     if (Object.keys(patch).length === 0) return

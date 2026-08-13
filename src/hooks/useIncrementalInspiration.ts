@@ -214,6 +214,8 @@ export function useIncrementalInspiration(
     await ai.start(messages, undefined, {
       category: 'inspiration.reverse',
       projectId: project.id!,
+      // WS-3B: 灵感反推结果是结构化 JSON 但字段值面向读者，固定 mixed。
+      outputKind: 'mixed',
     })
   }
 

@@ -115,13 +115,13 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
         reference.title, reference.author || '', merged, isHistorical,
       )
       const config = useAIConfigStore.getState().config
-      const meta = { category: 'reference.summary', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } } as const
+      const meta = { category: 'reference.summary', outputKind: 'functional-structured', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } } as const
       const effectiveConfig = resolveRequestConfig(config, meta).config
       if (!isAIConfigReady(effectiveConfig)) throw new Error(getAIConfigRequiredMessage(effectiveConfig))
       const output = await chat(
         [{ role: 'system', content: system }, { role: 'user', content: user }],
         { ...config, maxTokens: 4096 },
-        { category: 'reference.summary', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } },
+        { category: 'reference.summary', outputKind: 'functional-structured', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } },
       )
       const json = extractJSON(output)
       if (json) {
@@ -144,7 +144,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
       const craftTexts = collectCharacterCraftTexts(chunks)
       if (craftTexts.length === 0) throw new Error(t('analysisReport.noCraftTexts'))
       const config = useAIConfigStore.getState().config
-      const meta = { category: 'reference.characters', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } } as const
+      const meta = { category: 'reference.characters', outputKind: 'functional-structured', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } } as const
       const effectiveConfig = resolveRequestConfig(config, meta).config
       if (!isAIConfigReady(effectiveConfig)) throw new Error(getAIConfigRequiredMessage(effectiveConfig))
       const { system, user } = buildCharacterMergePrompt(
@@ -153,7 +153,7 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
       const output = await chat(
         [{ role: 'system', content: system }, { role: 'user', content: user }],
         { ...config, maxTokens: 4096 },
-        { category: 'reference.characters', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } },
+        { category: 'reference.characters', outputKind: 'functional-structured', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } },
       )
       const characters = parseCharacterMergeOutput(output)
       if (characters.length === 0) throw new Error(t('analysisReport.noParsedCharacters'))

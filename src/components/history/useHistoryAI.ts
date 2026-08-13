@@ -118,7 +118,7 @@ export function useHistoryAI({
       if (mode === 'consult') {
         await ai.start(messages, undefined, { category: 'history.consult', projectId })
       } else {
-        await ai.start(messages, undefined, { category: 'history.storm', projectId })
+        await ai.start(messages, undefined, { category: 'history.storm', projectId, outputKind: 'creative' })
       }
     } catch (error) {
       if (requestRef.current[mode] !== requestId) return

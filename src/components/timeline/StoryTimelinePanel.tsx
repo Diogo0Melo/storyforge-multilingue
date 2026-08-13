@@ -71,7 +71,7 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
   )
 
   const handleExtract = async () => {
-    const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'story.timeline' }).config
+    const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'story.timeline', outputKind: 'functional-structured' }).config
     if (!isAIConfigReady(effectiveConfig)) { setError(getAIConfigRequiredMessage(effectiveConfig)); return }
     if (writtenChapters.length === 0) { setError(t('errors.noWrittenChapters')); return }
     setExtracting(true)
@@ -89,7 +89,8 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
           })
           for (const chunk of splitExtractionText(chapterSource.text)) {
             const messages = buildStoryTimelinePrompt(ch.title, chunk)
-            const raw = await chat(messages, aiConfig, { category: 'story.timeline', projectId: project.id! })
+            // WS-3B P2-C：事件抽取输出纯 JSON 数组，高置信结构化调用，不注入文本语言约束。
+            const raw = await chat(messages, aiConfig, { category: 'story.timeline', outputKind: 'functional-structured', projectId: project.id! })
             found.push(...parseStoryEvents(raw))
           }
           const parsed = uniqueBy(

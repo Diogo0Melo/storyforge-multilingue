@@ -453,6 +453,8 @@ ${depthGuide}
   const config: AIConfig = { ...baseConfig, maxTokens: args.maxTokens }
   const meta = {
     category: 'reference.analysis',
+    // WS-3B P2-C：13/18 维纯 JSON 分析，高置信结构化调用，不注入文本语言约束。
+    outputKind: 'functional-structured',
     projectId: args.ref.projectId,
     configOverrides: { maxTokens: args.maxTokens },
   } as const

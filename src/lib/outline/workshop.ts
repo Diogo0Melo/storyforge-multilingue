@@ -476,9 +476,9 @@ export function createOutlineWorkshopNode(input: {
       return ai.start(messages, undefined, { category: 'outline.workshop.collision', projectId })
     }
     if (stage === 'quality') {
-      return ai.start(messages, undefined, { category: 'review.outline-workshop', projectId })
+      return ai.start(messages, undefined, { category: 'review.outline-workshop', projectId, outputKind: 'functional-structured' })
     }
-    return ai.start(messages, undefined, { category: 'outline.workshop.scenes', projectId })
+    return ai.start(messages, undefined, { category: 'outline.workshop.scenes', projectId, outputKind: 'mixed' })
   }
   return {
     id: `outline.workshop.${stage}:${chapterIdentity}`,

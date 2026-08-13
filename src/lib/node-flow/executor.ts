@@ -207,6 +207,9 @@ async function executeNode(input: {
     ], config, {
       category: 'node.creation',
       projectId: input.projectId,
+      // WS-3B：自由创作节点的输出是读者向创作文本，显式声明 creative，
+      // 由 client gate 注入项目 contentLanguage 约束。
+      outputKind: 'creative',
       configOverrides: { maxTokens: numberConfig(node, 'maxTokens', 6000) },
       contextOverflowPolicy: 'reject',
     }, input.signal)

@@ -109,7 +109,7 @@ export default function LocationPanel({ project }: Props) {
           const raw = await chat(
             buildLocationExtractPrompt(chunk, [...locations.map(location => location.name), ...found.map(item => item.name)]),
             aiConfig,
-            { category: 'location.extract', projectId: project.id! },
+            { category: 'location.extract', projectId: project.id!, outputKind: 'functional-structured' },
           )
           found.push(...parseLocations(raw))
         }

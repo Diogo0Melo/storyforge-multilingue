@@ -36,7 +36,7 @@ export async function aiRestructure<T>(
   schemaInstruction: string,
   config: AIConfig,
 ): Promise<T | null> {
-  const effectiveConfig = resolveRequestConfig(config, { category: 'ai.restructure' }).config
+  const effectiveConfig = resolveRequestConfig(config, { category: 'ai.restructure', outputKind: 'functional-structured' }).config
   if (!isAIConfigReady(effectiveConfig) || !rawText.trim()) return null
   const messages: ChatMessage[] = [
     {
@@ -51,7 +51,8 @@ ${schemaInstruction}
     { role: 'user', content: rawText },
   ]
   try {
-    const out = await chat(messages, config, { category: 'ai.restructure' })
+    // WS-3B P2-C：重构产物必须是纯 JSON，高置信结构化调用，不注入文本语言约束。
+    const out = await chat(messages, config, { category: 'ai.restructure', outputKind: 'functional-structured' })
     return extractJson<T>(out)
   } catch {
     return null

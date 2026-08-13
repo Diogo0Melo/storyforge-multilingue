@@ -83,7 +83,7 @@ ${rawText}`
         { role: 'user',   content: userPrompt },
       ],
       config,
-      { category: 'character.structure' },
+      { category: 'character.structure', outputKind: 'functional-structured' },
     )
 
     // 从响应中提取 JSON（防止模型多输出前后文）

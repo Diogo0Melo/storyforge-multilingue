@@ -150,7 +150,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
           systems: scopedSystems,
         }),
         aiConfig,
-        { category: 'cultivation.progress', projectId: project.id! },
+        { category: 'cultivation.progress', projectId: project.id!, outputKind: 'functional-structured' },
       )
       const next = parseCultivationProgressResult({
         raw,

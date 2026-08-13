@@ -218,7 +218,7 @@ function FieldEditor({
     const messages = buildStoryGeneratePrompt(
       field.dimension, project.name, project.genre || '', fullWorldContext, hint, opts, value, mode,
     )
-    ai.start(messages, undefined, { category: 'story.generate', projectId: project.id! })
+    ai.start(messages, undefined, { category: 'story.generate', projectId: project.id!, outputKind: 'creative' })
   }
 
   return (

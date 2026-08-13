@@ -169,6 +169,7 @@ describe('PIPELINE-2 · 五阶段章纲工坊', () => {
     expect(start.mock.calls[0][2]).toEqual({
       category: 'review.outline-workshop',
       projectId: 1,
+      outputKind: 'functional-structured',
     })
     expect(result.gate).toEqual({ status: 'pass', issues: [] })
     expect(result.adopted).toBe(false)

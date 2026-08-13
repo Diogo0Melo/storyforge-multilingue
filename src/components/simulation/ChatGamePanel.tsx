@@ -182,7 +182,7 @@ export default function ChatGamePanel({ project, worldGroupId }: { project: Proj
       runtimeContext: runtimeContext.text,
       characterName: character.name,
       userMessage: text,
-    }), undefined, { category: 'simulation.chatgame', projectId: project.id!, contextOverflowPolicy: 'reject' })
+    }), undefined, { category: 'simulation.chatgame', outputKind: 'creative', projectId: project.id!, contextOverflowPolicy: 'reject' })
     if (!draft.trim()) return
     await store.recordChatReply({ replyToSequence: userSequence, text: parseChatReply(draft), baseSequence: userSequence })
   }
@@ -194,7 +194,7 @@ export default function ChatGamePanel({ project, worldGroupId }: { project: Proj
     if (!target || target.role !== 'user' || !character) throw new Error(t('chatGame.originalMessageMissingError'))
     const baseSequence = store.runtimeState.lastSequence
     const runtimeContext = await assembleContext({ projectId: project.id!, worldGroupId, simulationSessionId: selected.id, sourceKeys: ['simulationRuntime'], provider: config.provider, model: config.model })
-    const draft = await ai.start(buildChatGamePrompt({ runtimeContext: runtimeContext.text, characterName: character.name, userMessage: target.text }), undefined, { category: 'simulation.chatgame', projectId: project.id!, contextOverflowPolicy: 'reject' })
+    const draft = await ai.start(buildChatGamePrompt({ runtimeContext: runtimeContext.text, characterName: character.name, userMessage: target.text }), undefined, { category: 'simulation.chatgame', outputKind: 'creative', projectId: project.id!, contextOverflowPolicy: 'reject' })
     if (!draft.trim()) return
     await store.recordChatReply({ replyToSequence: target.eventSequence, text: parseChatReply(draft), baseSequence, supersedesSequence: reply.eventSequence })
   }

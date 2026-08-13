@@ -97,7 +97,7 @@ export default function CharacterRelationPanel({ project }: Props) {
     setExtractedRelations([])
     setSelectedExtracted(new Set())
     const messages = await buildRelationExtractPrompt(projectId, projectCharacters)
-    ai.start(messages, undefined, { category: 'relation.extract', projectId })
+    ai.start(messages, undefined, { category: 'relation.extract', projectId, outputKind: 'functional-structured' })
   }, [projectId, projectCharacters, ai])
 
   const handleAcceptExtracted = async () => {

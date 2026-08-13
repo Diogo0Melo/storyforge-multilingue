@@ -84,7 +84,7 @@ export default function StoryArcPanel({ project }: Props) {
     const messages = buildStoryArcPrompt(
       project.name, project.genre || '', worldCtx, storyCoreCtx, outlineSummary, genType, existingArcs,
     )
-    const raw = await ai.start(messages, undefined, { category: 'story-arc.generate', projectId: project.id! })
+    const raw = await ai.start(messages, undefined, { category: 'story-arc.generate', projectId: project.id!, outputKind: 'mixed' })
     if (!raw) return
 
     const result = parseStoryArcResult(raw)

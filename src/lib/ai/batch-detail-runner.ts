@@ -106,7 +106,7 @@ export async function batchGenerateDetails(
         foreshadowContext,
       )
 
-      const rawOutput = await chat(messages, config, { category: 'detail.scene', projectId: ch.projectId })
+      const rawOutput = await chat(messages, config, { category: 'detail.scene', projectId: ch.projectId, outputKind: 'mixed' })
       if (signal?.aborted) {
         return { generated, skipped: chapters.length - todo.length, failed, cancelled: true, elapsed: Date.now() - start }
       }

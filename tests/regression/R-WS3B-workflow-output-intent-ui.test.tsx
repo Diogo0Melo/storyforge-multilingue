@@ -1,27 +1,22 @@
 /**
  * R-WS3B · WorkflowEditor 输出意图选择器（UI lane）
  *
- * WS-3B Phase 1 契约：`PromptWorkflowStep.outputKind?: OutputKind`。
+ * WS-3B 契约：`PromptWorkflowStep.outputKind?: OutputKind`（已在 types/workflow.ts 登记）。
  * 编辑器节点检查器应暴露 Auto + 五种 OutputKind；Auto ↔ undefined，
  * 显式选择经既有保存链路（useWorkflowStore.save → db.promptWorkflows）持久化。
- *
- * 字段由工作流类型 lane 登记进 types/workflow.ts；登记落地前本测试与
- * WorkflowEditor 同样通过桥接类型（StepWithOutputIntent）读写。
+ * 字段直接经 PromptWorkflowStep.outputKind 读写，无桥接类型。
  */
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { db } from '../../src/lib/db/schema'
-import type { PromptWorkflow, PromptWorkflowStep } from '../../src/lib/types/workflow'
-import type { OutputKind } from '../../src/lib/ai/output-language'
+import type { PromptWorkflow } from '../../src/lib/types/workflow'
 import { DialogProvider } from '../../src/components/shared/Dialog'
 import { ToastProvider } from '../../src/components/shared/Toast'
 import WorkflowEditor from '../../src/components/settings/prompt/WorkflowEditor'
 import { useWorkflowStore } from '../../src/stores/workflow'
 
 ;(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true
-
-type StepWithOutputIntent = PromptWorkflowStep & { outputKind?: OutputKind }
 
 function baseWorkflow(): PromptWorkflow {
   return {
@@ -116,16 +111,16 @@ describe('R-WS3B · 节点检查器输出意图选择器', () => {
     await clickSave(mounted.host)
 
     const stored = await db.promptWorkflows.get(93001)
-    expect((stored?.steps[0] as StepWithOutputIntent).outputKind).toBe('creative')
+    expect(stored?.steps[0].outputKind).toBe('creative')
     // 未触碰的步骤保持 undefined
-    expect((stored?.steps[1] as StepWithOutputIntent).outputKind).toBeUndefined()
+    expect(stored?.steps[1].outputKind).toBeUndefined()
 
     await unmount(mounted)
   })
 
   it('回到 Auto 写回 undefined，其余步骤字段不丢失', async () => {
     const workflow = baseWorkflow()
-    ;(workflow.steps[0] as StepWithOutputIntent).outputKind = 'mixed'
+    workflow.steps[0].outputKind = 'mixed'
     await db.promptWorkflows.put(workflow)
 
     const mounted = await mount(workflow)
@@ -136,7 +131,7 @@ describe('R-WS3B · 节点检查器输出意图选择器', () => {
     await clickSave(mounted.host)
 
     const stored = await db.promptWorkflows.get(93001)
-    expect((stored?.steps[0] as StepWithOutputIntent).outputKind).toBeUndefined()
+    expect(stored?.steps[0].outputKind).toBeUndefined()
     expect(stored?.steps[0]?.label).toBe('故事种子')
     expect(stored?.steps).toHaveLength(2)
 

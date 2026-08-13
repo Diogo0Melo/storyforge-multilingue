@@ -153,7 +153,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
       ctx.characterContext,
       '',
     )
-    ai.start(messages, undefined, { category: 'detail.scene', projectId: project.id! })
+    ai.start(messages, undefined, { category: 'detail.scene', projectId: project.id!, outputKind: 'mixed' })
   }
 
   // D2: {t('detailed.enhanceDetail')}
@@ -180,7 +180,7 @@ export default function DetailedOutlinePanel({ project }: Props) {
       prevSummary, nextSummary,
       worldCtx, charCtx, foreshadowCtx,
     )
-    enhanceAI.start(messages, undefined, { category: 'detail.enhance', projectId: project.id! })
+    enhanceAI.start(messages, undefined, { category: 'detail.enhance', projectId: project.id!, outputKind: 'mixed' })
   }
 
   const handleAcceptEnhanced = async (text: string) => {

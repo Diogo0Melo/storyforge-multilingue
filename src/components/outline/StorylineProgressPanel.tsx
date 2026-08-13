@@ -86,7 +86,7 @@ export default function StorylineProgressPanel(props: {
         arcs: props.arcs,
       }),
       undefined,
-      { category: 'storyline-progress.map', projectId: props.projectId },
+      { category: 'storyline-progress.map', projectId: props.projectId, outputKind: 'functional-structured' },
     )
     if (!raw) return
     setCandidates(parseStorylineProgressResult({ raw, chapterContent: content, arcs: props.arcs }))

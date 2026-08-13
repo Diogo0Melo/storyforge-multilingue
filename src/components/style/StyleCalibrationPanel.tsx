@@ -65,6 +65,7 @@ export default function StyleCalibrationPanel({ projectId, profile }: Props) {
       const output = await chat(messages, aiConfig, {
         category: 'style.calibrate',
         projectId,
+        outputKind: 'creative',
       })
       if (!output.trim()) {
         setError(t('calibration.errorEmptyResult'))

@@ -85,7 +85,7 @@ export default function WorldConstitutionPanel({ project, onShowFacts }: {
           content: '你是设定断言抽取器。严格遵守闭集、逐字证据和 JSON 输出要求，不补写用户未提供的设定。',
         },
         { role: 'user', content: buildSettingAssertionExtractPrompt(sources, subjects) },
-      ], undefined, { category: 'canon.setting.extract', projectId: project.id })
+      ], undefined, { category: 'canon.setting.extract', projectId: project.id, outputKind: 'functional-structured' })
       const candidates = parseSettingAssertionCandidates(raw, sources, subjects)
       const result = await adoptSetting({
         projectId: project.id,

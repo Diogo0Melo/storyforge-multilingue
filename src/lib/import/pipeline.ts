@@ -394,6 +394,8 @@ async function parseChunkOnce(args: {
   const config: AIConfig = { ...baseConfig, maxTokens: overrideMax }
   const meta = {
     category: 'import.parse-chunk',
+    // WS-3B P2-C：统一解析输出纯 JSON，高置信结构化调用，不注入文本语言约束。
+    outputKind: 'functional-structured',
     projectId: args.projectId,
     configOverrides: { maxTokens: overrideMax },
   } as const

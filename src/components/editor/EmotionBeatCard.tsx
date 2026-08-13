@@ -65,7 +65,7 @@ export default function EmotionBeatCard({
         chapterTitle, chapterSummary, worldContext, characterContext, prevChapterEnding,
       )
       console.log('[EmotionBeat] 开始生成节拍卡:', chapterTitle)
-      const raw = await ai.start(messages, undefined, { category: 'emotion.beat', projectId })
+      const raw = await ai.start(messages, undefined, { category: 'emotion.beat', projectId, outputKind: 'mixed' })
       const { overallArc, beats, error } = parseEmotionBeats(raw)
       if (error) console.warn('[EmotionBeat] 解析警告:', error)
       if (beats.length > 0) {

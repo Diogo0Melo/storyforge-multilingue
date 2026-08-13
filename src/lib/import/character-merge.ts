@@ -80,6 +80,8 @@ export async function runCharacterMerge(args: RunCharacterMergeArgs): Promise<vo
     }
     const meta = {
       category: 'import.merge-characters',
+      // WS-3B P2-C：合并组输出纯 JSON，高置信结构化调用，不注入文本语言约束。
+      outputKind: 'functional-structured',
       projectId,
       configOverrides: { maxTokens: config.maxTokens },
     } as const

@@ -149,7 +149,7 @@ export default function InventoryPanel({ project }: Props) {
               [...knownNames, ...found.map(event => event.itemName)],
               characterNames,
             )
-            const raw = await chat(messages, aiConfig, { category: 'inventory.extract', projectId: project.id! })
+            const raw = await chat(messages, aiConfig, { category: 'inventory.extract', projectId: project.id!, outputKind: 'functional-structured' })
             found.push(...parseInventoryEvents(raw))
           }
           const key = (ev: ExtractedItemEvent) => JSON.stringify([

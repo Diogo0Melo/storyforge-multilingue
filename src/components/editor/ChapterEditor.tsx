@@ -476,6 +476,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         call: messages => chat(messages, aiConfig, {
           category: 'chapter.memory',
           projectId: project.id!,
+          outputKind: 'functional-structured',
         }),
       })
       if (result.status === 'written') await refreshChapter(chapterId)
@@ -844,6 +845,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
           projectId: project.id!,
           configOverrides: { maxTokens: 8_000 },
           contextOverflowPolicy: 'reject',
+          outputKind: 'functional-structured',
         }, controller.signal),
       })
       const run = await persistChapterOrganizationCandidate(candidate)
@@ -934,6 +936,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         call: messages => memoryAI.start(messages, undefined, {
           category: 'chapter.memory',
           projectId: project.id!,
+          outputKind: 'functional-structured',
         }),
       })
       if (result.status === 'written') {
@@ -1029,7 +1032,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       const characterNames = characters.map(character => character.name)
       const messages = buildStateExtractPrompt(stateCtx, task.chapterTitle, task.chapterPlainText, characterNames)
       console.log('[AutoPost] 自动提取状态:', task.chapterTitle)
-      const raw = await stateAI.start(messages, undefined, { category: 'state.extract', projectId: project.id! })
+      const raw = await stateAI.start(messages, undefined, { category: 'state.extract', projectId: project.id!, outputKind: 'functional-structured' })
       const { diffs, error } = parseStateDiffs(raw, characterNames)
       if (error) {
         console.error('[AutoPost] 状态提取解析失败:', error)

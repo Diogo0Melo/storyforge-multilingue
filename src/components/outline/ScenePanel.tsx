@@ -125,7 +125,7 @@ export default function ScenePanel({ project, outlineNodeId, chapterTitle, chapt
       charIdx >= 0 ? assembled.segments[charIdx]?.content ?? '' : '',
       '',
     )
-    ai.start(messages, undefined, { category: 'detail.scene', projectId })
+    ai.start(messages, undefined, { category: 'detail.scene', projectId, outputKind: 'mixed' })
     setExpanded(true)
   }
 
