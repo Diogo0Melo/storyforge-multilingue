@@ -12,6 +12,8 @@ import { buildPolishPrompt, buildExpandPrompt } from '../../lib/ai/adapters/chap
 import type { ChatMessage } from '../../lib/types'
 
 interface Props {
+  /** 当前项目 id — WS-3B Phase 1：调用元信息（用量归属 + 输出语言 gate 的项目语言解析） */
+  projectId: number
   /** 获取当前选中文本 */
   getSelectedText: () => string
   /** 获取选中文本的位置（用于定位工具栏） */
@@ -35,7 +37,7 @@ function getActions(t: (...args: any[]) => string): { type: ActionType; icon: ty
 }
 
 export default function FloatingToolbar({
-  getSelectedText, getSelectionRect, replaceSelectedText, disabled,
+  projectId, getSelectedText, getSelectionRect, replaceSelectedText, disabled,
 }: Props) {
   const { t } = useDomainT('editor')
   const ACTIONS = getActions(t)
@@ -107,7 +109,17 @@ export default function FloatingToolbar({
         break
     }
 
-    const output = await ai.start(messages, undefined, { category: 'chapter.toolbar' })
+    // WS-3B Phase 1：动作级调用元信息。手稿编辑（润色/扩写/缩写/改写）是创意写作，
+    // 查漏输出审校建议；每个 category 保持字面声明以满足架构守卫与 AI manual 扫描。
+    const output = action === 'polish'
+      ? await ai.start(messages, undefined, { category: 'chapter.toolbar.polish', projectId, outputKind: 'creative' })
+      : action === 'expand'
+        ? await ai.start(messages, undefined, { category: 'chapter.toolbar.expand', projectId, outputKind: 'creative' })
+        : action === 'condense'
+          ? await ai.start(messages, undefined, { category: 'chapter.toolbar.condense', projectId, outputKind: 'creative' })
+          : action === 'rewrite'
+            ? await ai.start(messages, undefined, { category: 'chapter.toolbar.rewrite', projectId, outputKind: 'creative' })
+            : await ai.start(messages, undefined, { category: 'chapter.toolbar.check', projectId, outputKind: 'functional-prose' })
     if (output) {
       setResult(output)
     }

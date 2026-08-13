@@ -5,6 +5,7 @@ import {
   parseAgentProtocolAction,
 } from '../../src/lib/agent/protocol'
 import { chat } from '../../src/lib/ai/client'
+import { hasOutputLanguageConstraint } from '../../src/lib/ai/output-language'
 import {
   runReadOnlyAgentWithClient,
 } from '../../src/lib/agent/client-adapter'
@@ -167,6 +168,9 @@ describe('R-AGENT1 · 严格只读 AgentRunner', () => {
 
     expect(result.status).toBe('completed')
     expect(fetchMock).toHaveBeenCalledTimes(1)
+    // WS-3B：只读协议输出是严格 JSON，请求体绝不携带自然语言输出约束
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body)) as { messages: Parameters<typeof hasOutputLanguageConstraint>[0] }
+    expect(hasOutputLanguageConstraint(body.messages)).toBe(false)
     await vi.waitFor(async () => {
       const entry = await db.aiUsageLog.toCollection().last()
       expect(entry).toMatchObject({

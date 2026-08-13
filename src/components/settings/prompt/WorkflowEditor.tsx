@@ -8,6 +8,7 @@ import type {
   PromptWorkflowGraph,
   PromptWorkflowStep,
 } from '../../../lib/types/workflow'
+import type { OutputKind } from '../../../lib/ai/output-language'
 import {
   ALL_MODULE_KEYS_FOR_WORKFLOW,
   SAVE_TARGET_PRESETS,
@@ -27,6 +28,30 @@ import { useDomainT } from '../../../i18n'
 import { resolveSystemSeedDisplay } from '../../../lib/ai/seed-i18n'
 
 type EditorMode = 'canvas' | 'details'
+
+/**
+ * WS-3B Phase 1 · 每步输出意图（outputKind）选项。
+ *
+ * 契约：`PromptWorkflowStep.outputKind?: OutputKind`，Auto ↔ undefined；字段由
+ * 工作流类型 lane 在 types/workflow.ts 登记，登记落地前本 lane 通过下方桥接类型
+ * 读写，不引入平行 schema。i18n key 等待三语 locale 登记，登记前按仓库既有模式
+ * 用 `defaultValue` 呈现兜底文案（同 node-authoring catalog 的 UI 兜底约定）。
+ */
+const OUTPUT_INTENT_OPTIONS: ReadonlyArray<{
+  value: '' | OutputKind
+  labelKey: string
+  fallback: string
+}> = [
+  { value: '', labelKey: 'workflow.outputIntentAuto', fallback: 'Auto' },
+  { value: 'creative', labelKey: 'workflow.outputIntentCreative', fallback: 'Creative writing' },
+  { value: 'mixed', labelKey: 'workflow.outputIntentMixed', fallback: 'Mixed writing' },
+  { value: 'functional-prose', labelKey: 'workflow.outputIntentFunctionalProse', fallback: 'Functional text' },
+  { value: 'functional-structured', labelKey: 'workflow.outputIntentFunctionalStructured', fallback: 'Structured data (JSON)' },
+  { value: 'language-neutral', labelKey: 'workflow.outputIntentLanguageNeutral', fallback: 'Language-neutral' },
+]
+
+/** outputKind 登记进 PromptWorkflowStep 前的读写桥接类型（合并后可直接去掉）。 */
+type StepWithOutputIntent = PromptWorkflowStep & { outputKind?: OutputKind }
 
 export default function WorkflowEditor({
   workflow,
@@ -466,6 +491,24 @@ export default function WorkflowEditor({
                       <option key={preset.value} value={preset.value}>{label}</option>
                     )
                   })}
+                </select>
+              </div>
+              <div>
+                <label className="mb-1 block text-[10px] text-text-muted">
+                  {t('workflow.outputIntentLabel', { defaultValue: 'Output intent' })}
+                </label>
+                <select
+                  value={(selectedStep as StepWithOutputIntent).outputKind ?? ''}
+                  onChange={event => updateStepById(selectedStep.stepId, {
+                    outputKind: (event.target.value || undefined) as StepWithOutputIntent['outputKind'],
+                  } as Partial<StepWithOutputIntent>)}
+                  className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+                >
+                  {OUTPUT_INTENT_OPTIONS.map(option => (
+                    <option key={option.value} value={option.value}>
+                      {t(option.labelKey, { defaultValue: option.fallback })}
+                    </option>
+                  ))}
                 </select>
               </div>
               <label className="flex items-center gap-2 text-xs text-text-secondary">

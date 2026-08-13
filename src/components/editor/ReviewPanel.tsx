@@ -100,7 +100,8 @@ export default function ReviewPanel(props: Props) {
       chapterContent, chapterTitle, worldContext,
       characterContext, prevChapterSummary, foreshadowContext, stateContext
     )
-    const output = await ai.start(messages, undefined, { category: 'review.quality' })
+    // WS-3B Phase 1：审校报告是功能性散文输出 → functional-prose（UI 语言约束）
+    const output = await ai.start(messages, undefined, { category: 'review.quality', projectId, outputKind: 'functional-prose' })
     const result = parseReviewResult(output)
     if (result) setReview(chapterId, result)
   }
@@ -108,7 +109,7 @@ export default function ReviewPanel(props: Props) {
   const handleRunAntiAI = async () => {
     const highFreq = extractHighFreqWords(chapterContent)
     const messages = buildAntiAIPrompt(chapterContent, highFreq.map(w => w.replace(/\(\d+次\)/, '')))
-    const output = await ai.start(messages, undefined, { category: 'review.anti-ai' })
+    const output = await ai.start(messages, undefined, { category: 'review.anti-ai', projectId, outputKind: 'functional-prose' })
     const result = parseAntiAIResult(output)
     if (result) setAntiAI(chapterId, result)
   }
@@ -117,7 +118,7 @@ export default function ReviewPanel(props: Props) {
     const messages = buildReadabilityPrompt(
       chapterContent, chapterTitle, prevChapterSummary, nextChapterSummary
     )
-    const output = await ai.start(messages, undefined, { category: 'review.readability' })
+    const output = await ai.start(messages, undefined, { category: 'review.readability', projectId, outputKind: 'functional-prose' })
     const result = parseReadabilityResult(output)
     if (result) setReadability(chapterId, result)
   }
@@ -144,6 +145,8 @@ export default function ReviewPanel(props: Props) {
         call: messages => ai.start(messages, undefined, {
           category: auditMode === 'fast' ? 'review.consistency.fast' : 'review.consistency.deep',
           projectId,
+          // WS-3B Phase 1：一致性审计产出结构化 findings → functional-structured（不注入文本语言约束）
+          outputKind: 'functional-structured',
           configOverrides: { maxTokens: auditMode === 'fast' ? 4_000 : 6_000 },
         }),
       })

@@ -411,6 +411,8 @@ export function createCharacterCopilotNode(
   const runAI = dependencies.runAI ?? (messages => chat(messages, input.config, {
     category: input.routingCategory ?? 'character.generate',
     projectId: input.projectId,
+    // WS-3B：角色候选是结构化 JSON 但字段值面向读者，固定 mixed。
+    outputKind: 'mixed',
     configOverrides: {
       maxTokens: input.generationOverrides?.maxTokens ?? 6000,
       ...(input.generationOverrides?.temperature != null

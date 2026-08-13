@@ -451,6 +451,8 @@ export function createOutlineCopilotNode(
   const runAI = dependencies.runAI ?? (messages => chat(messages, input.config, {
     category: input.routingCategory ?? (input.mode === 'volumes' ? 'outline.volume' : 'outline.chapter'),
     projectId: input.project.id!,
+    // WS-3B：大纲候选是结构化条目但标题/摘要面向读者，固定 mixed。
+    outputKind: 'mixed',
     configOverrides: {
       maxTokens: input.generationOverrides?.maxTokens ?? (input.mode === 'volumes' ? 8000 : 12_000),
       ...(input.generationOverrides?.temperature != null

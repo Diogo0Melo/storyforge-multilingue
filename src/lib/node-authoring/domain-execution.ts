@@ -293,6 +293,9 @@ async function executeDetail(input: DomainExecutionInput): Promise<DomainExecuti
     const raw = await chat(messages, input.aiConfig, {
       category: 'detail.chapter-planning',
       projectId: input.projectId,
+      // WS-3B：细纲输出是被 parser 严格解析的结构化 JSON；category 会被 'detail.' 前缀
+      // 分类为 creation，必须显式声明 functional-structured，client gate 不注入文本语言约束。
+      outputKind: 'functional-structured',
       configOverrides: generationOverrides(input.node, input.inputs),
       contextOverflowPolicy: 'reject',
     }, input.signal)
@@ -432,6 +435,9 @@ async function executeChapterOrganization(input: DomainExecutionInput): Promise<
     raw = await chat(messages, input.aiConfig, {
       category: 'chapter.continuity',
       projectId: input.projectId,
+      // WS-3B：六域整理输出是被 parser 严格解析的结构化 JSON；category 会被 'chapter.'
+      // 前缀分类为 creation，必须显式声明 functional-structured，不注入文本语言约束。
+      outputKind: 'functional-structured',
       configOverrides: generationOverrides(input.node, input.inputs),
       contextOverflowPolicy: 'reject',
     }, input.signal)
@@ -495,6 +501,9 @@ async function executeFactNode(input: DomainExecutionInput): Promise<DomainExecu
   const raw = await chat(messages, input.aiConfig, {
     category: 'chapter.continuity',
     projectId: input.projectId,
+    // WS-3B：受控谓词事实抽取输出结构化 JSON（parser 逐字回查引文）；显式声明
+    // functional-structured，避免 'chapter.' 前缀的 creation 分类误注入语言约束。
+    outputKind: 'functional-structured',
     configOverrides: generationOverrides(input.node, input.inputs),
     contextOverflowPolicy: 'reject',
   }, input.signal)

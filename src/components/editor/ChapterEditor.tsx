@@ -770,7 +770,8 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     reviseReportRef.current = report
     const messages = buildReviewRevisePrompt(plainText, report, worldCtx, charCtx)
     ai.setOperation('revise-full')
-    ai.start(messages, undefined, { category: 'review.revise', projectId: project.id! })
+    // WS-3B Phase 1：review.revise 是按报告改写全文手稿 → creative（项目正文语言约束）
+    ai.start(messages, undefined, { category: 'review.revise', projectId: project.id!, outputKind: 'creative' })
   }
 
   const handleRunChapterOrganization = async (force = false) => {
@@ -1455,6 +1456,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
 
       {/* Phase 24.3: 选中文本浮动工具栏 */}
       {compareSourceHtml == null && <FloatingToolbar
+        projectId={project.id!}
         getSelectedText={() => editorRef.current?.getSelectedText() || ''}
         getSelectionRect={() => {
           const sel = window.getSelection()

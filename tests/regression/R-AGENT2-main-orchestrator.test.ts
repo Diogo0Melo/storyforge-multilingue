@@ -9,6 +9,7 @@ import {
   adoptMasterCandidate,
   createMasterAgentPlan,
 } from '../../src/lib/agent/orchestrator'
+import { hasOutputLanguageConstraint } from '../../src/lib/ai/output-language'
 import { db } from '../../src/lib/db/schema'
 import type { AIConfigPreset, Project } from '../../src/lib/types'
 import { useAIConfigStore } from '../../src/stores/ai-config'
@@ -128,6 +129,9 @@ describe('AGENT-2 · 主 Agent 编排与持久会话', () => {
 
     expect(plan.tasks.map(task => task.agentId)).toEqual(['character'])
     expect(fetchMock).toHaveBeenCalledOnce()
+    // WS-3B：规划协议输出是严格 JSON，请求体绝不携带自然语言输出约束
+    const body = JSON.parse(String(fetchMock.mock.calls[0][1]?.body)) as { messages: Parameters<typeof hasOutputLanguageConstraint>[0] }
+    expect(hasOutputLanguageConstraint(body.messages)).toBe(false)
     await vi.waitFor(async () => {
       expect(await db.aiUsageLog.toCollection().last()).toMatchObject({
         category: 'agent.orchestrator',

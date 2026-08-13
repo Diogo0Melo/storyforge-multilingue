@@ -366,6 +366,8 @@ export default function WorkflowRunner({ workflow, project, onClose }: RunnerPro
         stepId: step.stepId,
         category: step.promptModuleKey,
         projectId: project?.id,
+        // WS-3B · 转发步骤显式输出意图；Auto（undefined）留给 client gate 过渡推导
+        outputKind: step.outputKind,
         ai,
       })
       const output = (

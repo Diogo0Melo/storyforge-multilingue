@@ -7,6 +7,7 @@
  * 工作流让用户一键跑完整条链，每步可以审核 / 修改 / 跳过 / 重生成。
  */
 import type { PromptModuleKey } from './prompt'
+import type { OutputKind } from '../ai/output-language'
 
 /**
  * 步骤输出的"自动写回"目标（Phase 17）
@@ -55,6 +56,12 @@ export interface PromptWorkflowStep {
   inputValues?: Record<string, string>
   /** Phase 17：本步输出的自动写回目标 */
   saveTarget?: SaveTarget
+  /**
+   * WS-3B · 作者为本步显式声明的输出语义意图（D12 OutputKind）。
+   * 缺省（Auto/legacy）必须保持 undefined：client gate 继续走 classifyAITask
+   * 过渡推导与失败保险；未知/自定义分类绝不得在此被静默默认成 creative。
+   */
+  outputKind?: OutputKind
 }
 
 /** FLOW-1 · 画布节点只保存布局，业务配置仍唯一来自 PromptWorkflowStep。 */

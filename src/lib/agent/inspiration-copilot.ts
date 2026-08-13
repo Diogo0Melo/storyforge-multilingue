@@ -262,6 +262,8 @@ export function createInspirationCopilotNode(
   const runAI = dependencies.runAI ?? (messages => chat(messages, input.config, {
     category: input.routingCategory ?? 'inspiration.reverse',
     projectId: input.projectId,
+    // WS-3B：灵感反推候选是结构化 JSON 但字段值面向读者，固定 mixed。
+    outputKind: 'mixed',
     configOverrides: { maxTokens: 6000 },
     contextOverflowPolicy: 'reject',
   }, input.signal))

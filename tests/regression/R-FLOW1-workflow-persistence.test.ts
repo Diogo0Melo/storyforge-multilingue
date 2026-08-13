@@ -90,6 +90,14 @@ describe('FLOW-1 · 工作流图持久化与专用导入导出', () => {
     expect(restored.createdAt).toBe(1234)
   })
 
+  it('导入拒绝非法 outputKind，避免把未知语义带入 client gate', () => {
+    const source = graphWorkflow('非法输出意图')
+    ;(source.steps[0] as unknown as Record<string, unknown>).outputKind = 'not-a-real-output-kind'
+
+    expect(() => parseImportedWorkflows(JSON.parse(serializeWorkflows([source]))))
+      .toThrow('非法 outputKind')
+  })
+
   it('导入环路图在写库前失败，不静默删除坏边', () => {
     const source = graphWorkflow('坏图')
     source.graph!.edges.push({

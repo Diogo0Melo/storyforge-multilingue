@@ -187,6 +187,8 @@ export function createWorldOriginCopilotNode(
     ?? (messages => chat(messages, input.config, {
       category: input.routingCategory ?? 'worldview.dimension',
       projectId: input.projectId,
+      // WS-3B：世界起源候选是面向读者的创作文本，固定 creative。
+      outputKind: 'creative',
       configOverrides: { maxTokens: 3000 },
       contextOverflowPolicy: 'reject',
     }, input.signal))

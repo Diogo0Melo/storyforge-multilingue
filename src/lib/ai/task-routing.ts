@@ -39,6 +39,9 @@ const EXTRACTION_PREFIXES = [
   'codex.extract',
   'location.extract',
   'story.timeline',
+  // WS-3B：故事进程年表抽取（Phase 25.5.2-a 模块键，键名带连字符，区别于 'story.timeline'）。
+  // 动态节点 continuity.timeline 以此分类缺省推导 functional-structured，不得落入 creation 桶。
+  'story-timeline.extract',
   'chapter.organize',
   'chapter.memory',
   'character.structure',

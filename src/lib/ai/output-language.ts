@@ -36,6 +36,20 @@ export type OutputKind =
   | 'mixed'
   | 'language-neutral'
 
+/** D12 的运行时值全集；持久化/导入边界与 UI 选择器共用此事实源。 */
+export const OUTPUT_KIND_VALUES = [
+  'creative',
+  'functional-prose',
+  'functional-structured',
+  'mixed',
+  'language-neutral',
+] as const satisfies readonly OutputKind[]
+
+export function isOutputKind(value: unknown): value is OutputKind {
+  return typeof value === 'string'
+    && (OUTPUT_KIND_VALUES as readonly string[]).includes(value)
+}
+
 /** pt-BR 输出约束（对应 zh 版意图；G2A 复审文案）。 */
 export const PORTUGUESE_OUTPUT_CONSTRAINT = [
   '【Restrição rígida de idioma de saída】',

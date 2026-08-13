@@ -354,6 +354,9 @@ export async function createMasterAgentPlan(input: {
       : await chat(messages, config, {
           category: 'agent.orchestrator',
           projectId: input.projectId,
+          // WS-3B：规划输出是严格 JSON 协议，固定 functional-structured；
+          // client gate 不得注入自然语言输出约束。
+          outputKind: 'functional-structured',
           configOverrides: { maxTokens: 1800, temperature: 0.2 },
           contextOverflowPolicy: 'reject',
         }, input.signal)

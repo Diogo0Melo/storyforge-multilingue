@@ -5,7 +5,7 @@ import { useAIConfigStore } from '../../stores/ai-config'
 import { db } from '../db/schema'
 import { adopt } from '../registry/adopt'
 import type { NodeFlow, NodeRunRecord } from '../types'
-import { AUTHORING_NODE_BY_ID } from './catalog'
+import { AUTHORING_NODE_BY_ID, authoringDynamicOutputKind } from './catalog'
 import {
   hashAuthoringText,
   readAuthoringCanonBinding,
@@ -319,6 +319,9 @@ async function executeNode(input: {
       ], aiConfig, {
       category: 'node.creation',
       projectId: input.projectId,
+      // WS-3B：自由创作节点的输出是读者向创作文本，显式声明 creative，
+      // 由 client gate 注入项目 contentLanguage 约束。
+      outputKind: 'creative',
       configOverrides: {
         temperature: controlNumber(inputs, 'control.temperature', numberConfig(node, 'temperature', aiConfig.temperature)),
         maxTokens: controlNumber(inputs, 'control.max-tokens', numberConfig(node, 'maxTokens', aiConfig.maxTokens)),
@@ -340,6 +343,9 @@ async function executeNode(input: {
     })
     if (domain) return domain
     const sourceKeys = template.reads?.sourceKeys ?? []
+    // WS-3B：已知创作/结构化模板显式声明 outputKind；未知/自定义 promptModuleKey
+    // 保持未声明（undefined），由 client gate 的分类推导/失败保险裁决，绝不静默 creative。
+    const dynamicOutputKind = authoringDynamicOutputKind(template)
     const upstream = composeInputs(inputs.filter(item => item.state !== 'control'))
     const binding = !upstream && sourceKeys.length
       ? await readAuthoringCanonBinding({
@@ -371,6 +377,7 @@ async function executeNode(input: {
       ], aiConfig, {
       category: template.promptModuleKey ?? 'node.creation',
       projectId: input.projectId,
+      ...(dynamicOutputKind !== undefined ? { outputKind: dynamicOutputKind } : {}),
       configOverrides: {
         temperature: controlNumber(inputs, 'control.temperature', numberConfig(node, 'temperature', aiConfig.temperature)),
         maxTokens: controlNumber(inputs, 'control.max-tokens', numberConfig(node, 'maxTokens', aiConfig.maxTokens)),

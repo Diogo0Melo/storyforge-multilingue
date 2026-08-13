@@ -501,6 +501,8 @@ export function createProseCopilotNode(
   const runAI = dependencies.runAI ?? (messages => chat(messages, input.config, {
     category: input.routingCategory ?? (input.operation === 'continue' ? 'chapter.continue' : 'chapter.content'),
     projectId: input.project.id!,
+    // WS-3B：正文候选是面向读者的创作文本，固定 creative。
+    outputKind: 'creative',
     configOverrides: {
       maxTokens: input.generationOverrides?.maxTokens ?? 16_000,
       ...(input.generationOverrides?.temperature != null

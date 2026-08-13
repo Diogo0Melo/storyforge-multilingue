@@ -235,6 +235,11 @@ describe('FLOW-3C · 领域节点专用执行器', () => {
       inputs: [candidateCount], projectId: project.id!, worldGroupId: null, aiConfig,
     })
     expect(chat).toHaveBeenCalledTimes(2)
+    // WS-3B：细纲候选是 parser 严格解析的结构化 JSON，每次调用都必须显式声明
+    // functional-structured（'detail.' 前缀缺省会误推导 creative 并注入语言约束）。
+    for (const call of vi.mocked(chat).mock.calls) {
+      expect(call[2]).toMatchObject({ category: 'detail.chapter-planning', outputKind: 'functional-structured' })
+    }
     expect(result?.variants).toHaveLength(2)
     expect(result?.output).toContain('海床亮起第二道门')
     expect(result?.variants?.[1]).toContain('第三道门在月下开启')

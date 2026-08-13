@@ -5,6 +5,7 @@ import type {
   PromptWorkflowGraphNode,
   PromptWorkflowStep,
 } from '../types/workflow'
+import { isOutputKind } from '../ai/output-language'
 import { validateWorkflowGraph } from './graph'
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -82,6 +83,12 @@ export function parseImportedWorkflow(value: unknown, now = Date.now()): PromptW
   ) {
     throw new Error(`工作流「${value.name}」包含非法步骤。`)
   }
+  const parsedSteps = steps.map(step => {
+    if (step.outputKind !== undefined && !isOutputKind(step.outputKind)) {
+      throw new Error(`工作流「${value.name}」包含非法 outputKind。`)
+    }
+    return step as unknown as PromptWorkflowStep
+  })
   const workflow: PromptWorkflow = {
     scope: 'user',
     name: value.name,
@@ -89,7 +96,7 @@ export function parseImportedWorkflow(value: unknown, now = Date.now()): PromptW
     genres: Array.isArray(value.genres)
       ? value.genres.filter((genre): genre is string => typeof genre === 'string')
       : undefined,
-    steps: steps as unknown as PromptWorkflowStep[],
+    steps: parsedSteps,
     graph: parseGraph(value.graph),
     isDefault: false,
     createdAt: now,

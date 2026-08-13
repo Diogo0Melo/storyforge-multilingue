@@ -1,4 +1,5 @@
 import { CHARACTER_DIMENSIONS, getDimensionLabel, getDimensionGroupLabel } from '../character/character-dimensions'
+import type { OutputKind } from '../ai/output-language'
 import type { PromptModuleKey } from '../types/prompt'
 import type {
   AuthoringNodeTemplate,
@@ -720,4 +721,44 @@ export function defaultConfigForTemplate(template: AuthoringNodeTemplate): Recor
     parameter.key,
     parameter.defaultValue ?? (parameter.type === 'number' ? 0 : parameter.type === 'boolean' ? false : ''),
   ]))
+}
+
+/**
+ * WS-3B · 动态节点执行的输出语义意图声明表（按 promptModuleKey）。
+ *
+ * 基类 AuthoringNodeTemplate 契约没有 output-kind 字段（contracts.ts 不归本lane改），
+ * 因此这里用显式解析表代替模板字段，规则与 client gate 的单点注入契约对齐：
+ * - 读者向创作文本（世界/故事/角色/伏笔等）→ 'creative'，由 gate 注入项目 contentLanguage；
+ * - 'chapter.continuity' 被 'chapter.' 前缀分类为 creation，但状态/认知/事实/物品/年表
+ *   整理输出都是 parser 严格解析的结构化数据，必须显式 'functional-structured'；
+ *   'detail.chapter-planning' 同理（'detail.' 前缀）。
+ * - 抽取类键（relation.extract / inventory.extract / story-timeline.extract）由
+ *   EXTRACTION_PREFIXES 分类推导 functional-structured，此处不重复声明。
+ * - 未列出的键有意返回 undefined：由 client gate 走 classifyAITask 推导或失败保险，
+ *   绝不把未知/自定义键静默为 creative。
+ */
+const AUTHORING_DYNAMIC_OUTPUT_KINDS: ReadonlyMap<string, OutputKind> = new Map([
+  ['worldview.dimension', 'creative'],
+  ['worldview.worldbuilding', 'creative'],
+  ['story.core', 'creative'],
+  ['character.dimension', 'creative'],
+  ['character.generate', 'creative'],
+  ['outline.plot', 'creative'],
+  ['foreshadow.generate', 'creative'],
+  ['chapter.content', 'creative'],
+  ['detail.chapter-planning', 'functional-structured'],
+  ['chapter.continuity', 'functional-structured'],
+])
+
+/**
+ * WS-3B · 解析动态 generate-field / generate-collection 执行应声明的 outputKind。
+ *
+ * - 无 promptModuleKey 的模板：executor 以自由创作 'node.creation' category 调用，
+ *   语义即自由创作 → 'creative'（显式声明，与 classifyAITask 的 creation 分类一致）。
+ * - 已知创作/结构化键 → 按上表显式声明。
+ * - 未知/自定义键 → undefined，交由 client gate 的分类推导/失败保险裁决。
+ */
+export function authoringDynamicOutputKind(template: AuthoringNodeTemplate): OutputKind | undefined {
+  if (!template.promptModuleKey) return 'creative'
+  return AUTHORING_DYNAMIC_OUTPUT_KINDS.get(template.promptModuleKey)
 }

@@ -27,6 +27,9 @@ export function runReadOnlyAgentWithClient(input: RunReadOnlyAgentWithClientInpu
             ...input.meta,
             category: 'agent.readonly',
             projectId: input.context.projectId,
+            // WS-3B：只读协议输出是严格 JSON，固定 functional-structured。
+            // 该语义意图不允许被调用方 meta 覆盖，client gate 不注入自然语言约束。
+            outputKind: 'functional-structured',
             contextOverflowPolicy: 'reject',
           },
           signal,
