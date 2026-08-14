@@ -109,7 +109,12 @@
     "dismissTitle": "关闭批量生成结果",
     "failed": "批量生成章节失败：{{error}}。",
     "writeError": "批量写入章节时出错：{{error}}。请查看控制台获取详情。",
-    "complete_other": "批量生成完成：{{count}} 章"
+    "complete_other": "批量生成完成：{{count}} 章",
+    "stage": {
+      "generatingVolume": "正在生成「{{title}}」的章节大纲…",
+      "volumeComplete": "「{{title}}」完成，生成了 {{count}} 章",
+      "volumeFailed": "「{{title}}」生成失败，已跳过"
+    }
   },
   "adopt": {
     "volumeSummaryWriteFailed": "未能写入本卷卷纲：{{reason}}",
@@ -142,6 +147,11 @@
     "hasDetailTitle": "有细纲",
     "batchGenerate": "批量生成细纲",
     "stopTitle": "停止",
+    "batchStage": {
+      "generatingDetail": "正在生成「{{title}}」的细纲…",
+      "generatingChapter": "正在生成「{{title}}」的正文…",
+      "done": "批量完成：生成 {{generated}} 个，跳过 {{skipped}} 个"
+    },
     "selectPrompt": "从左侧选一个章节开始编辑细纲。",
     "chapterSummaryMissing": "（章节大纲未填写）",
     "stats": "{{scenes}} 个场景 · 估算 {{words}} 字",
@@ -285,6 +295,11 @@
     "deletePlanTitle": "删除方案「{{name}}」？",
     "deletePlanMessage": "大纲与正文不会被删除；子版本会保留，但不再指向此方案。",
     "planSelectAria": "当前角色驱动方案",
+    "planStatus": {
+      "draft": "草稿",
+      "generated": "已生成",
+      "adopted": "已采纳"
+    },
     "newPlan": "新建",
     "copyAsNewVersion": "复制为新版本",
     "rename": "重命名",
@@ -362,20 +377,6 @@
     "applySkippedSuffix": "；{{count}} 项因保护边界或版本变化跳过",
     "copySuccess": "修订计划已复制到剪贴板",
     "copyPermissionError": "浏览器未授予剪贴板权限，请从 AI 输出区手动复制",
-    "chapterFallbackTitle": "第{{ordinal}}章",
-    "untitledConflict": "未命名冲突",
-    "unmarkedSource": "未标注来源",
-    "warnUnknownNodePatch": "已拒绝未知大纲节点 patch：{{nodeId}}",
-    "warnDuplicatePatch": "已拒绝重复大纲节点 patch：#{{nodeId}}",
-    "warnProtectedChapterPatch": "已拒绝第 {{ordinal}} 章 patch：属于已写保护区",
-    "warnAnchorRename": "已拒绝锚点「{{title}}」改名：锚点标题必须保留",
-    "warnOptionsIncomplete": "AI 只返回 {{count}} 档方案；应返回轻量、中度、深度三档",
-    "warnNoChapterMemory": "缺少可用章节记忆：本次只能做大纲级重规划，正文影响结论需人工复核",
-    "skipNodeMissing": "节点已删除或不属于当前项目",
-    "skipNodeProtected": "节点已进入正文保护区",
-    "skipOutlineChanged": "分析后大纲已变化，请重新分析",
-    "skipAnchorTitleProtected": "锚点标题受保护",
-    "skipAdoptRejected": "统一写回层拒绝了该 patch",
     "changeLabels": {
       "add-character": "新增角色",
       "revise-arc": "修改角色弧光",
@@ -386,11 +387,6 @@
       "light": "只小修",
       "balanced": "保留关键节点重排",
       "deep": "深度重构未写区"
-    },
-    "intensityLabels": {
-      "light": "轻量融入",
-      "balanced": "中度改线",
-      "deep": "深度重构"
     },
     "applyConfirmTitle_other": "应用 {{count}} 个未写大纲 patch？",
     "applyResult_other": "已应用 {{applied}} 项",

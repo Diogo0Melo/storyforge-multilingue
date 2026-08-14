@@ -12,6 +12,39 @@ import { adopt } from '../registry/adopt'
 import { resolveCanonicalChapterSequence } from '../ai/chapter-memory/canonical-chapter-sequence'
 import { walkOutlineChaptersInCanonicalOrder } from '../outline/canonical-outline-walk'
 import { htmlToPlainText } from '../utils/html'
+import { getT } from '../../i18n'
+
+/**
+ * acceptCultivationProgressCandidate 的可见错误文案键(ora-2)。
+ *
+ * 验收路径运行在 lib/store 上下文,抛出的错误消息直接展示给作者。所有查询必须
+ * 走【预加载】的 errors-lib 命名空间:懒加载的 cultivation 命名空间在冷读取时
+ * 可能尚未驻留,绝不能被该路径依赖。插值进 acceptTransitionMismatch 的
+ * transition 标签同此契约。可见文案与 cultivation:acceptErrors.* /
+ * cultivation:transition.*(展示层仍保有懒加载副本)逐字一致。
+ * 回归:tests/regression/R-I18N1-cultivation-errors.test.ts(冷就绪 + 三语一致)。
+ */
+export const CULTIVATION_ACCEPT_ERROR_KEYS = {
+  chapterMissing: 'errors-lib:cultivation.acceptChapterMissing',
+  characterMissing: 'errors-lib:cultivation.acceptCharacterMissing',
+  systemMissing: 'errors-lib:cultivation.acceptSystemMissing',
+  systemChanged: 'errors-lib:cultivation.acceptSystemChanged',
+  worldMismatchSystem: 'errors-lib:cultivation.acceptWorldMismatchSystem',
+  worldMismatchCharacter: 'errors-lib:cultivation.acceptWorldMismatchCharacter',
+  evidenceChanged: 'errors-lib:cultivation.acceptEvidenceChanged',
+  stageRemoved: 'errors-lib:cultivation.acceptStageRemoved',
+  alreadyConfirmed: 'errors-lib:cultivation.acceptAlreadyConfirmed',
+  transitionMismatch: 'errors-lib:cultivation.acceptTransitionMismatch',
+  writeFailed: 'errors-lib:cultivation.acceptWriteFailed',
+} as const
+
+/** acceptTransitionMismatch 的 {{expected}} 插值标签(errors-lib 预加载键)。 */
+export const CULTIVATION_TRANSITION_LABEL_KEYS = {
+  enter: 'errors-lib:cultivation.transitionEnter',
+  advance: 'errors-lib:cultivation.transitionAdvance',
+  regress: 'errors-lib:cultivation.transitionRegress',
+  switch: 'errors-lib:cultivation.transitionSwitch',
+} as const satisfies Record<CultivationTransition, string>
 
 export interface CultivationProgressCandidate {
   characterId: number
@@ -151,24 +184,25 @@ export async function acceptCultivationProgressCandidate(args: {
     db.cultivationSystems.get(args.candidate.cultivationSystemId),
     db.outlineNodes.where('projectId').equals(args.projectId).toArray(),
   ])
-  if (!chapter || chapter.projectId !== args.projectId) throw new Error('来源章节不存在或不属于当前项目')
-  if (!character || character.projectId !== args.projectId) throw new Error('角色不存在或不属于当前项目')
-  if (!system || system.projectId !== args.projectId) throw new Error('修炼体系不存在或不属于当前项目')
-  if (character.cultivationSystemId !== system.id) throw new Error('角色主修体系已变化，请重新分析')
+  const t = getT()
+  if (!chapter || chapter.projectId !== args.projectId) throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.chapterMissing))
+  if (!character || character.projectId !== args.projectId) throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.characterMissing))
+  if (!system || system.projectId !== args.projectId) throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.systemMissing))
+  if (character.cultivationSystemId !== system.id) throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.systemChanged))
 
   const outline = outlineNodes.find(node => node.id === chapter.outlineNodeId)
   const chapterWorld = outline?.worldGroupId ?? null
-  if ((system.worldGroupId ?? null) !== chapterWorld) throw new Error('来源章节与修炼体系不在同一世界')
+  if ((system.worldGroupId ?? null) !== chapterWorld) throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.worldMismatchSystem))
   if (!character.isCrossWorld && (character.homeWorldGroupId ?? null) !== chapterWorld) {
-    throw new Error('来源章节与角色归属世界不一致')
+    throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.worldMismatchCharacter))
   }
 
   const plain = htmlToPlainText(chapter.content || '').trim()
   const sourceOffset = uniqueQuoteOffset(plain, args.candidate.evidenceQuote)
-  if (sourceOffset < 0) throw new Error('正文证据已变化、重复或不存在，请重新分析')
+  if (sourceOffset < 0) throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.evidenceChanged))
   const stages = parseCultivationStages(system.stages)
   const stage = stages.find(item => item.id === args.candidate.stageId)
-  if (!stage) throw new Error('目标境界已从体系中删除，请重新分析')
+  if (!stage) throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.stageRemoved))
 
   const existing = await db.cultivationProgress
     .where('projectId').equals(args.projectId)
@@ -181,7 +215,7 @@ export async function acceptCultivationProgressCandidate(args: {
     row.sourceChapterId === chapter.id
     && row.stageId === stage.id
     && row.sourceQuote === args.candidate.evidenceQuote)) {
-    throw new Error('这条境界事件已经确认')
+    throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.alreadyConfirmed))
   }
 
   const candidateRow: CultivationProgress = {
@@ -211,7 +245,9 @@ export async function acceptCultivationProgressCandidate(args: {
     stages,
   )
   if (args.candidate.transition !== expected) {
-    throw new Error(`境界路径与变化类型不一致：当前应为 ${expected}`)
+    throw new Error(t(CULTIVATION_ACCEPT_ERROR_KEYS.transitionMismatch, {
+      expected: t(CULTIVATION_TRANSITION_LABEL_KEYS[expected]),
+    }))
   }
 
   const result = await adopt({
@@ -224,7 +260,7 @@ export async function acceptCultivationProgressCandidate(args: {
     )),
   })
   const id = result.written[0]?.id
-  if (id == null) throw new Error(result.skipped[0]?.reason || '修炼进度写入失败')
+  if (id == null) throw new Error(result.skipped[0]?.reason || t(CULTIVATION_ACCEPT_ERROR_KEYS.writeFailed))
 
   await normalizeProgressTransitions(args.projectId, character.id!, system.id!, stages)
   return id

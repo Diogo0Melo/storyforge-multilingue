@@ -3,8 +3,13 @@ import ForceGraph2D from 'react-force-graph-2d'
 
 type ForceGraphHandle = ComponentRef<typeof ForceGraph2D>
 import { moralAxisColor } from '../../lib/character/character-axes'
-import type { Character, CharacterRelation, RelationType } from '../../lib/types'
+import type { Character, CharacterRelation } from '../../lib/types'
 import { useDomainT } from '../../i18n'
+import {
+  projectCanonicalLabel,
+  RELATION_TYPE_LABEL_KEYS,
+  RELATION_TYPE_LEGEND_LABEL_KEYS,
+} from '../../i18n/display-projection'
 
 // 关系类型对应颜色
 const RELATION_COLORS: Record<string, string> = {
@@ -41,40 +46,14 @@ export default function RelationGraph({ characters, relations, width = 700, heig
   const { t } = useDomainT('relations')
   const graphRef = useRef<ForceGraphHandle | undefined>(undefined)
 
-  const getLegendLabel = (type: string): string => {
-    // Static key map — RelationType is a closed union, so this covers every valid value.
-    const KEY_BY_TYPE: Record<RelationType, `graphLegend.${RelationType}`> = {
-      family: 'graphLegend.family',
-      lover: 'graphLegend.lover',
-      friend: 'graphLegend.friend',
-      rival: 'graphLegend.rival',
-      enemy: 'graphLegend.enemy',
-      master: 'graphLegend.master',
-      student: 'graphLegend.student',
-      ally: 'graphLegend.ally',
-      subordinate: 'graphLegend.subordinate',
-      other: 'graphLegend.other',
-    }
-    const key = KEY_BY_TYPE[type as RelationType]
-    return key ? t(key) : type
-  }
+  // RelationType is a closed union; the shared maps cover every valid value.
+  // Truly invalid stored types fall back to the raw persisted value.
+  const getLegendLabel = (type: string): string =>
+    projectCanonicalLabel(t, RELATION_TYPE_LEGEND_LABEL_KEYS, type)
 
   const getLinkLabel = (rel: CharacterRelation): string => {
     if (rel.label) return rel.label
-    const KEY_BY_TYPE: Record<RelationType, `types.${RelationType}`> = {
-      family: 'types.family',
-      lover: 'types.lover',
-      friend: 'types.friend',
-      rival: 'types.rival',
-      enemy: 'types.enemy',
-      master: 'types.master',
-      student: 'types.student',
-      ally: 'types.ally',
-      subordinate: 'types.subordinate',
-      other: 'types.other',
-    }
-    const key = KEY_BY_TYPE[rel.relationType]
-    return key ? t(key) : rel.relationType
+    return projectCanonicalLabel(t, RELATION_TYPE_LABEL_KEYS, rel.relationType)
   }
 
   const graphData = useMemo(() => {

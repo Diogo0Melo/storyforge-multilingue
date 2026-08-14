@@ -64,6 +64,13 @@
     "statusSaving": "保存中…",
     "statusDirty": "待保存",
     "statusSaved": "已保存到本地",
+    "runStatus": {
+      "running": "运行中",
+      "paused": "已暂停",
+      "completed": "已完成",
+      "failed": "失败",
+      "cancelled": "已取消"
+    },
     "zoomOutTitle": "缩小",
     "zoomInTitle": "放大",
     "saveButton": "保存",

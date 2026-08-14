@@ -18,10 +18,7 @@
     "noTimelineHint": "Após escrever alguns capítulos, clique em \"Extrair Linha do Tempo do Texto\" para que a IA organize os principais eventos do enredo"
   },
   "errors": {
-    "noWrittenChapters": "Nenhum capítulo com texto escrito ainda — escreva alguns antes de extrair",
-    "invalidRange": "Selecione capítulos inicial/final válidos",
-    "startAfterEnd": "O capítulo inicial não pode ser maior que o final",
-    "noWrittenInRange": "Nenhum texto escrito para extrair no intervalo selecionado"
+    "noWrittenChapters": "Nenhum capítulo com texto escrito ainda — escreva alguns antes de extrair"
   },
   "importance": {
     "minor": "Menor",

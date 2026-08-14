@@ -18,15 +18,29 @@ import { nanoid } from '../utils/id'
 
 // ── 公共类型 ─────────────────────────────────────────────────────
 
+/**
+ * 稳定批量阶段码（Phase 1 i18n 契约）。
+ *
+ * stage 只允许这些与语言无关的码，禁止内嵌翻译文案；渲染端（细纲侧栏等）
+ * 在显示时经 locale key 映射成本地化文案。新增阶段必须先在此登记码位。
+ */
+export const BATCH_RUN_STAGES = ['generating-detail', 'generating-chapter', 'done'] as const
+export type BatchRunStage = typeof BATCH_RUN_STAGES[number]
+
 export interface BatchProgress {
   current: number
   total: number
   currentTitle: string
-  stage: string
+  /** 稳定阶段码，见 BATCH_RUN_STAGES；渲染端负责本地化显示。 */
+  stage: BatchRunStage
   /** 已完成数（含失败跳过的） */
   completed: number
   /** 失败的章节标题列表 */
   failures: string[]
+  /** stage='done' 时填充：成功生成数 */
+  generated?: number
+  /** stage='done' 时填充：跳过数 */
+  skipped?: number
 }
 
 // ── 批量细纲 ─────────────────────────────────────────────────────
@@ -88,7 +102,7 @@ export async function batchGenerateDetails(
       current: i + 1,
       total: todo.length,
       currentTitle: ch.title,
-      stage: `正在生成「${ch.title}」的细纲...`,
+      stage: 'generating-detail',
       completed: i,
       failures,
     })
@@ -154,9 +168,11 @@ export async function batchGenerateDetails(
     current: todo.length,
     total: todo.length,
     currentTitle: '',
-    stage: `完成！生成 ${generated}，跳过 ${chapters.length - todo.length}，失败 ${failed}`,
+    stage: 'done',
     completed: todo.length,
     failures,
+    generated,
+    skipped: chapters.length - todo.length,
   })
 
   return {
@@ -238,7 +254,7 @@ export async function batchGenerateChapters(
       current: i + 1,
       total: todo.length,
       currentTitle: ch.title,
-      stage: `正在生成「${ch.title}」正文...`,
+      stage: 'generating-chapter',
       completed: i,
       failures,
     })
@@ -276,9 +292,11 @@ export async function batchGenerateChapters(
     current: todo.length,
     total: todo.length,
     currentTitle: '',
-    stage: `完成！生成 ${generated}，跳过 ${chapters.length - todo.length}，失败 ${failed}`,
+    stage: 'done',
     completed: todo.length,
     failures,
+    generated,
+    skipped: chapters.length - todo.length,
   })
 
   return {

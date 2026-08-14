@@ -64,6 +64,13 @@
     "statusSaving": "Saving…",
     "statusDirty": "Unsaved changes",
     "statusSaved": "Saved locally",
+    "runStatus": {
+      "running": "Running",
+      "paused": "Paused",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
     "zoomOutTitle": "Zoom out",
     "zoomInTitle": "Zoom in",
     "saveButton": "Save",

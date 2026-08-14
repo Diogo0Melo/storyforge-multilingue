@@ -5,6 +5,7 @@
 import { useState } from 'react'
 import { X, ChevronDown, ChevronUp } from 'lucide-react'
 import { useDomainT } from '../../i18n'
+import { locationTagLabel } from '../../i18n/display-projection'
 import {
   TAG_CATEGORIES,
   TAG_EMOJI,
@@ -40,7 +41,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
             key={tag}
             className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/15 text-accent text-xs rounded-full"
           >
-            {TAG_EMOJI[tag] || '📍'} {tag}
+            {TAG_EMOJI[tag] || '📍'} {locationTagLabel(t, tag)}
             <button
               onClick={() => toggle(tag)}
               className="hover:text-red-400 transition-colors"
@@ -81,7 +82,7 @@ export default function LocationTagPicker({ selected, onChange }: Props) {
                           : 'bg-bg-surface border-border text-text-muted hover:text-text-primary hover:border-text-muted'
                       }`}
                     >
-                      {TAG_EMOJI[tag as LocationTag] || '📍'} {tag}
+                      {TAG_EMOJI[tag as LocationTag] || '📍'} {locationTagLabel(t, tag as LocationTag)}
                     </button>
                   )
                 })}

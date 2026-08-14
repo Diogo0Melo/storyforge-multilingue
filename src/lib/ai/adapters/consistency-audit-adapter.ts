@@ -94,7 +94,8 @@ export function parseConsistencyAuditResult(args: {
         : 'unknown'
       const severity: ConsistencySeverity = requested === 'hard' && evidence.length === 0 ? 'unknown' : requested
       return [{
-        category: String(item.category ?? '未分类'),
+        // 语义值原样保留；缺失/空白归一为空串，由渲染层给本地化兜底标签
+        category: String(item.category ?? '').trim(),
         severity,
         quote,
         evidence,

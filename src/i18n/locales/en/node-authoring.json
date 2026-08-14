@@ -75,6 +75,13 @@
     "savingStatus": "Saving…",
     "dirtyStatus": "Unsaved",
     "savedStatus": "Saved",
+    "runStatus": {
+      "running": "Running",
+      "paused": "Paused",
+      "completed": "Completed",
+      "failed": "Failed",
+      "cancelled": "Cancelled"
+    },
     "saveButton": "Save",
     "pauseRun": "Pause run",
     "cancelRun": "Cancel run",

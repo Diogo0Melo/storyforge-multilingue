@@ -39,6 +39,7 @@ import { useToast } from '../shared/Toast'
 import NodeFlowCanvas from './NodeFlowCanvas'
 import NodeInspector from './NodeInspector'
 import { getT, useDomainT } from '../../i18n'
+import { projectCanonicalLabel, NODE_RUN_STATUS_LABEL_KEYS } from '../../i18n/display-projection'
 
 function defaultNode(kind: NodeFlowKind, index: number): NodeFlowNode {
   const definition = NODE_KIND_BY_ID.get(kind)!
@@ -427,7 +428,7 @@ export default function NodeModeWorkspace(props: {
         <button type="button" onClick={() => setShowRunDetails(value => !value)} className="flex h-9 w-full items-center gap-2 px-4 text-left text-[11px] text-text-secondary hover:bg-bg-hover">
           <History className="h-3.5 w-3.5" />
           {t('workspace.runHistoryToggle')}
-          <span className="text-text-muted">{run ? `${run.status} · ${new Date(run.startedAt).toLocaleString()}` : t('workspace.runHistoryNeverRun')}</span>
+          <span className="text-text-muted">{run ? `${projectCanonicalLabel(t, NODE_RUN_STATUS_LABEL_KEYS, run.status)} · ${new Date(run.startedAt).toLocaleString()}` : t('workspace.runHistoryNeverRun')}</span>
           <span className="ml-auto">{showRunDetails ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronUp className="h-3.5 w-3.5" />}</span>
         </button>
         {showRunDetails && (

@@ -27,6 +27,7 @@ import {
   X,
 } from 'lucide-react'
 import { useDomainT, type DomainTFunction } from '../../i18n'
+import { projectCanonicalLabel, NODE_RUN_STATUS_LABEL_KEYS } from '../../i18n/display-projection'
 import { nanoid } from 'nanoid'
 import type { Project, NodeFlow, NodeRunRecord } from '../../lib/types'
 import {
@@ -690,7 +691,7 @@ export default function NodeAuthoringWorkspace(props: { project: Project; worldG
       <button type="button" onClick={() => setShowRuns(value => !value)} className="flex h-9 w-full items-center gap-2 px-4 text-left text-[11px] text-text-secondary hover:bg-bg-hover">
         <History className="h-3.5 w-3.5" />
         <span>{t('workspace.runsToggle')}</span>
-        <span className="text-text-muted">{run ? `${run.status} · ${new Date(run.startedAt).toLocaleString()}` : t('workspace.notYetRun')}</span>
+        <span className="text-text-muted">{run ? `${projectCanonicalLabel(t, NODE_RUN_STATUS_LABEL_KEYS, run.status)} · ${new Date(run.startedAt).toLocaleString()}` : t('workspace.notYetRun')}</span>
         <span className="ml-auto">{showRuns ? <ChevronDown className="h-3.5 w-3.5" /> : <ChevronRight className="h-3.5 w-3.5" />}</span>
       </button>
       <div className="flex flex-wrap items-center gap-3 border-t border-border px-4 py-2 text-[10px] text-text-muted"><span>{t('workspace.planEstimate', { calls: selectedPlan?.estimatedAiCalls ?? executionEstimate?.estimatedAiCalls ?? '—', tokens: (selectedPlan?.estimatedMaxOutputTokens ?? executionEstimate?.estimatedMaxOutputTokens ?? 0).toLocaleString() })}</span>{run && staleNodeIds.size > 0 && !isRunning && <button type="button" onClick={() => void runGraph(undefined, 'stale')} className="inline-flex items-center gap-1 rounded bg-amber-100 px-2 py-1 text-amber-800 hover:bg-amber-200"><RotateCcw className="h-3 w-3" />{t('workspace.rerunStale', { count: staleNodeIds.size })}</button>}<span className="ml-auto">{t('workspace.diffSummary', { addedNodes: graphDiff.nodesAdded, removedNodes: graphDiff.nodesRemoved, addedEdges: graphDiff.edgesAdded, removedEdges: graphDiff.edgesRemoved })}</span></div>

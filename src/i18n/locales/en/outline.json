@@ -109,7 +109,12 @@
     "writeAll": "Write all",
     "dismissTitle": "Dismiss batch results",
     "failed": "Batch chapter generation failed: {{error}}.",
-    "writeError": "Error writing chapters in batch: {{error}}. See console for details."
+    "writeError": "Error writing chapters in batch: {{error}}. See console for details.",
+    "stage": {
+      "generatingVolume": "Generating chapter outlines for \"{{title}}\"…",
+      "volumeComplete": "\"{{title}}\" complete: {{count}} chapters generated",
+      "volumeFailed": "\"{{title}}\" failed; skipped"
+    }
   },
   "adopt": {
     "volumeSummaryWriteFailed": "Could not write this volume's outline: {{reason}}",
@@ -142,6 +147,11 @@
     "hasDetailTitle": "Has detailed outline",
     "batchGenerate": "Batch generate detailed outlines",
     "stopTitle": "Stop",
+    "batchStage": {
+      "generatingDetail": "Generating detailed outline for \"{{title}}\"…",
+      "generatingChapter": "Generating chapter prose for \"{{title}}\"…",
+      "done": "Batch complete: {{generated}} generated, {{skipped}} skipped"
+    },
     "selectPrompt": "Select a chapter on the left to start editing its detailed outline.",
     "chapterSummaryMissing": "(chapter outline not filled)",
     "stats": "{{scenes}} scenes · ~ {{words}} words",
@@ -285,6 +295,11 @@
     "deletePlanTitle": "Delete plan \"{{name}}\"?",
     "deletePlanMessage": "Outlines and prose will not be deleted; sub-versions remain but no longer point to this plan.",
     "planSelectAria": "Current character-driven plan",
+    "planStatus": {
+      "draft": "Draft",
+      "generated": "Generated",
+      "adopted": "Adopted"
+    },
     "newPlan": "New",
     "copyAsNewVersion": "Copy as new version",
     "rename": "Rename",
@@ -365,21 +380,6 @@
     "applySkippedSuffix_other": "; {{count}} items skipped due to protection boundary or version drift",
     "copySuccess": "Revision plan copied to clipboard",
     "copyPermissionError": "Clipboard permission denied. Please copy manually from the AI output area.",
-    "chapterFallbackTitle": "Chapter {{ordinal}}",
-    "untitledConflict": "Untitled conflict",
-    "unmarkedSource": "Source not specified",
-    "warnUnknownNodePatch": "Rejected patch for unknown outline node: {{nodeId}}",
-    "warnDuplicatePatch": "Rejected duplicate patch for outline node #{{nodeId}}",
-    "warnProtectedChapterPatch": "Rejected patch for chapter {{ordinal}}: inside the written protected zone",
-    "warnAnchorRename": "Rejected rename of anchor \"{{title}}\": anchor titles must be preserved",
-    "warnOptionsIncomplete_one": "AI returned only {{count}} tier; expected light, balanced, and deep tiers",
-    "warnOptionsIncomplete_other": "AI returned only {{count}} tiers; expected light, balanced, and deep tiers",
-    "warnNoChapterMemory": "No usable chapter memory: this run can only do outline-level replanning; prose-impact conclusions need manual review",
-    "skipNodeMissing": "node was deleted or does not belong to the current project",
-    "skipNodeProtected": "node is now inside the prose protection zone",
-    "skipOutlineChanged": "outline changed after analysis; please re-analyze",
-    "skipAnchorTitleProtected": "anchor title is protected",
-    "skipAdoptRejected": "the unified write layer rejected the patch",
     "changeLabels": {
       "add-character": "Add character",
       "revise-arc": "Revise character arc",
@@ -390,11 +390,6 @@
       "light": "Minor tweaks only",
       "balanced": "Preserve key beats, reorder rest",
       "deep": "Deep restructure of unwritten region"
-    },
-    "intensityLabels": {
-      "light": "Light integration",
-      "balanced": "Moderate rerouting",
-      "deep": "Deep restructure"
     }
   },
   "revisionResult": {

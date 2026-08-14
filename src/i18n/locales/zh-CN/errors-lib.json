@@ -521,5 +521,49 @@
     "checkTtrpgOnly": "只有跑团会话可以进行技能检定。",
     "checkSkillInvalid": "检定技能无效。",
     "checkNonceTooLong": "检定 nonce 过长。"
+  },
+  "inventory": {
+    "invalidRange": "请选择有效的起止章节",
+    "startAfterEnd": "起始章不能大于结束章",
+    "noWrittenInRange": "所选范围内没有可提取的已写正文",
+    "noWrittenChapters": "还没有已写正文的章节，先去写作再提取"
+  },
+  "revision": {
+    "chapterFallbackTitle": "第{{ordinal}}章",
+    "untitledConflict": "未命名冲突",
+    "unmarkedSource": "未标注来源",
+    "warnUnknownNodePatch": "已拒绝未知大纲节点 patch：{{nodeId}}",
+    "warnDuplicatePatch": "已拒绝重复大纲节点 patch：#{{nodeId}}",
+    "warnProtectedChapterPatch": "已拒绝第 {{ordinal}} 章 patch：属于已写保护区",
+    "warnAnchorRename": "已拒绝锚点「{{title}}」改名：锚点标题必须保留",
+    "warnOptionsIncomplete": "AI 只返回 {{count}} 档方案；应返回轻量、中度、深度三档",
+    "warnNoChapterMemory": "缺少可用章节记忆：本次只能做大纲级重规划，正文影响结论需人工复核",
+    "skipNodeMissing": "节点已删除或不属于当前项目",
+    "skipNodeProtected": "节点已进入正文保护区",
+    "skipOutlineChanged": "分析后大纲已变化，请重新分析",
+    "skipAnchorTitleProtected": "锚点标题受保护",
+    "skipAdoptRejected": "统一写回层拒绝了该 patch",
+    "intensityLabels": {
+      "light": "轻量融入",
+      "balanced": "中度改线",
+      "deep": "深度重构"
+    }
+  },
+  "cultivation": {
+    "acceptChapterMissing": "来源章节不存在或不属于当前项目",
+    "acceptCharacterMissing": "角色不存在或不属于当前项目",
+    "acceptSystemMissing": "修炼体系不存在或不属于当前项目",
+    "acceptSystemChanged": "角色主修体系已变化，请重新分析",
+    "acceptWorldMismatchSystem": "来源章节与修炼体系不在同一世界",
+    "acceptWorldMismatchCharacter": "来源章节与角色归属世界不一致",
+    "acceptEvidenceChanged": "正文证据已变化、重复或不存在，请重新分析",
+    "acceptStageRemoved": "目标境界已从体系中删除，请重新分析",
+    "acceptAlreadyConfirmed": "这条境界事件已经确认",
+    "acceptTransitionMismatch": "境界路径与变化类型不一致：当前应为 {{expected}}",
+    "acceptWriteFailed": "修炼进度写入失败",
+    "transitionEnter": "首次确认",
+    "transitionAdvance": "突破",
+    "transitionRegress": "倒退",
+    "transitionSwitch": "改道"
   }
 }

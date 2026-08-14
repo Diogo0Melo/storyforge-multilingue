@@ -5,6 +5,62 @@
 import type { ChatMessage } from '../../types'
 import type { EmotionBeat } from '../../types/emotion-beat'
 
+/**
+ * 规范情感基调枚举（locale 无关）。AI 自由文本通过 normalizeEmotionTone
+ * 映射到这些代码；渲染层再按代码取颜色/本地化标签。禁止在存储里写翻译文案。
+ */
+export const EMOTION_TONES = [
+  'tense',
+  'warm',
+  'sad',
+  'joyful',
+  'angry',
+  'fear',
+  'calm',
+  'shocking',
+  'anticipation',
+] as const
+export type EmotionTone = typeof EMOTION_TONES[number]
+
+/** 每个规范基调的多语言关键词（zh/en/pt 子串匹配，均按小写比较）。 */
+const TONE_KEYWORDS: Record<EmotionTone, readonly string[]> = {
+  tense: ['紧张', 'tense', 'tension', 'suspense', 'thrill', 'tenso', 'nervos', 'ansied'],
+  warm: ['温馨', 'warm', 'heartwarming', 'tender', 'caloroso', 'aconcheg', 'ternura'],
+  sad: ['悲伤', '哀伤', 'sad', 'sorrow', 'grief', 'mourn', 'triste', 'melanc', 'luto'],
+  joyful: ['欢乐', '喜悦', 'joy', 'happy', 'cheerful', 'celebrat', 'alegr', 'feliz', 'divertid'],
+  angry: ['愤怒', '怒火', 'anger', 'angry', 'fury', 'rage', 'outrag', 'raiva', 'furios'],
+  fear: ['恐惧', '惊恐', 'fear', 'horror', 'dread', 'terror', 'medo', 'temor', 'assust'],
+  calm: ['平静', '宁静', 'calm', 'peaceful', 'serene', 'tranquil', 'calmo', 'sereno', 'sosseg'],
+  shocking: ['震撼', 'shock', 'stunning', 'overwhelming', 'chocante', 'impactante', 'impressionante'],
+  anticipation: ['期待', 'anticipat', 'expectant', 'hopeful', 'expectativa', 'esperan'],
+}
+
+/**
+ * 将任意语言的基调自由文本归一为规范代码。
+ * 无法识别时返回 null（渲染层给中性样式），绝不猜测。
+ */
+export function normalizeEmotionTone(raw: string): EmotionTone | null {
+  const text = raw.trim().toLowerCase()
+  if (!text) return null
+  if ((EMOTION_TONES as readonly string[]).includes(text)) return text as EmotionTone
+  for (const tone of EMOTION_TONES) {
+    if (TONE_KEYWORDS[tone].some(keyword => text.includes(keyword))) return tone
+  }
+  return null
+}
+
+/** 把 AI 返回的单条节拍归一为 EmotionBeat（缺省一律空串，不写翻译兜底文案）。 */
+function normalizeBeat(raw: unknown): EmotionBeat {
+  const beat = (raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}) as Record<string, unknown>
+  return {
+    label: String(beat.label ?? '').trim(),
+    sceneGoal: String(beat.sceneGoal ?? '').trim(),
+    emotionTone: String(beat.emotionTone ?? '').trim(),
+    readerFeeling: String(beat.readerFeeling ?? '').trim(),
+    characterGrowth: String(beat.characterGrowth ?? '').trim(),
+  }
+}
+
 export function buildEmotionBeatPrompt(
   chapterTitle: string,
   chapterSummary: string,
@@ -50,7 +106,12 @@ export function buildEmotionBeatPrompt(
   ]
 }
 
-/** 解析 AI 返回的情感节拍 JSON */
+/**
+ * 解析 AI 返回的情感节拍 JSON。
+ *
+ * error 返回 locale 无关的错误码（parse:not-object / parse:fallback-beats /
+ * parse:json-failed），不返回翻译文案；缺省字段一律空串，渲染层负责本地化兜底。
+ */
 export function parseEmotionBeats(raw: string): {
   overallArc: string
   beats: EmotionBeat[]
@@ -65,25 +126,13 @@ export function parseEmotionBeats(raw: string): {
 
     const parsed = JSON.parse(cleaned)
 
-    if (!parsed || typeof parsed !== 'object') {
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
       console.error('[EmotionBeat] 解析结果不是对象:', cleaned.slice(0, 200))
-      return { overallArc: '', beats: [], error: '解析结果不是对象' }
+      return { overallArc: '', beats: [], error: 'parse:not-object' }
     }
 
-    const overallArc = parsed.overallArc || ''
-    const beats: EmotionBeat[] = []
-
-    if (Array.isArray(parsed.beats)) {
-      for (const b of parsed.beats) {
-        beats.push({
-          label: b.label || '未命名节拍',
-          sceneGoal: b.sceneGoal || '',
-          emotionTone: b.emotionTone || '',
-          readerFeeling: b.readerFeeling || '',
-          characterGrowth: b.characterGrowth || '',
-        })
-      }
-    }
+    const overallArc = String(parsed.overallArc ?? '').trim()
+    const beats = Array.isArray(parsed.beats) ? parsed.beats.map(normalizeBeat) : []
 
     console.log(`[EmotionBeat] 解析成功: ${beats.length} 个节拍`)
     return { overallArc, beats }
@@ -94,14 +143,15 @@ export function parseEmotionBeats(raw: string): {
     try {
       const arrMatch = raw.match(/"beats"\s*:\s*(\[[\s\S]*?\])/)?.[1]
       if (arrMatch) {
-        const beats = JSON.parse(arrMatch) as EmotionBeat[]
+        const parsed = JSON.parse(arrMatch) as unknown[]
+        const beats = Array.isArray(parsed) ? parsed.map(normalizeBeat) : []
         console.log(`[EmotionBeat] 回退解析: 提取到 ${beats.length} 个节拍`)
-        return { overallArc: '', beats, error: '主解析失败，已回退提取 beats 数组' }
+        return { overallArc: '', beats, error: 'parse:fallback-beats' }
       }
     } catch {
       // ignore
     }
 
-    return { overallArc: '', beats: [], error: `JSON 解析失败: ${String(err)}` }
+    return { overallArc: '', beats: [], error: 'parse:json-failed' }
   }
 }

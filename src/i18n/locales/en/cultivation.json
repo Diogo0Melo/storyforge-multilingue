@@ -5,6 +5,11 @@
     "regress": "Regression",
     "switch": "Path change"
   },
+  "eventStatus": {
+    "confirmed": "Confirmed",
+    "stale": "Stale",
+    "sourceMissing": "Source missing"
+  },
   "analyze": {
     "noLinkedCharacter": "This chapter's world has no characters linked to a cultivation system. Set a primary system on the character card first.",
     "candidatesFound": "Found {{count}} reliable candidates; please confirm them one by one.",
@@ -14,6 +19,19 @@
   "accept": {
     "success": "Confirmed and written into the cultivation timeline.",
     "failed": "Confirmation failed"
+  },
+  "acceptErrors": {
+    "chapterMissing": "The source chapter does not exist or does not belong to this project",
+    "characterMissing": "The character does not exist or does not belong to this project",
+    "systemMissing": "The cultivation system does not exist or does not belong to this project",
+    "systemChanged": "The character's primary cultivation system has changed; please re-analyze",
+    "worldMismatchSystem": "The source chapter and the cultivation system are not in the same world",
+    "worldMismatchCharacter": "The source chapter does not match the character's home world",
+    "evidenceChanged": "The text evidence has changed, is duplicated, or no longer exists; please re-analyze",
+    "stageRemoved": "The target realm has been removed from the system; please re-analyze",
+    "alreadyConfirmed": "This realm event has already been confirmed",
+    "transitionMismatch": "The realm path does not match the change type: it should currently be {{expected}}",
+    "writeFailed": "Failed to write cultivation progress"
   },
   "delete": {
     "confirmTitle": "Delete this confirmed cultivation event?",

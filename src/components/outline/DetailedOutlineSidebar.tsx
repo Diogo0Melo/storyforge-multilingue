@@ -1,5 +1,6 @@
 import { ChevronRight, Square, Zap } from 'lucide-react'
 import { useDomainT } from '../../i18n'
+import { projectDetailedBatchStage } from '../../i18n/display-projection'
 import type { BatchProgress } from '../../lib/ai/batch-detail-runner'
 import type { DetailedOutline, OutlineNode } from '../../lib/types'
 
@@ -22,8 +23,10 @@ export default function DetailedOutlineSidebar({
   onBatchStart,
   onBatchStop,
 }: Props) {
-  const { t } = useDomainT('outline')
+  const { t, ready } = useDomainT('outline')
   const detailedNodeIds = new Set(detailedOutlines.map(detail => detail.outlineNodeId))
+
+  if (!ready) return null
 
   return (
     <div className="w-64 flex-shrink-0 border-r border-border overflow-y-auto p-3">
@@ -78,7 +81,7 @@ export default function DetailedOutlineSidebar({
                   <Square className="w-3 h-3" />
                 </button>
               </div>
-              <p className="text-[10px] text-text-muted truncate">{batchProgress.stage}</p>
+              <p className="text-[10px] text-text-muted truncate">{projectDetailedBatchStage(t, batchProgress)}</p>
             </div>
           )}
         </div>

@@ -18,10 +18,7 @@
     "noTimelineHint": "After writing some chapters, click \"Extract Timeline from Text\" to let AI organize major plot events"
   },
   "errors": {
-    "noWrittenChapters": "No chapters with written text yet — write some first before extracting",
-    "invalidRange": "Select valid start and end chapters",
-    "startAfterEnd": "The start chapter cannot be greater than the end chapter",
-    "noWrittenInRange": "No written text to extract in the selected range"
+    "noWrittenChapters": "No chapters with written text yet — write some first before extracting"
   },
   "importance": {
     "minor": "Minor",

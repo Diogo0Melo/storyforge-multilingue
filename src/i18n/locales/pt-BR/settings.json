@@ -514,7 +514,18 @@
     "story": "História",
     "rules": "Regras criativas",
     "prompt": "Gestão de prompts",
-    "import": "Análise de importação"
+    "import": "Análise de importação",
+    "relation": "Relações",
+    "plot": "Enredo",
+    "inspiration": "Inspiração",
+    "worldGroup": "Mundos",
+    "inventory": "Inventário",
+    "codex": "Entradas de configuração",
+    "location": "Locais importantes",
+    "storyTimeline": "Linha do Tempo da História",
+    "scene": "Cenas",
+    "history": "História",
+    "style": "Estilo"
   },
   "promptSubLabels": {
     "dimension": "Geração de dimensões",
@@ -552,7 +563,21 @@
     "chapterPlanning": "Planejamento de capítulo",
     "lineEditing": "Revisão linha a linha",
     "developmental": "Edição macro",
-    "readerValidation": "Validação pelo leitor"
+    "readerValidation": "Validação pelo leitor",
+    "memory": "Memória de capítulos",
+    "parseChunk": "Análise por blocos",
+    "mergeCharacters": "Mesclagem de personagens",
+    "extract": "Extração",
+    "characterDriven": "Enredo orientado por personagens",
+    "characterRevision": "Análise de mudança de personagem",
+    "reverse": "Retroengenharia de inspiração",
+    "reverseMultiworld": "Retroengenharia entre mundos",
+    "suggest": "Mundos sugeridos por IA",
+    "verify": "Verificação de cena",
+    "consult": "Consultoria histórica",
+    "storm": "Brainstorm",
+    "learn": "Aprendizado de estilo",
+    "calibrate": "Calibração de estilo"
   },
   "workflow": {
     "panelTitle": "Modo nó",

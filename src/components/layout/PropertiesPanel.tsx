@@ -7,6 +7,12 @@ import { useGeographyStore } from '../../stores/project-singletons'
 import { useForeshadowStore } from '../../stores/foreshadow'
 import type { SidebarModule } from './Sidebar'
 import { useDomainT } from '../../i18n'
+import {
+  projectCanonicalLabel,
+  CHAPTER_STATUS_LABEL_KEYS,
+  LAYOUT_RELATION_TYPE_LABEL_KEYS,
+  LAYOUT_LOCATION_TYPE_LABEL_KEYS,
+} from '../../i18n/display-projection'
 
 interface Props {
   activeModule: SidebarModule
@@ -64,7 +70,7 @@ function OutlineProps() {
       {currentChapter && (
         <Section title={t('propertiesPanel.currentChapter')} icon={PenTool}>
           <Stat label={t('propertiesPanel.chapterTitle')} value={currentChapter.title} />
-          <Stat label={t('propertiesPanel.chapterStatus')} value={currentChapter.status} />
+          <Stat label={t('propertiesPanel.chapterStatus')} value={projectCanonicalLabel(t, CHAPTER_STATUS_LABEL_KEYS, currentChapter.status)} />
           <Stat label={t('propertiesPanel.chapterWords')} value={t('propertiesPanel.wordsUnit', { count: currentChapter.wordCount.toLocaleString() })} />
           <Stat label={t('propertiesPanel.chapterUpdatedAt')} value={formatDate(currentChapter.updatedAt, lang)} />
         </Section>
@@ -118,7 +124,7 @@ function RelationProps() {
       <Stat label={t('propertiesPanel.totalRelations')} value={relations.length} />
       <Stat label={t('propertiesPanel.bidirectional')} value={relations.filter(r => r.isBidirectional).length} />
       <Stat label={t('propertiesPanel.unidirectional')} value={relations.filter(r => !r.isBidirectional).length} />
-      {topType && <Stat label={t('propertiesPanel.topRelationType')} value={t('propertiesPanel.topRelationTypeValue', { type: topType[0], count: topType[1] })} />}
+      {topType && <Stat label={t('propertiesPanel.topRelationType')} value={t('propertiesPanel.topRelationTypeValue', { type: projectCanonicalLabel(t, LAYOUT_RELATION_TYPE_LABEL_KEYS, topType[0]), count: topType[1] })} />}
     </Section>
   )
 }
@@ -138,7 +144,7 @@ function GeographyProps() {
     <Section title={t('propertiesPanel.geographyStats')} icon={MapPin}>
       <Stat label={t('propertiesPanel.locationTotal')} value={locations.length} />
       {Object.entries(typeCount).map(([type, count]) => (
-        <Stat key={type} label={type} value={count} />
+        <Stat key={type} label={projectCanonicalLabel(t, LAYOUT_LOCATION_TYPE_LABEL_KEYS, type)} value={count} />
       ))}
     </Section>
   )

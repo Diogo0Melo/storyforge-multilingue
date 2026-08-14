@@ -8,6 +8,7 @@ import {
   GitBranch, List, Sparkles, Loader2,
 } from 'lucide-react'
 import { useDomainT } from '../../i18n'
+import { locationTagLabel } from '../../i18n/display-projection'
 import { useLocationStore } from '../../stores/location'
 import type { Project, ImportantLocation, LocationTag } from '../../lib/types'
 import { TAG_EMOJI } from '../../lib/types/location'
@@ -183,9 +184,9 @@ export default function LocationPanel({ project }: Props) {
                 <span
                   key={tag}
                   className="text-[10px] px-1.5 py-0.5 bg-bg-elevated text-text-muted rounded"
-                  title={tag}
+                  title={locationTagLabel(t, tag)}
                 >
-                  {TAG_EMOJI[tag] || '📍'} {tag}
+                  {TAG_EMOJI[tag] || '📍'} {locationTagLabel(t, tag)}
                 </span>
               ))}
               {tags.length > 3 && (
@@ -387,7 +388,7 @@ export default function LocationPanel({ project }: Props) {
               <div className="font-medium text-sm text-text-primary">{item.name}</div>
               <p className="text-xs text-text-muted mt-0.5">{item.significance || item.description}</p>
               <div className="mt-1 flex flex-wrap gap-1">
-                {item.tags.map(tag => <span key={tag} className="px-1.5 py-0.5 rounded bg-bg-elevated text-[10px] text-text-muted">{TAG_EMOJI[tag]} {tag}</span>)}
+                {item.tags.map(tag => <span key={tag} className="px-1.5 py-0.5 rounded bg-bg-elevated text-[10px] text-text-muted">{TAG_EMOJI[tag] || '📍'} {locationTagLabel(t, tag)}</span>)}
               </div>
             </div>
           )}

@@ -5,6 +5,11 @@
     "regress": "Regressão",
     "switch": "Mudança de caminho"
   },
+  "eventStatus": {
+    "confirmed": "Confirmado",
+    "stale": "Obsoleto",
+    "sourceMissing": "Fonte ausente"
+  },
   "analyze": {
     "noLinkedCharacter": "O mundo deste capítulo não tem personagens vinculados a um sistema de cultivo. Defina primeiro um sistema principal no cartão do personagem.",
     "candidatesFound": "Encontrados {{count}} candidatos confiáveis; confirme-os um a um.",
@@ -14,6 +19,19 @@
   "accept": {
     "success": "Confirmado e gravado na linha do tempo de cultivo.",
     "failed": "Falha na confirmação"
+  },
+  "acceptErrors": {
+    "chapterMissing": "O capítulo de origem não existe ou não pertence a este projeto",
+    "characterMissing": "O personagem não existe ou não pertence a este projeto",
+    "systemMissing": "O sistema de cultivo não existe ou não pertence a este projeto",
+    "systemChanged": "O sistema principal do personagem mudou; analise novamente",
+    "worldMismatchSystem": "O capítulo de origem e o sistema de cultivo não estão no mesmo mundo",
+    "worldMismatchCharacter": "O capítulo de origem não corresponde ao mundo de origem do personagem",
+    "evidenceChanged": "A evidência do texto mudou, está duplicada ou deixou de existir; analise novamente",
+    "stageRemoved": "O reino de destino foi removido do sistema; analise novamente",
+    "alreadyConfirmed": "Este evento de reino já foi confirmado",
+    "transitionMismatch": "O caminho do reino não corresponde ao tipo de mudança: atualmente deveria ser {{expected}}",
+    "writeFailed": "Falha ao gravar o progresso de cultivo"
   },
   "delete": {
     "confirmTitle": "Excluir este evento de cultivo confirmado?",

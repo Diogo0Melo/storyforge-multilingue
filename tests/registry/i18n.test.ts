@@ -3,7 +3,7 @@
  *
  * 验证:
  * ① 三语言 × 全命名空间 key 对齐(CLRD 复数归一化)
- * ② fallback 链(en → zh-CN;缺失返回 key 本身)
+ * ② 视觉回退策略(Phase 1:pt-BR/en 缺失 key 原样返回,不再静默落 zh-CN)
  * ③ detector 映射(pt / pt-PT → pt-BR;zh-TW → zh-CN)
  * ④ 插值 + 复数烟雾
  * ⑤ detector 持久化(localStorage sf_lang)
@@ -82,13 +82,19 @@ describe('i18n core', () => {
     }
   })
 
-  it('fallback: en 缺失时回退到 zh-CN 值', async () => {
-    await i18n.changeLanguage('en')
-    // common:save 在 en 存在,直接命中
-    expect(i18n.t('common:save')).toBe('Save')
+  it('fallback 策略(Phase 1):pt-BR/en 缺失 key 原样返回,不再静默落 zh-CN', async () => {
     // 构造一个只存在于 zh-CN 的 key(键名唯一,留驻不删,不污染其他用例)
     i18n.addResource('zh-CN', 'common', '__testOnlyZhFallback', '仅中文')
+    // zh-CN 仍是完整有效语言:自己的 key 直接命中
+    await i18n.changeLanguage('zh-CN')
     expect(i18n.t('common:__testOnlyZhFallback')).toBe('仅中文')
+    // en:存在的 key 直命中;zh-only key 原样返回 key,绝不渲染中文
+    await i18n.changeLanguage('en')
+    expect(i18n.t('common:save')).toBe('Save')
+    expect(i18n.t('common:__testOnlyZhFallback')).toBe('__testOnlyZhFallback')
+    // pt-BR 同理
+    await i18n.changeLanguage('pt-BR')
+    expect(i18n.t('common:__testOnlyZhFallback')).toBe('__testOnlyZhFallback')
   })
 
   it('key 全局缺失时返回 key 本身', async () => {

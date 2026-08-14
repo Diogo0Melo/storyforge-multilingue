@@ -514,7 +514,18 @@
     "story": "Story",
     "rules": "Creative rules",
     "prompt": "Prompt management",
-    "import": "Import parsing"
+    "import": "Import parsing",
+    "relation": "Relations",
+    "plot": "Plot planning",
+    "inspiration": "Inspiration",
+    "worldGroup": "Worlds",
+    "inventory": "Inventory",
+    "codex": "Setting entries",
+    "location": "Important locations",
+    "storyTimeline": "Story timeline",
+    "scene": "Scenes",
+    "history": "History",
+    "style": "Style"
   },
   "promptSubLabels": {
     "dimension": "Dimension generation",
@@ -552,7 +563,21 @@
     "chapterPlanning": "Chapter planning",
     "lineEditing": "Line editing",
     "developmental": "Developmental edit",
-    "readerValidation": "Reader validation"
+    "readerValidation": "Reader validation",
+    "memory": "Chapter memory",
+    "parseChunk": "Chunk parsing",
+    "mergeCharacters": "Character merge",
+    "extract": "Extraction",
+    "characterDriven": "Character-driven plot",
+    "characterRevision": "Character revision analysis",
+    "reverse": "Inspiration reverse-engineering",
+    "reverseMultiworld": "Multiworld reverse-engineering",
+    "suggest": "AI-suggested worlds",
+    "verify": "Scene verification",
+    "consult": "Historical consultation",
+    "storm": "Brainstorming",
+    "learn": "Style learning",
+    "calibrate": "Style calibration"
   },
   "workflow": {
     "panelTitle": "Node mode",

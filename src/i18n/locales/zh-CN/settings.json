@@ -514,7 +514,18 @@
     "story": "故事",
     "rules": "创作规则",
     "prompt": "Prompt 管理",
-    "import": "导入解析"
+    "import": "导入解析",
+    "relation": "角色关系",
+    "plot": "剧情规划",
+    "inspiration": "灵感",
+    "worldGroup": "多世界",
+    "inventory": "物品栏",
+    "codex": "设定词条",
+    "location": "重要地点",
+    "storyTimeline": "故事进程年表",
+    "scene": "场景",
+    "history": "历史",
+    "style": "文风"
   },
   "promptSubLabels": {
     "dimension": "维度生成",
@@ -552,7 +563,21 @@
     "chapterPlanning": "章场规划",
     "lineEditing": "语言修订",
     "developmental": "宏观修订",
-    "readerValidation": "读者验证"
+    "readerValidation": "读者验证",
+    "memory": "章节记忆",
+    "parseChunk": "分块解析",
+    "mergeCharacters": "角色合并",
+    "extract": "提取",
+    "characterDriven": "角色驱动剧情",
+    "characterRevision": "角色变更分析",
+    "reverse": "灵感反推",
+    "reverseMultiworld": "多世界灵感反推",
+    "suggest": "AI 建议世界",
+    "verify": "场景考证",
+    "consult": "历史考据",
+    "storm": "头脑风暴",
+    "learn": "文风学习",
+    "calibrate": "文风校准"
   },
   "workflow": {
     "panelTitle": "节点模式",

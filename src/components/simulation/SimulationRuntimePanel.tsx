@@ -18,6 +18,11 @@ import {
 } from 'lucide-react'
 import { useDomainT } from '../../i18n'
 import {
+  projectCanonicalLabel,
+  SESSION_STATUS_LABEL_KEYS,
+  QUEST_STATUS_LABEL_KEYS,
+} from '../../i18n/display-projection'
+import {
   loadSimulationCanonCandidates,
   parseSimulationCanonSnapshot,
   repairCanonSourceName,
@@ -635,7 +640,7 @@ export default function SimulationRuntimePanel(props: {
             >
               <div className="truncate text-sm font-medium">{session.title}</div>
               <div className="mt-0.5 text-[11px] text-text-muted">
-                {kindLabel(session.kind)} · {session.status}
+                {kindLabel(session.kind)} · {projectCanonicalLabel(t, SESSION_STATUS_LABEL_KEYS, session.status)}
               </div>
             </button>
           ))}
@@ -1303,7 +1308,7 @@ export default function SimulationRuntimePanel(props: {
                       <div className="max-h-40 space-y-1 overflow-y-auto">
                         {campaign.quests.map(quest => (
                           <button key={quest.questId} type="button" onClick={() => { setCampaignQuestId(quest.questId); setCampaignQuestTitle(quest.title); setCampaignQuestDescription(quest.description); setCampaignQuestStatus(quest.status); setCampaignQuestPriority(String(quest.priority)); setCampaignQuestDueClock(quest.dueClock == null ? '' : String(quest.dueClock)) }} className="flex w-full items-center gap-2 rounded bg-bg-surface px-2 py-1.5 text-left text-xs hover:bg-bg-hover">
-                            <span className="flex-1 truncate text-text-secondary">{quest.title}</span><span className="text-text-muted">{quest.status}</span>{quest.dueClock != null && <span className="text-text-muted">T+{quest.dueClock}</span>}
+                            <span className="flex-1 truncate text-text-secondary">{quest.title}</span><span className="text-text-muted">{projectCanonicalLabel(t, QUEST_STATUS_LABEL_KEYS, quest.status)}</span>{quest.dueClock != null && <span className="text-text-muted">T+{quest.dueClock}</span>}
                           </button>
                         ))}
                         {campaign.quests.length === 0 && <p className="text-xs text-text-muted">{t('campaign.noQuests')}</p>}

@@ -41,6 +41,33 @@ const PACE_COLORS: Record<ScenePace, string> = {
   climax: 'bg-error/15 text-error',
 }
 
+/**
+ * 显式 枚举 → locale 键投影。注册键组是 previewPanel.*（不是 preview.*——
+ * 后者属于大纲生成预览对话框）；键表由 tests/registry/i18n-computed-keys.test.ts
+ * 强制三语言齐全。渲染不做「t() 为真值否则回退原文」的判断——键缺失时回退的是
+ * 数据原值，绝不泄漏原始 key。
+ */
+const EMOTION_LABEL_KEYS = {
+  rising: 'previewPanel.emotion.rising',
+  falling: 'previewPanel.emotion.falling',
+  flat: 'previewPanel.emotion.flat',
+  wave: 'previewPanel.emotion.wave',
+  climax: 'previewPanel.emotion.climax',
+} as const satisfies Record<EmotionArc, string>
+
+const PACE_LABEL_KEYS = {
+  slow: 'previewPanel.pace.slow',
+  medium: 'previewPanel.pace.medium',
+  fast: 'previewPanel.pace.fast',
+  climax: 'previewPanel.pace.climax',
+} as const satisfies Record<ScenePace, string>
+
+const FORESHADOW_ROLE_LABEL_KEYS = {
+  plant: 'previewPanel.foreshadowRole.plant',
+  resolve: 'previewPanel.foreshadowRole.resolve',
+  echo: 'previewPanel.foreshadowRole.echo',
+} as const satisfies Record<'plant' | 'resolve' | 'echo', string>
+
 export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
   const { t } = useDomainT('outline')
   const { nodes, updateNode } = useOutlineStore()
@@ -152,7 +179,9 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
           )}
           {detail?.emotionArc && (
             <span className={`text-xs ${EMOTION_COLORS[detail.emotionArc] || ''}`}>
-              {t(`preview.emotion.${detail.emotionArc}` as any) || detail.emotionArc}
+              {EMOTION_LABEL_KEYS[detail.emotionArc]
+                ? t(EMOTION_LABEL_KEYS[detail.emotionArc])
+                : detail.emotionArc}
             </span>
           )}
         </div>
@@ -189,7 +218,11 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
 
                 return (
                   <div key={f.id} className="flex items-center gap-2 text-xs">
-                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${roleColors[roleKey] || ''}`}>{t(`preview.foreshadowRole.${roleKey}` as any)}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${roleColors[roleKey] || ''}`}>
+                      {FORESHADOW_ROLE_LABEL_KEYS[roleKey]
+                        ? t(FORESHADOW_ROLE_LABEL_KEYS[roleKey])
+                        : roleKey}
+                    </span>
                     <span className="text-text-primary font-medium">{f.name}</span>
                     <span className="text-text-muted truncate flex-1">{f.description}</span>
                   </div>
@@ -211,7 +244,7 @@ export default function OutlinePreview({ outlineNodeId, onClose }: Props) {
                     <div className="flex items-center gap-2">
                       <span className="text-text-primary font-medium">{s.title}</span>
                       <span className={`px-1 py-0.5 rounded text-[10px] ${PACE_COLORS[s.pace]}`}>
-                        {t(`preview.pace.${s.pace}` as any)}
+                        {PACE_LABEL_KEYS[s.pace] ? t(PACE_LABEL_KEYS[s.pace]) : s.pace}
                       </span>
                       {s.estimatedWords > 0 && (
                         <span className="text-text-muted">{t('previewPanel.estimatedWords', { count: s.estimatedWords })}</span>

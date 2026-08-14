@@ -64,6 +64,13 @@
     "statusSaving": "Salvando…",
     "statusDirty": "Alterações pendentes",
     "statusSaved": "Salvo localmente",
+    "runStatus": {
+      "running": "Em execução",
+      "paused": "Pausada",
+      "completed": "Concluída",
+      "failed": "Falhou",
+      "cancelled": "Cancelada"
+    },
     "zoomOutTitle": "Reduzir zoom",
     "zoomInTitle": "Aumentar zoom",
     "saveButton": "Salvar",

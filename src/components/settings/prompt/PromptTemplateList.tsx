@@ -8,12 +8,17 @@ const GROUP_EMOJIS: Record<string, string> = {
   worldview: '🌍', research: '🔎', character: '🧙', outline: '🗂',
   chapter: '✏️', detail: '📝', review: '🧭', foreshadow: '🎯',
   geography: '🗺', story: '📖', rules: '📐', prompt: '⚙️', import: '📥',
+  relation: '💞', plot: '🧩', inspiration: '💡', 'world-group': '🌐',
+  inventory: '🎒', codex: '📚', location: '📍', 'story-timeline': '🕰️',
+  scene: '🎬', history: '🏛️', style: '🖋️',
 }
 
 const GROUP_ORDERS: Record<string, number> = {
   worldview: 1, research: 2, character: 3, outline: 4, chapter: 5,
   detail: 6, review: 7, foreshadow: 8, geography: 9, story: 10,
-  rules: 11, prompt: 12, import: 13,
+  rules: 11, prompt: 12, import: 13, relation: 14, plot: 15,
+  inspiration: 16, 'world-group': 17, inventory: 18, codex: 19,
+  location: 20, 'story-timeline': 21, scene: 22, history: 23, style: 24,
 }
 
 interface Props {

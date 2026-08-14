@@ -10,6 +10,13 @@
  * - `getT()` 非 React 环境(stores/lib)取翻译。
  * - 切换语言时同步设置 `document.documentElement.lang`。
  *
+ * Phase 1 运行时防护(仅视觉 UI 层,AI 提示词/输出语言仍由 output-language gate 治理):
+ * - 作者语言 pt-BR/en 的视觉回退不再落到 zh-CN 源文案:缺失 key 按 i18next 缺省
+ *   原样返回 key(三语 key 对齐 + value 翻译守卫保证健康态不命中;真命中时大声暴露)。
+ *   zh-CN 仍是完整受支持语言,只是不再充当其他语言的视觉回退。
+ * - 缺失插值变量由 `createMissingInterpolationHandler` 治理:dev/test 抛错(确定性
+ *   暴露漏传),生产 console.warn + 原样保留占位符(绝不崩溃、绝不编造内容)。
+ *
  * 升级说明:从 Phase 3.7 零依赖脚手架迁移到 react-i18next。旧 setLang/getLang/useTranslation
  * 已下线,调用方需改用 changeLanguage / i18n.language / useDomainT。
  */
@@ -55,6 +62,37 @@ function backendLoader(lng: string, ns: string) {
   return loader().then(mod => mod.default)
 }
 
+/**
+ * Phase 1 runtime safeguard · 缺失插值保护钩子(missingInterpolationHandler)。
+ *
+ * locale 文案里的 `{{var}}` 在 t() 未收到对应变量(值为 undefined)时被调用。
+ * i18next 缺省是静默保留占位符(skipOnVariables),这里把行为变成显式契约:
+ *
+ * - strict=true(dev/test):直接抛错——确定性暴露漏传变量,禁止静默渲染半成品文案。
+ *   错误消息包含变量名与源文案,便于定位调用点或 locale 键。
+ * - strict=false(生产):console.warn 并原样返回占位符(`match[0]`),渲染结果与
+ *   i18next 缺省一致——绝不崩溃、绝不编造内容。
+ *
+ * 注意:i18next 对空串/ null 值不视为缺失(不触发本钩子),只有 undefined 触发。
+ * 抽成工厂导出,便于测试分别断言两条分支的精确行为;buildConfig 按
+ * `import.meta.env.PROD` 装配(与 output-language gate 的 dev/test 失败保险同款)。
+ */
+export function createMissingInterpolationHandler(strict: boolean) {
+  return function missingInterpolationHandler(str: string, match: RegExpExecArray): string {
+    const variable = match?.[1]?.trim() || '?'
+    if (strict) {
+      throw new Error(
+        `[i18n] missing interpolation variable "{{${variable}}}" in "${str}". `
+        + 'Pass the variable in the t() options, or remove the placeholder from the locale value.',
+      )
+    }
+    console.warn(
+      `[i18n] missing interpolation variable "{{${variable}}}" in "${str}" — placeholder kept (production safe mode)`,
+    )
+    return match?.[0] ?? ''
+  }
+}
+
 /** 默认配置(测试可通过 opts 覆盖部分字段) */
 function buildConfig(opts?: {
   resources?: Record<string, any>
@@ -65,11 +103,15 @@ function buildConfig(opts?: {
   return {
     ...(opts?.resources ? { resources: opts.resources } : {}),
     ...(opts?.lng ? { lng: opts.lng } : {}),
-    // 缺 key 时降级到 zh-CN 源文案(zh-CN 自身缺失则原样返回 key)。
+    // Phase 1 视觉回退策略:作者语言 pt-BR/en 缺 key 时绝不静默落到 zh-CN 源文案,
+    // 各语言回退链为空 → 按 i18next 缺省原样返回 key。三语 key 对齐(i18n.test.ts)+
+    // value 翻译守卫(i18n-values.test.ts)保证健康态不会命中;真命中时以原始 key
+    // 大声暴露,而不是把中文渗透给 pt-BR/en 作者。zh-CN 仍是完整有效语言。
+    // 注意:这只治理视觉 UI 层;AI 提示词/输出语言由 output-language gate 治理,不受影响。
     // default 分支同时是 detector 对未知浏览器语言的兜底 → pt-BR(默认语言)。
     fallbackLng: {
-      'pt-BR': ['zh-CN'],
-      en: ['zh-CN'],
+      'pt-BR': [],
+      en: [],
       'zh-CN': [],
       default: ['pt-BR'],
     },
@@ -80,9 +122,13 @@ function buildConfig(opts?: {
     defaultNS: 'common',
     // 注意:i18next 的 `preload` 是【语言】列表,不是命名空间。要在 init 时载入这些
     // 命名空间必须用 `ns`(defaultNS 只影响默认取值,不会反向补进加载列表)。
-    // 设为 ns 后,init 会为当前语言及其 fallback 链(→zh-CN)都载入这组命名空间。
+    // 设为 ns 后,init 会为当前语言及其 fallback 链载入这组命名空间;Phase 1 起
+    // pt-BR/en 的回退链为空,故只载入当前语言自身(就绪语义见 tests/registry)。
     ns: [...PRELOAD_NS],
     interpolation: { escapeValue: false },
+    // Phase 1 runtime safeguard:缺失插值变量。dev/test 抛错(确定性暴露漏传),
+    // 生产 console.warn + 保留占位符(绝不崩溃)。见 createMissingInterpolationHandler。
+    missingInterpolationHandler: createMissingInterpolationHandler(!import.meta.env.PROD),
     react: { useSuspense: false },
     ...(useDetection
       ? {

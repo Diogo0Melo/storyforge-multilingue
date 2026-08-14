@@ -18,10 +18,7 @@
     "noTimelineHint": "写完一些章节后，点「从正文提取年表」让 AI 自动梳理剧情大事"
   },
   "errors": {
-    "noWrittenChapters": "还没有已写正文的章节，先去写作再提取",
-    "invalidRange": "请选择有效的起止章节",
-    "startAfterEnd": "起始章不能大于结束章",
-    "noWrittenInRange": "所选范围内没有可提取的已写正文"
+    "noWrittenChapters": "还没有已写正文的章节，先去写作再提取"
   },
   "importance": {
     "minor": "次要",

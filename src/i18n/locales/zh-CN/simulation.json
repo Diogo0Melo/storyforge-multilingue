@@ -5,6 +5,11 @@
     "ttrpg": "跑团",
     "chatgame": "角色聊天"
   },
+  "sessionStatus": {
+    "active": "进行中",
+    "paused": "已暂停",
+    "archived": "已归档"
+  },
   "sourceKind": {
     "world": "世界",
     "character": "角色",

@@ -10,6 +10,14 @@ import { parseChapterOutlineSmart, type ParsedChapter } from './parse-outline-ou
 import { useAIConfigStore } from '../../stores/ai-config'
 import type { OutlineNode } from '../types'
 
+/**
+ * 稳定阶段码（语言无关）。回调里只允许出现这些码位，禁止写入任何自然语言
+ * 文案；显示时经 locale key（outline ns → batch.stage.*）映射成本地化文案。
+ * 新增阶段必须先在此登记码位，并同步 display-projection 与三语 locale。
+ */
+export const OUTLINE_BATCH_STAGES = ['generating-volume', 'volume-complete', 'volume-failed'] as const
+export type OutlineBatchStage = typeof OUTLINE_BATCH_STAGES[number]
+
 export interface BatchOutlineProgress {
   /** 当前正在处理的卷索引（0-based） */
   currentVolumeIndex: number
@@ -21,8 +29,8 @@ export interface BatchOutlineProgress {
   parsedChapters: ParsedChapter[]
   /** 累计已完成的卷数 */
   completedVolumes: number
-  /** 阶段描述 */
-  stage: string
+  /** 稳定阶段码，见 OUTLINE_BATCH_STAGES；渲染端负责本地化显示。 */
+  stage: OutlineBatchStage
 }
 
 export interface BatchOutlineResult {
@@ -95,7 +103,7 @@ export async function runBatchOutlineGeneration(
       currentVolumeTitle: vol.title,
       parsedChapters: [],
       completedVolumes: i,
-      stage: `正在生成「${vol.title}」的章节大纲...`,
+      stage: 'generating-volume',
     })
 
     // 构建前序摘要：上一卷的章节梗概
@@ -141,7 +149,7 @@ export async function runBatchOutlineGeneration(
         currentVolumeTitle: vol.title,
         parsedChapters: parsed,
         completedVolumes: i + 1,
-        stage: `「${vol.title}」完成，生成了 ${parsed.length} 章`,
+        stage: 'volume-complete',
       })
     } catch (err) {
       if (signal?.aborted) {
@@ -157,7 +165,7 @@ export async function runBatchOutlineGeneration(
         currentVolumeTitle: vol.title,
         parsedChapters: [],
         completedVolumes: i + 1,
-        stage: `「${vol.title}」生成失败，已跳过`,
+        stage: 'volume-failed',
       })
     }
   }

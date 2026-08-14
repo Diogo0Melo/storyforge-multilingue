@@ -109,7 +109,12 @@
     "writeAll": "Gravar tudo",
     "dismissTitle": "Dispensar resultados do lote",
     "failed": "Falha na geração de capítulos em lote: {{error}}.",
-    "writeError": "Erro ao gravar capítulos em lote: {{error}}. Veja o console para detalhes."
+    "writeError": "Erro ao gravar capítulos em lote: {{error}}. Veja o console para detalhes.",
+    "stage": {
+      "generatingVolume": "Gerando esboço de capítulos de \"{{title}}\"…",
+      "volumeComplete": "\"{{title}}\" concluído: {{count}} capítulos gerados",
+      "volumeFailed": "\"{{title}}\" falhou; ignorado"
+    }
   },
   "adopt": {
     "volumeSummaryWriteFailed": "Não foi possível gravar o esboço deste volume: {{reason}}",
@@ -142,6 +147,11 @@
     "hasDetailTitle": "Tem esboço detalhado",
     "batchGenerate": "Gerar esboços detalhados em lote",
     "stopTitle": "Parar",
+    "batchStage": {
+      "generatingDetail": "Gerando esboço detalhado de \"{{title}}\"…",
+      "generatingChapter": "Gerando texto do capítulo \"{{title}}\"…",
+      "done": "Lote concluído: {{generated}} gerados, {{skipped}} ignorados"
+    },
     "selectPrompt": "Selecione um capítulo à esquerda para começar a editar seu esboço detalhado.",
     "chapterSummaryMissing": "(esboço do capítulo não preenchido)",
     "stats": "{{scenes}} cenas · ~ {{words}} palavras",
@@ -285,6 +295,11 @@
     "deletePlanTitle": "Excluir plano \"{{name}}\"?",
     "deletePlanMessage": "Esboços e prosa não serão excluídos; subversões permanecem, mas deixam de apontar para este plano.",
     "planSelectAria": "Plano orientado por personagens atual",
+    "planStatus": {
+      "draft": "Rascunho",
+      "generated": "Gerado",
+      "adopted": "Adotado"
+    },
     "newPlan": "Novo",
     "copyAsNewVersion": "Copiar como nova versão",
     "rename": "Renomear",
@@ -365,21 +380,6 @@
     "applySkippedSuffix_other": "; {{count}} itens ignorados devido a limite de proteção ou divergência de versão",
     "copySuccess": "Plano de revisão copiado para a área de transferência",
     "copyPermissionError": "Permissão de área de transferência negada. Copie manualmente da área de saída da IA.",
-    "chapterFallbackTitle": "Capítulo {{ordinal}}",
-    "untitledConflict": "Conflito sem título",
-    "unmarkedSource": "Fonte não indicada",
-    "warnUnknownNodePatch": "Patch rejeitado para nó de esboço desconhecido: {{nodeId}}",
-    "warnDuplicatePatch": "Patch duplicado rejeitado para o nó de esboço #{{nodeId}}",
-    "warnProtectedChapterPatch": "Patch rejeitado para o capítulo {{ordinal}}: dentro da zona protegida escrita",
-    "warnAnchorRename": "Renomeação rejeitada da âncora \"{{title}}\": títulos de âncora devem ser preservados",
-    "warnOptionsIncomplete_one": "A IA retornou apenas {{count}} nível; esperados os níveis leve, moderado e profundo",
-    "warnOptionsIncomplete_other": "A IA retornou apenas {{count}} níveis; esperados os níveis leve, moderado e profundo",
-    "warnNoChapterMemory": "Sem memória de capítulos utilizável: esta execução só pode replanejar no nível de esboço; conclusões de impacto na prosa precisam de revisão manual",
-    "skipNodeMissing": "o nó foi excluído ou não pertence ao projeto atual",
-    "skipNodeProtected": "o nó agora está dentro da zona de proteção da prosa",
-    "skipOutlineChanged": "o esboço mudou após a análise; analise novamente",
-    "skipAnchorTitleProtected": "o título da âncora está protegido",
-    "skipAdoptRejected": "a camada unificada de gravação rejeitou o patch",
     "changeLabels": {
       "add-character": "Adicionar personagem",
       "revise-arc": "Revisar arco do personagem",
@@ -390,11 +390,6 @@
       "light": "Apenas ajustes leves",
       "balanced": "Preservar marcos-chave, reordenar o resto",
       "deep": "Reestruturação profunda da região não escrita"
-    },
-    "intensityLabels": {
-      "light": "Integração leve",
-      "balanced": "Redirecionamento moderado",
-      "deep": "Reestruturação profunda"
     }
   },
   "revisionResult": {

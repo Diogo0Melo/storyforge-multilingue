@@ -521,5 +521,50 @@
     "checkTtrpgOnly": "Only TTRPG sessions can perform skill checks.",
     "checkSkillInvalid": "Check skill is invalid.",
     "checkNonceTooLong": "Check nonce is too long."
+  },
+  "inventory": {
+    "invalidRange": "Select valid start and end chapters",
+    "startAfterEnd": "The start chapter cannot be greater than the end chapter",
+    "noWrittenInRange": "No written text to extract in the selected range",
+    "noWrittenChapters": "No chapters with written text yet — write some first before extracting"
+  },
+  "revision": {
+    "chapterFallbackTitle": "Chapter {{ordinal}}",
+    "untitledConflict": "Untitled conflict",
+    "unmarkedSource": "Source not specified",
+    "warnUnknownNodePatch": "Rejected patch for unknown outline node: {{nodeId}}",
+    "warnDuplicatePatch": "Rejected duplicate patch for outline node #{{nodeId}}",
+    "warnProtectedChapterPatch": "Rejected patch for chapter {{ordinal}}: inside the written protected zone",
+    "warnAnchorRename": "Rejected rename of anchor \"{{title}}\": anchor titles must be preserved",
+    "warnOptionsIncomplete_one": "AI returned only {{count}} tier; expected light, balanced, and deep tiers",
+    "warnOptionsIncomplete_other": "AI returned only {{count}} tiers; expected light, balanced, and deep tiers",
+    "warnNoChapterMemory": "No usable chapter memory: this run can only do outline-level replanning; prose-impact conclusions need manual review",
+    "skipNodeMissing": "node was deleted or does not belong to the current project",
+    "skipNodeProtected": "node is now inside the prose protection zone",
+    "skipOutlineChanged": "outline changed after analysis; please re-analyze",
+    "skipAnchorTitleProtected": "anchor title is protected",
+    "skipAdoptRejected": "the unified write layer rejected the patch",
+    "intensityLabels": {
+      "light": "Light integration",
+      "balanced": "Moderate rerouting",
+      "deep": "Deep restructure"
+    }
+  },
+  "cultivation": {
+    "acceptChapterMissing": "The source chapter does not exist or does not belong to this project",
+    "acceptCharacterMissing": "The character does not exist or does not belong to this project",
+    "acceptSystemMissing": "The cultivation system does not exist or does not belong to this project",
+    "acceptSystemChanged": "The character's primary cultivation system has changed; please re-analyze",
+    "acceptWorldMismatchSystem": "The source chapter and the cultivation system are not in the same world",
+    "acceptWorldMismatchCharacter": "The source chapter does not match the character's home world",
+    "acceptEvidenceChanged": "The text evidence has changed, is duplicated, or no longer exists; please re-analyze",
+    "acceptStageRemoved": "The target realm has been removed from the system; please re-analyze",
+    "acceptAlreadyConfirmed": "This realm event has already been confirmed",
+    "acceptTransitionMismatch": "The realm path does not match the change type: it should currently be {{expected}}",
+    "acceptWriteFailed": "Failed to write cultivation progress",
+    "transitionEnter": "First confirmation",
+    "transitionAdvance": "Breakthrough",
+    "transitionRegress": "Regression",
+    "transitionSwitch": "Path change"
   }
 }

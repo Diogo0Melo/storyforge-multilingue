@@ -38,15 +38,19 @@ const IMPORTANCE_KEYS: Record<number, string> = {
   3: 'importance.critical',
 }
 
+/** 本 ns 自有错误的语义键：只在状态里存键，渲染时才翻译（ready/切语言后自动刷新）。 */
+type TimelineErrorKey = 'errors.noWrittenChapters'
+
 export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
-  const { t } = useDomainT('timeline')
+  const { t, ready } = useDomainT('timeline')
   const { events, loading, loadAll, addEvent, updateEvent, deleteEvent, deleteByChapter } = useStoryTimelineStore()
   const { chapters, loadAll: loadChapters } = useChapterStore()
   const aiConfig = useAIConfigStore(s => s.config)
 
   const [extracting, setExtracting] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  // 语义键错误在渲染期翻译；来自 lib 的消息（errors-lib 预加载，恒 ready）保持预译字符串。
+  const [error, setError] = useState<{ key: TimelineErrorKey } | { message: string } | null>(null)
 
   useEffect(() => {
     loadAll(project.id!)
@@ -70,10 +74,14 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
     [chapters],
   )
 
+  // timeline 是懒加载命名空间：ready 前不渲染任何文案，也不允许触发会把翻译
+  // 写进状态或持久化的动作（手动添加的默认事件标题是 A4 持久化数据）。
+  if (!ready) return null
+
   const handleExtract = async () => {
     const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'story.timeline', outputKind: 'functional-structured' }).config
-    if (!isAIConfigReady(effectiveConfig)) { setError(getAIConfigRequiredMessage(effectiveConfig)); return }
-    if (writtenChapters.length === 0) { setError(t('errors.noWrittenChapters')); return }
+    if (!isAIConfigReady(effectiveConfig)) { setError({ message: getAIConfigRequiredMessage(effectiveConfig) }); return }
+    if (writtenChapters.length === 0) { setError({ key: 'errors.noWrittenChapters' }); return }
     setExtracting(true)
     setError(null)
     setProgress({ done: 0, total: writtenChapters.length })
@@ -161,7 +169,11 @@ export default function StoryTimelinePanel({ project, onOpenChapter }: Props) {
         </div>
       </div>
 
-      {error && <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">{error}</div>}
+      {error && (
+        <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">
+          {'key' in error ? t(error.key) : error.message}
+        </div>
+      )}
 
       {extracting && progress && (
         <div className="p-3 bg-accent/10 border border-accent/20 rounded-lg">

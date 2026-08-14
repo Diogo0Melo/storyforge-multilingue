@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useDomainT } from '../../i18n'
+import { projectOutlineBatchStage } from '../../i18n/display-projection'
 import { Check, GripVertical, Layers, Loader2, Plus, Sparkles, X } from 'lucide-react'
 import type { ParsedChapter } from '../../lib/ai/parse-outline-output'
 import type { BatchOutlineProgress } from '../../lib/ai/batch-outline-runner'
@@ -59,13 +60,15 @@ export default function OutlineVolumeSidebar({
   onReorderVolumes,
   onMoveChapter,
 }: OutlineVolumeSidebarProps) {
-  const { t } = useDomainT('outline')
+  const { t, ready } = useDomainT('outline')
   const [chapterDropTargetId, setChapterDropTargetId] = useState<number | null>(null)
   const volumeDnD = useDragReorder(volumes.map(volume => volume.id), onReorderVolumes)
 
   useEffect(() => {
     if (activeChapterDrag == null) setChapterDropTargetId(null)
   }, [activeChapterDrag])
+
+  if (!ready) return null
 
   return (
     <div className="flex flex-col h-full">
@@ -109,7 +112,7 @@ export default function OutlineVolumeSidebar({
                     style={{ width: `${(batchProgress.completedVolumes / batchProgress.totalVolumes) * 100}%` }}
                   />
                 </div>
-                <p className="text-[10px] text-text-muted truncate">{batchProgress.stage}</p>
+                <p className="text-[10px] text-text-muted truncate">{projectOutlineBatchStage(t, batchProgress)}</p>
                 <button
                   onClick={onCancelBatch}
                   className="w-full px-2 py-1 text-[10px] text-error border border-error/30 rounded hover:bg-error/10 transition-colors"

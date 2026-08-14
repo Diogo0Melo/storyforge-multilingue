@@ -324,7 +324,7 @@ function ConsistencyResultView({ result, t }: { result: ConsistencyAuditResult; 
             }>
               {finding.severity === 'hard' ? t('review.severityHard') : finding.severity === 'risk' ? t('review.severityRisk') : t('review.severityInsufficient')}
             </span>
-            <span className="text-text-muted">{finding.category}</span>
+            <span className="text-text-muted">{finding.category || t('review.categoryUncategorized')}</span>
           </div>
           <p className="mt-1 text-xs text-text-primary">{finding.reason}</p>
           <p className="mt-1 text-[11px] text-text-muted border-l-2 border-border pl-2">{t('review.evidenceQuotePrefix', { quote: finding.quote })}</p>

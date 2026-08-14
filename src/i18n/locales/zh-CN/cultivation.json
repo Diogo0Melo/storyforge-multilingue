@@ -5,6 +5,11 @@
     "regress": "倒退",
     "switch": "改道"
   },
+  "eventStatus": {
+    "confirmed": "已确认",
+    "stale": "已失效",
+    "sourceMissing": "来源缺失"
+  },
   "analyze": {
     "noLinkedCharacter": "本章世界没有已关联修炼体系的角色，请先在角色卡设置主修体系。",
     "candidatesFound": "发现 {{count}} 条可靠候选，请逐条确认。",
@@ -14,6 +19,19 @@
   "accept": {
     "success": "已确认并写入修炼历程。",
     "failed": "确认失败"
+  },
+  "acceptErrors": {
+    "chapterMissing": "来源章节不存在或不属于当前项目",
+    "characterMissing": "角色不存在或不属于当前项目",
+    "systemMissing": "修炼体系不存在或不属于当前项目",
+    "systemChanged": "角色主修体系已变化，请重新分析",
+    "worldMismatchSystem": "来源章节与修炼体系不在同一世界",
+    "worldMismatchCharacter": "来源章节与角色归属世界不一致",
+    "evidenceChanged": "正文证据已变化、重复或不存在，请重新分析",
+    "stageRemoved": "目标境界已从体系中删除，请重新分析",
+    "alreadyConfirmed": "这条境界事件已经确认",
+    "transitionMismatch": "境界路径与变化类型不一致：当前应为 {{expected}}",
+    "writeFailed": "修炼进度写入失败"
   },
   "delete": {
     "confirmTitle": "删除这条已确认修炼事件？",

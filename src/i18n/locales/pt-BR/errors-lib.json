@@ -520,6 +520,51 @@
     "sceneOpenTtrpgOnly": "Apenas sessões de TTRPG podem abrir cenas.",
     "checkTtrpgOnly": "Apenas sessões de TTRPG podem realizar testes de perícia.",
     "checkSkillInvalid": "Perícia do teste inválida.",
-    "checkNonceTooLong": "Nonce do teste longo demais."
+    "checkNonceTooLong": "Nonce da resolução aleatória longo demais."
+  },
+  "inventory": {
+    "invalidRange": "Selecione capítulos inicial/final válidos",
+    "startAfterEnd": "O capítulo inicial não pode ser maior que o final",
+    "noWrittenInRange": "Nenhum texto escrito para extrair no intervalo selecionado",
+    "noWrittenChapters": "Nenhum capítulo com texto escrito ainda — escreva alguns antes de extrair"
+  },
+  "revision": {
+    "chapterFallbackTitle": "Capítulo {{ordinal}}",
+    "untitledConflict": "Conflito sem título",
+    "unmarkedSource": "Fonte não indicada",
+    "warnUnknownNodePatch": "Patch rejeitado para nó de esboço desconhecido: {{nodeId}}",
+    "warnDuplicatePatch": "Patch duplicado rejeitado para o nó de esboço #{{nodeId}}",
+    "warnProtectedChapterPatch": "Patch rejeitado para o capítulo {{ordinal}}: dentro da zona protegida escrita",
+    "warnAnchorRename": "Renomeação rejeitada da âncora \"{{title}}\": títulos de âncora devem ser preservados",
+    "warnOptionsIncomplete_one": "A IA retornou apenas {{count}} nível; esperados os níveis leve, moderado e profundo",
+    "warnOptionsIncomplete_other": "A IA retornou apenas {{count}} níveis; esperados os níveis leve, moderado e profundo",
+    "warnNoChapterMemory": "Sem memória de capítulos utilizável: esta execução só pode replanejar no nível de esboço; conclusões de impacto na prosa precisam de revisão manual",
+    "skipNodeMissing": "o nó foi excluído ou não pertence ao projeto atual",
+    "skipNodeProtected": "o nó agora está dentro da zona de proteção da prosa",
+    "skipOutlineChanged": "o esboço mudou após a análise; analise novamente",
+    "skipAnchorTitleProtected": "o título da âncora está protegido",
+    "skipAdoptRejected": "a camada unificada de gravação rejeitou o patch",
+    "intensityLabels": {
+      "light": "Integração leve",
+      "balanced": "Redirecionamento moderado",
+      "deep": "Reestruturação profunda"
+    }
+  },
+  "cultivation": {
+    "acceptChapterMissing": "O capítulo de origem não existe ou não pertence a este projeto",
+    "acceptCharacterMissing": "O personagem não existe ou não pertence a este projeto",
+    "acceptSystemMissing": "O sistema de cultivo não existe ou não pertence a este projeto",
+    "acceptSystemChanged": "O sistema principal do personagem mudou; analise novamente",
+    "acceptWorldMismatchSystem": "O capítulo de origem e o sistema de cultivo não estão no mesmo mundo",
+    "acceptWorldMismatchCharacter": "O capítulo de origem não corresponde ao mundo de origem do personagem",
+    "acceptEvidenceChanged": "A evidência do texto mudou, está duplicada ou deixou de existir; analise novamente",
+    "acceptStageRemoved": "O reino de destino foi removido do sistema; analise novamente",
+    "acceptAlreadyConfirmed": "Este evento de reino já foi confirmado",
+    "acceptTransitionMismatch": "O caminho do reino não corresponde ao tipo de mudança: atualmente deveria ser {{expected}}",
+    "acceptWriteFailed": "Falha ao gravar o progresso de cultivo",
+    "transitionEnter": "Primeira confirmação",
+    "transitionAdvance": "Avanço",
+    "transitionRegress": "Regressão",
+    "transitionSwitch": "Mudança de caminho"
   }
 }

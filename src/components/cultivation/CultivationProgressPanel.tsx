@@ -21,6 +21,7 @@ import { useOutlineStore } from '../../stores/outline'
 import { useProjectStore } from '../../stores/project'
 import { useDialog } from '../shared/Dialog'
 import { useDomainT } from '../../i18n'
+import { projectCanonicalLabel, CULTIVATION_PROGRESS_STATUS_LABEL_KEYS } from '../../i18n/display-projection'
 
 const TRANSITION_KEYS = {
   enter: 'transition.enter',
@@ -380,7 +381,7 @@ export default function CultivationProgressPanel({ project }: { project: Project
                           {event.stageName}
                           <span className="ml-2 text-[10px] text-accent">{t(TRANSITION_KEYS[event.transition])}</span>
                           {event.status !== 'confirmed' && (
-                            <span className="ml-2 text-[10px] text-error">{event.status}</span>
+                            <span className="ml-2 text-[10px] text-error">{projectCanonicalLabel(t, CULTIVATION_PROGRESS_STATUS_LABEL_KEYS, event.status)}</span>
                           )}
                         </p>
                         <p className="text-[10px] text-text-muted flex items-center gap-1 mt-1">

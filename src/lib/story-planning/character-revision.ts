@@ -1,3 +1,10 @@
+/**
+ * i18n:本文件在解析/应用边界为缺字段生成回退文案与警告。这些字符串在解析时
+ * 冻入计划对象、供面板稍后渲染,因此必须取自【预加载】的 errors-lib ns——
+ * outline 是组件域懒加载 ns,lib 读取它会在 ns 未就绪时把原始 key 冻进计划
+ * (I18N.md:lib 只读 errors:/errors-lib:/common:defaults.*)。组件域自有文案
+ * (changeLabels/strategyLabels/applyConfirm* 等)仍留在 errors-lib:revision.*。
+ */
 import { getT } from '../../i18n'
 import { db } from '../db/schema'
 import { normalizeChapterText } from '../ai/chapter-memory/text-normalization'
@@ -265,7 +272,7 @@ function parseAffected(value: unknown): CharacterRevisionAffectedChapter[] {
     if (!row || ordinal == null || ordinal < 1) return []
     return [{
       ordinal,
-      title: text(row.title) || getT()('outline:revision.chapterFallbackTitle', { ordinal }),
+      title: text(row.title) || getT()('errors-lib:revision.chapterFallbackTitle', { ordinal }),
       severity: severity(row.severity),
       reason: text(row.reason),
       evidenceQuotes: array(row.evidenceQuotes).map(text).filter(Boolean),
@@ -296,8 +303,8 @@ function parseConflicts(value: unknown): CharacterRevisionConflict[] {
     if (!row || !text(row.reason)) return []
     return [{
       severity: severity(row.severity),
-      source: text(row.source) || getT()('outline:revision.unmarkedSource'),
-      title: text(row.title) || getT()('outline:revision.untitledConflict'),
+      source: text(row.source) || getT()('errors-lib:revision.unmarkedSource'),
+      title: text(row.title) || getT()('errors-lib:revision.untitledConflict'),
       reason: text(row.reason),
       evidenceQuote: text(row.evidenceQuote),
     }]
@@ -311,7 +318,7 @@ function parseForeshadows(value: unknown, protectedThrough: number): CharacterRe
     if (!row || ordinal == null || ordinal < 1 || !text(row.suggestion)) return []
     return [{
       chapterOrdinal: ordinal,
-      title: text(row.title) || getT()('outline:revision.chapterFallbackTitle', { ordinal }),
+      title: text(row.title) || getT()('errors-lib:revision.chapterFallbackTitle', { ordinal }),
       suggestion: text(row.suggestion),
       writtenRegion: ordinal <= protectedThrough,
     }]
@@ -332,22 +339,22 @@ function parsePatches(
     const nodeId = finiteInteger(row?.outlineNodeId)
     const chapter = nodeId == null ? null : chaptersByNode.get(nodeId)
     if (!row || nodeId == null || !chapter) {
-      warnings.push(getT()('outline:revision.warnUnknownNodePatch', { nodeId: nodeId ?? '?' }))
+      warnings.push(getT()('errors-lib:revision.warnUnknownNodePatch', { nodeId: nodeId ?? '?' }))
       return []
     }
     if (seen.has(nodeId)) {
-      warnings.push(getT()('outline:revision.warnDuplicatePatch', { nodeId }))
+      warnings.push(getT()('errors-lib:revision.warnDuplicatePatch', { nodeId }))
       return []
     }
     if (chapter.written || chapter.ordinal <= protectedThrough) {
-      warnings.push(getT()('outline:revision.warnProtectedChapterPatch', { ordinal: chapter.ordinal }))
+      warnings.push(getT()('errors-lib:revision.warnProtectedChapterPatch', { ordinal: chapter.ordinal }))
       return []
     }
     const proposedTitle = text(row.proposedTitle) || chapter.title
     const proposedSummary = text(row.proposedSummary) || chapter.summary
     const anchorProtected = anchorIds.has(nodeId)
     if (anchorProtected && proposedTitle !== chapter.title) {
-      warnings.push(getT()('outline:revision.warnAnchorRename', { title: chapter.title }))
+      warnings.push(getT()('errors-lib:revision.warnAnchorRename', { title: chapter.title }))
       return []
     }
     if (proposedTitle === chapter.title && proposedSummary === chapter.summary) return []
@@ -395,15 +402,15 @@ export function parseCharacterRevisionOutput(
     return [{
       id: text(row.id) || intensity,
       intensity,
-      label: text(row.label) || getT()(`outline:revision.intensityLabels.${intensity}`),
+      label: text(row.label) || getT()(`errors-lib:revision.intensityLabels.${intensity}`),
       summary: text(row.summary),
       risks: array(row.risks).map(text).filter(Boolean),
       patches: parsePatches(row.patches, snapshot, protectedThrough, anchorIds, warnings),
     }]
   }).slice(0, 3)
-  if (options.length < 3) warnings.push(getT()('outline:revision.warnOptionsIncomplete', { count: options.length }))
+  if (options.length < 3) warnings.push(getT()('errors-lib:revision.warnOptionsIncomplete', { count: options.length }))
   if (!snapshot.hasChapterMemory) {
-    warnings.push(getT()('outline:revision.warnNoChapterMemory'))
+    warnings.push(getT()('errors-lib:revision.warnNoChapterMemory'))
   }
   return {
     changeSummary: text(root.changeSummary),
@@ -437,19 +444,19 @@ export async function applyCharacterRevisionPatches(input: {
   for (const patch of input.patches) {
     const current = currentByNode.get(patch.outlineNodeId)
     if (!current) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipNodeMissing') })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipNodeMissing') })
       continue
     }
     if (current.written || current.ordinal <= protectedThrough) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipNodeProtected') })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipNodeProtected') })
       continue
     }
     if (current.title !== patch.currentTitle || current.summary !== patch.currentSummary) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipOutlineChanged') })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipOutlineChanged') })
       continue
     }
     if (anchors.has(patch.outlineNodeId) && patch.proposedTitle !== current.title) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipAnchorTitleProtected') })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipAnchorTitleProtected') })
       continue
     }
 
@@ -465,7 +472,7 @@ export async function applyCharacterRevisionPatches(input: {
       },
     })
     if (!outlineWrite.written.length) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('outline:revision.skipAdoptRejected') })
+      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipAdoptRejected') })
       continue
     }
 

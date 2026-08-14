@@ -31,6 +31,7 @@ import {
 import { characterAxesLabel } from '../../lib/character/character-axes'
 import { adoptCharacterDrivenVolumes } from '../../lib/story-planning/character-driven-adoption'
 import { useDomainT } from '../../i18n'
+import { projectCharacterDrivenPlanStatus } from '../../i18n/display-projection'
 import CharacterRevisionPanel from './CharacterRevisionPanel'
 
 interface Props {
@@ -363,7 +364,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
         >
           {plans.map(plan => (
             <option key={plan.id} value={plan.id}>
-              {plan.name} · v{plan.version} · {plan.status}
+              {plan.name} · v{plan.version} · {projectCharacterDrivenPlanStatus(t, plan.status)}
             </option>
           ))}
         </select>
@@ -633,7 +634,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
                         <p className="text-xs text-text-muted mb-1 pl-8">{vol.volumeSummary}</p>
                       )}
                       {vol.characterArcs && (
-                        <p className="text-xs text-text-muted mb-2 pl-8 italic">{t('characterDriven.arcLabel', { arcs: vol.characterArcs })}</p>
+                        <p className="text-xs text-text-muted mb-2 pl-8 italic">{t('characterDriven.arcLabel', { text: vol.characterArcs })}</p>
                       )}
                       {/* 章节列表 */}
                       <div className="pl-8 space-y-1">

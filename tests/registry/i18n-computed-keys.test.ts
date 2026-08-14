@@ -314,10 +314,11 @@ const groups: ComputedKeyGroup[] = [
     prefix: 'previewPanel.foreshadowRole',
     keys: ['plant', 'resolve', 'echo'] as const,
   },
-  // ── outline: revision.intensityLabels ──
+  // ── errors-lib: revision.intensityLabels (lib-side fallbacks resolve via the
+  //    preloaded errors-lib ns — see src/lib/story-planning/character-revision.ts) ──
   {
-    name: 'outline:revision.intensityLabels',
-    ns: 'outline',
+    name: 'errors-lib:revision.intensityLabels',
+    ns: 'errors-lib',
     prefix: 'revision.intensityLabels',
     keys: ['light', 'balanced', 'deep'] as const,
   },
@@ -386,56 +387,15 @@ const groups: ComputedKeyGroup[] = [
 // These are CONFIRMED absent in ALL 3 locales. They represent real bugs that
 // need code fixes (wrong prefix) or locale additions. The gate passes today
 // but documents the debt. Remove entries as they are fixed.
+//
+// Debt paid (Phase 1 outline/timeline i18n fixes):
+// - OutlinePreview.tsx now projects emotion/pace/foreshadowRole onto the
+//   registered previewPanel.* keys (the old `preview.*` prefix belonged to the
+//   outline-generation preview dialog and never existed in locales).
+// - promptSubLabels/promptGroupLabels gaps were filled in all 3 settings.json
+//   files; every bounded catalog slug now resolves to an author-facing label.
 
-const KNOWN_MISSING = new Set<string>([
-  // OutlinePreview.tsx uses `preview.*` prefix but locale keys are under
-  // `previewPanel.*`. This is a CODE BUG (wrong prefix in the component),
-  // not a missing translation. The correct keys (previewPanel.*) are tested above.
-  'outline:preview.emotion.rising',
-  'outline:preview.emotion.falling',
-  'outline:preview.emotion.flat',
-  'outline:preview.emotion.wave',
-  'outline:preview.emotion.climax',
-  'outline:preview.pace.slow',
-  'outline:preview.pace.medium',
-  'outline:preview.pace.fast',
-  'outline:preview.pace.climax',
-  'outline:preview.foreshadowRole.plant',
-  'outline:preview.foreshadowRole.resolve',
-  'outline:preview.foreshadowRole.echo',
-
-  // promptSubLabels: these sub-keys are derived from PromptModuleKey values
-  // that only appear in system seeds (not in the editor dropdown). The keys
-  // are absent in all 3 locales. PromptTemplateList falls back to raw text.
-  'settings:promptSubLabels.memory',
-  'settings:promptSubLabels.parseChunk',
-  'settings:promptSubLabels.mergeCharacters',
-  'settings:promptSubLabels.extract',
-  'settings:promptSubLabels.characterDriven',
-  'settings:promptSubLabels.characterRevision',
-  'settings:promptSubLabels.reverse',
-  'settings:promptSubLabels.reverseMultiworld',
-  'settings:promptSubLabels.suggest',
-  'settings:promptSubLabels.verify',
-  'settings:promptSubLabels.consult',
-  'settings:promptSubLabels.storm',
-  'settings:promptSubLabels.learn',
-  'settings:promptSubLabels.calibrate',
-
-  // promptGroupLabels: group prefixes derived from moduleKeys whose first
-  // segment has no corresponding label in any locale.
-  'settings:promptGroupLabels.relation',
-  'settings:promptGroupLabels.plot',
-  'settings:promptGroupLabels.inspiration',
-  'settings:promptGroupLabels.worldGroup',
-  'settings:promptGroupLabels.inventory',
-  'settings:promptGroupLabels.codex',
-  'settings:promptGroupLabels.location',
-  'settings:promptGroupLabels.storyTimeline',
-  'settings:promptGroupLabels.scene',
-  'settings:promptGroupLabels.history',
-  'settings:promptGroupLabels.style',
-])
+const KNOWN_MISSING = new Set<string>([])
 
 // ─── Test ──────────────────────────────────────────────────────────────────
 

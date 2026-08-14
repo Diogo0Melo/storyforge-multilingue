@@ -8,7 +8,7 @@ import { Heart, Sparkles, ChevronUp, Trash2, Edit3, Save, Plus, X, RotateCcw } f
 import { useEmotionBeatStore } from '../../stores/emotion-beat'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
-import { buildEmotionBeatPrompt, parseEmotionBeats } from '../../lib/ai/adapters/emotion-beat-adapter'
+import { buildEmotionBeatPrompt, parseEmotionBeats, normalizeEmotionTone, type EmotionTone } from '../../lib/ai/adapters/emotion-beat-adapter'
 import type { EmotionBeat } from '../../lib/types'
 import { useDialog } from '../shared/Dialog'
 import { useDomainT } from '../../i18n'
@@ -23,23 +23,22 @@ interface Props {
   prevChapterEnding: string
 }
 
-const TONE_COLORS: Record<string, string> = {
-  '紧张': 'bg-red-500/15 text-red-400',
-  '温馨': 'bg-amber-500/15 text-amber-400',
-  '悲伤': 'bg-blue-500/15 text-blue-400',
-  '欢乐': 'bg-yellow-500/15 text-yellow-400',
-  '愤怒': 'bg-orange-500/15 text-orange-400',
-  '恐惧': 'bg-purple-500/15 text-purple-400',
-  '平静': 'bg-green-500/15 text-green-400',
-  '震撼': 'bg-pink-500/15 text-pink-400',
-  '期待': 'bg-cyan-500/15 text-cyan-400',
+/** 规范基调代码 → 颜色（与 UI 语言无关；颜色语义与旧版一致）。 */
+const TONE_COLORS: Record<EmotionTone, string> = {
+  tense: 'bg-red-500/15 text-red-400',
+  warm: 'bg-amber-500/15 text-amber-400',
+  sad: 'bg-blue-500/15 text-blue-400',
+  joyful: 'bg-yellow-500/15 text-yellow-400',
+  angry: 'bg-orange-500/15 text-orange-400',
+  fear: 'bg-purple-500/15 text-purple-400',
+  calm: 'bg-green-500/15 text-green-400',
+  shocking: 'bg-pink-500/15 text-pink-400',
+  anticipation: 'bg-cyan-500/15 text-cyan-400',
 }
 
 function getToneColor(tone: string): string {
-  for (const [key, cls] of Object.entries(TONE_COLORS)) {
-    if (tone.includes(key)) return cls
-  }
-  return 'bg-bg-elevated text-text-muted'
+  const canonical = normalizeEmotionTone(tone)
+  return canonical ? TONE_COLORS[canonical] : 'bg-bg-elevated text-text-muted'
 }
 
 export default function EmotionBeatCard({
@@ -264,10 +263,12 @@ export default function EmotionBeatCard({
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-0.5">
-                  <span className="font-medium text-text-primary">{beat.label}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] ${getToneColor(beat.emotionTone)}`}>
-                    {beat.emotionTone}
-                  </span>
+                  <span className="font-medium text-text-primary">{beat.label || t('emotionBeat.untitledBeat')}</span>
+                  {beat.emotionTone && (
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] ${getToneColor(beat.emotionTone)}`}>
+                      {beat.emotionTone}
+                    </span>
+                  )}
                 </div>
                 <div className="text-text-muted space-y-0.5">
                   {beat.sceneGoal && <p>🎯 {beat.sceneGoal}</p>}

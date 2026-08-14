@@ -75,6 +75,13 @@
     "savingStatus": "保存中…",
     "dirtyStatus": "待保存",
     "savedStatus": "已保存",
+    "runStatus": {
+      "running": "运行中",
+      "paused": "已暂停",
+      "completed": "已完成",
+      "failed": "失败",
+      "cancelled": "已取消"
+    },
     "saveButton": "保存",
     "pauseRun": "暂停运行",
     "cancelRun": "取消运行",

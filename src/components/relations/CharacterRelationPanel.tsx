@@ -11,6 +11,7 @@ import { useToast } from '../shared/Toast'
 import { syncRelationToCharacterFields } from '../../lib/relations/relationship-summary'
 import RelationGraph from './RelationGraph'
 import { useDomainT } from '../../i18n'
+import { projectCanonicalLabel, RELATION_TYPE_LABEL_KEYS } from '../../i18n/display-projection'
 
 const RELATION_TYPE_VALUES: RelationType[] = [
   'family',
@@ -277,7 +278,7 @@ export default function CharacterRelationPanel({ project }: Props) {
                 {extractedRelations.map((rel, i) => {
                   const fromName = projectCharacters.find(c => c.id === rel.fromCharacterId)?.name || rel.char1
                   const toName = projectCharacters.find(c => c.id === rel.toCharacterId)?.name || rel.char2
-                  const typeLabel = t(`types.${rel.type}` as any) || rel.type
+                  const typeLabel = projectCanonicalLabel(t, RELATION_TYPE_LABEL_KEYS, rel.type)
                   const isSelected = selectedExtracted.has(i)
                   return (
                     <label
@@ -435,7 +436,7 @@ export default function CharacterRelationPanel({ project }: Props) {
                 >
                   {RELATION_TYPE_VALUES.map((value) => (
                     <option key={value} value={value}>
-                      {t(`types.${value}`)}
+                      {projectCanonicalLabel(t, RELATION_TYPE_LABEL_KEYS, value)}
                     </option>
                   ))}
                 </select>

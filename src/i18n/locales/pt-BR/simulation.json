@@ -5,6 +5,11 @@
     "ttrpg": "Sessão de RPG",
     "chatgame": "Chat com Personagens"
   },
+  "sessionStatus": {
+    "active": "Ativa",
+    "paused": "Pausada",
+    "archived": "Arquivada"
+  },
   "sourceKind": {
     "world": "Mundo",
     "character": "Personagem",
