@@ -1,4 +1,4 @@
-﻿import { CheckSquare, Square } from 'lucide-react'
+﻿import { Braces, CheckSquare, ChevronDown, ChevronUp, Info, Square } from 'lucide-react'
 import type { OutlineNode, StateCard } from '../../lib/types'
 import { STATE_CATEGORY_LABEL_KEYS } from '../../lib/types/state-card'
 import { useDomainT } from '../../i18n'
@@ -39,11 +39,36 @@ export default function ChapterContextPreview({
   const { t } = useDomainT('editor')
   return (
     <div className="mx-6 mb-3 max-h-64 overflow-y-auto rounded-xl border border-border bg-bg-elevated p-3 text-xs text-text-muted shadow-theme-sm">
-      <p className="font-medium text-text-secondary mb-1">{t('contextPreview.title')}</p>
-      <div className="whitespace-pre-wrap">
-        {worldContext && <p>{t('contextPreview.worldSection')}{worldContext.slice(0, 500)}...</p>}
-        {characterContext && <p>{t('contextPreview.characterSection')}{characterContext.slice(0, 300)}...</p>}
-        {outlineNode && <p>{t('contextPreview.outlineSection')}{outlineNode.title}：{outlineNode.summary}</p>}
+      <div className="mb-1 flex items-center gap-1.5">
+        <Braces className="h-3.5 w-3.5 flex-shrink-0 text-accent" aria-hidden="true" />
+        <p className="font-medium text-text-secondary">{t('contextPreview.title')}</p>
+        <span className="ml-auto rounded border border-border bg-bg-base px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide text-text-muted">
+          {t('contextPreview.payloadBadge')}
+        </span>
+      </div>
+      <p className="mb-1.5 flex items-start gap-1 text-[11px] leading-snug text-text-muted">
+        <Info className="mt-0.5 h-3 w-3 flex-shrink-0" aria-hidden="true" />
+        <span>{t('contextPreview.disclosure')}</span>
+      </p>
+      <div className="space-y-1 whitespace-pre-wrap break-words rounded-lg border border-border-subtle bg-bg-base px-2 py-1.5 font-mono text-[11px] leading-relaxed">
+        {worldContext && (
+          <p>
+            <span className="text-text-secondary">{t('contextPreview.worldSection')}</span>
+            {worldContext.slice(0, 500)}...
+          </p>
+        )}
+        {characterContext && (
+          <p>
+            <span className="text-text-secondary">{t('contextPreview.characterSection')}</span>
+            {characterContext.slice(0, 300)}...
+          </p>
+        )}
+        {outlineNode && (
+          <p>
+            <span className="text-text-secondary">{t('contextPreview.outlineSection')}</span>
+            {outlineNode.title}：{outlineNode.summary}
+          </p>
+        )}
       </div>
 
       {stateCards.length > 0 && (
@@ -55,9 +80,12 @@ export default function ChapterContextPreview({
             <button
               type="button"
               onClick={onToggleStateList}
-              className="text-accent hover:text-accent-hover text-xs"
+              className="flex items-center gap-0.5 text-accent hover:text-accent-hover text-xs"
             >
               {stateListExpanded ? t('contextPreview.btnCollapse') : t('contextPreview.btnExpand')}
+              {stateListExpanded
+                ? <ChevronUp className="h-3 w-3 flex-shrink-0" aria-hidden="true" />
+                : <ChevronDown className="h-3 w-3 flex-shrink-0" aria-hidden="true" />}
             </button>
           </div>
           {stateListExpanded && (

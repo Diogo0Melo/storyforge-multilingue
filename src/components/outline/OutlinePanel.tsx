@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
-import { useDomainT } from '../../i18n'
+import { useDomainT, getSupportedUiLang } from '../../i18n'
+import { resolveProjectContentLanguage } from '../../lib/ai/content-language'
 import { useOutlineStore } from '../../stores/outline'
 import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIStream } from '../../hooks/useAIStream'
@@ -378,6 +379,8 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     volumes,
     nodes,
     hint,
+    // Phase 3: 批量章纲使用项目 RESOLVED 内容语言（D1：持久化值 → UI 语言回退）
+    contentLanguage: resolveProjectContentLanguage(project, getSupportedUiLang()),
     assembleContext: buildOutlineAssembledContext,
     reloadOutline: () => loadAll(project.id!),
     onError: toast.error,

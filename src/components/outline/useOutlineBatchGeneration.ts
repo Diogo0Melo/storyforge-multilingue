@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react'
-import { useDomainT } from '../../i18n'
+import { useDomainT, type SupportedLang } from '../../i18n'
 import {
   runBatchOutlineGeneration,
   type BatchOutlineProgress,
@@ -15,6 +15,8 @@ interface Options {
   volumes: OutlineNode[]
   nodes: OutlineNode[]
   hint: string
+  /** Phase 3: 项目 RESOLVED 内容语言；缺省时章纲示例回退语言无关占位符 */
+  contentLanguage?: SupportedLang
   assembleContext: (worldGroupId: number | null, outlineNodeId?: number | null) => Promise<AssembleContextResult>
   reloadOutline: () => Promise<void>
   onError: (message: string) => void
@@ -31,6 +33,7 @@ export function useOutlineBatchGeneration({
   volumes,
   nodes,
   hint,
+  contentLanguage,
   assembleContext,
   reloadOutline,
   onError,
@@ -72,6 +75,7 @@ export function useOutlineBatchGeneration({
         userHint: hint || undefined,
         characterContext: contextPart(assembled, 'characters'),
         worldRulesContext: contextPart(assembled, 'worldRules'),
+        contentLanguage,
         signal: controller.signal,
         onProgress: setProgress,
       })
@@ -83,7 +87,7 @@ export function useOutlineBatchGeneration({
       if (abortRef.current === controller) abortRef.current = null
       setRunning(false)
     }
-  }, [volumes, nodes, multiWorldEnabled, hint, assembleContext, onError, t])
+  }, [volumes, nodes, multiWorldEnabled, hint, contentLanguage, assembleContext, onError, t])
 
   const cancel = useCallback(() => {
     abortRef.current?.abort()

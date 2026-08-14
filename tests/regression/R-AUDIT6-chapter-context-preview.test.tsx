@@ -2,6 +2,7 @@ import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import ChapterContextPreview from '../../src/components/editor/ChapterContextPreview'
+import zhEditor from '../../src/i18n/locales/zh-CN/editor.json'
 import type { StateCard } from '../../src/lib/types'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
@@ -83,5 +84,23 @@ describe('AUDIT-6 · 章节上下文预览', () => {
     await act(async () => northGate.click())
     expect(props.onToggleStateCard).toHaveBeenCalledWith(2)
     expect(props.onToggleStateCard).toHaveBeenCalledWith(3)
+  })
+
+  it('呈现技术/AI 上下文预览标识：标题、原始负载徽标与提示语言披露，且与状态卡区域共存', async () => {
+    const host = (await mount()).host
+    expect(host.textContent).toContain(zhEditor.contextPreview.title)
+    expect(host.textContent).toContain(zhEditor.contextPreview.payloadBadge)
+    expect(host.textContent).toContain(zhEditor.contextPreview.disclosure)
+    expect(host.textContent).toContain('状态卡注入（1/3）')
+  })
+
+  it('负载正文按源原样呈现，不被翻译或改写', async () => {
+    const host = (await mount({
+      worldContext: '灵脉分布：北境冰原',
+      characterContext: '主角性格隐忍，惯用暗语',
+      stateCards: [],
+    })).host
+    expect(host.textContent).toContain('灵脉分布：北境冰原')
+    expect(host.textContent).toContain('主角性格隐忍，惯用暗语')
   })
 })

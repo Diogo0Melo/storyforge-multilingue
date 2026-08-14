@@ -15,7 +15,8 @@ describe('AUDIT-6 · 提示词领域拆分完整性', () => {
     // 展示元数据字段（pt-BR 本地化），systemPrompt/userPromptTemplate 正文逐字未变。
     // 2026-08-10 i18n residual campaign W-seeds：seed-i18n 扩展到全部 内置-* seeds +
     // genre-packs 展示元数据（3 locales 显示提取）；prompt 正文仍逐字未变（diff 验证）。
-    expect(seedDigest()).toBe('37518da3ad0e1ee7292c9f7abef776e26451a3aa4e1d5363605600210363335e')
+    // 2026-08-14 Phase 3: core outline title examples became runtime language-aware.
+    expect(seedDigest()).toBe('ecadb0be270b13bc871e54ca81032c2f8a06a71bc9d67c8330447a1f82768251')
   })
 
   it('分块导入把固定分类目录放在变化的块序号和滚动上下文之前，保留可缓存前缀', () => {

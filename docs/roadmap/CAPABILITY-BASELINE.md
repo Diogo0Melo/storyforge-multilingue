@@ -308,7 +308,7 @@
 - `characterDrivenPlan` 只读取 `projects.activeCharacterDrivenPlanId` 指向的同项目方案；普通卷纲、章纲、细纲、场景与正文生成均显式接入，没有 active 时不注入。
 - 角色改名时使用当前名并提示方案快照名；角色删除时软 ID 置空、文本快照保留，方案不级联删除。
 - DB v44、`PROJECT_TABLES`、必需表、项目删除、便携导出导入均已收口；active、父版本和弧光角色引用会在导入后重映射。
-- 勾选生成卷后只经统一 `adopt(target=outlineNodes)` 写入卷/章，并保留 `【角色弧光推进】`；重复采纳幂等。
+- 勾选生成卷后只经统一 `adopt(target=outlineNodes)` 写入卷/章；新章节摘要原样写入，结构化 `arcProgress` 保留在 `characterDrivenPlans.generatedVolumes` 方案 JSON 中。重复采纳幂等，既有含历史标记的行不被重写。
 - CF-12 在同一入口提供“开书规划 / 中途重规划”：规范章序和真实正文划分已写保护、近期过渡和未写规划区，保护值不能低于最后已写章。
 - 影响分析复用 active 方案、角色、Canon、故事线、现有大纲和章节连续性等登记上下文；章节记忆不足时明确降级为有限证据分析。
 - AI 必须给轻量、中度、深度三档方案；本地拒绝未知/重复节点、正文或保护区 patch 和锚点改名，作者可逐项预览后确认。

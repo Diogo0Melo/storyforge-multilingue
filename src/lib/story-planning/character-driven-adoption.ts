@@ -21,6 +21,8 @@ async function resolveWorldGroupId(projectId: number): Promise<number | null> {
  * 角色驱动结果写入大纲的唯一领域入口。
  * 每一行都经过 adopt()/FIELD_REGISTRY/ADOPTION_SCHEMAS；重复卷复用既有节点，
  * 不绕过统一写回层，也不触碰 storyCore 或既有正文。
+ * 章节摘要按作者可见内容原样写入；结构化 arcProgress 只保留在
+ * characterDrivenPlans.generatedVolumes 的方案 JSON 中，不拼接进大纲。
  */
 export async function adoptCharacterDrivenVolumes(input: {
   projectId: number
@@ -71,7 +73,7 @@ export async function adoptCharacterDrivenVolumes(input: {
           parentId: volumeId,
           type: 'chapter',
           title: chapter.title,
-          summary: `${chapter.summary}${chapter.arcProgress ? `\n\n【角色弧光推进】${chapter.arcProgress}` : ''}`,
+          summary: chapter.summary,
           order: chapterIndex,
         },
       })

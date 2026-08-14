@@ -450,7 +450,9 @@
     "btnApplyOutline": "Atualizar esboço do capítulo com candidato"
   },
   "contextPreview": {
-    "title": "📋 Contexto enviado à IA:",
+    "title": "Contexto enviado à IA:",
+    "payloadBadge": "payload bruto",
+    "disclosure": "Os títulos no payload podem usar linguagem interna de prompt. Eles são exibidos exatamente como enviados, não como conteúdo do autor traduzido.",
     "worldSection": "[Construção de Mundo]",
     "characterSection": "[Personagens]",
     "outlineSection": "[Esboço do capítulo]",

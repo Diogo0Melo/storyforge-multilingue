@@ -197,5 +197,66 @@ describe('R-CF9C · 持久化角色驱动工作区', () => {
     expect(await db.outlineNodes.where('projectId').equals(projectId).count()).toBe(3)
     expect((await db.storyCores.get(storyCoreId))?.mainPlot).toBe('不可覆盖的主线')
     expect((await db.chapters.get(chapterId))?.content).toBe('<p>不能修改</p>')
+
+    // (a) 新采纳章节摘要必须原样保留，不得拼接【角色弧光推进】等内部标记
+    const adoptedChapter = await db.outlineNodes.get(first.chapterIds[0])
+    expect(adoptedChapter?.summary).toBe('林舟遇见昔日同伴。')
+    expect(adoptedChapter?.summary).not.toContain('【角色弧光推进】')
+    expect(adoptedChapter?.summary).not.toContain('林舟第一次承认自己仍在意故乡。')
+    const adoptedVolume = await db.outlineNodes.get(first.volumeIds[0])
+    expect(adoptedVolume?.summary).toBe('主角回到故乡并直面旧案。')
+
+    // (b) 结构化 arcProgress 保留在方案 JSON 中，采纳生命周期不丢失
+    const planId = await useCharacterDrivenPlanStore.getState().createPlan(projectId, '归乡方案')
+    await useCharacterDrivenPlanStore.getState().saveGenerated(planId, generated)
+    await useCharacterDrivenPlanStore.getState().markAdopted(planId)
+    const storedPlan = await db.characterDrivenPlans.get(planId)
+    expect(storedPlan?.status).toBe('adopted')
+    expect(parseCharacterDrivenPlotVolumes(storedPlan?.generatedVolumes)).toEqual(generated)
+    expect(parseCharacterDrivenPlotVolumes(storedPlan?.generatedVolumes)[0]?.chapters[0]?.arcProgress)
+      .toBe('林舟第一次承认自己仍在意故乡。')
+  })
+
+  it('历史遗留带【角色弧光推进】标记的大纲行在采纳与重复采纳后保持字节不变', async () => {
+    const projectId = await seedProject()
+    const legacySummary = '林舟遇见昔日同伴。\n\n【角色弧光推进】林舟第一次承认自己仍在意故乡。'
+    const legacyVolumeId = await db.outlineNodes.add({
+      projectId,
+      parentId: null,
+      type: 'volume',
+      title: '第一卷 归乡',
+      summary: '主角回到故乡并直面旧案。',
+      order: 0,
+      createdAt: 1,
+      updatedAt: 1,
+    } as any)
+    const legacyChapterId = await db.outlineNodes.add({
+      projectId,
+      parentId: legacyVolumeId,
+      type: 'chapter',
+      title: '第一章 故人',
+      summary: legacySummary,
+      order: 0,
+      createdAt: 1,
+      updatedAt: 1,
+    } as any)
+    const before = {
+      volume: JSON.stringify(await db.outlineNodes.get(legacyVolumeId)),
+      chapter: JSON.stringify(await db.outlineNodes.get(legacyChapterId)),
+    }
+
+    const first = await adoptCharacterDrivenVolumes({ projectId, volumes: generated })
+    const second = await adoptCharacterDrivenVolumes({ projectId, volumes: generated })
+
+    // 重复卷复用既有节点而非改写或重建；章节按 skip 策略跳过
+    expect(first.volumeIds).toEqual([legacyVolumeId])
+    expect(first.chapterIds).toHaveLength(0)
+    expect(second.volumeIds).toEqual([legacyVolumeId])
+    expect(second.chapterIds).toHaveLength(0)
+    // (c) 遗留行不被重写：字节完全一致，不清洗也不追加
+    expect(JSON.stringify(await db.outlineNodes.get(legacyVolumeId))).toBe(before.volume)
+    expect(JSON.stringify(await db.outlineNodes.get(legacyChapterId))).toBe(before.chapter)
+    expect((await db.outlineNodes.get(legacyChapterId))?.summary).toBe(legacySummary)
+    expect(await db.outlineNodes.where('projectId').equals(projectId).count()).toBe(2)
   })
 })

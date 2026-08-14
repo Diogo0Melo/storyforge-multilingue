@@ -8,6 +8,7 @@ import { chat } from './client'
 import { buildChapterOutlinePrompt } from './adapters/outline-adapter'
 import { parseChapterOutlineSmart, type ParsedChapter } from './parse-outline-output'
 import { useAIConfigStore } from '../../stores/ai-config'
+import type { SupportedLang } from '../../i18n'
 import type { OutlineNode } from '../types'
 
 /**
@@ -57,6 +58,8 @@ export interface BatchOutlineOptions {
   worldRulesContext?: string
   /** 多世界：按卷解析各自世界规则（提供则逐卷覆盖 worldRulesContext） */
   worldRulesContextResolver?: (volumeId: number) => Promise<string>
+  /** Phase 3: 项目 RESOLVED 内容语言（注入对应语言的章标题示例）；缺省回退语言无关占位符 */
+  contentLanguage?: SupportedLang
   /** 进度回调 */
   onProgress?: (progress: BatchOutlineProgress) => void
   /** 取消信号 */
@@ -79,6 +82,7 @@ export async function runBatchOutlineGeneration(
     characterContext,
     worldRulesContext,
     worldRulesContextResolver,
+    contentLanguage,
     onProgress,
     signal,
   } = options
@@ -125,6 +129,7 @@ export async function runBatchOutlineGeneration(
       undefined, // options
       characterContext,
       volWorldRulesContext,
+      contentLanguage,
     )
 
     try {

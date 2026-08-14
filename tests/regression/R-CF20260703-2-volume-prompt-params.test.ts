@@ -16,6 +16,9 @@ const ADAPTER_VOLUME_VARIABLES = new Set([
   'worldRulesContext',
   'existingVolumesContext',
   'existingVolumeCount',
+  // Phase 3: 内容语言相关的卷标题示例（outline-adapter 按 contentLanguage 注入）
+  'volumeTitleExample',
+  'volumeOutputExample',
   'userHint',
 ])
 

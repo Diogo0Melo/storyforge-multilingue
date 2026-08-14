@@ -450,11 +450,13 @@
     "btnApplyOutline": "Update chapter outline with candidate"
   },
   "contextPreview": {
-    "title": "📋 Context sent to AI:",
+    "title": "Context sent to AI:",
+    "payloadBadge": "raw payload",
+    "disclosure": "Headings in the payload may use internal prompt language. They are shown exactly as sent, not translated author content.",
     "worldSection": "[Worldview]",
     "characterSection": "[Characters]",
     "outlineSection": "[Chapter outline]",
-    "stateCardsTitle": "📋 State card injection ({{matched}}/{{total}})",
+    "stateCardsTitle": "State card injection ({{matched}}/{{total}})",
     "btnCollapse": "Collapse",
     "btnExpand": "Expand to adjust",
     "stateCardAriaLabel": "State card: ",

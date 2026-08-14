@@ -1,4 +1,5 @@
 import type { ChatMessage } from '../../types'
+import type { SupportedLang } from '../../../i18n'
 import { usePromptStore } from '../../../stores/prompt'
 import { renderPrompt } from '../prompt-engine'
 import { appendUserConstraint } from './prompt-guards'
@@ -6,6 +7,62 @@ import { appendUserConstraint } from './prompt-guards'
 export interface RunOptions {
   parameterValues?: Record<string, unknown>
   overrides?: { systemPrompt?: string; userPromptTemplate?: string }
+}
+
+/**
+ * Phase 3 · 大纲标题示例解析（按项目内容语言）。
+ *
+ * 核心卷/章纲种子模板不再硬编码「第1卷/第2卷」「第1章/第2章」输出示例；
+ * 改由 prompt 边界（本适配器）按项目 RESOLVED contentLanguage 注入对应语言
+ * 的标题示例，避免 pt-BR/en 项目收到中文序数示例。未提供语言时回退到
+ * 语言无关占位符（直接/单测调用方安全）。示例只影响 few-shot 文案；输出
+ * 语言约束仍由 client gate 按 outputKind 注入，JSON 键名与解析器行为不变。
+ */
+export interface OutlineTitleExamples {
+  /** 卷标题行内示例（不含外层引号） */
+  volumeTitleExample: string
+  /** 卷级大纲完整 JSON 示例数组（单行） */
+  volumeOutputExample: string
+  /** 章节标题行内示例（不含外层引号） */
+  chapterTitleExample: string
+  /** 章节大纲完整 JSON 示例数组（单行） */
+  chapterOutputExample: string
+}
+
+const OUTLINE_TITLE_EXAMPLES: Record<SupportedLang, OutlineTitleExamples> = {
+  'zh-CN': {
+    volumeTitleExample: '第1卷：XXX',
+    volumeOutputExample: '[{"title":"第1卷：起始之章","summary":"..."},{"title":"第2卷：风云再起","summary":"..."}]',
+    chapterTitleExample: '第1章：XXX',
+    chapterOutputExample: '[{"title":"第1章：初入江湖","summary":"..."},{"title":"第2章：暗潮涌动","summary":"..."}]',
+  },
+  'pt-BR': {
+    volumeTitleExample: 'Volume 1: XXX',
+    volumeOutputExample: '[{"title":"Volume 1: O Começo","summary":"..."},{"title":"Volume 2: A Tempestade","summary":"..."}]',
+    chapterTitleExample: 'Capítulo 1: XXX',
+    chapterOutputExample: '[{"title":"Capítulo 1: Primeiros Passos","summary":"..."},{"title":"Capítulo 2: Maré Alta","summary":"..."}]',
+  },
+  en: {
+    volumeTitleExample: 'Volume 1: XXX',
+    volumeOutputExample: '[{"title":"Volume 1: The Beginning","summary":"..."},{"title":"Volume 2: Rising Storm","summary":"..."}]',
+    chapterTitleExample: 'Chapter 1: XXX',
+    chapterOutputExample: '[{"title":"Chapter 1: Into the Fray","summary":"..."},{"title":"Chapter 2: Undercurrents","summary":"..."}]',
+  },
+}
+
+/** 语言无关占位符：只演示 JSON 结构，不暗示任何语言的序数命名。 */
+const NEUTRAL_OUTLINE_TITLE_EXAMPLES: OutlineTitleExamples = {
+  volumeTitleExample: '...',
+  volumeOutputExample: '[{"title":"...","summary":"..."},{"title":"...","summary":"..."}]',
+  chapterTitleExample: '...',
+  chapterOutputExample: '[{"title":"...","summary":"..."},{"title":"...","summary":"..."}]',
+}
+
+export function resolveOutlineTitleExamples(contentLanguage?: SupportedLang): OutlineTitleExamples {
+  if (contentLanguage && contentLanguage in OUTLINE_TITLE_EXAMPLES) {
+    return OUTLINE_TITLE_EXAMPLES[contentLanguage]
+  }
+  return NEUTRAL_OUTLINE_TITLE_EXAMPLES
 }
 
 export interface VolumeOutlineRequest {
@@ -27,6 +84,8 @@ export function buildVolumeOutlinePrompt(
   /** Phase 32: 世界规则清单（替代旧 historicalContext + creativeMode） */
   worldRulesContext?: string,
   request?: VolumeOutlineRequest,
+  /** Phase 3: 项目 RESOLVED 内容语言，用于注入对应语言的卷标题示例；缺省回退语言无关占位符 */
+  contentLanguage?: SupportedLang,
 ): ChatMessage[] {
   const rawVolumeCount = options?.parameterValues?.volumeCount
   const explicitVolumeCount = Number(rawVolumeCount)
@@ -43,6 +102,7 @@ export function buildVolumeOutlinePrompt(
     },
   }
   const tpl = usePromptStore.getState().getActive('outline.volume')
+  const examples = resolveOutlineTitleExamples(contentLanguage)
   const { messages } = renderPrompt(tpl, {
     projectName,
     genres: genre,
@@ -54,6 +114,8 @@ export function buildVolumeOutlinePrompt(
     worldRulesContext: worldRulesContext || '',
     existingVolumesContext: request?.existingVolumesContext || '',
     existingVolumeCount,
+    volumeTitleExample: examples.volumeTitleExample,
+    volumeOutputExample: examples.volumeOutputExample,
     userHint,
   }, normalizedOptions)
 
@@ -106,8 +168,11 @@ export function buildChapterOutlinePrompt(
   characterContext?: string,
   /** Phase 32: 世界规则清单 */
   worldRulesContext?: string,
+  /** Phase 3: 项目 RESOLVED 内容语言，用于注入对应语言的章标题示例；缺省回退语言无关占位符 */
+  contentLanguage?: SupportedLang,
 ): ChatMessage[] {
   const tpl = usePromptStore.getState().getActive('outline.chapter')
+  const examples = resolveOutlineTitleExamples(contentLanguage)
   const { messages } = renderPrompt(tpl, {
     volumeTitle,
     volumeSummary,
@@ -115,6 +180,8 @@ export function buildChapterOutlinePrompt(
     prevVolumeSummary: prevVolumeSummary || '（这是第一卷）',
     characterContext: characterContext || '',
     worldRulesContext: worldRulesContext || '',
+    chapterTitleExample: examples.chapterTitleExample,
+    chapterOutputExample: examples.chapterOutputExample,
     userHint,
   }, options)
   // CF-3：章纲必须服从本卷 summary 所承载的主线方向，不得另起支线压过主线。
@@ -141,6 +208,8 @@ export function buildSingleChapterOutlinePrompt(
   options?: RunOptions,
   characterContext?: string,
   worldRulesContext?: string,
+  /** Phase 3: 项目 RESOLVED 内容语言（透传给章纲模板示例）；缺省回退语言无关占位符 */
+  contentLanguage?: SupportedLang,
 ): ChatMessage[] {
   const messages = buildChapterOutlinePrompt(
     volumeTitle,
@@ -157,6 +226,7 @@ export function buildSingleChapterOutlinePrompt(
     },
     characterContext,
     worldRulesContext,
+    contentLanguage,
   )
   // WS-3A：输出语言约束改由 client gate 按 outputKind 注入（调用方声明 mixed）
   return appendUserConstraint(messages, `【本次单章补全硬约束】

@@ -450,7 +450,9 @@
     "btnApplyOutline": "用候选更新本章章纲"
   },
   "contextPreview": {
-    "title": "📋 发送给 AI 的上下文：",
+    "title": "发送给 AI 的上下文：",
+    "payloadBadge": "原始负载",
+    "disclosure": "负载中的标题可能使用内部提示语言，按发送原样展示，并非翻译后的作者内容。",
     "worldSection": "【世界观】",
     "characterSection": "【角色】",
     "outlineSection": "【章节大纲】",

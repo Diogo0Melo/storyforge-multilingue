@@ -331,14 +331,14 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
 
 每卷 summary 请涵盖：①本卷核心冲突/主线目标 ②情绪走向（蓄力→高潮→余韵）③主角状态变化 ④卷末悬念/钩子。
 
-**输出格式**：请严格输出 JSON 数组，用 \`\`\`json 代码块包裹，每个元素包含 title（卷标题，如"第1卷：XXX"）和 summary（4-6 句，覆盖上述四点）。示例：
+**输出格式**：请严格输出 JSON 数组，用 \`\`\`json 代码块包裹，每个元素包含 title（卷标题{{#if volumeTitleExample}}，如"{{volumeTitleExample}}"{{/if}}）和 summary（4-6 句，覆盖上述四点）。{{#if volumeOutputExample}}示例：
 \`\`\`json
-[{"title":"第1卷：起始之章","summary":"..."},{"title":"第2卷：风云再起","summary":"..."}]
+{{volumeOutputExample}}
 \`\`\`
-不要输出 JSON 以外的任何文字。{{#if userHint}}
+{{/if}}不要输出 JSON 以外的任何文字。{{#if userHint}}
 
 用户补充要求：{{userHint}}{{/if}}`,
-    variables: ['projectName', 'genres', 'targetWordCount', 'worldContext', 'storyCore', 'characterContext', 'worldRulesContext', 'existingVolumesContext', 'userHint'],
+    variables: ['projectName', 'genres', 'targetWordCount', 'worldContext', 'storyCore', 'characterContext', 'worldRulesContext', 'existingVolumesContext', 'volumeTitleExample', 'volumeOutputExample', 'userHint'],
     parameters: VOLUME_OUTLINE_PARAMETERS,
     isActive: true,
   },
@@ -374,14 +374,14 @@ export const CORE_PROMPT_SEEDS: PromptSeed[] = [
 3. 章节数量：必须输出恰好 {{chaptersPerVolume}} 章，不多不少。若卷情节摘要中提到的章节数与此处不一致，一律以此处设定的 {{chaptersPerVolume}} 章为准。{{/if}}{{#if notUsesChaptersPerVolume}}
 3. 章节数量：约 15-25 章。{{/if}}
 
-**输出格式**：请严格输出 JSON 数组，用 \`\`\`json 代码块包裹{{#if usesChaptersPerVolume}}（数组长度必须恰好为 {{chaptersPerVolume}}）{{/if}}，每个元素包含 title（章节标题，如"第1章：XXX"）和 summary（1-2 句情节摘要）。示例：
+**输出格式**：请严格输出 JSON 数组，用 \`\`\`json 代码块包裹{{#if usesChaptersPerVolume}}（数组长度必须恰好为 {{chaptersPerVolume}}）{{/if}}，每个元素包含 title（章节标题{{#if chapterTitleExample}}，如"{{chapterTitleExample}}"{{/if}}）和 summary（1-2 句情节摘要）。{{#if chapterOutputExample}}示例：
 \`\`\`json
-[{"title":"第1章：初入江湖","summary":"..."},{"title":"第2章：暗潮涌动","summary":"..."}]
+{{chapterOutputExample}}
 \`\`\`
-不要输出 JSON 以外的任何文字。{{#if userHint}}
+{{/if}}不要输出 JSON 以外的任何文字。{{#if userHint}}
 
 用户补充要求：{{userHint}}{{/if}}`,
-    variables: ['volumeTitle', 'volumeSummary', 'worldContext', 'prevVolumeSummary', 'characterContext', 'worldRulesContext', 'userHint'],
+    variables: ['volumeTitle', 'volumeSummary', 'worldContext', 'prevVolumeSummary', 'characterContext', 'worldRulesContext', 'chapterTitleExample', 'chapterOutputExample', 'userHint'],
     parameters: [
       { key: 'pace', label: '节奏', type: 'select',
         options: ['慢', '中', '快', '极快'], default: '中', optional: true },

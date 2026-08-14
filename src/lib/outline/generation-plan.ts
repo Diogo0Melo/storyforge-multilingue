@@ -7,7 +7,8 @@ import {
 } from '../ai/adapters/outline-adapter'
 import type { AssembleContextResult } from '../registry/types'
 import type { OutlineGenerationRequest } from './generation-request'
-import { getT } from '../../i18n'
+import { getSupportedUiLang, getT } from '../../i18n'
+import { resolveProjectContentLanguage } from '../ai/content-language'
 
 export type OutlineGenerationPlan = {
   status: 'ready'
@@ -72,6 +73,10 @@ export function buildOutlineGenerationPlan(input: {
   const targetError = outlineGenerationTargetError(request, nodes, volumes)
   if (targetError) return { status: 'skip', reason: targetError }
 
+  // Phase 3: prompt 边界使用项目 RESOLVED 内容语言（D1：持久化值 → UI 语言回退），
+  // 让卷/章纲模板注入对应语言的标题示例；不改变任何持久化标题。
+  const contentLanguage = resolveProjectContentLanguage(project, getSupportedUiLang())
+
   if (request.kind === 'volumes' || request.kind === 'single-volume') {
     const explicitCount = Number(options.parameterValues?.volumeCount)
     if (
@@ -111,6 +116,7 @@ export function buildOutlineGenerationPlan(input: {
           existingVolumeCount: volumes.length,
           targetVolumeTitle: targetVolume?.title,
         },
+        contentLanguage,
       ),
     }
   }
@@ -147,6 +153,7 @@ export function buildOutlineGenerationPlan(input: {
         options,
         characterContext,
         worldRulesContext,
+        contentLanguage,
       ),
     }
   }
@@ -163,6 +170,7 @@ export function buildOutlineGenerationPlan(input: {
       options,
       characterContext,
       worldRulesContext,
+      contentLanguage,
     ),
   }
 }
