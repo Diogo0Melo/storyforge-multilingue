@@ -16,7 +16,7 @@ import {
   Loader2,
   Sparkles,
 } from 'lucide-react'
-import { useDomainT } from '../../i18n'
+import { getSupportedUiLang, useDomainT } from '../../i18n'
 import {
   projectCanonicalLabel,
   SESSION_STATUS_LABEL_KEYS,
@@ -42,6 +42,7 @@ import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { resolveRequestConfig } from '../../lib/ai/client'
+import { resolveProjectContentLanguage } from '../../lib/ai/content-language'
 import { isAIConfigReady } from '../../lib/ai/config-readiness'
 import { assembleContext } from '../../lib/registry/assemble-context'
 import { buildNpcEvolutionPrompt, parseNpcEvolutionCandidate } from '../../lib/simulation/npc-evolution'
@@ -252,6 +253,9 @@ export default function SimulationRuntimePanel(props: {
   const [campaignScheduleActivity, setCampaignScheduleActivity] = useState('')
   const [campaignScheduleRecurrence, setCampaignScheduleRecurrence] = useState<'once' | 'daily' | 'weekly'>('once')
   const { config } = useAIConfigStore()
+  // R-I18N-P2: 模拟严格 JSON 调用的叙事语言契约只使用项目 resolved 内容语言
+  // （content-language.ts 单一语义入口），不发明第二套 locale 源。
+  const simulationContentLanguage = resolveProjectContentLanguage(props.project, getSupportedUiLang())
 
   useEffect(() => {
     void store.load(props.project.id!, props.worldGroupId)
@@ -463,7 +467,15 @@ export default function SimulationRuntimePanel(props: {
       targetEntityKey: selectedNpc.entityKey,
       targetName: selectedNpc.name,
       runtimeContext: runtimeContext.text,
-    }), undefined, { category: 'simulation.npc-evolution', projectId: props.project.id! })
+      contentLanguage: simulationContentLanguage,
+    }), undefined, {
+      category: 'simulation.npc-evolution',
+      projectId: props.project.id!,
+      // R-I18N-P2: 严格 JSON 协议调用；client gate 不得追加宽泛散文语言约束，
+      // 叙事语言由提示词内的字段级契约负责。
+      outputKind: 'language-neutral',
+      contextOverflowPolicy: 'reject',
+    })
     if (!draft.trim()) return
     const candidate = parseNpcEvolutionCandidate({
       draft,
@@ -490,7 +502,14 @@ export default function SimulationRuntimePanel(props: {
       actorName: selectedTtrpgActor.name,
       action: ttrpgAction,
       runtimeContext: runtimeContext.text,
-    }), undefined, { category: 'simulation.ttrpg-gm', projectId: props.project.id! })
+      contentLanguage: simulationContentLanguage,
+    }), undefined, {
+      category: 'simulation.ttrpg-gm',
+      projectId: props.project.id!,
+      // R-I18N-P2: 严格 JSON 协议调用；client gate 不得追加宽泛散文语言约束。
+      outputKind: 'language-neutral',
+      contextOverflowPolicy: 'reject',
+    })
     if (!draft.trim()) return
     setTtrpgCandidate(parseTtrpgTurnCandidate({
       draft,
@@ -515,7 +534,14 @@ export default function SimulationRuntimePanel(props: {
     const draft = await encounterAI.start(buildTtrpgEncounterPrompt({
       runtimeContext: runtimeContext.text,
       participantKeys: ttrpgParticipantKeys,
-    }), undefined, { category: 'simulation.ttrpg-encounter', projectId: props.project.id! })
+      contentLanguage: simulationContentLanguage,
+    }), undefined, {
+      category: 'simulation.ttrpg-encounter',
+      projectId: props.project.id!,
+      // R-I18N-P2: 严格 JSON 协议调用；client gate 不得追加宽泛散文语言约束。
+      outputKind: 'language-neutral',
+      contextOverflowPolicy: 'reject',
+    })
     if (!draft.trim()) return
     setTtrpgEncounterCandidate(parseTtrpgEncounterCandidate({
       draft,

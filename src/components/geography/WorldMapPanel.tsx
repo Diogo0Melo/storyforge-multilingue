@@ -106,7 +106,9 @@ export default function WorldMapPanel({ project }: Props) {
       sourceKeys: ['codex', 'locations'],
     })).text
     const messages = buildVoronoiMapPrompt(wv, overview, locations, codexCtx)
-    const result = await ai.start(messages, undefined, { category: 'geography.world-map', projectId: project.id! })
+    // WS-3B Phase 2（fix-5b）：地图参数 JSON 是混合信封——键名/枚举/数值/seed/证据引文为协议字段，
+    // mapName 与补全地名是作者面向文本按项目 contentLanguage → 显式声明 mixed。
+    const result = await ai.start(messages, undefined, { category: 'geography.world-map', projectId: project.id!, outputKind: 'mixed' })
     if (!result) return
 
     try {

@@ -77,10 +77,14 @@ describe('Phase 3.2 · parseInventoryEvents', () => {
     expect(events[1]).toMatchObject({ itemName: '丹药', heldByName: '林风', action: 'consume', quantity: 3 })
   })
 
-  it('未知 action 默认 gain;quantity 缺省/非法归一为 1', () => {
+  it('未知 action 整条拒绝,绝不静默转为 gain(fix-8)', () => {
     const raw = JSON.stringify([{ itemName: '剑', heldByName: '张铁', action: 'weird', note: '' }])
+    expect(parseInventoryEvents(raw)).toHaveLength(0)
+  })
+
+  it('quantity 缺省/非法归一为 1', () => {
+    const raw = JSON.stringify([{ itemName: '剑', heldByName: '张铁', action: 'gain', note: '' }])
     const events = parseInventoryEvents(raw)
-    expect(events[0].action).toBe('gain')
     expect(events[0].quantity).toBe(1)
   })
 

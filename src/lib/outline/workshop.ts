@@ -1,5 +1,6 @@
-import { getT } from '../../i18n'
+import { getSupportedUiLang, getT, SUPPORTED_LANGS } from '../../i18n'
 import type { UseAIStreamReturn } from '../../hooks/useAIStream'
+import type { OutputKind } from '../ai/output-language'
 import {
   checkHeldItemAcquisition,
   type HeldItemProjection,
@@ -49,6 +50,34 @@ export const OUTLINE_WORKSHOP_STAGE_META: Record<OutlineWorkshopStage, {
   collision: { title: '碰撞预演', description: '让动机自然相撞，形成至少三步反应链', calls: 1 },
   quality: { title: '质量闸门', description: '软性反套路审查 + 物品/认知/宪法闭集硬查', calls: 1 },
   scenes: { title: '场景卡', description: '收敛为可采纳场景卡与不可写清单', calls: 1 },
+}
+
+/**
+ * fix-7 · 五阶段显式输出意图（WS-3B Phase 2 收口，不再走 client gate 过渡推导）：
+ * - scan / motivation / collision：作者面规划散文会流入场景卡并成为工作产物 → mixed，
+ *   由 client gate 注入项目 RESOLVED 内容语言约束；
+ * - quality：严格 JSON 协议 + 闭集硬查 → functional-structured（不注入全局语言约束）。
+ *   advisory 的 reason/suggestion 是 UI 散文，改在 prompt 内声明字段级语言契约
+ *   （见 buildOutlineWorkshopMessages quality 分支规则 6），不整体切换 functional-prose——
+ *   确定性测试无法证明全局 UI 语言约束下 JSON 键名、quote 逐字引文与闭集枚举不被改写，
+ *   故保留 structured 意图 + 窄字段指令，不做库层事后翻译；
+ * - scenes：场景卡叙事字段为内容散文、ID/枚举为结构化 → mixed（保持既有契约）。
+ */
+export const OUTLINE_WORKSHOP_STAGE_OUTPUT_KINDS: Record<OutlineWorkshopStage, OutputKind> = {
+  scan: 'mixed',
+  motivation: 'mixed',
+  collision: 'mixed',
+  quality: 'functional-structured',
+  scenes: 'mixed',
+}
+
+/** 各阶段登记 category（与 task-routing 注册一致）；quality 归 review 类。 */
+export const OUTLINE_WORKSHOP_STAGE_CATEGORIES: Record<OutlineWorkshopStage, string> = {
+  scan: 'outline.workshop.scan',
+  motivation: 'outline.workshop.motivation',
+  collision: 'outline.workshop.collision',
+  quality: 'review.outline-workshop',
+  scenes: 'outline.workshop.scenes',
 }
 
 export type OutlineWorkshopArtifacts = Partial<Record<OutlineWorkshopStage, string>>
@@ -128,6 +157,16 @@ function confirmedArtifacts(
     const text = artifacts[stage]?.trim()
     return text ? [`【已确认·${OUTLINE_WORKSHOP_STAGE_META[stage].title}】\n${text}`] : []
   }).join('\n\n')
+}
+
+/**
+ * fix-7 · 质量节点字段级语言指令使用的 UI 语言自称。
+ * 复用 SUPPORTED_LANGS 单一事实源；语言自称（中文/English/Português (Brasil)）
+ * 对模型最易识别，且不把翻译标签写进任何产物。
+ */
+function uiLanguagePromptLabel(): string {
+  const lang = getSupportedUiLang()
+  return SUPPORTED_LANGS.find(item => item.code === lang)?.label ?? lang
 }
 
 export function buildOutlineWorkshopMessages(
@@ -229,7 +268,8 @@ export function buildOutlineWorkshopMessages(
 2. cognitionReferences 只能选闭集中的 characterId + knowledgeKey，不确定就不输出；
 3. canonClaims 只能选闭集中的 factId，且只在草案明确采用该设定值时输出；
 4. advisories 是软建议，不能伪装成确定性结论；
-5. 没有内容的数组返回 []。`,
+5. 没有内容的数组返回 []；
+6. 字段语言契约：advisories 的 reason 与 suggestion 面向作者，直接用${uiLanguagePromptLabel()}书写，不得事后翻译；quote 逐字保留草案原文；category 枚举值、JSON 键名、characterId/knowledgeKey/factId 与 proposedValue 一律保持原样，不得翻译或改写。`,
       },
       {
         role: 'user',
@@ -262,7 +302,8 @@ export function buildOutlineWorkshopMessages(
 2. characterIds/foreshadowIds 只能使用上下文已有 ID；
 3. prohibitions 必须覆盖提前知情、重复首次获得、设定冲突和节奏前置；
 4. cognitionReferences/canonClaims 只能使用闭集 ID，quote 必须逐字出现在本次 JSON 的场景文字中，不确定就返回空数组；
-5. 不要把质量审查里的被否决方案写回场景卡。`,
+5. 不要把质量审查里的被否决方案写回场景卡；
+6. 字段语言契约：prohibitions 是面向作者的守卫说明散文，与场景文字使用同一种语言书写；JSON 键名、emotionArc/pace 枚举值、characterIds/foreshadowIds 与 quote 一律保持原样，不得翻译或改写。`,
     },
     {
       role: 'user',
@@ -299,6 +340,60 @@ export interface WorkshopCanonClaim {
 export interface WorkshopQualityEvaluation {
   gate: GenerationGateResult
   advisories: WorkshopAdvisory[]
+}
+
+/**
+ * fix-7 · 工作坊 AI 输出的字段级语言/语义角色（协议兼容契约，JSON 键名与闭集枚举不变）。
+ *
+ * - canonical / display-only / source-preserved 字段由确定性解析器做闭集与逐字校验；
+ * - ui-prose 字段由模型按 prompt 声明直接以作者 UI 语言书写（库层不做事后翻译，
+ *   也不把翻译标签写回产物——产物存 AI 原样 JSON，语义键/原值可长期复用）；
+ * - content-prose 字段跟随 mixed 意图由 client gate 注入的项目内容语言。
+ */
+export type WorkshopFieldRole =
+  | 'canonical'        // ID/闭集枚举/结构化键：保持原样，确定性校验
+  | 'display-only'     // 仅展示：不与枚举做字符串匹配，AI 返回值原样保留
+  | 'source-preserved' // 草案逐字引文：includes 校验，禁止翻译或改写
+  | 'ui-prose'         // 面向作者的说明：直接以当前 UI 语言书写
+  | 'content-prose'    // 内容散文字段：跟随项目内容语言
+
+export const WORKSHOP_QUALITY_FIELD_ROLES: Readonly<Record<string, WorkshopFieldRole>> = {
+  'advisories[].category': 'display-only',
+  'advisories[].quote': 'source-preserved',
+  'advisories[].reason': 'ui-prose',
+  'advisories[].suggestion': 'ui-prose',
+  'cognitionReferences[].characterId': 'canonical',
+  'cognitionReferences[].knowledgeKey': 'canonical',
+  'cognitionReferences[].quote': 'source-preserved',
+  'canonClaims[].factId': 'canonical',
+  'canonClaims[].proposedValue': 'canonical',
+  'canonClaims[].quote': 'source-preserved',
+}
+
+export const WORKSHOP_SCENES_FIELD_ROLES: Readonly<Record<string, WorkshopFieldRole>> = {
+  openingHook: 'content-prose',
+  endingCliffhanger: 'content-prose',
+  sceneLocation: 'content-prose',
+  emotionArc: 'canonical',
+  appearingCharacterIds: 'canonical',
+  foreshadowIds: 'canonical',
+  // 不可写清单：面向作者的守卫说明散文（Oracle fix-7 复审：非 canonical 数据）。
+  // adopt-workshop 仅 trim/去重后原样持久化，无闭集校验、无解析后翻译；
+  // extractWorkshopSceneNarrative 仍将其排除在剧情证据之外。
+  prohibitions: 'content-prose',
+  'scenes[].title': 'content-prose',
+  'scenes[].summary': 'content-prose',
+  'scenes[].location': 'content-prose',
+  'scenes[].conflict': 'content-prose',
+  'scenes[].pace': 'canonical',
+  'scenes[].characterIds': 'canonical',
+  'scenes[].estimatedWords': 'canonical',
+  'cognitionReferences[].characterId': 'canonical',
+  'cognitionReferences[].knowledgeKey': 'canonical',
+  'cognitionReferences[].quote': 'source-preserved',
+  'canonClaims[].factId': 'canonical',
+  'canonClaims[].proposedValue': 'canonical',
+  'canonClaims[].quote': 'source-preserved',
 }
 
 function parseObject(raw: string): Record<string, unknown> | null {
@@ -465,21 +560,13 @@ export function createOutlineWorkshopNode(input: {
   qualityGate?: (output: string) => GenerationGateResult
 }): GenerationNode<OutlineWorkshopNodeInput, string> {
   const { stage, projectId, chapterIdentity, ai, qualityGate } = input
-  const run = (messages: ChatMessage[]) => {
-    if (stage === 'scan') {
-      return ai.start(messages, undefined, { category: 'outline.workshop.scan', projectId })
-    }
-    if (stage === 'motivation') {
-      return ai.start(messages, undefined, { category: 'outline.workshop.motivation', projectId })
-    }
-    if (stage === 'collision') {
-      return ai.start(messages, undefined, { category: 'outline.workshop.collision', projectId })
-    }
-    if (stage === 'quality') {
-      return ai.start(messages, undefined, { category: 'review.outline-workshop', projectId, outputKind: 'functional-structured' })
-    }
-    return ai.start(messages, undefined, { category: 'outline.workshop.scenes', projectId, outputKind: 'mixed' })
-  }
+  // fix-7 · 五阶段 category + outputKind 全部显式声明（见 OUTLINE_WORKSHOP_STAGE_OUTPUT_KINDS），
+  // client gate 不再依赖过渡期分类推导。
+  const run = (messages: ChatMessage[]) => ai.start(messages, undefined, {
+    category: OUTLINE_WORKSHOP_STAGE_CATEGORIES[stage],
+    projectId,
+    outputKind: OUTLINE_WORKSHOP_STAGE_OUTPUT_KINDS[stage],
+  })
   return {
     id: `outline.workshop.${stage}:${chapterIdentity}`,
     kind: `outline.workshop.${stage}`,

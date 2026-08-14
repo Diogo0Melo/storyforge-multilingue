@@ -80,7 +80,8 @@ export default function CreativeRulesPanel({ project }: Props) {
       worldview?.summary || worldview?.worldOrigin?.slice(0, 200) || '',
       storyCore?.theme || storyCore?.centralConflict || '',
     )
-    ai.start(messages, undefined, { category: 'rules.generate', projectId: project.id! })
+    // fix-5a：读者面向的创作规则散文 → creative（gate 注入项目 resolved contentLanguage）
+    ai.start(messages, undefined, { category: 'rules.generate', projectId: project.id!, outputKind: 'creative' })
   }
 
   const acceptAi = async (text: string) => {

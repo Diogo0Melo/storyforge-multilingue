@@ -138,7 +138,7 @@ describe('AUDIT-6 · 历史双 agent controller', () => {
       manualSourceText: '【历史总述】王朝三百年\n【纪年体系】星历',
     })
     expect(consultAI.setOperation).toHaveBeenCalledWith('event:7')
-    expect(consultAI.start.mock.calls[0][2]).toEqual({ category: 'history.consult', projectId: 1 })
+    expect(consultAI.start.mock.calls[0][2]).toEqual({ category: 'history.consult', projectId: 1, outputKind: 'functional-prose' })
     expect(consultAI.start.mock.calls[0][0].map(message => message.content).join('\n')).toContain('【世界观】默认')
     expect(controller.consultPreparing).toBe(false)
   })

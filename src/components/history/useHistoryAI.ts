@@ -116,7 +116,9 @@ export function useHistoryAI({
       )
       const messages = buildHistoryAIMessages({ mode, target, worldContext: assembled.text, template })
       if (mode === 'consult') {
-        await ai.start(messages, undefined, { category: 'history.consult', projectId })
+        // WS-3B Phase 2（fix-5b）：考据咨询是面向作者的分析散文（UI 语言），持久化史料/上下文按输入原样保留
+        // → 显式声明 functional-prose；storm 分支保持 creative 不变。
+        await ai.start(messages, undefined, { category: 'history.consult', projectId, outputKind: 'functional-prose' })
       } else {
         await ai.start(messages, undefined, { category: 'history.storm', projectId, outputKind: 'creative' })
       }

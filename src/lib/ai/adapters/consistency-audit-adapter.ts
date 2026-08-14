@@ -1,14 +1,43 @@
 import type { ChatMessage } from '../../types'
 
 export type ConsistencyAuditMode = 'fast' | 'deep'
-export type ConsistencySeverity = 'hard' | 'risk' | 'unknown'
 
+/**
+ * 严重度规范闭集（canonical enum，locale 无关的机器值，禁止本地化或改名）。
+ * parser 只接受这三个值；未知值一律降级为 unknown。
+ */
+export const CONSISTENCY_SEVERITIES = ['hard', 'risk', 'unknown'] as const
+export type ConsistencySeverity = typeof CONSISTENCY_SEVERITIES[number]
+
+/**
+ * 证据来源类型规范闭集（canonical enum，locale 无关的机器值，禁止本地化或改名）。
+ */
+export const CONSISTENCY_EVIDENCE_SOURCE_TYPES = ['canon', 'observation', 'chapter', 'summary'] as const
+export type ConsistencyEvidenceSourceType = typeof CONSISTENCY_EVIDENCE_SOURCE_TYPES[number]
+
+/**
+ * 字段契约（结构化信封不是语言中立的，每个字段分类明确）：
+ * - category：源保留展示标签（模型写作的语义分类，展示值而非机器枚举）。
+ *   parser 原样保留、不重映射、不翻译；缺失/空白归一为空串，由渲染层给本地化兜底
+ *   标签（见 ReviewPanel / R-I18N1）。
+ * - severity：规范闭集枚举（CONSISTENCY_SEVERITIES）；hard 缺证据时降级 unknown。
+ * - quote / evidence[].quote：源保留逐字引文——必须逐字出现在待审正文/证据上下文
+ *   中，否则整条 finding 被拒。禁止翻译或改写源引文来"修复"校验。
+ * - evidence[].sourceType / evidence[].sourceId：规范契约字段，指向证据上下文中的
+ *   来源。sourceType 必须逐字命中 CONSISTENCY_EVIDENCE_SOURCE_TYPES；sourceId 必须
+ *   是非负安全整数（Number.isSafeInteger），字符串形式仅接受纯十进制数字
+ *   （/^[0-9]+$/），拒绝 hex（0x…）、指数（1e3）、空白、符号等非十进制写法。
+ *   非法值按 fail-closed 丢弃该证据条目（不静默改写为 observation/0）；
+ *   证据被丢弃后 hard 自动降级 unknown（见 severity 规则）。
+ * - reason / suggestion：作者面向的 UI 散文，原样渲染（语言由输出意图决定，
+ *   parser 不做事后翻译）。
+ */
 export interface ConsistencyFinding {
   category: string
   severity: ConsistencySeverity
   quote: string
   evidence: Array<{
-    sourceType: 'canon' | 'observation' | 'chapter' | 'summary'
+    sourceType: ConsistencyEvidenceSourceType
     sourceId: number
     quote: string
   }>
@@ -56,6 +85,14 @@ export function buildConsistencyAuditPrompt(args: {
   ]
 }
 
+/**
+ * 解析一致性审计 JSON。
+ *
+ * 恢复策略（有意为之）：对畸形/截断输出 **fail-closed，不做 JSON 修复**。
+ * 截断的信封即使内部已含完整 finding，也一律返回 null（调用方按解析失败处理），
+ * 保证半截无效输出不会泄漏进审计结果。字段级 fail-closed 见 ConsistencyFinding
+ * 字段契约（quote 失配拒整条 finding；evidence 的 sourceType/sourceId 非法拒该证据）。
+ */
 export function parseConsistencyAuditResult(args: {
   raw: string
   mode: ConsistencyAuditMode
@@ -79,17 +116,32 @@ export function parseConsistencyAuditResult(args: {
             const value = entry as Record<string, unknown>
             const evidenceQuote = String(value.quote ?? '').trim()
             if (!evidenceQuote || !args.evidenceContext.includes(evidenceQuote)) return []
-            const sourceType = ['canon', 'observation', 'chapter', 'summary'].includes(String(value.sourceType))
-              ? String(value.sourceType) as ConsistencyFinding['evidence'][number]['sourceType']
-              : 'observation'
+            // sourceType 是规范闭集字段：非法值拒绝该证据，不静默改写为 observation
+            const sourceTypeRaw = String(value.sourceType)
+            if (!(CONSISTENCY_EVIDENCE_SOURCE_TYPES as readonly string[]).includes(sourceTypeRaw)) return []
+            // sourceId 是规范契约字段：必须为非负安全整数，且字符串形式必须是
+            // 纯十进制数字（拒绝 0x…、1e3、前导/嵌入空白等非十进制写法）。
+            // 缺失/非法一律拒绝该证据，不静默归零
+            const sourceIdRaw = value.sourceId
+            let sourceId: number
+            if (typeof sourceIdRaw === 'number') {
+              sourceId = sourceIdRaw
+            } else if (typeof sourceIdRaw === 'string' && /^[0-9]+$/.test(sourceIdRaw)) {
+              // 纯十进制数字（无 hex/指数/空白/符号），安全转为 number
+              sourceId = Number(sourceIdRaw)
+            } else {
+              sourceId = NaN
+            }
+            if (!Number.isSafeInteger(sourceId) || sourceId < 0) return []
             return [{
-              sourceType,
-              sourceId: Number.isFinite(Number(value.sourceId)) ? Number(value.sourceId) : 0,
+              sourceType: sourceTypeRaw as ConsistencyEvidenceSourceType,
+              sourceId,
               quote: evidenceQuote,
             }]
           })
         : []
-      const requested = ['hard', 'risk', 'unknown'].includes(String(item.severity))
+      // 严重度走规范闭集；未知/缺失值降级为 unknown，不接受任意字符串
+      const requested = (CONSISTENCY_SEVERITIES as readonly string[]).includes(String(item.severity))
         ? String(item.severity) as ConsistencySeverity
         : 'unknown'
       const severity: ConsistencySeverity = requested === 'hard' && evidence.length === 0 ? 'unknown' : requested

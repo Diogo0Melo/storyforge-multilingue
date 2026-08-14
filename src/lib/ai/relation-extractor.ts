@@ -10,7 +10,29 @@ import { usePromptStore } from '../../stores/prompt'
 import { renderPrompt } from './prompt-engine'
 import { characterAxesLabel } from '../character/character-axes'
 
-/** AI 返回的原始关系条目 */
+/**
+ * 关系类型规范闭集（canonical enum）。
+ *
+ * 值必须与持久化枚举 RelationType 逐字一致：关系类型写入 IndexedDB 后
+ * 永不改名；新增/删除类型必须伴随数据迁移，而不是修改本列表或把旧值
+ * 重映射成新值。列表用 as const satisfies 约束——RelationType 增删成员时
+ * 此处必须同步，否则类型检查失败（编译期覆盖守卫）。
+ */
+export const RELATION_TYPE_CODES = [
+  'family', 'lover', 'friend', 'rival', 'enemy',
+  'master', 'student', 'ally', 'subordinate', 'other',
+] as const satisfies readonly RelationType[]
+
+/**
+ * 字段契约（结构化信封不是语言中立的）：
+ * - type：规范闭集枚举（RELATION_TYPE_CODES），parser 拒绝闭集外的值，
+ *   绝不把本地化标签（如 "朋友"/"friend 的译文"）当作类型解析，也绝不
+ *   重命名已持久化的类型。
+ * - char1 / char2：源保留文本——必须使用原文中出现的角色名，供后续
+ *   名字匹配；禁止翻译或归一化改写。
+ * - label / description：作者面向 prose，按源语言原样保留（仅 trim），
+ *   由 UI 直接展示，parser 不做任何事后翻译。
+ */
 export interface ExtractedRelation {
   char1: string
   char2: string
@@ -86,7 +108,12 @@ export async function buildRelationExtractPrompt(
 }
 
 /**
- * 解析 AI 输出的 JSON 关系数组
+ * 解析 AI 输出的 JSON 关系数组。
+ *
+ * 恢复策略（有意为之）：对畸形/截断输出 **fail-closed，不做 JSON 修复**。
+ * 截断数组（无论尾部是否残留 ']'）JSON.parse 必然失败 → 返回空数组，
+ * 保证半截/无效条目不会泄漏进预览或写入。字段级闭集约束见 ExtractedRelation
+ * 字段契约（type 必须逐字命中 RELATION_TYPE_CODES）。
  */
 export function parseRelationOutput(output: string): ExtractedRelation[] {
   // 尝试从输出中提取 JSON 数组
@@ -106,21 +133,19 @@ export function parseRelationOutput(output: string): ExtractedRelation[] {
     const parsed = JSON.parse(arrayMatch[0])
     if (!Array.isArray(parsed)) return []
 
-    const VALID_TYPES = new Set<string>([
-      'family', 'lover', 'friend', 'rival', 'enemy',
-      'master', 'student', 'ally', 'subordinate', 'other',
-    ])
+    // 类型必须逐字命中规范闭集；未知/本地化类型一律拒绝，不做静默改写
+    const VALID_TYPES: ReadonlySet<string> = new Set(RELATION_TYPE_CODES)
 
     return parsed
       .filter((item: Record<string, unknown>) =>
         item.char1 && item.char2 && item.type && VALID_TYPES.has(String(item.type))
       )
       .map((item: Record<string, unknown>) => ({
-        char1: String(item.char1),
-        char2: String(item.char2),
+        char1: String(item.char1).trim(),
+        char2: String(item.char2).trim(),
         type: String(item.type) as RelationType,
-        label: String(item.label || ''),
-        description: String(item.description || ''),
+        label: String(item.label ?? '').trim(),
+        description: String(item.description ?? '').trim(),
         bidirectional: item.bidirectional !== false,
       }))
   } catch {

@@ -131,7 +131,9 @@ export default function GeographyPanel({ project }: Props) {
     setSvgContent('')
     setView('aimap')
     const messages = buildConceptMapPrompt(overview, locations)
-    const result = await ai.start(messages, undefined, { category: 'geography.concept-map', projectId: project.id! })
+    // WS-3B Phase 2（fix-5b）：概念地图是混合信封——SVG 结构/坐标/地点 ID 为协议字段必须原样保留，
+    // 图中面向作者的地名与说明文字按项目 contentLanguage → 显式声明 mixed。
+    const result = await ai.start(messages, undefined, { category: 'geography.concept-map', projectId: project.id!, outputKind: 'mixed' })
     // 提取 SVG 代码（去掉可能的 markdown code block）
     const svg = result
       .replace(/^```(?:svg|xml)?\n?/i, '')

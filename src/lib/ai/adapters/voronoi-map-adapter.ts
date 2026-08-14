@@ -104,6 +104,7 @@ export function buildVoronoiMapPrompt(
 **严格要求**：
 1. 返回**纯 JSON**，不要用 markdown 包裹，不要添加解释文字
 2. JSON 必须能被 JSON.parse() 直接解析
+3. **字段语言契约（mixed 输出意图）**：JSON 键名、全部枚举值（heightmapTemplate / namingStyle / kind / scaleTier / direction / distanceTier / distanceUnit / source）、数值参数与 seed 是协议字段，必须按本文档原样输出，禁止翻译或改写；evidenceQuote 必须保持用户资料中的逐字原文。只有 mapName 和你补全的新名字属于作者面向文本，遵循输出语言约束；用户已给定的名字仍按铁律原样保留。
 
 **参数说明**：
 {

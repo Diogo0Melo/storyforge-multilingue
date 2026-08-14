@@ -129,7 +129,9 @@ export default function StyleLearningPanel({ project }: Props) {
         revisionPairs: formattedRevisionPairs,
         calibrationFeedback: formattedCalibrationFeedback,
       })
-      const out = await chat(messages, aiConfig, { category: 'style.learn', projectId: project.id! })
+      // WS-3B Phase 2（fix-5b）：文风画像是面向作者的 UI 分析散文（跟随 UI 语言），
+      // 章节样本/改稿对照作为输入源文本原样保留 → 显式声明 functional-prose。
+      const out = await chat(messages, aiConfig, { category: 'style.learn', projectId: project.id!, outputKind: 'functional-prose' })
       const text = out.trim()
       if (!text) { setError(t('learning.errorEmptyResponse')); return }
       await saveProfile(project.id!, {

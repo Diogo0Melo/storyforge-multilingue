@@ -80,7 +80,8 @@ export default function SceneVerifyPanel({ project }: Props) {
         sceneEra: sceneEra || undefined,
         sceneLocation: sceneLocation || undefined,
       })
-      await ai.start(messages, undefined, { category: 'scene.verify', projectId: project.id! })
+      // fix-5a：UI 展示的审校/验证散文 → functional-prose（gate 注入当前 UI 语言）
+      await ai.start(messages, undefined, { category: 'scene.verify', projectId: project.id!, outputKind: 'functional-prose' })
     } finally {
       setBuilding(false)
     }

@@ -160,7 +160,9 @@ export default function CharacterPanel({ project, view = 'generator' }: Props) {
       } : undefined,
     }
     const messages = buildCharacterPrompt(project.name, project.genre ?? '', worldCtx, existing, enrichedHint, opts)
-    ai.start(messages, undefined, { category: 'character.generate', projectId: project.id! })
+    // fix-5a：结构化角色信封内含作者面向的角色散文 → mixed（gate 注入项目 resolved contentLanguage）。
+    // JSON/schema 标识符保持规范形；解析器不做后置翻译。
+    ai.start(messages, undefined, { category: 'character.generate', projectId: project.id!, outputKind: 'mixed' })
   }
 
   return (

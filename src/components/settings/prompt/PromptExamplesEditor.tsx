@@ -97,10 +97,13 @@ ${template.systemPrompt}
 4. 不要包含说明文字，只输出反例内容`
 
     try {
+      // fix-5a 显式例外：示例是模板受控/源保留的提示词数据，不是 StoryForge 内容散文
+      // → language-neutral（gate 不注入文本语言约束）。===EXAMPLE=== 分隔协议与规范示例
+      // 元数据（id/text/source/rating/createdAt）保持稳定；解析不做后置翻译。
       const result = await ai.start([
         { role: 'system', content: '你是一位提示词工程师助手，擅长为提示词模板生成示例数据。' },
         { role: 'user', content: metaPrompt },
-      ], undefined, { category: 'prompt.examples' })
+      ], undefined, { category: 'prompt.examples', outputKind: 'language-neutral' })
       const parts = result.split(/===EXAMPLE===/i).map(s => s.trim()).filter(Boolean)
       const newExamples: PromptExample[] = parts.slice(0, 3).map(t => ({
         id: `ex-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
