@@ -328,7 +328,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
               className="inline-flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-lg text-sm disabled:opacity-40"
             >
               {plansLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
-              {t('characterDriven.newPlan')}
+              {t('characterDriven.createPlan')}
             </button>
           </div>
         </div>
@@ -369,7 +369,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
           ))}
         </select>
         <button onClick={handleCreatePlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-accent disabled:opacity-40">
-          <Plus className="w-3.5 h-3.5" />{t('characterDriven.newPlan')}
+          <Plus className="w-3.5 h-3.5" />{t('characterDriven.createPlan')}
         </button>
         <button onClick={handleCopyPlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-accent disabled:opacity-40">
           <Copy className="w-3.5 h-3.5" />{t('characterDriven.copyAsNewVersion')}

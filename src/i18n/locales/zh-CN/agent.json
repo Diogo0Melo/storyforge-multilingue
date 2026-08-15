@@ -180,7 +180,7 @@
     "outlineMissingMode": "大纲候选缺少写回模式，请重新生成。",
     "proseMissingTarget": "正文候选缺少目标章节或写回模式，请重新生成。",
     "adoptSuccessWorldOrigin": "世界来源已写入项目。",
-    "adoptSuccessCharacter": "角色\"{{name}}\"已加入项目。",
+    "adoptSuccessCharacter": "角色“{{name}}”已加入项目。",
     "adoptSuccessInspirationSingle": "已保存新的单世界灵感版本。",
     "adoptSuccessInspirationMulti": "已保存新的多世界灵感版本。",
     "adoptSuccessVolumeOutline": "卷级大纲已写入项目。",

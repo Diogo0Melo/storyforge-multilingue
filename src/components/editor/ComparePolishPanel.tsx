@@ -125,7 +125,7 @@ export default function ComparePolishPanel({
     <section aria-label={t('comparePolish.ariaLabel')} className="space-y-3">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border pb-3">
         <div>
-          <h3 className="text-sm font-semibold text-text-primary">{t('comparePolish.headerTitle', { chapter: chapterTitle })}</h3>
+          <h3 className="text-sm font-semibold text-text-primary">{t('comparePolish.headerTitle', { title: chapterTitle })}</h3>
           <p className="mt-1 text-xs text-text-muted">{t('comparePolish.headerSubtitle')}</p>
         </div>
         <div className="flex items-center gap-2">

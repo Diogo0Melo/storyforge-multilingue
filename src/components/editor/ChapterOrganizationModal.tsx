@@ -177,7 +177,7 @@ export default function ChapterOrganizationModal({
 
           <div className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-bg-base p-3 text-xs text-text-secondary sm:grid-cols-3">
             <span>{t('chapterOrganization.budgetTokens', { used: candidate.budget.usedTokens.toLocaleString(), max: candidate.budget.maxTokens.toLocaleString() })}</span>
-            <span>{t('chapterOrganization.budgetCalls', { calls: candidate.budget.calls, max: candidate.budget.maxCalls })}</span>
+            <span>{t('chapterOrganization.budgetCalls', { calls: candidate.budget.calls, maxCalls: candidate.budget.maxCalls })}</span>
             <span>{t('chapterOrganization.sourceHashPrefix')} {candidate.sourceTextHash.slice(0, 12)}…</span>
           </div>
 
