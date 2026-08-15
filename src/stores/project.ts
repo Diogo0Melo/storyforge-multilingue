@@ -100,6 +100,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       operation: t('errors:project.deleteOperation'),
       projectId: id,
       details: t('errors:project.deleteDetails'),
+      confirmLabel: t('errors-lib:safety.dangerOperationContinue'),
     })
     if (!proceed) return  // 用户取消
 
