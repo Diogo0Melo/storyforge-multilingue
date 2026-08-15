@@ -323,6 +323,7 @@ export default function ChapterOutlineWorkshop({
   const activeIndex = OUTLINE_WORKSHOP_STAGES.indexOf(activeStage)
   const stageAttempts = attempts[activeStage] ?? []
   const displayedOutput = running ? ai.output : draft
+  const activeStageTitle = t(OUTLINE_WORKSHOP_STAGE_I18N_KEYS[activeStage].titleKey, { defaultValue: OUTLINE_WORKSHOP_STAGE_META[activeStage].title })
 
   return (
     <div className="mb-4 rounded-xl border border-accent/30 bg-bg-surface p-4 shadow-theme-sm" data-testid="chapter-outline-workshop">
@@ -418,7 +419,7 @@ export default function ChapterOutlineWorkshop({
               {(displayedOutput || running) ? (
                 <div className="space-y-2">
                   <textarea
-                    aria-label={`${t(OUTLINE_WORKSHOP_STAGE_I18N_KEYS[activeStage].titleKey, { defaultValue: OUTLINE_WORKSHOP_STAGE_META[activeStage].title })} ${t('workshop.productAria')}`}
+                    aria-label={`${activeStageTitle} ${t('workshop.productAria', { stage: activeStageTitle })}`}
                     value={displayedOutput}
                     disabled={running}
                     onChange={event => {

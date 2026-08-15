@@ -8,8 +8,9 @@ import {
 import type { Character, CharacterRelation } from '../../src/lib/types'
 import zhRelations from '../../src/i18n/locales/zh-CN/relations.json'
 
-const panelSource = readFileSync('src/components/relations/CharacterRelationPanel.tsx', 'utf8')
-const graphSource = readFileSync('src/components/relations/RelationGraph.tsx', 'utf8')
+// 统一换行符,保证多行断言在 CRLF/LF 工作区下同样成立
+const panelSource = readFileSync('src/components/relations/CharacterRelationPanel.tsx', 'utf8').replace(/\r\n/g, '\n')
+const graphSource = readFileSync('src/components/relations/RelationGraph.tsx', 'utf8').replace(/\r\n/g, '\n')
 
 const now = 1_780_000_000_000
 

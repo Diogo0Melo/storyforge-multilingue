@@ -185,7 +185,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ## 四、AI 调用点（消耗统计 category · 在哪触发)
 
-共 62 个 category。
+共 67 个 category。
 未分类调用: 0 个。动态 category 调用: 10 个。
 
 | category | 触发文件 |
@@ -200,7 +200,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `chapter.continuity` | `src/lib/node-authoring/domain-execution.ts:435`<br/>`src/lib/node-authoring/domain-execution.ts:501` |
 | `chapter.deai` | `src/components/editor/ChapterEditor.tsx:759` |
 | `chapter.expand` | `src/components/editor/ChapterEditor.tsx:739` |
-| `chapter.memory` | `src/components/editor/ChapterEditor.tsx:476` |
+| `chapter.memory` | `src/components/editor/ChapterEditor.tsx:476`<br/>`src/components/editor/ChapterEditor.tsx:936` |
 | `chapter.organize` | `src/components/editor/ChapterEditor.tsx:843` |
 | `chapter.polish` | `src/components/editor/ChapterEditor.tsx:731` |
 | `chapter.toolbar.check` | `src/components/editor/FloatingToolbar.tsx:122` |
@@ -214,6 +214,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `codex.extract` | `src/components/codex/CodexPanel.tsx:231` |
 | `cultivation.progress` | `src/components/cultivation/CultivationProgressPanel.tsx:146` |
 | `detail.chapter-planning` | `src/lib/node-authoring/domain-execution.ts:293` |
+| `detail.enhance` | `src/components/outline/DetailedOutlinePanel.tsx:183` |
 | `detail.scene` | `src/components/outline/DetailedOutlinePanel.tsx:156`<br/>`src/components/outline/ScenePanel.tsx:128`<br/>`src/lib/ai/batch-detail-runner.ts:123` |
 | `emotion.beat` | `src/components/editor/EmotionBeatCard.tsx:67` |
 | `foreshadow.structure` | `src/components/foreshadow/ForeshadowPanel.tsx:83` |
@@ -241,6 +242,10 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `rules.generate` | `src/components/rules/CreativeRulesPanel.tsx:84` |
 | `scene.verify` | `src/components/scene/SceneVerifyPanel.tsx:84` |
 | `simulation.chatgame` | `src/components/simulation/ChatGamePanel.tsx:181`<br/>`src/components/simulation/ChatGamePanel.tsx:197` |
+| `simulation.npc-evolution` | `src/components/simulation/SimulationRuntimePanel.tsx:465` |
+| `simulation.ttrpg-encounter` | `src/components/simulation/SimulationRuntimePanel.tsx:534` |
+| `simulation.ttrpg-gm` | `src/components/simulation/SimulationRuntimePanel.tsx:500` |
+| `state.extract` | `src/components/editor/ChapterEditor.tsx:1035` |
 | `story-arc.generate` | `src/components/outline/StoryArcPanel.tsx:87` |
 | `story.generate` | `src/components/worldview/StoryCorePanel.tsx:221` |
 | `story.timeline` | `src/components/timeline/StoryTimelinePanel.tsx:101` |
@@ -268,4 +273,4 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ---
 
-生成时间基准:commit `80fce65`
+生成时间基准:commit `04815c6`

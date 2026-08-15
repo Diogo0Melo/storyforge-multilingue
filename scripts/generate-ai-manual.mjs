@@ -10,6 +10,7 @@
  *   ③ CONTEXT_SOURCES 上下文源       (src/lib/registry/context-sources.ts) — key/label/scope/layer
  *   ④ FIELD_REGISTRY 可写字段        (src/lib/registry/field-registry.ts) — target/field/aliases
  *   ⑤ AI 调用点 category             (src/components, src/lib) — category + 文件位置
+ *      检测走共享扫描器 scripts/ai-call-scanner.mjs(含 xxAI.start 命名空间 receiver)
  *
  * 用 TypeScript AST 解析声明性事实，不执行应用代码/IndexedDB，CI 友好。
  *
@@ -22,6 +23,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
 import ts from 'typescript'
+import { scanAiCallSites } from './ai-call-scanner.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const OUT = path.join(root, 'docs/AI-FUNCTIONS-MANUAL.generated.md')
@@ -178,43 +180,9 @@ function extractAdoptionExtensions() {
 }
 
 // ── ⑤ AI 调用点 category ──
-const AI_META_FORWARDERS = new Set([
-  'src/hooks/useAIStream.ts',
-  'src/lib/import/chat-with-abort.ts',
-  'src/lib/reference-analysis/pipeline.ts',
-])
-
-function findCallRanges(src, callee) {
-  const ranges = []
-  const re = new RegExp(`\\b${callee.replace('.', '\\.')}\\s*\\(`, 'g')
-  let m
-  while ((m = re.exec(src))) {
-    const prefix = src.slice(Math.max(0, m.index - 24), m.index)
-    if (/\bfunction\s*$/.test(prefix) || /\bexport\s+async\s+function\s*$/.test(prefix)) continue
-    let depth = 0
-    let quote = null
-    let escaped = false
-    for (let i = m.index + callee.length; i < src.length; i++) {
-      const ch = src[i]
-      if (quote) {
-        if (escaped) escaped = false
-        else if (ch === '\\') escaped = true
-        else if (ch === quote) quote = null
-        continue
-      }
-      if (ch === '"' || ch === "'" || ch === '`') quote = ch
-      else if (ch === '(') depth++
-      else if (ch === ')') {
-        depth--
-        if (depth === 0) {
-          ranges.push({ start: m.index, end: i + 1, text: src.slice(m.index, i + 1) })
-          break
-        }
-      }
-    }
-  }
-  return ranges
-}
+// 检测规则统一在 scripts/ai-call-scanner.mjs（与 check-architecture ④ 共用）：
+// 覆盖字面量 ai.start/chat/streamChat 与命名空间 receiver（npcAI/ttrpgAI/stateAI…）.start，
+// 并由共享扫描器排除注释/字符串误报、转发器与 client.ts 豁免、按位置去重。
 
 function extractAiCalls() {
   const out = {}
@@ -231,25 +199,16 @@ function extractAiCalls() {
       if (ent.isDirectory()) walk(rel)
       else if (/\.(ts|tsx)$/.test(ent.name)) {
         const src = read(rel)
-        for (const callee of ['ai.start', 'chat', 'streamChat']) {
-          for (const call of findCallRanges(src, callee)) {
-            const lineStart = src.lastIndexOf('\n', call.start) + 1
-            const lineEnd = src.indexOf('\n', call.start)
-            const lineText = src.slice(lineStart, lineEnd < 0 ? src.length : lineEnd).trim()
-            if (lineText.startsWith('//') || lineText.startsWith('*')) continue
-            if (AI_META_FORWARDERS.has(rel) && /\bmeta\b/.test(call.text)) continue
-            if (rel === 'src/lib/ai/client.ts') continue
-            const line = src.slice(0, call.start).split('\n').length
-            const literal = call.text.match(/category:\s*'([a-zA-Z0-9._-]+)'/)
-            if (literal) {
-              ;(out[literal[1]] ??= new Set()).add(`${rel}:${line}`)
-              continue
-            }
-            if (/\bcategory\s*:/.test(call.text)) {
-              dynamic.push(`${rel}:${line} · ${callee}`)
-            } else {
-              uncategorized.push(`${rel}:${line} · ${callee}`)
-            }
+        for (const call of scanAiCallSites(src, rel)) {
+          const literal = call.text.match(/category:\s*'([a-zA-Z0-9._-]+)'/)
+          if (literal) {
+            ;(out[literal[1]] ??= new Set()).add(`${rel}:${call.line}`)
+            continue
+          }
+          if (/\bcategory\s*:/.test(call.text)) {
+            dynamic.push(`${rel}:${call.line} · ${call.callee}`)
+          } else {
+            uncategorized.push(`${rel}:${call.line} · ${call.callee}`)
           }
         }
       }

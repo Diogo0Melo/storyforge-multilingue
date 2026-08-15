@@ -81,7 +81,7 @@ describe('G1 normalizeContentLanguage', () => {
 
 describe('G1 getSupportedUiLang', () => {
   it('returns a valid SupportedLang for current i18n.language', () => {
-    const lang = getSupportedUiLang()
+    const lang: SupportedLang = getSupportedUiLang()
     expect(SUPPORTED_LANGS.some(l => l.code === lang)).toBe(true)
   })
 
@@ -96,7 +96,6 @@ describe('G1 set-sync: SUPPORTED_LANGS / languageName keys / Project type', () =
     const locales = ['pt-BR', 'en', 'zh-CN'] as const
     for (const { code } of SUPPORTED_LANGS) {
       for (const lng of locales) {
-        const key = `${lng}:common.languageName.${code}`
         // Use i18n.t with lng option to check each locale has the key
         const val = i18n.t(`common:languageName.${code}`, { lng })
         expect(val, `missing common:languageName.${code} in ${lng}`).not.toBe(`common:languageName.${code}`)

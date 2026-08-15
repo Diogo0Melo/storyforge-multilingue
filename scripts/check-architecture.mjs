@@ -10,7 +10,7 @@
  *   ① stores 里不得手写 db.transaction([...大表清单...])(必须走 lifecycle 派生)
  *   ② components/hooks 里不得直接 db.xxx.add/update/delete(必须走 adopt/store)
  *   ③ components/hooks 里不得手挑 buildWorldContext/buildCharacterContext(必须走 assembleContext)
- *   ④ 消耗统计:ai.start/chat 调用应带 category meta(允许豁免列表)
+ *   ④ 消耗统计:AI receiver 调用(ai.start / xxAI.start / chat / streamChat)应带 category meta(允许豁免列表)
  *   ⑤ PROJECT_TABLES exportable 表必须接入 JSON 导出/导入
  *   ⑥ components/hooks/pages 不得使用浏览器原生 alert/confirm/prompt
  *   ⑦ 正式 UI 不得出现"正在开发/即将推出/敬请期待"式死入口文案
@@ -21,6 +21,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import ts from 'typescript'
+import { scanAiCallSites } from './ai-call-scanner.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -114,61 +115,15 @@ for (const dir of UI_DIRS) {
 }
 
 // ── ④ AI 调用必须带 category meta ──
-const AI_META_FORWARDERS = new Set([
-  'src/hooks/useAIStream.ts',
-  'src/lib/import/chat-with-abort.ts',
-  'src/lib/reference-analysis/pipeline.ts',
-])
-
-function findCallRanges(src, callee) {
-  const ranges = []
-  const re = new RegExp(`\\b${callee.replace('.', '\\.')}\\s*\\(`, 'g')
-  let m
-  while ((m = re.exec(src))) {
-    const prefix = src.slice(Math.max(0, m.index - 24), m.index)
-    if (/\bfunction\s*$/.test(prefix) || /\bexport\s+async\s+function\s*$/.test(prefix)) continue
-    let depth = 0
-    let quote = null
-    let escaped = false
-    for (let i = m.index + callee.length; i < src.length; i++) {
-      const ch = src[i]
-      if (quote) {
-        if (escaped) escaped = false
-        else if (ch === '\\') escaped = true
-        else if (ch === quote) quote = null
-        continue
-      }
-      if (ch === '"' || ch === "'" || ch === '`') {
-        quote = ch
-      } else if (ch === '(') {
-        depth++
-      } else if (ch === ')') {
-        depth--
-        if (depth === 0) {
-          ranges.push({ start: m.index, end: i + 1, text: src.slice(m.index, i + 1) })
-          break
-        }
-      }
-    }
-  }
-  return ranges
-}
-
+// 检测规则(字面量 ai.start/chat/streamChat + 命名空间 xxAI.start、注释/字符串误报防御、
+// meta 转发器与 client.ts 豁免、按位置去重)统一在 scripts/ai-call-scanner.mjs,
+// 与 generate-ai-manual.mjs 共用同一事实源。
 for (const dir of ['src/components', 'src/hooks', 'src/lib']) {
   for (const file of walk(dir)) {
     const src = read(file)
-    for (const callee of ['ai.start', 'chat', 'streamChat']) {
-      for (const call of findCallRanges(src, callee)) {
-        const lineStart = src.lastIndexOf('\n', call.start) + 1
-        const lineEnd = src.indexOf('\n', call.start)
-        const lineText = src.slice(lineStart, lineEnd < 0 ? src.length : lineEnd).trim()
-        if (lineText.startsWith('//') || lineText.startsWith('*')) continue
-        if (AI_META_FORWARDERS.has(file) && /\bmeta\b/.test(call.text)) continue
-        if (file === 'src/lib/ai/client.ts') continue
-        if (!/\bcategory\s*:/.test(call.text)) {
-          const line = src.slice(0, call.start).split('\n').length
-          violations.push(`[④AI分类] ${file}:${line}: \`${callee}(...)\` 缺少 category meta,消耗统计与 AI manual 会漏记`)
-        }
+    for (const call of scanAiCallSites(src, file)) {
+      if (!/\bcategory\s*:/.test(call.text)) {
+        violations.push(`[④AI分类] ${file}:${call.line}: \`${call.callee}(...)\` 缺少 category meta,消耗统计与 AI manual 会漏记`)
       }
     }
   }
@@ -355,6 +310,19 @@ if (!selfTestWrites.includes('references.update') || !selfTestWrites.includes('r
 }
 if (!findLegacyContextCalls(selfTestSource).some(call => call.name === 'buildCodexContext')) {
   violations.push('[⑨守卫自测] context builder AST 扫描器未识别基准违规')
+}
+
+// ④ 守卫自测:receiver 扫描器必须命中命名空间 receiver,且不对注释/字符串/同名声明误报
+const aiCallSelfTestSource = [
+  "const npcAI = useAIStream('self-test')",
+  '// npcAI.start(commentedOut)',
+  "const note = 'ttrpgAI.start(insideString)'",
+  'export async function chat(declaredNotCalled) { return declaredNotCalled }',
+  "npcAI.start(messages, undefined, { category: 'self.test' })",
+].join('\n')
+const aiCallSelfTestHits = scanAiCallSites(aiCallSelfTestSource, 'src/self-test-ai-receiver.ts')
+if (aiCallSelfTestHits.length !== 1 || aiCallSelfTestHits[0].callee !== 'npcAI.start') {
+  violations.push('[④守卫自测] AI receiver 扫描器未命中命名空间 receiver,或对注释/字符串/函数声明误报')
 }
 
 // ── 报告 ──

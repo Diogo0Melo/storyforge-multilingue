@@ -11,6 +11,8 @@ export default tseslint.config(
     ignores: [
       'dist', 'dev-dist', 'coverage', 'node_modules',
       '**/*.config.{js,ts,mjs,cjs}', 'scripts/**', 'public/**',
+      // 一次性 i18n 审计产物(脚本/截图/日志),不属于应用代码,不纳入 lint
+      '.i18n-audit/**',
     ],
   },
   js.configs.recommended,
