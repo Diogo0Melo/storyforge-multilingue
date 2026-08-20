@@ -3,18 +3,26 @@ import type { ChatMessage } from '../types'
 
 export const AGENT_TEAM_BUDGET_PROFILES = ['economy', 'balanced', 'expanded'] as const
 export type AgentTeamBudgetProfile = typeof AGENT_TEAM_BUDGET_PROFILES[number]
+export const AGENT_TEAM_RETRY_CAUSES = ['generationGate', 'canon', 'languageShadow'] as const
+export type AgentTeamRetryCause = typeof AGENT_TEAM_RETRY_CAUSES[number]
 
 export interface AgentTeamBudgetPolicy {
   profile: AgentTeamBudgetProfile
   maxTokens: number
   maxCalls: number
+  maxSemanticRetries: number
+  /** Compatibility alias retained for existing Canon evidence and callers. */
   maxCanonRetries: number
 }
 
 export interface AgentTeamBudgetEvidence extends AgentTeamBudgetPolicy {
   usedTokens: number
   calls: number
+  semanticRetries: number
+  retryCauses: AgentTeamRetryCause[]
+  /** Compatibility aliases retained for regressions and persisted evidence. */
   canonRetries: number
+  causes: AgentTeamRetryCause[]
 }
 
 export interface AgentTeamCallReservation {
@@ -24,9 +32,9 @@ export interface AgentTeamCallReservation {
 }
 
 const POLICIES: Record<AgentTeamBudgetProfile, AgentTeamBudgetPolicy> = {
-  economy: { profile: 'economy', maxTokens: 80_000, maxCalls: 7, maxCanonRetries: 1 },
-  balanced: { profile: 'balanced', maxTokens: 160_000, maxCalls: 7, maxCanonRetries: 1 },
-  expanded: { profile: 'expanded', maxTokens: 240_000, maxCalls: 7, maxCanonRetries: 1 },
+  economy: { profile: 'economy', maxTokens: 80_000, maxCalls: 7, maxSemanticRetries: 1, maxCanonRetries: 1 },
+  balanced: { profile: 'balanced', maxTokens: 160_000, maxCalls: 7, maxSemanticRetries: 1, maxCanonRetries: 1 },
+  expanded: { profile: 'expanded', maxTokens: 240_000, maxCalls: 7, maxSemanticRetries: 1, maxCanonRetries: 1 },
 }
 
 export class AgentTeamBudgetExceededError extends Error {
@@ -61,6 +69,8 @@ export class AgentTeamBudgetTracker {
   readonly policy: AgentTeamBudgetPolicy
   private usedTokens = 0
   private calls = 0
+  private semanticRetries = 0
+  private retryCauses: AgentTeamRetryCause[] = []
   private canonRetries = 0
 
   constructor(profile: AgentTeamBudgetProfile) {
@@ -100,14 +110,39 @@ export class AgentTeamBudgetTracker {
     this.usedTokens += reservation.estimatedInputTokens
   }
 
-  claimCanonRetry(issues: readonly { message: string }[]): void {
-    if (this.canonRetries >= this.policy.maxCanonRetries) {
+  claimRetry(causes: readonly AgentTeamRetryCause[]): void {
+    const uniqueCauses = [...new Set(causes)]
+    if (uniqueCauses.length === 0) return
+    if (this.semanticRetries >= this.policy.maxSemanticRetries) {
       throw new AgentTeamBudgetExceededError(
-        `确定性 Canon 校验仍未通过，且本轮 ${this.policy.maxCanonRetries} 次受控打回机会已经用完：`
-        + issues.map(issue => issue.message).join('；'),
+        `本轮 ${this.policy.maxSemanticRetries} 次共享语义打回机会已经用完。`,
       )
     }
-    this.canonRetries += 1
+    this.semanticRetries += 1
+    this.retryCauses.push(...uniqueCauses)
+    // The legacy field counted deterministic gate/canon reworks, so retain
+    // that evidence while language-only retries use the new semantic fields.
+    if (uniqueCauses.includes('generationGate') || uniqueCauses.includes('canon')) {
+      this.canonRetries += 1
+    }
+  }
+
+  claimSemanticRetry(causes: readonly AgentTeamRetryCause[]): void {
+    this.claimRetry(causes)
+  }
+
+  claimCanonRetry(issues: readonly { message: string }[]): void {
+    try {
+      this.claimRetry(['canon'])
+    } catch (error) {
+      if (error instanceof AgentTeamBudgetExceededError) {
+        throw new AgentTeamBudgetExceededError(
+          `确定性 Canon 校验仍未通过，且本轮 ${this.policy.maxCanonRetries} 次受控打回机会已经用完：`
+          + issues.map(issue => issue.message).join('；'),
+        )
+      }
+      throw error
+    }
   }
 
   snapshot(): AgentTeamBudgetEvidence {
@@ -115,7 +150,10 @@ export class AgentTeamBudgetTracker {
       ...this.policy,
       usedTokens: this.usedTokens,
       calls: this.calls,
+      semanticRetries: this.semanticRetries,
+      retryCauses: [...this.retryCauses],
       canonRetries: this.canonRetries,
+      causes: [...this.retryCauses],
     }
   }
 }

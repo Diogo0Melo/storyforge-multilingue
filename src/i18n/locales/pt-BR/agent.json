@@ -30,7 +30,7 @@
     "includedEmpty": "Nenhum",
     "trimmedLine": "Cortados por inteiro: {{items}}",
     "omittedLine": "Sem dados / desativados: {{items}}",
-    "teamBudgetLine": "Orçamento da equipe nesta rodada ≈ {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} chamadas · Retentativas Canon {{retries}}/{{maxRetries}}",
+    "teamBudgetLine": "Orçamento da equipe nesta rodada ≈ {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} chamadas · Retentativas semânticas {{retries}}/{{maxRetries}}",
     "dependsOnWarning": "Adote primeiro as tarefas anteriores: {{ids}}",
     "rejectButton": "Rejeitar",
     "adoptButton": "Adotar"
@@ -51,7 +51,7 @@
     "candidateFallbackLabel": "Candidato",
     "backgroundTasksNotice": "{{summary}} Vou concluir {{count}} tarefas de domínio em segundo plano.",
     "completionCandidates": "Os Agents de domínio em segundo plano concluíram e geraram {{count}} candidatos. Revise, edite e decida se deseja adotá-los.",
-    "completionBudget": "Nesta rodada a equipe usou cerca de {{used}} / {{max}} tokens, {{calls}} chamadas e {{retries}} retentativas controladas do Canon.",
+    "completionBudget": "Nesta rodada a equipe usou cerca de {{used}} / {{max}} tokens, {{calls}} chamadas e {{retries}} retentativas semânticas controladas.",
     "roundFailed": "Esta rodada não foi concluída: {{message}}",
     "candidateRejected": "Candidato rejeitado; nada foi gravado no projeto."
   },

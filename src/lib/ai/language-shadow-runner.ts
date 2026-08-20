@@ -14,6 +14,11 @@ export interface LanguageShadowInput {
 
 export type LanguageShadowObserver = (report: LanguageShadowReport) => void
 
+export interface LanguageShadowRunOptions {
+  /** Keep the report pure when an unchanged in-memory candidate is revalidated. */
+  observe?: boolean
+}
+
 function warnSignal(report: LanguageShadowReport): void {
   console.warn({
     family: report.family,
@@ -42,6 +47,7 @@ function errorReport(input: LanguageShadowInput): LanguageShadowReport {
 export function runLanguageShadow(
   input: LanguageShadowInput,
   onReport?: LanguageShadowObserver,
+  options: LanguageShadowRunOptions = {},
 ): LanguageShadowReport {
   let report: LanguageShadowReport
   try {
@@ -62,7 +68,7 @@ export function runLanguageShadow(
         },
       }
     }
-  } else if (report.status === 'signal') {
+  } else if (options.observe !== false && report.status === 'signal') {
     warnSignal(report)
   }
   return report

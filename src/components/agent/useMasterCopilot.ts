@@ -200,7 +200,7 @@ export function useMasterCopilot(input: {
             used: teamBudget.snapshot().usedTokens.toLocaleString(),
             max: teamBudget.snapshot().maxTokens.toLocaleString(),
             calls: teamBudget.snapshot().calls,
-            retries: teamBudget.snapshot().canonRetries,
+            retries: teamBudget.snapshot().semanticRetries,
           }),
         ].join(' '),
       })

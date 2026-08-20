@@ -7,28 +7,64 @@ import type {
 } from '../generation/generation-node'
 import { runGenerationNode } from '../generation/generation-node'
 import type { ChatMessage } from '../types'
+import type { SupportedLang } from '../../i18n'
+import {
+  validateLanguage,
+  type LanguageShadowPolicy,
+} from '../ai/language-shadow-enforcement'
+import type { SanitizedShadowField, ShadowFamily } from '../ai/language-shadow-validator'
+import type { OutputKind } from '../ai/output-language'
 import {
   AgentTeamBudgetTracker,
   type AgentTeamCallReservation,
+  type AgentTeamRetryCause,
 } from './team-budget'
+
+interface CausedIssue {
+  issue: GenerationGateIssue
+  cause: AgentTeamRetryCause
+}
 
 function mergeIssues(
   gate: GenerationGateResult | null,
-  extra: readonly GenerationGateIssue[],
-): GenerationGateIssue[] {
-  const issues = [...(gate?.issues ?? []), ...extra]
-  return [...new Map(issues.map(issue => [`${issue.code}:${issue.message}`, issue])).values()]
+  canon: readonly GenerationGateIssue[],
+  language: readonly GenerationGateIssue[],
+): CausedIssue[] {
+  const issues: CausedIssue[] = [
+    ...(gate?.issues ?? []).map(issue => ({ issue, cause: 'generationGate' as const })),
+    ...canon.map(issue => ({ issue, cause: 'canon' as const })),
+    ...language.map(issue => ({ issue, cause: 'languageShadow' as const })),
+  ]
+  return [...new Map(issues.map(entry => [`${entry.issue.code}:${entry.issue.message}`, entry])).values()]
 }
 
-function correctionMessage(issues: readonly GenerationGateIssue[]): ChatMessage {
+function correctionMessage(entries: readonly CausedIssue[]): ChatMessage {
+  const grouped = new Map<AgentTeamRetryCause, GenerationGateIssue[]>()
+  entries.forEach(({ issue, cause }) => grouped.set(cause, [...(grouped.get(cause) ?? []), issue]))
+  const hasCanonCompatibilityCause = entries.some(({ cause }) => cause === 'generationGate' || cause === 'canon')
   return {
     role: 'user',
     content: [
-      '【确定性 Canon 校验打回】上一版不会进入候选，也没有写入项目。',
-      ...issues.map(issue => `- ${issue.code}: ${issue.message}`),
-      '只修复这些明确问题，继续遵守原任务、原输出格式和所有已提供的项目事实；不要解释。',
+      `${hasCanonCompatibilityCause ? '【候选完整重试/确定性 Canon 校验打回】' : '【候选完整重试】'}上一版不会进入候选，也没有写入项目。`,
+      '请重新生成完整候选；禁止输出 patch、增量、合并或解释。',
+      ...[...grouped.entries()].map(([cause, issues]) => [
+        `原因：${cause}`,
+        ...issues.map(issue => `- ${issue.code}: ${issue.message}`),
+      ].join('\n')),
+      '继续遵守原任务、原输出格式和所有已提供的项目事实。',
     ].join('\n'),
   }
+}
+
+export interface LanguageShadowValidation<TOutput> {
+  family: ShadowFamily
+  targetLanguage: SupportedLang
+  project?: (output: TOutput) => readonly SanitizedShadowField[]
+  fields?: readonly SanitizedShadowField[]
+  policy?: Partial<Record<ShadowFamily, unknown>> | LanguageShadowPolicy
+  mode?: 'shadow' | 'enforce'
+  outputKind?: OutputKind
+  languagePolicy?: 'project' | 'ui' | 'none'
 }
 
 async function runOnce<TInput, TOutput, TAdoption>(input: {
@@ -39,9 +75,10 @@ async function runOnce<TInput, TOutput, TAdoption>(input: {
   callLabel: string
   maxOutputTokens: number
   validate?: (output: TOutput) => Promise<GenerationGateIssue[]> | GenerationGateIssue[]
+  languageShadow?: LanguageShadowValidation<TOutput>
 }): Promise<{
   result: GenerationNodeRunResult<TOutput, TAdoption>
-  issues: GenerationGateIssue[]
+  issues: CausedIssue[]
 }> {
   let reservation: AgentTeamCallReservation | null = null
   let settled = false
@@ -54,10 +91,31 @@ async function runOnce<TInput, TOutput, TAdoption>(input: {
     const result = await runGenerationNode(input.node, input.prepared, { messages: input.messages })
     input.budget.settleCall(reservation, result.output)
     settled = true
-    const extra = result.gate?.status === 'blocked'
+    const canon = result.gate?.status === 'blocked'
       ? []
       : await input.validate?.(result.output) ?? []
-    return { result, issues: mergeIssues(result.gate, extra) }
+    let language: GenerationGateIssue[] = []
+    if (input.languageShadow) {
+      const shadow = input.languageShadow
+      let fields: readonly SanitizedShadowField[] = []
+      try {
+        fields = shadow.project ? shadow.project(result.output) : shadow.fields ?? []
+      } catch {
+        // A projection failure must not turn advisory shadow infrastructure into
+        // an operational block or an extra provider call.
+        fields = []
+      }
+      language = validateLanguage({
+        family: shadow.family,
+        targetLanguage: shadow.targetLanguage,
+        fields,
+        policy: shadow.policy,
+        mode: shadow.mode,
+        outputKind: shadow.outputKind,
+        languagePolicy: shadow.languagePolicy,
+      })
+    }
+    return { result, issues: mergeIssues(result.gate, canon, language) }
   } catch (error) {
     if (reservation && !settled) input.budget.settleFailedCall(reservation)
     throw error
@@ -75,6 +133,7 @@ export async function runBudgetedGenerationNode<TInput, TOutput, TAdoption>(inpu
   callLabel: string
   maxOutputTokens: number
   validate?: (output: TOutput) => Promise<GenerationGateIssue[]> | GenerationGateIssue[]
+  languageShadow?: LanguageShadowValidation<TOutput>
 }): Promise<GenerationNodeRunResult<TOutput, TAdoption>> {
   const first = await runOnce({
     ...input,
@@ -82,14 +141,14 @@ export async function runBudgetedGenerationNode<TInput, TOutput, TAdoption>(inpu
   })
   if (first.issues.length === 0) return first.result
 
-  input.budget.claimCanonRetry(first.issues)
+  input.budget.claimRetry(first.issues.map(entry => entry.cause))
   const retry = await runOnce({
     ...input,
-    callLabel: `${input.callLabel}（Canon 打回）`,
+    callLabel: `${input.callLabel}（语义打回）`,
     messages: [...input.prepared.messages, correctionMessage(first.issues)],
   })
   if (retry.issues.length > 0) {
-    throw new Error(`确定性 Canon 校验打回后仍未通过：${retry.issues.map(issue => issue.message).join('；')}`)
+    throw new Error(`完整候选重试后仍未通过：${retry.issues.map(entry => entry.issue.message).join('；')}`)
   }
   return retry.result
 }

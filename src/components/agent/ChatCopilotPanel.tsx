@@ -230,8 +230,10 @@ export default function ChatCopilotPanel({
                   max: candidate.payload.teamBudgetEvidence.maxTokens.toLocaleString(),
                   calls: candidate.payload.teamBudgetEvidence.calls,
                   maxCalls: candidate.payload.teamBudgetEvidence.maxCalls,
-                  retries: candidate.payload.teamBudgetEvidence.canonRetries,
-                  maxRetries: candidate.payload.teamBudgetEvidence.maxCanonRetries,
+                  retries: candidate.payload.teamBudgetEvidence.semanticRetries
+                    ?? candidate.payload.teamBudgetEvidence.canonRetries,
+                  maxRetries: candidate.payload.teamBudgetEvidence.maxSemanticRetries
+                    ?? candidate.payload.teamBudgetEvidence.maxCanonRetries,
                 })}
               </p>
             )}

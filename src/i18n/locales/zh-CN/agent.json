@@ -30,7 +30,7 @@
     "includedEmpty": "无",
     "trimmedLine": "整段裁剪：{{items}}",
     "omittedLine": "无数据/未启用：{{items}}",
-    "teamBudgetLine": "本轮团队预算约 {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} 次调用 · Canon 打回 {{retries}}/{{maxRetries}}",
+    "teamBudgetLine": "本轮团队预算约 {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} 次调用 · 语义重试 {{retries}}/{{maxRetries}}",
     "dependsOnWarning": "采纳前需先采纳上游任务：{{ids}}",
     "rejectButton": "拒绝",
     "adoptButton": "采纳"
@@ -51,7 +51,7 @@
     "candidateFallbackLabel": "候选",
     "backgroundTasksNotice": "{{summary}} 我会在后台完成 {{count}} 个领域任务。",
     "completionCandidates": "后台领域 Agent 已完成，生成了 {{count}} 份候选。请检查、编辑并决定是否采纳。",
-    "completionBudget": "本轮团队约使用 {{used}} / {{max}} tokens，{{calls}} 次调用，Canon 受控打回 {{retries}} 次。",
+    "completionBudget": "本轮团队约使用 {{used}} / {{max}} tokens，{{calls}} 次调用，语义受控重试 {{retries}} 次。",
     "roundFailed": "本轮没有完成：{{message}}",
     "candidateRejected": "候选已拒绝，没有写入项目。"
   },

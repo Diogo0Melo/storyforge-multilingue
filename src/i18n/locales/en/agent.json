@@ -30,7 +30,7 @@
     "includedEmpty": "None",
     "trimmedLine": "Trimmed wholesale: {{items}}",
     "omittedLine": "No data / disabled: {{items}}",
-    "teamBudgetLine": "Team budget this round ≈ {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} calls · Canon retries {{retries}}/{{maxRetries}}",
+    "teamBudgetLine": "Team budget this round ≈ {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} calls · Semantic retries {{retries}}/{{maxRetries}}",
     "dependsOnWarning": "Adopt upstream tasks first: {{ids}}",
     "rejectButton": "Reject",
     "adoptButton": "Adopt"
@@ -51,7 +51,7 @@
     "candidateFallbackLabel": "Candidate",
     "backgroundTasksNotice": "{{summary}} I will complete {{count}} domain tasks in the background.",
     "completionCandidates": "Background domain Agents finished and generated {{count}} candidates. Review, edit, and decide whether to adopt them.",
-    "completionBudget": "This round the team used about {{used}} / {{max}} tokens, {{calls}} calls, and {{retries}} Canon-controlled retries.",
+    "completionBudget": "This round the team used about {{used}} / {{max}} tokens, {{calls}} calls, and {{retries}} semantic-controlled retries.",
     "roundFailed": "This round did not complete: {{message}}",
     "candidateRejected": "Candidate rejected; nothing was written to the project."
   },

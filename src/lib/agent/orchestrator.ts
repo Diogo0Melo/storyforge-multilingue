@@ -27,6 +27,12 @@ import {
 } from '../ai/language-shadow-projections'
 import { runLanguageShadow } from '../ai/language-shadow-runner'
 import {
+  adaptLanguageShadowReportToIssues,
+  DEFAULT_LANGUAGE_SHADOW_POLICY,
+  resolveLanguageShadowPolicy,
+  type LanguageShadowPolicy,
+} from '../ai/language-shadow-enforcement'
+import {
   parseAgentEventPayload,
   type AgentEvent,
   type InspirationResultMode,
@@ -68,6 +74,7 @@ import type {
 import { executeAgentTool } from './tool-registry'
 import { validateDomainCandidateCanon } from './canon-validator'
 import { runBudgetedGenerationNode } from './team-execution'
+import type { LanguageShadowValidation } from './team-execution'
 import {
   AgentTeamBudgetExceededError,
   AgentTeamBudgetTracker,
@@ -127,6 +134,33 @@ function prepareAgentLanguageShadowFields(
   // intentionally reported as unregistered instead of being inferred from
   // candidate property names or types.
   return projectAgentShadowFields([unregisteredAgentShadowField(draft)])
+}
+
+function stringifyAgentOutput(output: unknown): string {
+  if (typeof output === 'string') return output
+  try {
+    return JSON.stringify(output)
+  } catch {
+    return String(output)
+  }
+}
+
+function buildAgentLanguageShadowValidation(
+  agentId: DomainAgentId,
+  targetLanguage: ReturnType<typeof resolveProjectContentLanguage>,
+  policy: LanguageShadowPolicy,
+  mode: InspirationResultMode = 'single',
+): LanguageShadowValidation<unknown> {
+  return {
+    family: 'agents',
+    targetLanguage,
+    policy,
+    project: output => prepareAgentLanguageShadowFields(
+      agentId,
+      stringifyAgentOutput(output),
+      mode,
+    ),
+  }
 }
 
 export interface MasterAgentTask {
@@ -441,6 +475,7 @@ export async function executeMasterAgentPlan(input: {
   plan: MasterAgentPlan
   budget?: AgentTeamBudgetTracker
   signal?: AbortSignal
+  languageShadowPolicy?: Partial<Record<'agents', 'shadow' | 'enforce'>>
   onTask?: (task: MasterAgentTask, status: 'running' | 'completed' | 'failed', error?: string) => void
 }): Promise<ExecutedMasterCandidate[]> {
   const candidates: ExecutedMasterCandidate[] = []
@@ -449,6 +484,17 @@ export async function executeMasterAgentPlan(input: {
   const budget = input.budget ?? new AgentTeamBudgetTracker(
     useAIConfigStore.getState().agentTeamBudgetProfile,
   )
+  const languageShadowPolicy = resolveLanguageShadowPolicy({
+    ...DEFAULT_LANGUAGE_SHADOW_POLICY,
+    ...input.languageShadowPolicy,
+  })
+  let project: Awaited<ReturnType<typeof db.projects.get>> | undefined
+  try {
+    project = await db.projects.get(input.projectId)
+  } catch {
+    // The shadow is advisory and must remain fail-open when the project read is unavailable.
+  }
+  const targetLanguage = resolveProjectContentLanguage(project ?? {}, getSupportedUiLang())
   for (const task of topologicalTasks(input.plan)) {
     if (input.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
     input.onTask?.(task, 'running')
@@ -472,6 +518,11 @@ export async function executeMasterAgentPlan(input: {
           budget,
           callLabel: getT()('agent:orchestrator.callLabelWorldOrigin'),
           maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
+          languageShadow: buildAgentLanguageShadowValidation(
+            task.agentId,
+            targetLanguage,
+            languageShadowPolicy,
+          ),
         })
         const draft = result.output
         candidates.push({
@@ -506,6 +557,11 @@ export async function executeMasterAgentPlan(input: {
           budget,
           callLabel: getT()('agent:orchestrator.callLabelCharacter'),
           maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
+          languageShadow: buildAgentLanguageShadowValidation(
+            task.agentId,
+            targetLanguage,
+            languageShadowPolicy,
+          ),
         })
         const draft = JSON.stringify(result.output, null, 2)
         candidates.push({
@@ -544,6 +600,12 @@ export async function executeMasterAgentPlan(input: {
           budget,
           callLabel: getT()('agent:orchestrator.callLabelInspiration'),
           maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
+          languageShadow: buildAgentLanguageShadowValidation(
+            task.agentId,
+            targetLanguage,
+            languageShadowPolicy,
+            prepared.mode,
+          ),
         })
         const draft = JSON.stringify(result.output, null, 2)
         candidates.push({
@@ -587,6 +649,11 @@ export async function executeMasterAgentPlan(input: {
             outlineNodeId: prepared.parentVolumeId,
             outputText: JSON.stringify(output),
           }),
+          languageShadow: buildAgentLanguageShadowValidation(
+            task.agentId,
+            targetLanguage,
+            languageShadowPolicy,
+          ),
         })
         const draft = JSON.stringify(result.output, null, 2)
         candidates.push({
@@ -630,6 +697,11 @@ export async function executeMasterAgentPlan(input: {
             outlineNodeId: prepared.outlineNodeId,
             outputText: output,
           }),
+          languageShadow: buildAgentLanguageShadowValidation(
+            task.agentId,
+            targetLanguage,
+            languageShadowPolicy,
+          ),
         })
         const draft = result.output
         candidates.push({
@@ -750,6 +822,7 @@ export async function adoptMasterCandidate(input: {
   payload: MasterCandidatePayload
   draft: string
   runtime?: ExecutedMasterCandidate
+  languageShadowPolicy?: Partial<Record<'agents', 'shadow' | 'enforce'>>
 }): Promise<string> {
   await assertCandidateDependenciesAdopted(input.event, input.payload)
   let projectReadSucceeded = true
@@ -760,7 +833,11 @@ export async function adoptMasterCandidate(input: {
     projectReadSucceeded = false
   }
   if (projectReadSucceeded) {
-    runLanguageShadow({
+    // Revalidate for the explicit adoption policy, but do not count the same
+    // unchanged in-memory candidate twice. Restored or edited candidates remain
+    // observable through the sanitized runner warning.
+    const alreadyObserved = input.runtime != null && input.runtime.draft === input.draft
+    const report = runLanguageShadow({
       family: 'agents',
       targetLanguage: resolveProjectContentLanguage(project ?? {}, getSupportedUiLang()),
       fields: prepareAgentLanguageShadowFields(
@@ -768,7 +845,18 @@ export async function adoptMasterCandidate(input: {
         input.draft,
         input.payload.mode ?? 'single',
       ),
+    }, undefined, { observe: !alreadyObserved })
+    const languageIssues = adaptLanguageShadowReportToIssues({
+      family: 'agents',
+      report,
+      mode: resolveLanguageShadowPolicy({
+        ...DEFAULT_LANGUAGE_SHADOW_POLICY,
+        ...input.languageShadowPolicy,
+      }).agents,
     })
+    if (languageIssues.length) {
+      throw new Error(languageIssues.map(issue => issue.message).join('；'))
+    }
   }
   if (input.runtime) {
     const output = input.payload.agentId === 'world-origin'
