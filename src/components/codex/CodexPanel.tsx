@@ -234,7 +234,12 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
           fieldSchema: schema,
           existingNames: [...catEntries.map(e => e.name), ...found.map(e => e.name)],
           supplementTags,
-        }), aiConfig, { category: 'codex.extract', projectId, outputKind: 'functional-structured' })
+        }), aiConfig, {
+          category: 'codex.extract',
+          projectId,
+          outputKind: 'functional-structured',
+          languagePolicy: 'project',
+        })
         found.push(...parseCodexEntries(raw, schema.map(f => f.key)))
       }
       const existingNames = new Set(catEntries.map(entry => entry.name.trim().toLocaleLowerCase()))

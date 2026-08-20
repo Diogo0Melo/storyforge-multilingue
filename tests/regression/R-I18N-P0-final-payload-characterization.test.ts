@@ -14,6 +14,8 @@ import {
 import {
   buildStoryForgeOutputPolicyBlock,
   SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT,
+  STORYFORGE_OUTPUT_POLICY_END,
+  STORYFORGE_OUTPUT_POLICY_START,
 } from '../../src/lib/ai/adapters/prompt-guards'
 import { db } from '../../src/lib/db/schema'
 import { buildOutlineGenerationPlan } from '../../src/lib/outline/generation-plan'
@@ -104,7 +106,7 @@ describe('R-I18N-P0 · payload final da matriz antiga', () => {
     expect(user.content.split(constraint).length - 1).toBe(1)
   })
 
-  it('functional-prose usa UI, enquanto functional-structured e language-neutral não materializam constraint', async () => {
+  it('functional-prose usa UI, enquanto functional-structured sem política explícita e language-neutral não materializam constraint', async () => {
     const projectId = await addProject('pt-BR')
     const cases = [
       { outputKind: 'functional-prose' as const, category: 'review.quality', suffix: buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT) },
@@ -124,6 +126,28 @@ describe('R-I18N-P0 · payload final da matriz antiga', () => {
       if (testCase.suffix) expect(user.content.endsWith(testCase.suffix)).toBe(true)
       else expect(user.content).toBe('Write the next scene.')
     }
+  })
+
+  it.each([
+    ['pt-BR', buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)],
+    ['en', buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT)],
+    ['zh-CN', buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)],
+  ] as const)('functional-structured + languagePolicy project materializa uma constraint terminal para %s', async (language, expectedBlock) => {
+    const projectId = await addProject(language)
+    const fetchMock = vi.fn(async () => jsonResponse())
+    vi.stubGlobal('fetch', fetchMock)
+
+    await expect(chat(baseMessages(), config(), {
+      category: 'codex.extract',
+      projectId,
+      outputKind: 'functional-structured',
+      languagePolicy: 'project',
+    })).resolves.toBe('ok')
+
+    const user = sentMessages(fetchMock).at(-1)!
+    expect(user.content.endsWith(expectedBlock)).toBe(true)
+    expect(user.content.split(STORYFORGE_OUTPUT_POLICY_START).length - 1).toBe(1)
+    expect(user.content.split(STORYFORGE_OUTPUT_POLICY_END).length - 1).toBe(1)
   })
 
   it('streamChat() mantém a mesma matriz antiga no corpo final enviado', async () => {

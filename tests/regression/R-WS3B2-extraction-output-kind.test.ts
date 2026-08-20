@@ -1,10 +1,10 @@
 /**
- * WS-3B Phase 2 · P2-B2 lane — extraction call-site outputKind regression
+ * WS-3B Codex lane — extraction call-site outputKind/languagePolicy regression
  *
  * Contract: every high-confidence extraction call site whose output is
  * parser-consumed (strict JSON) must explicitly declare
- * `outputKind: 'functional-structured'` in AICallMeta so the output-language
- * gate skips text-language constraint injection.
+ * `outputKind: 'functional-structured'` in AICallMeta. Codex additionally
+ * declares `languagePolicy: 'project'` so structured values use project language.
  *
  * Categories covered (all map to task-routing extraction kind):
  * - inventory.extract       (InventoryPanel)
@@ -28,6 +28,8 @@ interface CallSiteSpec {
   category: string
   /** Extra context expected near the call site (e.g. projectId pattern) */
   expectProjectId?: boolean
+  /** Explicit value-language policy required by this call site. */
+  expectLanguagePolicy?: 'project' | 'ui' | 'none'
   /** Use lastIndexOf when category appears in both resolveRequestConfig and the AI call */
   useLastIndex?: boolean
 }
@@ -37,7 +39,13 @@ const CALL_SITES: CallSiteSpec[] = [
   // and the actual chat() call; useLastIndex ensures we anchor on the AI call.
   { file: 'src/components/items/InventoryPanel.tsx', category: 'inventory.extract', expectProjectId: true, useLastIndex: true },
   { file: 'src/components/location/LocationPanel.tsx', category: 'location.extract', expectProjectId: true, useLastIndex: true },
-  { file: 'src/components/codex/CodexPanel.tsx', category: 'codex.extract', expectProjectId: true, useLastIndex: true },
+  {
+    file: 'src/components/codex/CodexPanel.tsx',
+    category: 'codex.extract',
+    expectProjectId: true,
+    expectLanguagePolicy: 'project',
+    useLastIndex: true,
+  },
   { file: 'src/components/cultivation/CultivationProgressPanel.tsx', category: 'cultivation.progress', expectProjectId: true, useLastIndex: true },
   // These files have the category only at the actual AI call site.
   { file: 'src/components/relations/CharacterRelationPanel.tsx', category: 'relation.extract', expectProjectId: true },
@@ -47,10 +55,10 @@ const CALL_SITES: CallSiteSpec[] = [
   { file: 'src/lib/ai/parse-character-output.ts', category: 'character.structure', expectProjectId: false },
 ]
 
-describe('WS-3B Phase 2 · P2-B2 extraction outputKind: functional-structured', () => {
+describe('WS-3B Codex · extraction outputKind/languagePolicy contract', () => {
   it.each(CALL_SITES)(
     '$file — $category declares outputKind functional-structured',
-    ({ file, category, expectProjectId, useLastIndex }) => {
+    ({ file, category, expectProjectId, expectLanguagePolicy, useLastIndex }) => {
       const source = readSource(file)
       const index = useLastIndex
         ? source.lastIndexOf(`category: '${category}'`)
@@ -68,6 +76,11 @@ describe('WS-3B Phase 2 · P2-B2 extraction outputKind: functional-structured', 
       if (expectProjectId) {
         expect(callSite, `${file}: '${category}' call must carry projectId`)
           .toMatch(/projectId/)
+      }
+
+      if (expectLanguagePolicy) {
+        expect(callSite, `${file}: '${category}' call must declare languagePolicy '${expectLanguagePolicy}'`)
+          .toContain(`languagePolicy: '${expectLanguagePolicy}'`)
       }
     },
   )
