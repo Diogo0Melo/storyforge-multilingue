@@ -15,6 +15,31 @@ export const AI_TASK_KINDS = [...GENERAL_AI_TASK_KINDS, ...AGENT_ROLE_TASK_KINDS
 export type AITaskKind = typeof AI_TASK_KINDS[number]
 export type AITaskRoutes = Partial<Record<AITaskKind, string>>
 
+/**
+ * Declarative output-language placement. This matrix is keyed by exact task
+ * categories and deliberately does not depend on model, provider, or preset.
+ */
+export type OutputLanguagePlacement = 'textual-fallback' | 'native-system'
+
+export const OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY = Object.freeze({
+  'outline.volume': 'textual-fallback',
+  'outline.chapter': 'textual-fallback',
+  'simulation.ttrpg-encounter': 'native-system',
+  'simulation.ttrpg-gm': 'native-system',
+  'simulation.npc-evolution': 'native-system',
+} as const satisfies Record<string, OutputLanguagePlacement>)
+
+/** Alias emphasizing that this is the central declarative capability matrix. */
+export const OUTPUT_LANGUAGE_PLACEMENT_MATRIX = OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY
+
+/** Resolve an exact category capability; unregistered categories use the safe textual fallback. */
+export function resolveOutputLanguagePlacement(category?: string): OutputLanguagePlacement {
+  if (category && Object.prototype.hasOwnProperty.call(OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY, category)) {
+    return OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY[category as keyof typeof OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY]
+  }
+  return 'textual-fallback'
+}
+
 export const AGENT_ROLE_CATEGORIES = {
   orchestrator: 'agent.orchestrator',
   'world-origin': 'agent.world-origin',

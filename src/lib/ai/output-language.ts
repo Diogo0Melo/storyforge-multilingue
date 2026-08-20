@@ -26,7 +26,11 @@ import {
   removeStoryForgeOutputPolicyBlocks,
 } from './adapters/prompt-guards'
 import { resolveProjectContentLanguage } from './content-language'
-import { classifyAITask, type AITaskKind } from './task-routing'
+import {
+  classifyAITask,
+  resolveOutputLanguagePlacement,
+  type AITaskKind,
+} from './task-routing'
 import { db } from '../db/schema'
 import type { AICallMeta } from './client'
 import { flushPendingProjectWrites } from '../../stores/project'
@@ -148,6 +152,7 @@ export async function applyOutputLanguageGate(
   messages: ChatMessage[],
   meta?: AICallMeta,
 ): Promise<ChatMessage[]> {
+  const placement = resolveOutputLanguagePlacement(meta?.category)
   // 1) languagePolicy 显式声明优先；显式策略不需要先分类 category。
   let languagePolicy = meta?.languagePolicy
   if (!languagePolicy) {
@@ -176,12 +181,28 @@ export async function applyOutputLanguageGate(
     else languagePolicy = 'none'
   }
 
-  // 2) none 不注入文本语言约束。
+  // 2) Native-system routes must not combine their system directive with a
+  // textual policy. Check this before the none early return so an explicit
+  // textual policy cannot silently bypass the route capability.
+  const hasIncompatibleTextualPolicy = meta?.outputKind === 'mixed'
+    || languagePolicy === 'project'
+    || languagePolicy === 'ui'
+  if (placement === 'native-system' && hasIncompatibleTextualPolicy) {
+    const policyName = meta?.outputKind === 'mixed' ? 'outputKind "mixed"' : `language policy "${languagePolicy}"`
+    const message = `[AI] output-language gate: category "${meta?.category ?? ''}" uses native-system placement and cannot receive textual policy ${policyName}.`
+    if (import.meta.env.PROD) {
+      console.error(message)
+      return messages
+    }
+    throw new Error(message)
+  }
+
+  // 3) none 不注入文本语言约束。
   if (languagePolicy === 'none') {
     return messages
   }
 
-  // 3) 解析语言
+  // 4) 解析语言
   const uiLocale = getSupportedUiLang()
   let lang: SupportedLang
   if (languagePolicy === 'ui') {
@@ -202,6 +223,6 @@ export async function applyOutputLanguageGate(
     }
   }
 
-  // 4) 仅替换已标记块；无标记块时追加一个新块。
+  // 5) Only textual-fallback routes materialize the single terminal block.
   return appendOutputLanguageConstraint(messages, lang)
 }

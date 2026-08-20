@@ -15,8 +15,9 @@ export interface RunOptions {
  * 核心卷/章纲种子模板不再硬编码「第1卷/第2卷」「第1章/第2章」输出示例；
  * 改由 prompt 边界（本适配器）按项目 RESOLVED contentLanguage 注入对应语言
  * 的标题示例，避免 pt-BR/en 项目收到中文序数示例。未提供语言时回退到
- * 语言无关占位符（直接/单测调用方安全）。示例只影响 few-shot 文案；输出
- * 语言约束仍由 client gate 按 outputKind 注入，JSON 键名与解析器行为不变。
+ * 语言无关占位符（直接/单测调用方安全）。示例只影响 few-shot 文案，不是
+ * placement 的权威策略；输出语言约束仍由 client gate 按 outputKind 注入，JSON
+ * 键名与解析器行为不变。
  */
 export interface OutlineTitleExamples {
   /** 卷标题行内示例（不含外层引号） */

@@ -47,7 +47,8 @@ export function createOutlineGenerationNode(input: {
       if (plan.status === 'skip') throw new OutlineGenerationSkipError(plan.reason)
       return plan.messages
     },
-    // WS-3A：大纲生成（JSON 骨架 + 自然语言 summary）→ mixed，gate 注入项目 contentLanguage 约束
+    // WS-3A：大纲生成（JSON 骨架 + 自然语言 summary）→ mixed；其唯一 placement
+    // 由 task-routing 的声明式矩阵收口到 textual-fallback。
     run: messages => category === 'outline.volume'
       ? ai.start(messages, undefined, {
         category: 'outline.volume',
