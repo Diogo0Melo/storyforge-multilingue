@@ -18,9 +18,10 @@ sincronizações do upstream.
 
 ## Bootstrap e republicação do fork
 
-1. Preserve e verifique a branch local `feat/i18n-legacy` e o worktree. Não use o
-   `origin/main` obsoleto como base, nem renomeie automaticamente branch ou
-   worktree suja.
+1. Preserve e verifique a branch local `feat/i18n-legacy` e o worktree. A Fase 0
+   roda em `feat/i18n/phase-0-characterization`, criada a partir dela; futuras
+   fases usam `feat/i18n/<fase-ou-unidade>`. Não use o `origin/main` obsoleto
+   como base, nem renomeie automaticamente branch ou worktree suja.
 2. A substituição do conteúdo ocorre somente no fork `origin` e somente após
    ação explícita do autor. Não apague, force-pushe, republique nem altere
    remotes automaticamente.
