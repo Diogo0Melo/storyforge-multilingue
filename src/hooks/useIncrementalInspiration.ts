@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { getT } from '../i18n'
+import { getSupportedUiLang, getT } from '../i18n'
 import { useAIStream } from './useAIStream'
 import { createAISessionKey } from '../stores/ai-generation-session'
 import { useInspirationWorkspaceStore } from '../stores/inspiration-workspace'
@@ -18,6 +18,9 @@ import {
   type InspirationResultDiff,
 } from '../lib/inspiration/workspace'
 import { assembleContext } from '../lib/registry/assemble-context'
+import { resolveProjectContentLanguage } from '../lib/ai/content-language'
+import { projectReverseShadowFields } from '../lib/ai/language-shadow-projections'
+import { runLanguageShadow } from '../lib/ai/language-shadow-runner'
 import type { Project } from '../lib/types'
 import type {
   InspirationResultMode,
@@ -224,6 +227,11 @@ export function useIncrementalInspiration(
     if (!pendingResult || pendingDiff === null) return
     setConfirmingFusion(true)
     try {
+      runLanguageShadow({
+        family: 'reverse',
+        targetLanguage: resolveProjectContentLanguage(project, getSupportedUiLang()),
+        fields: projectReverseShadowFields(pendingResult),
+      })
       await workspace.saveVersion(project.id!, {
         mode,
         parentVersionId: pendingParent?.id ?? null,

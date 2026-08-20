@@ -27,7 +27,10 @@ import { adopt } from '../../lib/registry/adopt'
 import { useToast } from '../shared/Toast'
 import { uniqueBy } from '../../lib/ai/structured-extraction'
 import { assembleContext } from '../../lib/registry/assemble-context'
-import { useDomainT } from '../../i18n'
+import { getSupportedUiLang, useDomainT } from '../../i18n'
+import { resolveProjectContentLanguage } from '../../lib/ai/content-language'
+import { projectCodexShadowFields } from '../../lib/ai/language-shadow-projections'
+import { runLanguageShadow } from '../../lib/ai/language-shadow-runner'
 import CodexCategoryFieldsEditor from './CodexCategoryFieldsEditor'
 import CodexEntryDetail from './CodexEntryDetail'
 
@@ -258,6 +261,11 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
   const handleAdoptCandidates = async () => {
     if (!activeCat || !scopeReady) return
     const chosen = candidates.filter((_, index) => selectedCandidates.has(index))
+    runLanguageShadow({
+      family: 'codex',
+      targetLanguage: resolveProjectContentLanguage(project, getSupportedUiLang()),
+      fields: projectCodexShadowFields(chosen, parseFieldSchema(activeCat.fieldSchema)),
+    })
     const result = await adopt({
       projectId,
       worldGroupId: scopedWorldGroupId,

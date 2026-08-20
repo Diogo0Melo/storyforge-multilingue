@@ -1,5 +1,5 @@
 import JSON5 from 'json5'
-import { getT } from '../../i18n'
+import { getSupportedUiLang, getT } from '../../i18n'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { AGENT_ROLE_CATEGORIES } from '../ai/task-routing'
 import { useChapterStore } from '../../stores/chapter'
@@ -18,6 +18,14 @@ import {
   MAX_INSPIRATION_FRAGMENTS,
 } from '../inspiration/workspace'
 import { adopt } from '../registry/adopt'
+import { resolveProjectContentLanguage } from '../ai/content-language'
+import { getFieldRole } from '../registry/field-registry'
+import {
+  projectAgentShadowFields,
+  projectReverseShadowFields,
+  unregisteredAgentShadowField,
+} from '../ai/language-shadow-projections'
+import { runLanguageShadow } from '../ai/language-shadow-runner'
 import {
   parseAgentEventPayload,
   type AgentEvent,
@@ -83,6 +91,42 @@ const MAX_OUTPUT_TOKENS_BY_AGENT: Record<DomainAgentId, number> = {
   inspiration: 8_000,
   outline: 12_000,
   prose: 16_000,
+}
+
+function prepareAgentLanguageShadowFields(
+  agentId: DomainAgentId,
+  draft: string,
+  mode: InspirationResultMode = 'single',
+) {
+  if (agentId === 'world-origin') {
+    return projectAgentShadowFields([{
+      role: getFieldRole('worldviews', 'worldOrigin'),
+      value: draft,
+    }])
+  }
+  if (agentId === 'character') {
+    try {
+      const candidate = parseCharacterCandidateDraft(draft) as Record<string, unknown>
+      const fields = ['name', 'shortDescription', 'personality', 'background', 'motivation', 'arc']
+      return projectAgentShadowFields(fields.map(field => ({
+        role: getFieldRole('characters', field),
+        value: candidate[field],
+      })))
+    } catch {
+      return projectAgentShadowFields([unregisteredAgentShadowField(draft)])
+    }
+  }
+  if (agentId === 'inspiration') {
+    try {
+      return projectReverseShadowFields(parseInspirationCandidateDraft(draft, mode))
+    } catch {
+      return projectAgentShadowFields([unregisteredAgentShadowField(draft)])
+    }
+  }
+  // Outline and prose do not expose audited field boundaries here. They are
+  // intentionally reported as unregistered instead of being inferred from
+  // candidate property names or types.
+  return projectAgentShadowFields([unregisteredAgentShadowField(draft)])
 }
 
 export interface MasterAgentTask {
@@ -708,6 +752,24 @@ export async function adoptMasterCandidate(input: {
   runtime?: ExecutedMasterCandidate
 }): Promise<string> {
   await assertCandidateDependenciesAdopted(input.event, input.payload)
+  let projectReadSucceeded = true
+  let project: Awaited<ReturnType<typeof db.projects.get>> | undefined = undefined
+  try {
+    project = await db.projects.get(input.projectId)
+  } catch {
+    projectReadSucceeded = false
+  }
+  if (projectReadSucceeded) {
+    runLanguageShadow({
+      family: 'agents',
+      targetLanguage: resolveProjectContentLanguage(project ?? {}, getSupportedUiLang()),
+      fields: prepareAgentLanguageShadowFields(
+        input.payload.agentId,
+        input.draft,
+        input.payload.mode ?? 'single',
+      ),
+    })
+  }
   if (input.runtime) {
     const output = input.payload.agentId === 'world-origin'
       ? input.draft
