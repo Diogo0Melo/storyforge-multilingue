@@ -190,7 +190,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 | category | 触发文件 |
 |---|---|
-| `agent.orchestrator` | `src/lib/agent/orchestrator.ts:354` |
+| `agent.orchestrator` | `src/lib/agent/orchestrator.ts:432` |
 | `agent.readonly` | `src/lib/agent/client-adapter.ts:23` |
 | `ai.restructure` | `src/lib/ai/restructure.ts:55` |
 | `canon.setting.extract` | `src/components/facts/WorldConstitutionPanel.tsx:82` |
@@ -211,7 +211,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `character.generate` | `src/components/character/CharacterPanel.tsx:165` |
 | `character.structure` | `src/lib/ai/parse-character-output.ts:80` |
 | `character.supplement` | `src/components/character/CharacterSupplementAction.tsx:82` |
-| `codex.extract` | `src/components/codex/CodexPanel.tsx:231` |
+| `codex.extract` | `src/components/codex/CodexPanel.tsx:234` |
 | `cultivation.progress` | `src/components/cultivation/CultivationProgressPanel.tsx:146` |
 | `detail.chapter-planning` | `src/lib/node-authoring/domain-execution.ts:293` |
 | `detail.enhance` | `src/components/outline/DetailedOutlinePanel.tsx:183` |
@@ -223,14 +223,14 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `geography.world-map` | `src/components/geography/WorldMapPanel.tsx:111` |
 | `history.consult` | `src/components/history/useHistoryAI.ts:121` |
 | `history.storm` | `src/components/history/useHistoryAI.ts:123` |
-| `inspiration.reverse` | `src/hooks/useIncrementalInspiration.ts:214` |
+| `inspiration.reverse` | `src/hooks/useIncrementalInspiration.ts:217` |
 | `inventory.extract` | `src/components/items/InventoryPanel.tsx:152` |
 | `location.extract` | `src/components/location/LocationPanel.tsx:110` |
 | `node.creation` | `src/lib/node-authoring/executor.ts:316`<br/>`src/lib/node-flow/executor.ts:204` |
-| `outline.chapter` | `src/lib/ai/batch-outline-runner.ts:136`<br/>`src/lib/outline/generation-node.ts:57` |
+| `outline.chapter` | `src/lib/ai/batch-outline-runner.ts:136`<br/>`src/lib/outline/generation-node.ts:58` |
 | `outline.character-driven` | `src/components/outline/CharacterDrivenPlotPanel.tsx:201` |
 | `outline.character-revision` | `src/components/outline/CharacterRevisionPanel.tsx:177` |
-| `outline.volume` | `src/lib/outline/generation-node.ts:52` |
+| `outline.volume` | `src/lib/outline/generation-node.ts:53` |
 | `prompt.examples` | `src/components/settings/prompt/PromptExamplesEditor.tsx:103` |
 | `reference.characters` | `src/components/project/AnalysisReportViewer.tsx:153` |
 | `reference.summary` | `src/components/project/AnalysisReportViewer.tsx:121` |
@@ -273,4 +273,4 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ---
 
-生成时间基准:commit `04815c6`
+生成时间基准:commit `7002a0b`
