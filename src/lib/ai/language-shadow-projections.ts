@@ -13,7 +13,6 @@ export interface CodexShadowCandidate {
   description?: unknown
   tags?: unknown
   fields?: unknown
-  [key: string]: unknown
 }
 
 const CODEX_STANDARD_FIELDS = ['summary', 'description', 'tags'] as const
