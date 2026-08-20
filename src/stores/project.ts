@@ -44,6 +44,91 @@ interface ProjectStore {
   setCurrentProject: (id: number | null) => void
 }
 
+interface ProjectWriteQueueItem {
+  sequence: number
+  promise: Promise<void>
+}
+
+interface ProjectWriteQueueState {
+  /** Always-resolving execution tail; a failed item must not block later writes. */
+  tail: Promise<void>
+  nextSequence: number
+  items: Map<number, ProjectWriteQueueItem>
+}
+
+// Content-language writes are also initiated outside the panel (for example by
+// imports or tests), so the queue belongs to the store module rather than to a
+// component. A failed item is swallowed only for the purpose of advancing the
+// queue; its own promise and the flush still expose the original error.
+const pendingProjectWrites = new Map<number, ProjectWriteQueueState>()
+
+function enqueueProjectWrite(projectId: number, write: () => Promise<void>): Promise<void> {
+  const state = pendingProjectWrites.get(projectId) ?? {
+    tail: Promise.resolve(),
+    nextSequence: 0,
+    items: new Map<number, ProjectWriteQueueItem>(),
+  }
+  const sequence = state.nextSequence++
+  const current = state.tail.then(write)
+  state.tail = current.catch(() => undefined)
+  state.items.set(sequence, { sequence, promise: current })
+  pendingProjectWrites.set(projectId, state)
+
+  // Keep the rejection handled internally so an ignored updateProject call
+  // cannot create an unhandled-rejection event. The returned promise remains
+  // rejected for callers that explicitly await the write.
+  void current.then(
+    () => {
+      if (pendingProjectWrites.get(projectId) === state) {
+        state.items.delete(sequence)
+        if (state.items.size === 0 && state.nextSequence === sequence + 1) {
+          pendingProjectWrites.delete(projectId)
+        }
+      }
+    },
+    () => undefined,
+  )
+  return current
+}
+
+/**
+ * Wait for content-language writes already queued for a project.
+ * No project id deliberately means that there is no project queue to await.
+ */
+export async function flushPendingProjectWrites(projectId?: number | null): Promise<void> {
+  if (projectId == null) return
+
+  while (true) {
+    const state = pendingProjectWrites.get(projectId)
+    if (!state) return
+    const boundary = state.nextSequence
+    const items = [...state.items.values()]
+
+    if (items.length > 0) {
+      const results = await Promise.allSettled(items.map(item => item.promise))
+      const failed = results.find(result => result.status === 'rejected')
+
+      // Consume this flush boundary's items. Failed items are retained until a
+      // flush observes them, so a generation cannot silently pass an earlier
+      // failed write merely because a later write succeeded.
+      if (pendingProjectWrites.get(projectId) === state) {
+        for (const item of items) {
+          if (item.sequence < boundary) state.items.delete(item.sequence)
+        }
+        if (state.items.size === 0 && state.nextSequence === boundary) {
+          pendingProjectWrites.delete(projectId)
+        }
+      }
+
+      if (failed?.status === 'rejected') throw failed.reason
+    }
+
+    // A write may have arrived while this flush was awaiting. Observe the
+    // newest queue boundary before allowing a generation to read IndexedDB.
+    if (pendingProjectWrites.get(projectId) === state && state.nextSequence === boundary) return
+  }
+}
+
 export const useProjectStore = create<ProjectStore>((set, get) => ({
   projects: [],
   currentProjectId: null,
@@ -88,9 +173,29 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     return id as number
   },
 
-  updateProject: async (id: number, data: Partial<Project>) => {
-    await db.projects.update(id, { ...data, updatedAt: Date.now() })
-    await get().loadProjects()
+  updateProject: (id: number, data: Partial<Project>) => {
+    const result = (async () => {
+      const changes: Partial<Project> = { ...data, updatedAt: Date.now() }
+      if (Object.prototype.hasOwnProperty.call(data, 'contentLanguage')) {
+        // WS-2/G1: updates use the same clamp as createProject; unsupported
+        // values never reach IndexedDB.
+        changes.contentLanguage = normalizeContentLanguage(data.contentLanguage) ?? getSupportedUiLang()
+      }
+
+      const write = () => db.projects.update(id, changes).then(async () => {
+        await get().loadProjects()
+      })
+      if (Object.prototype.hasOwnProperty.call(data, 'contentLanguage')) {
+        await enqueueProjectWrite(id, write)
+      } else {
+        await write()
+      }
+    })()
+
+    // Handle ignored calls without changing the rejection observed by callers
+    // that explicitly await the public promise.
+    void result.catch(() => undefined)
+    return result
   },
 
   deleteProject: async (id: number) => {

@@ -29,6 +29,7 @@ import { resolveProjectContentLanguage } from './content-language'
 import { classifyAITask, type AITaskKind } from './task-routing'
 import { db } from '../db/schema'
 import type { AICallMeta } from './client'
+import { flushPendingProjectWrites } from '../../stores/project'
 
 /** D12：调用方声明的输出语义意图。 */
 export type OutputKind =
@@ -186,8 +187,9 @@ export async function applyOutputLanguageGate(
   if (languagePolicy === 'ui') {
     lang = uiLocale
   } else {
-    // project → 项目 contentLanguage 的 RESOLVED 值（D1）。Fase 2 的
-    // flush/barrier 不在此阶段实现；这里保持现有 IndexedDB 读取行为。
+    // project → wait for the shared content-language write queue before the
+    // read, otherwise a generation can observe the previous language.
+    await flushPendingProjectWrites(meta?.projectId)
     const project = meta?.projectId != null ? await db.projects.get(meta.projectId) : undefined
     if (project) {
       lang = resolveProjectContentLanguage(project, uiLocale)
