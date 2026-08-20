@@ -136,7 +136,7 @@ adequado **ou** registrar formalmente a decisão de não criar novo ID (com just
 | Três registros | `CONTEXT_SOURCES` (`src/lib/registry/context-sources.ts`) e `assembleContext` (`src/lib/registry/assemble-context.ts`) devem continuar preservando conteúdo original (sem tradução); `FIELD_REGISTRY` (`src/lib/registry/field-registry.ts`) e `AdoptionSchema` (`src/lib/registry/adoption-schema.ts`, `ADOPTION_SCHEMAS`/`ADOPTION_EXTENSIONS`) são o lugar dos papéis de campo; `PROJECT_TABLES` (`src/lib/registry/project-tables.ts`) sem tabela nova. |
 | Testes | 47 testes direcionados passaram (evidência da tarefa), mas **faltam**: payload final completo, race/pending writes, placement único, semântica de valores JSON e bloqueio/retry. Existentes relevantes: `tests/registry/output-language-gate.test.ts`, `tests/registry/content-language.test.ts`, `tests/registry/parsers.test.ts`, `tests/regression/R-CF20260702-language-guard.test.ts`, `tests/regression/R-AUDIT6-prompt-seed-integrity.test.ts`, `tests/regression/R-G2A-language-constraint-trim.test.ts` (trim protegido + `detectInjectedOutputConstraint`), `tests/regression/R-AUDIT6-outline-generation-plan.test.ts`, `tests/regression/R-PHASE3-outline-title-language.test.ts`, `tests/regression/R-AUDIT6-outline-generation-controller.test.tsx`, `tests/regression/R-AUDIT6-outline-batch-controller.test.tsx`, `tests/regression/R-PIPELINE1-generation-node.test.ts`, `tests/regression/R-I18N-P2-workshop-language-contracts.test.ts` (contrato de idioma de simulation). |
 | Campo (imagens 229–240) | Codex produziu chinês com UI pt e fonte pt/en; reverse/Canon propagaram chinês; tela exibiu `contentLanguage` English; timing/persistência da captura incerto. Erro `无效的令牌` (token inválido) é problema upstream separado, fora deste escopo. |
-| Git | Branch atual legada `feat/i18n`, que contém a fonte local do i18n refeito; `vite.config.ts` modificado, `.opencode/` não rastreado e `docs/PLAN-AI-OUTPUT-LANGUAGE.md` não commitado no working tree. O `origin/main` publicado está obsoleto/disponível para substituição e não é base de execução. A primeira execução parte do estado local isolado de `feat/i18n`, sem tocar mudanças pré-existentes; novas fases usam `feat/i18n/<fase-ou-unidade>`. |
+| Git | Branch atual legada `feat/i18n-legacy`, que contém a fonte local do i18n refeito; `vite.config.ts` modificado, `.opencode/` não rastreado e `docs/PLAN-AI-OUTPUT-LANGUAGE.md` não commitado no working tree. O `origin/main` publicado está obsoleto/disponível para substituição e não é base de execução. A primeira execução parte do estado local isolado de `feat/i18n-legacy`, sem tocar mudanças pré-existentes; novas fases usam `feat/i18n/<fase-ou-unidade>`. |
 
 ## 5. Matriz de blast radius
 
@@ -273,7 +273,7 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
 > Cada fase: objetivo / arquivos prováveis / contrato / mudanças / validação / completude / rollback.
 > Antes de cada fase, leia `docs/FORK-MAINTENANCE.md` e preserve o worktree. Toda fase roda em
 > `feat/i18n/<fase-ou-unidade>` própria, com testes de contraexemplo e `git diff --check` limpo.
-> A Fase 0 parte do estado local isolado da legada `feat/i18n`, não do `origin/main` obsoleto;
+> A Fase 0 parte do estado local isolado da legada `feat/i18n-legacy`, não do `origin/main` obsoleto;
 > somente após republicação autorizada a nova `origin/main` vira base das fases seguintes.
 
 ### Fase 0 — Caracterização e lacunas de teste (ZERO mudança funcional)
@@ -488,7 +488,7 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
 - **Nenhuma mudança em código, banco, Canon ou testes é feita por este plano.** Este arquivo é
   exclusivamente planejamento; a primeira unidade de entrega executável é a Fase 0 (apenas testes).
 - Toda fase usa **`feat/i18n/<fase-ou-unidade>`**, nunca `main`, e exige leitura prévia de
-  `docs/FORK-MAINTENANCE.md`. A branch atual `feat/i18n` é legada e contém a fonte local do i18n
+  `docs/FORK-MAINTENANCE.md`. A branch atual `feat/i18n-legacy` é legada e contém a fonte local do i18n
   refeito; a primeira execução parte dela isolada, preservando `vite.config.ts` modificado,
   `.opencode/` não rastreado e o plano não commitado.
 - Commits de fase são locais e não presumem push. Nunca há push, PR, issue ou envio de dados ao
@@ -503,7 +503,7 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
 ## 17. Checklist anti-desvio (antes de cada fase)
 
 - Li `docs/FORK-MAINTENANCE.md` e confirmei `origin`/`upstream` sem alterar remotes?
-- A branch é `feat/i18n/<fase-ou-unidade>`? Se estou em `feat/i18n`, tratei-a como legada e preservei o worktree sujo?
+- A branch é `feat/i18n/<fase-ou-unidade>`? Se estou em `feat/i18n-legacy`, tratei-a como legada e preservei o worktree sujo?
 - Estou usando a base correta: estado local isolado na primeira execução ou nova `origin/main` após republicação autorizada?
 - Estou implementando exatamente o escopo da fase, sem "aproveitar para"?
 - A política de idioma continua única (I1) — sem segundo ponto de decisão e sem segunda materialização efetiva na rota (atenção a outline/simulation)?

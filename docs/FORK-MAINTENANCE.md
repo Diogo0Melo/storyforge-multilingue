@@ -13,12 +13,12 @@ sincronizações do upstream.
   nunca faça `git push upstream`. É proibido abrir PR, issue ou enviar qualquer
   dado ao repositório original.
 - O conteúdo atualmente publicado no fork do autor está obsoleto e não é fonte
-  de verdade. A branch local `feat/i18n`, com o i18n refeito, é a fonte para a
+  de verdade. A branch local `feat/i18n-legacy`, com o i18n refeito, é a fonte para a
   futura republicação.
 
 ## Bootstrap e republicação do fork
 
-1. Preserve e verifique a branch local `feat/i18n` e o worktree. Não use o
+1. Preserve e verifique a branch local `feat/i18n-legacy` e o worktree. Não use o
    `origin/main` obsoleto como base, nem renomeie automaticamente branch ou
    worktree suja.
 2. A substituição do conteúdo ocorre somente no fork `origin` e somente após
