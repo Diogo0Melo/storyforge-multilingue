@@ -109,4 +109,23 @@ describe('C group: structured extraction foundation', () => {
     expect(CONTEXT_SOURCE_BY_KEY.has('manualText')).toBe(true)
     expect(CONTEXT_SOURCE_BY_KEY.has('chapterContent')).toBe(true)
   })
+
+  it('codex parser accepts full schema and does not emit schema metadata', () => {
+    const parsed = parseCodexEntries(JSON.stringify([{
+      name: 'Lúmen-界',
+      summary: 'A cidade guarda memórias / 城市保存记忆',
+      description: 'La ville n’oublie personne · 아무도 잊지 않는다',
+      fields: { rank: '階位 / níveis de poder', unknown: 'drop' },
+    }]), [{ key: 'rank', label: '品级', type: 'select', role: 'canonical-id' }])
+
+    expect(parsed[0]).toMatchObject({
+      name: 'Lúmen-界',
+      summary: 'A cidade guarda memórias / 城市保存记忆',
+      description: 'La ville n’oublie personne · 아무도 잊지 않는다',
+      fields: { rank: '階位 / níveis de poder' },
+    })
+    expect(Object.keys(parsed[0])).toEqual([
+      'name', 'summary', 'description', 'fields', 'tags', 'icon', 'importance',
+    ])
+  })
 })

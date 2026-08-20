@@ -1,4 +1,5 @@
 import type { RagDocumentMetadata } from './rag-library'
+import type { FieldRole } from '../registry/types'
 
 /**
  * Phase 35-a — 词条系统（Codex）数据模型
@@ -21,6 +22,8 @@ export interface CodexFieldDef {
   /** 显示名（外观/品级/功效…） */
   label: string
   type: CodexFieldType
+  /** AI 输出字段的审计角色；旧 schema 缺省时保持未审计，不做推断。 */
+  role?: FieldRole
   /** select 选项 */
   options?: string[]
   /** ref 字段：建议指向哪类词条的 builtInKey（软提示，选择器仍可跨类） */

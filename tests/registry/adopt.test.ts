@@ -93,6 +93,23 @@ describe('Phase 1.2a · 统一写回层', () => {
     expect(rows[0].worldGroupId).toBe(101)
   })
 
+  it('写回多语言/人类文本时不添加 role 诊断或阻断', async () => {
+    const projectId = await createProject()
+    const value = 'A cidade guarda memórias / 城市保存记忆 / 記憶を保存する'
+    const result = await adopt({
+      projectId,
+      target: 'worldviews',
+      mode: 'replace',
+      data: { worldOrigin: value },
+    })
+
+    const row = await db.worldviews.where('projectId').equals(projectId).first()
+    expect(row?.worldOrigin).toBe(value)
+    expect(result.unknown).toEqual([])
+    expect(Object.keys(result)).not.toContain('role')
+    expect(Object.keys(result)).not.toContain('diagnostics')
+  })
+
   it('单例写回:worldviews 原生对象字段保持对象，不序列化成字符串', async () => {
     const projectId = await createProject()
     const divineDesign = {

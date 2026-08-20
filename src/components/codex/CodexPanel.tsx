@@ -240,7 +240,7 @@ export default function CodexPanel({ project, fixedDomain, fixedCategoryKeys, em
           outputKind: 'functional-structured',
           languagePolicy: 'project',
         })
-        found.push(...parseCodexEntries(raw, schema.map(f => f.key)))
+        found.push(...parseCodexEntries(raw, schema))
       }
       const existingNames = new Set(catEntries.map(entry => entry.name.trim().toLocaleLowerCase()))
       const parsed = uniqueBy(

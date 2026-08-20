@@ -44,8 +44,8 @@ export function buildCodexExtractPrompt(input: {
   }).messages
 }
 
-export function parseCodexEntries(raw: string, allowedFieldKeys: string[]): ExtractedCodexEntry[] {
-  const allowed = new Set(allowedFieldKeys)
+export function parseCodexEntries(raw: string, schema: CodexFieldDef[] | string[]): ExtractedCodexEntry[] {
+  const allowed = new Set(schema.map(field => typeof field === 'string' ? field : field.key))
   return parseJsonArray<Record<string, unknown>>(raw).map(item => {
     const sourceFields = item.fields && typeof item.fields === 'object' && !Array.isArray(item.fields)
       ? item.fields as Record<string, unknown>

@@ -3,7 +3,7 @@
  *
  * 本任务只新增写回层,不迁移现有调用方。1.2b 才把面板/store 写回切到 adopt()。
  */
-import type { FieldSpec } from './types'
+import type { FieldRole, FieldSpec } from './types'
 
 const roleAliases: Record<string, string> = {
   主角: 'protagonist',
@@ -112,6 +112,10 @@ function enumeration(
   return { target, field, type: 'enum', enums, enumAliasMap, aliases, sanitize: trimString }
 }
 
+function withRole(spec: FieldSpec, role: FieldRole): FieldSpec {
+  return { ...spec, role }
+}
+
 export const FIELD_REGISTRY: FieldSpec[] = [
   // worldviews: legacy free-text fields still used by existing panels.
   longtext('worldviews', 'geography', ['地理']),
@@ -122,21 +126,21 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   longtext('worldviews', 'rules', ['旧世界规则']),
 
   // worldviews: v3 结构字段。summary 作为 AI 反推别名归一到 worldOrigin。
-  longtext('worldviews', 'worldOrigin', ['summary', 'origin', 'worldSummary', '世界来源', '世界起源']),
-  longtext('worldviews', 'powerHierarchy', ['powerSystem', 'power', '力量体系']),
+  withRole(longtext('worldviews', 'worldOrigin', ['summary', 'origin', 'worldSummary', '世界来源', '世界起源']), 'free-text'),
+  withRole(longtext('worldviews', 'powerHierarchy', ['powerSystem', 'power', '力量体系']), 'free-text'),
   object('worldviews', 'divineDesign', ['divinity', '神明设定']),
   longtext('worldviews', 'worldStructure', ['structure', '世界结构']),
   longtext('worldviews', 'worldDimensions', ['dimensions', '世界尺寸']),
-  longtext('worldviews', 'continentLayout', ['continent', 'layout', '地貌分布', '大陆分布']),
+  withRole(longtext('worldviews', 'continentLayout', ['continent', 'layout', '地貌分布', '大陆分布']), 'free-text'),
   longtext('worldviews', 'regionDimensions', ['区域面积']),
   longtext('worldviews', 'mountainsRivers', ['山川河流']),
-  longtext('worldviews', 'climateByRegion', ['climate', '气候']),
+  withRole(longtext('worldviews', 'climateByRegion', ['climate', '气候']), 'free-text'),
   longtext('worldviews', 'naturalResourceOverview', ['自然资源概述', '自然资源全貌']),
   object('worldviews', 'naturalResources', ['resources', '自然资源']),
-  longtext('worldviews', 'historyLine', ['history', 'worldHistory', '历史线']),
+  withRole(longtext('worldviews', 'historyLine', ['worldHistory', '历史线']), 'free-text'),
   longtext('worldviews', 'worldEvents', ['events', '大事记']),
-  longtext('worldviews', 'races', ['species', '种族']),
-  longtext('worldviews', 'factionLayout', ['factions', '势力分布']),
+  withRole(longtext('worldviews', 'races', ['species', '种族']), 'free-text'),
+  withRole(longtext('worldviews', 'factionLayout', ['factions', '势力分布']), 'free-text'),
   longtext('worldviews', 'politicsEconomyCulture', ['politics', 'economyCulture', '政治经济文化']),
   longtext('worldviews', 'politicsOverview', ['政治概述', '政治制度概述']),
   longtext('worldviews', 'economyOverview', ['经济概述', '经济制度概述']),
@@ -145,16 +149,16 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   longtext('worldviews', 'itemDesign', ['items', 'artifactDesign', '道具设计']),
 
   // storyCores: storyLines 作为旧字段别名归一到 mainPlot。
-  longtext('storyCores', 'theme', ['主题']),
-  longtext('storyCores', 'centralConflict', ['conflict', '核心冲突']),
-  longtext('storyCores', 'plotPattern', ['pattern', '情节模式']),
-  longtext('storyCores', 'logline', ['一句话故事']),
+  withRole(longtext('storyCores', 'theme', ['主题']), 'free-text'),
+  withRole(longtext('storyCores', 'centralConflict', ['conflict', '核心冲突']), 'free-text'),
+  withRole(longtext('storyCores', 'plotPattern', ['pattern', '情节模式']), 'free-text'),
+  withRole(longtext('storyCores', 'logline', ['一句话故事']), 'free-text'),
   longtext('storyCores', 'concept', ['故事概念']),
-  longtext('storyCores', 'mainPlot', ['storyLines', 'plot', '主线', '故事主线']),
+  withRole(longtext('storyCores', 'mainPlot', ['storyLines', 'plot', '主线', '故事主线']), 'free-text'),
   longtext('storyCores', 'subPlots', ['subplots', '复线']),
 
   // characters
-  text('characters', 'name', ['姓名', '角色名']),
+  withRole(text('characters', 'name', ['姓名', '角色名']), 'preserve'),
   enumeration(
     'characters',
     'role',
@@ -162,14 +166,14 @@ export const FIELD_REGISTRY: FieldSpec[] = [
     roleAliases,
     ['定位', '角色定位'],
   ),
-  enumeration(
+  withRole(enumeration(
     'characters',
     'roleWeight',
     ['main', 'secondary', 'npc', 'extra'],
     roleWeightAliases,
     ['戏份', '戏份权重', '角色权重'],
-  ),
-  enumeration(
+  ), 'canonical-id'),
+  withRole(enumeration(
     'characters',
     'moralAxis',
     ['good', 'neutral', 'evil'],
@@ -179,8 +183,8 @@ export const FIELD_REGISTRY: FieldSpec[] = [
       恶: 'evil', 邪恶: 'evil', 反派: 'evil',
     },
     ['道德轴', '善恶轴'],
-  ),
-  enumeration(
+  ), 'canonical-id'),
+  withRole(enumeration(
     'characters',
     'orderAxis',
     ['lawful', 'neutral', 'chaotic'],
@@ -190,16 +194,16 @@ export const FIELD_REGISTRY: FieldSpec[] = [
       混乱: 'chaotic',
     },
     ['秩序轴', '守序混乱轴'],
-  ),
+  ), 'canonical-id'),
   enumeration('characters', 'alignment', ['good', 'evil'], { 正派: 'good', 反派: 'evil', 善: 'good', 恶: 'evil' }, ['阵营']),
-  longtext('characters', 'shortDescription', ['description', 'summary', '简介', '一句话简介']),
+  withRole(longtext('characters', 'shortDescription', ['description', 'summary', '简介', '一句话简介']), 'free-text'),
   longtext('characters', 'appearance', ['外貌']),
-  longtext('characters', 'personality', ['性格']),
-  longtext('characters', 'background', ['背景', 'backgroundStory']),
-  longtext('characters', 'motivation', ['动机']),
+  withRole(longtext('characters', 'personality', ['性格']), 'free-text'),
+  withRole(longtext('characters', 'background', ['背景', 'backgroundStory']), 'free-text'),
+  withRole(longtext('characters', 'motivation', ['动机']), 'free-text'),
   longtext('characters', 'abilities', ['能力']),
   longtext('characters', 'relationships', ['关系']),
-  longtext('characters', 'arc', ['角色弧光', '成长线']),
+  withRole(longtext('characters', 'arc', ['角色弧光', '成长线']), 'free-text'),
   // 扩展角色维度（CHARACTER_DIMENSIONS 描述符的写权威；AI 输出经 adopt() 写回）
   longtext('characters', 'identity', ['身份', '职业', '势力', '势力归属']),
   text('characters', 'profile', ['年龄性别', '基础信息', '年龄', '性别', '种族']),
@@ -228,13 +232,13 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   text('characters', 'cultivationStageId', ['境界ID', '当前境界ID']),
 
   // characterRelations：AI 提取只能在作者确认后经 adopt() 写入。
-  num('characterRelations', 'fromCharacterId', ['起点角色ID']),
-  num('characterRelations', 'toCharacterId', ['终点角色ID']),
-  enumeration(
+  withRole(num('characterRelations', 'fromCharacterId', ['起点角色ID']), 'preserve'),
+  withRole(num('characterRelations', 'toCharacterId', ['终点角色ID']), 'preserve'),
+  withRole(enumeration(
     'characterRelations',
     'relationType',
     ['family', 'lover', 'friend', 'rival', 'enemy', 'master', 'student', 'ally', 'subordinate', 'other'],
-  ),
+  ), 'canonical-id'),
   text('characterRelations', 'label', ['关系名']),
   longtext('characterRelations', 'description', ['关系描述']),
   bool('characterRelations', 'isBidirectional', ['双向关系']),
@@ -343,20 +347,20 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   num('codexCategories', 'order'),
   num('codexCategories', 'worldGroupId'),
 
-  text('codexEntries', 'name', ['词条名']),
-  num('codexEntries', 'categoryId'),
-  text('codexEntries', 'icon'),
-  longtext('codexEntries', 'summary', ['简介']),
-  longtext('codexEntries', 'description', ['描述']),
+  withRole(text('codexEntries', 'name', ['词条名']), 'preserve'),
+  withRole(num('codexEntries', 'categoryId'), 'preserve'),
+  withRole(text('codexEntries', 'icon'), 'preserve'),
+  withRole(longtext('codexEntries', 'summary', ['简介']), 'free-text'),
+  withRole(longtext('codexEntries', 'description', ['描述']), 'free-text'),
   json('codexEntries', 'fields', ['字段']),
   json('codexEntries', 'refs', ['引用']),
-  json('codexEntries', 'tags', ['标签']),
-  num('codexEntries', 'importance', ['重要度']),
-  num('codexEntries', 'cultivationSystemId', ['修炼体系ID']),
-  text('codexEntries', 'cultivationStageId', ['境界ID', '当前境界ID']),
-  num('codexEntries', 'importantLocationId', ['重要地点ID', '空间地点ID']),
-  num('codexEntries', 'order'),
-  num('codexEntries', 'worldGroupId'),
+  withRole(json('codexEntries', 'tags', ['标签']), 'free-text'),
+  withRole(num('codexEntries', 'importance', ['重要度']), 'preserve'),
+  withRole(num('codexEntries', 'cultivationSystemId', ['修炼体系ID']), 'preserve'),
+  withRole(text('codexEntries', 'cultivationStageId', ['境界ID', '当前境界ID']), 'preserve'),
+  withRole(num('codexEntries', 'importantLocationId', ['重要地点ID', '空间地点ID']), 'preserve'),
+  withRole(num('codexEntries', 'order'), 'preserve'),
+  withRole(num('codexEntries', 'worldGroupId'), 'preserve'),
 
   // WORLD-1 / Phase 37 cultivationSystems
   text('cultivationSystems', 'name', ['体系名', '修炼体系']),
@@ -386,10 +390,10 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   enumeration('cultivationProgress', 'status', ['confirmed', 'stale', 'source-missing']),
 
   // importantLocations / downstream extraction products
-  text('importantLocations', 'name', ['地点名']),
-  json('importantLocations', 'tags', ['地点标签']),
-  longtext('importantLocations', 'description', ['地点描述']),
-  longtext('importantLocations', 'significance', ['剧情重要性']),
+  withRole(text('importantLocations', 'name', ['地点名']), 'preserve'),
+  withRole(json('importantLocations', 'tags', ['地点标签']), 'canonical-id'),
+  withRole(longtext('importantLocations', 'description', ['地点描述']), 'free-text'),
+  withRole(longtext('importantLocations', 'significance', ['剧情重要性']), 'free-text'),
   num('importantLocations', 'parentId'),
   num('importantLocations', 'sortOrder'),
 
@@ -519,3 +523,16 @@ export const FIELD_BY_TARGET: ReadonlyMap<string, FieldSpec[]> = new Map(
     FIELD_REGISTRY.filter(f => f.target === target),
   ]),
 )
+
+/** Resolve a canonical field or one of its registered aliases. */
+export function getFieldSpec(target: string, field: string): FieldSpec | undefined {
+  const specs = FIELD_BY_TARGET.get(target)
+  if (!specs) return undefined
+  return specs.find(spec => spec.field === field)
+    ?? specs.find(spec => spec.aliases?.includes(field))
+}
+
+/** Read the explicitly audited role; never infer one from type, name, or value. */
+export function getFieldRole(target: string, field: string): FieldRole | undefined {
+  return getFieldSpec(target, field)?.role
+}

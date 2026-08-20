@@ -60,4 +60,19 @@ describe('Codex B1 · 自定义专属字段', () => {
     // 仍是内置类(builtInKey 不变)
     expect((await db.codexCategories.get(mineral.id!))!.builtInKey).toBe('mineral')
   })
+
+  it('CodexFieldDef.role survives serialization while legacy schema stays un-audited', () => {
+    const schema: CodexFieldDef[] = [
+      { key: 'rank', label: '品级', type: 'select', role: 'canonical-id' },
+      { key: 'note', label: '备注', type: 'longtext', role: 'free-text' },
+    ]
+    const parsed = parseFieldSchema(stringifyFieldSchema(schema))
+    expect(parsed.map(field => field.role)).toEqual(['canonical-id', 'free-text'])
+
+    const legacy = parseFieldSchema(JSON.stringify([
+      { key: 'old', label: '旧字段', type: 'text' },
+    ]))
+    expect(legacy[0]).not.toHaveProperty('role')
+    expect(legacy[0].role).toBeUndefined()
+  })
 })

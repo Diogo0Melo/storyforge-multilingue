@@ -198,7 +198,12 @@ export interface FieldSpec {
   label?: string
   /** 中文/别名枚举归一,如 主角 -> protagonist */
   enumAliasMap?: Record<string, string>
+  /** AI 输出字段的审计角色；缺省表示本阶段尚未审计。 */
+  role?: FieldRole
 }
+
+/** AI 输出字段的审计角色。缺省不代表任何推断结果。 */
+export type FieldRole = 'free-text' | 'preserve' | 'canonical-id'
 
 export interface CompositeIdentity {
   kind: 'composite'
