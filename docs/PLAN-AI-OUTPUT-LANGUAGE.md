@@ -140,7 +140,7 @@ adequado **ou** registrar formalmente a decisão de não criar novo ID (com just
 | Três registros | `CONTEXT_SOURCES` (`src/lib/registry/context-sources.ts`) e `assembleContext` (`src/lib/registry/assemble-context.ts`) devem continuar preservando conteúdo original (sem tradução); `FIELD_REGISTRY` (`src/lib/registry/field-registry.ts`) e `AdoptionSchema` (`src/lib/registry/adoption-schema.ts`, `ADOPTION_SCHEMAS`/`ADOPTION_EXTENSIONS`) são o lugar dos papéis de campo; `PROJECT_TABLES` (`src/lib/registry/project-tables.ts`) sem tabela nova. |
 | Testes / evidência Fase 0 | A caracterização direcionada cobre gate/golden e contraexemplo autoral, payload final de `chat()`/`streamChat()`, races de `contentLanguage`, parse reverse multiworld, valores Codex e contrato system/language-neutral de simulation em `tests/regression/R-I18N-P0-*.test.ts` e arquivos de registry/regressão permitidos. Os testes registram lacunas atuais — payload/placement único, barreira/fail-closed, semântica de valores e bloqueio/retry ainda não são implementados. Permanecem relevantes `tests/regression/R-G2A-language-constraint-trim.test.ts` (trim protegido + `detectInjectedOutputConstraint`), regressões de outline e `R-I18N-P2-workshop-language-contracts.test.ts`. |
 | Campo (imagens 229–240) | Codex produziu chinês com UI pt e fonte pt/en; reverse/Canon propagaram chinês; tela exibiu `contentLanguage` English; timing/persistência da captura incerto. Erro `无效的令牌` (token inválido) é problema upstream separado, fora deste escopo. |
-| Git | Branch de origem legada `feat/i18n-legacy`, que contém a fonte local do i18n refeito; branch atual de execução `feat/i18n/phase-0-characterization`, criada a partir dela; `vite.config.ts` modificado, `.opencode/` não rastreado e `docs/PLAN-AI-OUTPUT-LANGUAGE.md` não commitado no working tree. O `origin/main` publicado está obsoleto/disponível para substituição e não é base de execução. Novas fases usam `feat/i18n/<fase-ou-unidade>`, preservando mudanças pré-existentes. |
+| Git | Branch de origem legada `feat/i18n-legacy`, que contém a fonte local do i18n refeito; branch atual de execução `feat/i18n/phase-1-policy-gate`, criada a partir dela; `vite.config.ts` modificado, `.opencode/` não rastreado e `docs/PLAN-AI-OUTPUT-LANGUAGE.md` não commitado no working tree. O `origin/main` publicado está obsoleto/disponível para substituição e não é base de execução. Novas fases usam `feat/i18n/<fase-ou-unidade>`, preservando mudanças pré-existentes. |
 
 ## 5. Matriz de blast radius
 
@@ -217,7 +217,7 @@ nativos abaixo são **futuros**, habilitados conforme capability declarada da ro
 
 | Placement | Descrição | Status |
 |---|---|---|
-| `textual-fallback` | Bloco marcado versionado (`equivalente a [STORYFORGE_OUTPUT_POLICY]`) anexado à última mensagem `user`; é a mesma política serializada, não uma segunda | **Atual** (hoje ainda sem marcador versionado — introduzido na Fase 1) |
+| `textual-fallback` | Bloco marcado versionado (`[STORYFORGE_OUTPUT_POLICY:v1]` ... `[/STORYFORGE_OUTPUT_POLICY:v1]`) anexado à última mensagem `user`; é a mesma política serializada, não uma segunda | **Atual** (decidido e implementado na Fase 1) |
 | `system/developer` | Papel `system` (ou `developer` quando a rota expuser) no array `messages` OpenAI-compatible | **Futuro**, habilitado por capability de rota/adapter |
 | `native-system` | Instrução em mensagem/campo de sistema nativo da rota (ex.: adapters que já constroem `system` próprio, como simulation hoje) | **Futuro** como capability declarativa — outline/simulation deixam de ser materializadores ad-hoc (Fase 7) |
 
@@ -456,11 +456,13 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
 
 ### Perguntas abertas (decidir antes/durante a implementação, não aqui)
 
-1. Forma exata e versão do marcador do bloco StoryForge (`equivalente a [STORYFORGE_OUTPUT_POLICY]`).
-2. Autosave vs. botão Save único em `ProjectInfoPanel` (o contrato §7 vale para ambos).
-3. Onde declarar capability de placement: extensão de `task-routing.ts` ou definição de adapter própria.
-4. Limiar de falso positivo por família que autoriza promoção de shadow → bloqueio.
-5. Famílias de seeds a avaliar na Fase 8 e ordem.
+> **Decisão da Fase 1:** o marcador v1 é `[STORYFORGE_OUTPUT_POLICY:v1]` com fechamento
+> `[/STORYFORGE_OUTPUT_POLICY:v1]`. A constraint vigente fica entre os dois marcadores.
+
+1. Autosave vs. botão Save único em `ProjectInfoPanel` (o contrato §7 vale para ambos).
+2. Onde declarar capability de placement: extensão de `task-routing.ts` ou definição de adapter própria.
+3. Limiar de falso positivo por família que autoriza promoção de shadow → bloqueio.
+4. Famílias de seeds a avaliar na Fase 8 e ordem.
 
 ## 15. Arquivos a tocar / proibidos na primeira execução
 
@@ -493,8 +495,9 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
   exclusivamente planejamento; a primeira unidade de entrega executável é a Fase 0 (apenas testes).
 - Toda fase usa **`feat/i18n/<fase-ou-unidade>`**, nunca `main`, e exige leitura prévia de
   `docs/FORK-MAINTENANCE.md`. A branch de origem legada `feat/i18n-legacy` contém a fonte local do
-  i18n refeito; a branch atual de execução é `feat/i18n/phase-0-characterization`, criada a partir
+  i18n refeito; a branch atual de execução é `feat/i18n/phase-1-policy-gate`, criada a partir
   dela, preservando `vite.config.ts` modificado, `.opencode/` não rastreado e o plano não commitado.
+  Nas fases seguintes, `feat/i18n/<fase-ou-unidade>` permanece o padrão de branch.
 - Commits de fase são locais e não presumem push. Nunca há push, PR, issue ou envio de dados ao
   upstream; publicação, exclusão, force-push, republicação, alteração de remotes e sincronização
   real são operações separadas, somente com autorização explícita, e publicação apenas para origin.
@@ -507,7 +510,7 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
 ## 17. Checklist anti-desvio (antes de cada fase)
 
 - Li `docs/FORK-MAINTENANCE.md` e confirmei `origin`/`upstream` sem alterar remotes?
-- A branch atual de execução é `feat/i18n/phase-0-characterization`, criada a partir da origem legada `feat/i18n-legacy`? Nas fases seguintes, usei `feat/i18n/<fase-ou-unidade>` e preservei o worktree sujo?
+- A branch atual de execução é `feat/i18n/phase-1-policy-gate`, criada a partir da origem legada `feat/i18n-legacy`? Nas fases seguintes, usei `feat/i18n/<fase-ou-unidade>` e preservei o worktree sujo?
 - Estou usando a base correta: estado local isolado na primeira execução ou nova `origin/main` após republicação autorizada?
 - Estou implementando exatamente o escopo da fase, sem "aproveitar para"?
 - A política de idioma continua única (I1) — sem segundo ponto de decisão e sem segunda materialização efetiva na rota (atenção a outline/simulation)?

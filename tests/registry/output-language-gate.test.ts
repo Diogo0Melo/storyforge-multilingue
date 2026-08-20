@@ -16,11 +16,17 @@ import {
   applyOutputLanguageGate,
   appendOutputLanguageConstraint,
   buildOutputLanguageConstraint,
+  detectOutputLanguagePolicyBlock,
   hasOutputLanguageConstraint,
   ENGLISH_OUTPUT_CONSTRAINT,
   PORTUGUESE_OUTPUT_CONSTRAINT,
 } from '../../src/lib/ai/output-language'
-import { SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT } from '../../src/lib/ai/adapters/prompt-guards'
+import {
+  buildStoryForgeOutputPolicyBlock,
+  SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT,
+  STORYFORGE_OUTPUT_POLICY_END,
+  STORYFORGE_OUTPUT_POLICY_START,
+} from '../../src/lib/ai/adapters/prompt-guards'
 import { classifyAITask } from '../../src/lib/ai/task-routing'
 import type { ChatMessage } from '../../src/lib/types'
 
@@ -85,7 +91,7 @@ describe('WS-3A buildOutputLanguageConstraint', () => {
     const original = baseMessages()
     const result = appendOutputLanguageConstraint(original, 'pt-BR')
     expect(result).not.toBe(original)
-    expect(lastUser(result)).toBe(`请写一章。\n\n${PORTUGUESE_OUTPUT_CONSTRAINT}`)
+    expect(lastUser(result)).toBe(`请写一章。\n\n${buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)}`)
     // 原数组不被修改
     expect(lastUser(original)).toBe('请写一章。')
   })
@@ -96,9 +102,9 @@ describe('WS-3A gate 注入矩阵（uiLocale=zh-CN）', () => {
     const ptProject = await addProject('pt-BR')
     const enProject = await addProject('en')
     const cases = [
-      { outputKind: 'creative' as const, projectId: ptProject, expected: PORTUGUESE_OUTPUT_CONSTRAINT },
-      { outputKind: 'mixed' as const, projectId: enProject, expected: ENGLISH_OUTPUT_CONSTRAINT },
-      { outputKind: 'functional-prose' as const, projectId: ptProject, expected: SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT },
+      { outputKind: 'creative' as const, projectId: ptProject, expected: buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT) },
+      { outputKind: 'mixed' as const, projectId: enProject, expected: buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT) },
+      { outputKind: 'functional-prose' as const, projectId: ptProject, expected: buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT) },
       { outputKind: 'functional-structured' as const, projectId: ptProject, expected: '' },
       { outputKind: 'language-neutral' as const, projectId: enProject, expected: '' },
     ]
@@ -120,7 +126,7 @@ describe('WS-3A gate 注入矩阵（uiLocale=zh-CN）', () => {
       projectId,
       outputKind: 'creative',
     })
-    expect(lastUser(result).endsWith(PORTUGUESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('mixed + 项目 contentLanguage=en → 注入 en 约束', async () => {
@@ -130,7 +136,7 @@ describe('WS-3A gate 注入矩阵（uiLocale=zh-CN）', () => {
       projectId,
       outputKind: 'mixed',
     })
-    expect(lastUser(result).endsWith(ENGLISH_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('creative + contentLanguage 未回填（undefined）→ 回退 uiLocale（zh-CN）约束', async () => {
@@ -140,12 +146,12 @@ describe('WS-3A gate 注入矩阵（uiLocale=zh-CN）', () => {
       projectId,
       outputKind: 'creative',
     })
-    expect(lastUser(result).endsWith(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('creative + 无 projectId → uiLocale 约束', async () => {
     const result = await applyOutputLanguageGate(baseMessages(), { outputKind: 'creative' })
-    expect(lastUser(result).endsWith(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('creative + projectId 无对应行 → uiLocale 约束', async () => {
@@ -153,7 +159,7 @@ describe('WS-3A gate 注入矩阵（uiLocale=zh-CN）', () => {
       outputKind: 'creative',
       projectId: 999_999,
     })
-    expect(lastUser(result).endsWith(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('functional-prose → 始终 uiLocale 约束（忽略项目 contentLanguage）', async () => {
@@ -163,7 +169,7 @@ describe('WS-3A gate 注入矩阵（uiLocale=zh-CN）', () => {
       projectId,
       outputKind: 'functional-prose',
     })
-    expect(lastUser(result).endsWith(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('functional-structured → 不注入', async () => {
@@ -188,7 +194,7 @@ describe('WS-3A gate 跟随 UI 语言变化', () => {
   it('functional-prose 在 uiLocale=pt-BR 时注入 pt-BR 约束', async () => {
     await i18n.changeLanguage('pt-BR')
     const result = await applyOutputLanguageGate(baseMessages(), { outputKind: 'functional-prose' })
-    expect(lastUser(result).endsWith(PORTUGUESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('creative + 未回填项目 在 uiLocale=pt-BR 时回退 pt-BR 约束', async () => {
@@ -198,7 +204,7 @@ describe('WS-3A gate 跟随 UI 语言变化', () => {
       projectId,
       outputKind: 'creative',
     })
-    expect(lastUser(result).endsWith(PORTUGUESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 })
 
@@ -221,6 +227,39 @@ describe('WS-3A fail-safe：UNKNOWN category', () => {
     })
     expect(result).toEqual(baseMessages())
   })
+
+  it('显式 languagePolicy 优先于 outputKind，且不要求 category 分类', async () => {
+    const projectId = await addProject('pt-BR')
+    const result = await applyOutputLanguageGate(baseMessages(), {
+      category: 'definitely.not.registered',
+      projectId,
+      outputKind: 'functional-structured',
+      languagePolicy: 'project',
+    })
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT))).toBe(true)
+  })
+
+  it('显式 none 不注入，也不要求 category 分类', async () => {
+    const messages = baseMessages()
+    const result = await applyOutputLanguageGate(messages, {
+      category: 'definitely.not.registered',
+      outputKind: 'creative',
+      languagePolicy: 'none',
+    })
+    expect(result).toEqual(messages)
+  })
+
+  it('显式 ui 优先于项目语言', async () => {
+    await i18n.changeLanguage('en')
+    const projectId = await addProject('pt-BR')
+    const result = await applyOutputLanguageGate(baseMessages(), {
+      category: 'definitely.not.registered',
+      projectId,
+      outputKind: 'creative',
+      languagePolicy: 'ui',
+    })
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT))).toBe(true)
+  })
 })
 
 describe('WS-3A 过渡期缺省推导（classifyAITask → interim OutputKind）', () => {
@@ -230,7 +269,7 @@ describe('WS-3A 过渡期缺省推导（classifyAITask → interim OutputKind）
       category: 'chapter.content',
       projectId,
     })
-    expect(lastUser(result).endsWith(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('review kind（review.quality）→ functional-prose → uiLocale 约束', async () => {
@@ -239,7 +278,7 @@ describe('WS-3A 过渡期缺省推导（classifyAITask → interim OutputKind）
       category: 'review.quality',
       projectId,
     })
-    expect(lastUser(result).endsWith(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)).toBe(true)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
   it('新登记的结构化 category → 不注入', async () => {
@@ -277,7 +316,7 @@ describe('WS-3A task-routing 新分类', () => {
 })
 
 describe('WS-3A 双重注入守卫', () => {
-  it('已带 zh 约束的消息不被 gate 重复注入', async () => {
+  it('已带 zh 标记块的消息被同一策略替换一次，不重复注入', async () => {
     const preConstrained = appendOutputLanguageConstraint(baseMessages(), 'zh-CN')
     const projectId = await addProject('pt-BR')
     const result = await applyOutputLanguageGate(preConstrained, {
@@ -285,24 +324,25 @@ describe('WS-3A 双重注入守卫', () => {
       projectId,
       outputKind: 'creative',
     })
-    expect(result).toEqual(preConstrained)
-    expect(lastUser(result).split(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT).length - 1).toBe(1)
+    const block = buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)
+    expect(lastUser(result).endsWith(block)).toBe(true)
+    expect(lastUser(result).split(block).length - 1).toBe(1)
   })
 
   it('已带 pt-BR 约束的消息不被 gate 重复注入', async () => {
     const preConstrained = appendOutputLanguageConstraint(baseMessages(), 'pt-BR')
     const result = await applyOutputLanguageGate(preConstrained, { outputKind: 'creative' })
-    expect(result).toEqual(preConstrained)
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT))).toBe(true)
   })
 
-  it('hasOutputLanguageConstraint 识别三种约束签名', () => {
+  it('hasOutputLanguageConstraint 只识别三种完整 StoryForge 标记块', () => {
     expect(hasOutputLanguageConstraint(baseMessages())).toBe(false)
     expect(hasOutputLanguageConstraint(appendOutputLanguageConstraint(baseMessages(), 'zh-CN'))).toBe(true)
     expect(hasOutputLanguageConstraint(appendOutputLanguageConstraint(baseMessages(), 'pt-BR'))).toBe(true)
     expect(hasOutputLanguageConstraint(appendOutputLanguageConstraint(baseMessages(), 'en'))).toBe(true)
   })
 
-  it('当前守卫会把恰好以已知约束结尾的作者自定义 prompt 误认为 StoryForge 约束', async () => {
+  it('作者自定义 prompt 即使以原始 constraint 结尾也保持完整', async () => {
     const authorPrompt: ChatMessage[] = [{
       role: 'user',
       content: [
@@ -312,14 +352,75 @@ describe('WS-3A 双重注入守卫', () => {
     }]
     const projectId = await addProject('en')
 
-    // Fase 0 只冻结现状：endsWith 守卫不区分作者文字与 StoryForge 注入块，
-    // 因此这里不会替换为项目语言，也不会追加第二个约束。
-    expect(hasOutputLanguageConstraint(authorPrompt)).toBe(true)
+    expect(hasOutputLanguageConstraint(authorPrompt)).toBe(false)
     const result = await applyOutputLanguageGate(authorPrompt, {
       category: 'chapter.content',
       projectId,
       outputKind: 'creative',
     })
-    expect(result).toEqual(authorPrompt)
+    expect(result).not.toEqual(authorPrompt)
+    expect(lastUser(result)).toContain(PORTUGUESE_OUTPUT_CONSTRAINT)
+    expect(lastUser(result)).toContain(buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT))
+    expect(lastUser(result).split(STORYFORGE_OUTPUT_POLICY_START).length - 1).toBe(1)
+    expect(lastUser(result).split(STORYFORGE_OUTPUT_POLICY_END).length - 1).toBe(1)
+  })
+
+  it('reexecução do gate é idempotente para o bloco marcado', async () => {
+    const projectId = await addProject('en')
+    const once = await applyOutputLanguageGate(baseMessages(), {
+      projectId,
+      outputKind: 'creative',
+    })
+    const twice = await applyOutputLanguageGate(once, {
+      projectId,
+      outputKind: 'creative',
+    })
+    expect(twice).toEqual(once)
+    expect(detectOutputLanguagePolicyBlock(twice)).toBe(
+      buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT),
+    )
+  })
+
+  it('normaliza bloco marcado não terminal e preserva texto autoral posterior', () => {
+    const authorBefore = 'instrução autoral antes'
+    const authorAfter = 'instrução autoral posterior'
+    const oldBlock = buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)
+    const messages: ChatMessage[] = [{
+      role: 'user',
+      content: `${authorBefore}\n\n${oldBlock}\n\n${authorAfter}`,
+    }]
+
+    const result = appendOutputLanguageConstraint(messages, 'en')
+    const content = lastUser(result)
+    const block = buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT)
+    expect(content).toContain(authorBefore)
+    expect(content).toContain(authorAfter)
+    expect(content.endsWith(block)).toBe(true)
+    expect(content.split(STORYFORGE_OUTPUT_POLICY_START).length - 1).toBe(1)
+    expect(content.split(STORYFORGE_OUTPUT_POLICY_END).length - 1).toBe(1)
+    expect(detectOutputLanguagePolicyBlock(result)).toBe(block)
+  })
+
+  it('normaliza múltiplos blocos marcados para um único bloco final', () => {
+    const authorBefore = 'texto autoral inicial'
+    const authorMiddle = 'texto autoral intermediário'
+    const authorAfter = 'texto autoral final'
+    const firstBlock = buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)
+    const secondBlock = buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)
+    const messages: ChatMessage[] = [{
+      role: 'user',
+      content: `${authorBefore}\n\n${firstBlock}\n\n${authorMiddle}\n\n${secondBlock}\n\n${authorAfter}`,
+    }]
+
+    const result = appendOutputLanguageConstraint(messages, 'en')
+    const content = lastUser(result)
+    const block = buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT)
+    expect(content).toContain(authorBefore)
+    expect(content).toContain(authorMiddle)
+    expect(content).toContain(authorAfter)
+    expect(content.endsWith(block)).toBe(true)
+    expect(content.split(STORYFORGE_OUTPUT_POLICY_START).length - 1).toBe(1)
+    expect(content.split(STORYFORGE_OUTPUT_POLICY_END).length - 1).toBe(1)
+    expect(detectOutputLanguagePolicyBlock(result)).toBe(block)
   })
 })

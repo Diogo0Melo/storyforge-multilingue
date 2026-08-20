@@ -21,7 +21,9 @@ import type { ChatMessage } from '../types'
 import { getSupportedUiLang, type SupportedLang } from '../../i18n'
 import {
   SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT,
-  appendUserConstraint,
+  buildStoryForgeOutputPolicyBlock,
+  findStoryForgeOutputPolicyBlock,
+  removeStoryForgeOutputPolicyBlocks,
 } from './adapters/prompt-guards'
 import { resolveProjectContentLanguage } from './content-language'
 import { classifyAITask, type AITaskKind } from './task-routing'
@@ -78,12 +80,6 @@ export function buildOutputLanguageConstraint(lang: SupportedLang): string {
   }
 }
 
-const ALL_OUTPUT_CONSTRAINTS: readonly string[] = [
-  SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT,
-  PORTUGUESE_OUTPUT_CONSTRAINT,
-  ENGLISH_OUTPUT_CONSTRAINT,
-]
-
 /**
  * 沿用 appendUserConstraint 形状：克隆消息，把约束追加到最后一条 user 消息。
  */
@@ -91,17 +87,39 @@ export function appendOutputLanguageConstraint(
   messages: ChatMessage[],
   lang: SupportedLang,
 ): ChatMessage[] {
-  return appendUserConstraint(messages, buildOutputLanguageConstraint(lang))
+  const next = messages.map(message => ({ ...message }))
+  const user = [...next].reverse().find(message => message.role === 'user')
+  if (!user) return next
+
+  const block = buildStoryForgeOutputPolicyBlock(buildOutputLanguageConstraint(lang))
+  const hadPolicyBlock = findStoryForgeOutputPolicyBlock(user.content) !== undefined
+  const withoutPolicyBlocks = removeStoryForgeOutputPolicyBlocks(user.content)
+  // O separador criado pela materialização anterior também é removido apenas
+  // quando está no fim do texto externo; texto autoral posterior permanece no
+  // mesmo lugar. Em seguida, a política é sempre materializada uma única vez,
+  // no final, para que o detector do trim possa protegê-la integralmente.
+  const authorContent = hadPolicyBlock && withoutPolicyBlocks.endsWith('\n\n')
+    ? withoutPolicyBlocks.slice(0, -2)
+    : withoutPolicyBlocks
+  user.content = authorContent ? `${authorContent}\n\n${block}` : block
+  return next
 }
 
 /**
- * 双重注入守卫：最后一条 user 消息已以任一语言约束结尾时返回 true。
- * 廉价检查，防止 WS-3B 过渡期同一调用被注入两次。
+ * 返回最后一条 user 消息末尾的完整 StoryForge 标记块，供 client 的
+ * trim 保护使用。检测逻辑集中在此处，client 不维护第二套 marker 规则。
  */
+export function detectOutputLanguagePolicyBlock(messages: ChatMessage[]): string | undefined {
+  const user = [...messages].reverse().find(message => message.role === 'user')
+  if (!user) return undefined
+  const block = findStoryForgeOutputPolicyBlock(user.content)
+  return block && user.content.endsWith(block) ? block : undefined
+}
+
+/** 兼容旧 API：只识别最后一条 user 中完整的 StoryForge 标记块。 */
 export function hasOutputLanguageConstraint(messages: ChatMessage[]): boolean {
   const user = [...messages].reverse().find(message => message.role === 'user')
-  if (!user) return false
-  return ALL_OUTPUT_CONSTRAINTS.some(constraint => user.content.endsWith(constraint))
+  return user !== undefined && findStoryForgeOutputPolicyBlock(user.content) !== undefined
 }
 
 /**
@@ -129,41 +147,47 @@ export async function applyOutputLanguageGate(
   messages: ChatMessage[],
   meta?: AICallMeta,
 ): Promise<ChatMessage[]> {
-  // 1) outputKind：显式声明优先
-  let outputKind = meta?.outputKind
-  if (!outputKind) {
-    const taskKind = classifyAITask(meta?.category)
-    if (!taskKind) {
-      // 失败保险（D3/D12）：未登记 category 在 dev/test 必须暴露；生产绝不破坏调用。
-      if (import.meta.env.PROD) {
-        console.error(
-          `[AI] output-language gate: unknown task category "${meta?.category ?? ''}" — skipping language constraint injection`,
+  // 1) languagePolicy 显式声明优先；显式策略不需要先分类 category。
+  let languagePolicy = meta?.languagePolicy
+  if (!languagePolicy) {
+    // 兼容旧调用方：先使用显式 outputKind，再由 category 做过渡期推导。
+    let outputKind = meta?.outputKind
+    if (!outputKind) {
+      const taskKind = classifyAITask(meta?.category)
+      if (!taskKind) {
+        // 失败保险（D3/D12）：未登记 category 在 dev/test 必须暴露；生产绝不破坏调用。
+        if (import.meta.env.PROD) {
+          console.error(
+            `[AI] output-language gate: unknown task category "${meta?.category ?? ''}" — skipping language constraint injection`,
+          )
+          return messages
+        }
+        throw new Error(
+          `[AI] output-language gate: unknown task category "${meta?.category ?? ''}". `
+          + 'Register it in task-routing.ts or declare outputKind explicitly in AICallMeta.',
         )
-        return messages
       }
-      throw new Error(
-        `[AI] output-language gate: unknown task category "${meta?.category ?? ''}". `
-        + 'Register it in task-routing.ts or declare outputKind explicitly in AICallMeta.',
-      )
+      outputKind = INTERIM_OUTPUT_KIND_BY_TASK_KIND[taskKind]
     }
-    outputKind = INTERIM_OUTPUT_KIND_BY_TASK_KIND[taskKind]
+
+    if (outputKind === 'creative' || outputKind === 'mixed') languagePolicy = 'project'
+    else if (outputKind === 'functional-prose') languagePolicy = 'ui'
+    else languagePolicy = 'none'
   }
 
-  // 2) 结构化 / 语言中立 / 过渡期未声明 → 不注入文本语言约束（规则 D）
-  if (!outputKind || outputKind === 'functional-structured' || outputKind === 'language-neutral') {
+  // 2) none 不注入文本语言约束。
+  if (languagePolicy === 'none') {
     return messages
   }
 
-  // 3) 双重注入守卫
-  if (hasOutputLanguageConstraint(messages)) return messages
-
-  // 4) 语言解析
+  // 3) 解析语言
   const uiLocale = getSupportedUiLang()
   let lang: SupportedLang
-  if (outputKind === 'functional-prose') {
+  if (languagePolicy === 'ui') {
     lang = uiLocale
   } else {
-    // creative / mixed → 项目 contentLanguage 的 RESOLVED 值（D1）
+    // project → 项目 contentLanguage 的 RESOLVED 值（D1）。Fase 2 的
+    // flush/barrier 不在此阶段实现；这里保持现有 IndexedDB 读取行为。
     const project = meta?.projectId != null ? await db.projects.get(meta.projectId) : undefined
     if (project) {
       lang = resolveProjectContentLanguage(project, uiLocale)
@@ -175,5 +199,7 @@ export async function applyOutputLanguageGate(
       )
     }
   }
+
+  // 4) 仅替换已标记块；无标记块时追加一个新块。
   return appendOutputLanguageConstraint(messages, lang)
 }

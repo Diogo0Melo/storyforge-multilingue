@@ -9,11 +9,9 @@ import { resolveAIConfigForTask, type AITaskKind } from './task-routing'
 import { getT } from '../../i18n'
 import {
   applyOutputLanguageGate,
-  ENGLISH_OUTPUT_CONSTRAINT,
-  PORTUGUESE_OUTPUT_CONSTRAINT,
+  detectOutputLanguagePolicyBlock,
   type OutputKind,
 } from './output-language'
-import { SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT } from './adapters/prompt-guards'
 
 /** 调用元信息（用于消耗统计分类） */
 export interface AICallMeta {
@@ -35,6 +33,11 @@ export interface AICallMeta {
    * 缺省时由 classifyAITask 过渡期推导（WS-3B 改为显式声明并收紧）。
    */
   outputKind?: OutputKind
+  /**
+   * Fase 1: política explícita de idioma. Quando presente, tem precedência
+   * sobre outputKind e não exige classificação de category.
+   */
+  languagePolicy?: 'project' | 'ui' | 'none'
 }
 
 export function resolveRequestConfig(config: AIConfig, meta?: AICallMeta) {
@@ -55,22 +58,9 @@ function warnRouteFallback(resolved: ReturnType<typeof resolveRequestConfig>, me
   }
 }
 
-/**
- * G2A：输出语言 gate 可能注入的三种约束精确文本（各自直接派生自
- * output-language.ts / prompt-guards.ts 的字节级常量）。用于在 gate 之后
- * 识别需要受保护裁剪的精确约束。
- */
-const OUTPUT_LANGUAGE_CONSTRAINTS: readonly string[] = [
-  SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT,
-  PORTUGUESE_OUTPUT_CONSTRAINT,
-  ENGLISH_OUTPUT_CONSTRAINT,
-]
-
 /** G2A：识别 gate 注入到最后一条 user 消息末尾的精确输出语言约束；无注入时返回 undefined。 */
-function detectInjectedOutputConstraint(messages: ChatMessage[]): string | undefined {
-  const user = [...messages].reverse().find(message => message.role === 'user')
-  if (!user) return undefined
-  return OUTPUT_LANGUAGE_CONSTRAINTS.find(constraint => user.content.endsWith(constraint))
+export function detectInjectedOutputConstraint(messages: ChatMessage[]): string | undefined {
+  return detectOutputLanguagePolicyBlock(messages)
 }
 
 function usageEntry(

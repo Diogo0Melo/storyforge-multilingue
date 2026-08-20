@@ -11,7 +11,10 @@ import {
   ENGLISH_OUTPUT_CONSTRAINT,
   PORTUGUESE_OUTPUT_CONSTRAINT,
 } from '../../src/lib/ai/output-language'
-import { SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT } from '../../src/lib/ai/adapters/prompt-guards'
+import {
+  buildStoryForgeOutputPolicyBlock,
+  SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT,
+} from '../../src/lib/ai/adapters/prompt-guards'
 import { db } from '../../src/lib/db/schema'
 import { buildOutlineGenerationPlan } from '../../src/lib/outline/generation-plan'
 import type { AIConfig, ChatMessage, OutlineNode, Project } from '../../src/lib/types'
@@ -82,8 +85,8 @@ afterEach(async () => {
 
 describe('R-I18N-P0 · payload final da matriz antiga', () => {
   it.each([
-    ['creative', 'pt-BR', PORTUGUESE_OUTPUT_CONSTRAINT],
-    ['mixed', 'en', ENGLISH_OUTPUT_CONSTRAINT],
+    ['creative', 'pt-BR', buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)],
+    ['mixed', 'en', buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT)],
   ] as const)('%s resolve contentLanguage de projeto e preserva a constraint no chat()', async (outputKind, language, constraint) => {
     const projectId = await addProject(language)
     const fetchMock = vi.fn(async () => jsonResponse())
@@ -104,7 +107,7 @@ describe('R-I18N-P0 · payload final da matriz antiga', () => {
   it('functional-prose usa UI, enquanto functional-structured e language-neutral não materializam constraint', async () => {
     const projectId = await addProject('pt-BR')
     const cases = [
-      { outputKind: 'functional-prose' as const, category: 'review.quality', suffix: SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT },
+      { outputKind: 'functional-prose' as const, category: 'review.quality', suffix: buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT) },
       { outputKind: 'functional-structured' as const, category: 'codex.extract', suffix: '' },
       { outputKind: 'language-neutral' as const, category: 'simulation.ttrpg-gm', suffix: '' },
     ]
@@ -139,8 +142,9 @@ describe('R-I18N-P0 · payload final da matriz antiga', () => {
 
     expect(chunks.join('')).toBe('ok')
     const user = sentMessages(fetchMock).at(-1)!
-    expect(user.content.endsWith(ENGLISH_OUTPUT_CONSTRAINT)).toBe(true)
-    expect(user.content.split(ENGLISH_OUTPUT_CONSTRAINT).length - 1).toBe(1)
+    const policyBlock = buildStoryForgeOutputPolicyBlock(ENGLISH_OUTPUT_CONSTRAINT)
+    expect(user.content.endsWith(policyBlock)).toBe(true)
+    expect(user.content.split(policyBlock).length - 1).toBe(1)
   })
 })
 
@@ -216,8 +220,9 @@ describe('R-I18N-P0 · outline com materializadores atuais', () => {
     const messages = sentMessages(fetchMock)
     const joined = messages.map(message => message.content).join('\n')
     expect(joined).toContain('Volume 1: O Começo')
-    expect(messages.at(-1)!.content.endsWith(PORTUGUESE_OUTPUT_CONSTRAINT)).toBe(true)
+    const policyBlock = buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)
+    expect(messages.at(-1)!.content.endsWith(policyBlock)).toBe(true)
     // Caracterização, não correção: exemplos do adapter + gate textual coexistem hoje.
-    expect(joined.split(PORTUGUESE_OUTPUT_CONSTRAINT).length - 1).toBe(1)
+    expect(joined.split(policyBlock).length - 1).toBe(1)
   })
 })

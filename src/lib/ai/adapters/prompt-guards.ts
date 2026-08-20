@@ -12,6 +12,57 @@ export const SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT = [
   '如果输入资料中混有英文，请先在内部理解并转写为中文表达；不要原样扩散到大纲或正文。',
 ].join('\n')
 
+/** Fase 1: delimitadores autoritativos e versionados da política textual. */
+export const STORYFORGE_OUTPUT_POLICY_START = '[STORYFORGE_OUTPUT_POLICY:v1]'
+export const STORYFORGE_OUTPUT_POLICY_END = '[/STORYFORGE_OUTPUT_POLICY:v1]'
+
+export function buildStoryForgeOutputPolicyBlock(constraint: string): string {
+  return [STORYFORGE_OUTPUT_POLICY_START, constraint, STORYFORGE_OUTPUT_POLICY_END].join('\n')
+}
+
+/**
+ * Retorna somente um bloco completo, delimitado byte a byte pelos marcadores
+ * StoryForge. Texto autoral que contenha apenas a constraint nunca casa aqui.
+ */
+export function findStoryForgeOutputPolicyBlock(content: string): string | undefined {
+  let searchFrom = 0
+  let lastBlock: string | undefined
+  while (searchFrom < content.length) {
+    const start = content.indexOf(STORYFORGE_OUTPUT_POLICY_START, searchFrom)
+    if (start < 0) break
+    const end = content.indexOf(
+      STORYFORGE_OUTPUT_POLICY_END,
+      start + STORYFORGE_OUTPUT_POLICY_START.length,
+    )
+    if (end < 0) break
+    lastBlock = content.slice(start, end + STORYFORGE_OUTPUT_POLICY_END.length)
+    searchFrom = end + STORYFORGE_OUTPUT_POLICY_END.length
+  }
+  return lastBlock
+}
+
+/** Remove todos os blocos completos, preservando exatamente o texto externo. */
+export function removeStoryForgeOutputPolicyBlocks(content: string): string {
+  let result = ''
+  let cursor = 0
+  let found = false
+
+  while (cursor < content.length) {
+    const start = content.indexOf(STORYFORGE_OUTPUT_POLICY_START, cursor)
+    if (start < 0) break
+    const end = content.indexOf(
+      STORYFORGE_OUTPUT_POLICY_END,
+      start + STORYFORGE_OUTPUT_POLICY_START.length,
+    )
+    if (end < 0) break
+    result += content.slice(cursor, start)
+    cursor = end + STORYFORGE_OUTPUT_POLICY_END.length
+    found = true
+  }
+
+  return found ? result + content.slice(cursor) : content
+}
+
 export function appendUserConstraint(messages: ChatMessage[], constraint: string): ChatMessage[] {
   const next = messages.map(message => ({ ...message }))
   const user = [...next].reverse().find(message => message.role === 'user')

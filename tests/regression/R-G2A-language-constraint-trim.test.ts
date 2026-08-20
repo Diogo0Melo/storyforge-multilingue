@@ -15,9 +15,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { chat, streamChat } from '../../src/lib/ai/client'
 import { estimateTokens, trimMessagesToFit } from '../../src/lib/ai/context-budget'
 import { SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT } from '../../src/lib/ai/adapters/prompt-guards'
+import { buildStoryForgeOutputPolicyBlock } from '../../src/lib/ai/adapters/prompt-guards'
 import type { AIConfig, ChatMessage } from '../../src/lib/types'
 
-const CONSTRAINT = SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT
+const CONSTRAINT = buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)
 const CONSTRAINT_TOKENS = estimateTokens(CONSTRAINT)
 const MAX_TOKENS = 128
 
