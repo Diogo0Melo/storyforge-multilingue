@@ -29,6 +29,8 @@ const entrypoints = [
   // FLOW-2 compatibility workspace remains intentionally reachable for old graphs and migration tests
   // while the product entry points use NodeAuthoringWorkspace.
   'src/components/node-flow/NodeModeWorkspace.tsx',
+  // Public baseline/eval tooling; intentionally headless and not part of the UI bundle.
+  'src/lib/evals/language-shadow/index.ts',
 ].map(file => path.resolve(root, file))
 
 const graph = new Map()
