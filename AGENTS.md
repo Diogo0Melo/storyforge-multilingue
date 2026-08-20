@@ -32,7 +32,10 @@ AI/DB/导入导出入口。领域扩展只能使用架构守卫认可、带理�
    或纯测试任务不得因此加载整份 Blueprint、路线图、历史日志。
 4. 新体系、完整功能或小功能先核对路线图对应体系的范围、依赖和能力基线；已存在的
    能力必须复用，不按历史标题重复开发。
-5. 在独立分支工作。分支使用 `feat/`、`fix/` 或 `refactor/`；不得直接 push `main`。
+5. 在独立分支工作。开发分支使用 `feat/`、`fix/` 或 `refactor/`；fork 同步分支明确使用
+   `sync/upstream/<id>`；不得直接 push `main`。
+6. Fork、upstream、同步或合并任务遵循
+   [`docs/FORK-MAINTENANCE.md`](docs/FORK-MAINTENANCE.md)。
 
 ## 数据与发布红线
 

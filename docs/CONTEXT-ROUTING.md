@@ -28,6 +28,7 @@
 | Agent Harness、长运行恢复、完成验证 | run/step/attempt、`completed` 来源、context/write scope、checkpoint/receipt | `AI-HARNESS-ARCHITECTURE-20260803.md` 中命中的差距、目标架构或 H0-H5 阶段；再读 Runner、orchestrator、GenerationNode、三注册表和 simulation runtime 对应片段 | 未命中的外部研究、完整 Blueprint、其它阶段实施细节 |
 | schema、迁移、删除、合并、导入导出 | 表名、owner、refs、world scope、迁移版本 | `project-tables.ts`、`schema.ts`、相关 lifecycle 实现、迁移/往返/删除测试；Blueprint 对应数据段 | 其它 Phase、历史完成流水 |
 | 新体系或完整功能 | 稳定 ID、唯一归属、前置依赖 | 路线图中对应体系、能力基线同名章节、关联设计文档；若有 Blueprint ID，仅读该 ID 的“前置/改法/验证/完成判据” | 路线图其它体系、完整 Blueprint |
+| Fork、upstream、同步或合并 | remotes、`origin/main`、当前 branch 与 worktree 状态 | [`FORK-MAINTENANCE.md`](FORK-MAINTENANCE.md)，以及需要时读取 `COLLAB-WORKFLOW.md` 的相关流程 | 未命中的完整协作日志、无关历史文档 |
 | PR、合并、发布、跨模型交接 | branch/commit/PR/check 状态 | `COLLAB-WORKFLOW.md` 相关流程、PR diff、受影响测试 | 全部协作日志 |
 | 历史追溯、来源审计 | 任务 ID、commit、文件名 | `git log` / `git blame` / `rg` 命中；必要时读 `ROADMAP-LEGACY.md` 或 `COLLAB-LOG.md` 邻近片段 | 历史文档全文 |
 | 宪法冲突或新增架构规则 | 冲突的注册表/红线条款 | `CLAUDE.md` 对应章节、架构检查器和当前代码证据 | 与冲突无关的设计文档 |
