@@ -362,6 +362,25 @@
 
 ## AGENT-1 / SIM-1 / PRODUCT-1 / PLATFORM-1
 
+### PRODUCT-1/AI-LANG-1 · AI Output Language
+
+#### 当前能力
+
+- 项目已有 `contentLanguage` 解析与规范化入口；`chat()`/`streamChat()` 目前在网络边界按旧 `outputKind` 矩阵追加文本 constraint。
+- outline adapter 已按项目语言注入标题示例；simulation 的 ttrpg/NPC 路径已在 `system` 注入叙事字段语言指令，并由严格 JSON 调用声明 `language-neutral` 避免 central gate 再追加约束。
+- 当前阶段只登记和冻结事实，权威执行计划为 [`PLAN-AI-OUTPUT-LANGUAGE.md`](../PLAN-AI-OUTPUT-LANGUAGE.md)；不新增表、registry、Canon 或并行 materializer 入口。
+
+#### 当前边界 / 尚未完成
+
+- Fase 0 的回归证据确认：作者 prompt 恰好以已知 constraint 结尾可能被旧 guard 误认；payload 仍可同时包含 outline adapter 示例与 gate constraint；`contentLanguage` 写入没有共享队列、flush 或 fail-closed，非法值可经通用 update 路径落库并在读取时回退 UI。
+- 结构化输出的多语言值、reverse/Codex literal preservation、simulation system directive 和无第二全局 materialization 目前是 characterization，不是语言校验或 placement 收口。
+- outline workshop、Voronoi/map contract、chatgame 以及 creative/mixed gate 依赖路径已纳入计划库存；尚无全产品唯一 materialization 完成声明，outline/simulation consolidation 仍依赖后续 Fase 7。
+
+#### 依赖与复用边界
+
+- 复用 `CONTEXT_SOURCES`/`assembleContext()` 读取、`FIELD_REGISTRY`/`AdoptionSchema`/`adopt()` 写回和 `PROJECT_TABLES` 生命周期；本能力不创建平行事实源。
+- 施工依赖与阶段边界以计划 D1–D11、Fases 0–8 为准；Fase 0 仅记录当前缺口，后续实现仍需分别补 registry/生命周期/失败反例证据。
+
 ### 已有能力
 
 - 当前 AI 主要是用户触发的单轮生成、流式输出、确认和采纳；已有模型路由和部分 Agent/工具基础。

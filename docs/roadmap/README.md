@@ -53,9 +53,21 @@
 | 10 | **SIM-1 世界模拟与互动运行时** | 为跑团、角色聊天、文字游戏和 NPC 演进提供共同状态与事件地基 | SIM-1A 共同运行时核心；SIM-1B 作者选择式 Canon 冻结、来源 hash 审计、角色/地点/物品投影、实体查看和检查点恢复分支；SIM-1C NPC 演进候选、作者确认/拒绝、过期保护和事件回放已交付 | 创作 Canon 与运行时状态分层；模拟不得污染作者原稿；状态变化可回放、可分支；AI 只能产候选 | **SIM-1C COMPLETE（2026-08-03）；TTRPG-1C 与 CHATGAME-1 已消费该基座；NEXT CHATGAME-1 扩展** |
 | 11 | **TTRPG-1 跑团与战役主持** | 在 StoryForge 世界中进行单机跑团、规则判定和长期战役 | `TTRPG-1A` 单机战役主持、`1B` 规则与战斗遭遇、`1C` 长期战役已完成；后续 `1D` 多人协作 | AI 叙事与确定性判定分离；第一阶段不做联网多人；战役日志不冒充创作 Canon | **1C COMPLETE（2026-08-05）；NEXT 1D；依赖 SIM-1** |
 | 12 | **CHATGAME-1 角色聊天与冒险** | 提供类似酒馆的角色聊天、长期记忆、多角色房间和文字冒险 | ✅ 单角色聊天 MVP：用户身份/场景、冻结角色快照、流式回复、重生成、检查点与分支；后续长期记忆、多角色调度、地点/物品/能力与冒险选择 | 角色知识边界真实；运行时人格/状态不自动反写角色主档；游戏事件只能候选式回流创作层 | **MVP COMPLETE（2026-08-05）；后续扩展依赖 SIM-1，联机依赖 PLATFORM-1** |
-| 13 | **PRODUCT-1 新手转化、数据主权与开源信任** | 让新用户快速得到成果，成熟用户敢托付手稿，贡献者能参与 | 当前功能单位：备份恢复可信；后续 `AUDIT-5/8/9/10/11`、加密备份、帮助系统、i18n、安全/贡献/发布政策另行登记 | 当前阶段完成备份导入边界；其余产品能力仍需独立设计和验收 | **CURRENT SCOPE COMPLETE：备份恢复可信（2026-08-05）；后续扩展未完成** |
+| 13 | **PRODUCT-1 新手转化、数据主权与开源信任** | 让新用户快速得到成果，成熟用户敢托付手稿，贡献者能参与 | 当前功能单位：备份恢复可信；`PRODUCT-1/AI-LANG-1` AI 输出语言；后续 `AUDIT-5/8/9/10/11`、加密备份、帮助系统、安全/贡献/发布政策另行登记 | 当前阶段完成备份导入边界；AI 输出语言按独立阶段推进，其余产品能力仍需独立设计和验收 | **CURRENT SCOPE COMPLETE：备份恢复可信（2026-08-05）；AI-LANG-1 PHASE 0 CHARACTERIZATION** |
 | 14 | **PLATFORM-1 协作与社区广场** | 支撑世界版本发布、发现、游玩、派生、讨论、协作和社区治理 | 当前本地世界包 v1 保持兼容；后续 `PLATFORM-1B/1C` 按世界发布版本、模块许可、发现、派生图、协作和治理实施 | 当前阶段完成本地发布/导入闭环；线上服务服从 `WORLD-2` 世界/作品/实例边界，不直接同步或覆盖本地草稿 | **CURRENT SCOPE COMPLETE：本地世界发布包（2026-08-05）；NEXT DESIGN BASELINE REGISTERED** |
 | 15 | **WORLD-2 世界引擎领域重构** | 把散落在分步骤模式中的世界基础、角色资产、主线/支线、大纲/细纲与 SIM 状态机重组为完整世界引擎 | `WORLD-2A` 基线冻结与语义纠偏 → `2B` 完整世界工作台 → `2C` 世界/作品所有权 → `2D` 可执行叙事 → `2E` 版本/发布包 v2 → `2F` 多产品实例统一 | 分步骤模式原样保护；多世界只是可选子系统；世界基础、叙事蓝图和状态机分层；作品与游玩绑定冻结世界版本 | **DESIGN BASELINE（2026-08-05）；NEXT WORLD-2A** |
+
+### PRODUCT-1/AI-LANG-1 开工登记卡
+
+| 项目 | 登记 |
+|---|---|
+| 稳定 ID / 名称 / 类型 | `PRODUCT-1/AI-LANG-1` · AI Output Language · PRODUCT-1 下的完整能力单位 |
+| 用户故事 | 作者为项目选择内容语言后，面向作者/读者的 AI 输出按项目或 UI 政策生成；结构化值保留合法键、枚举、ID、名称和引文。 |
+| 主归属 / 旧入口 | 主归属 PRODUCT-1；复用现有 `chat()`/`streamChat()` gate、outline/simulation adapters 和既有解析入口，不创建平行 AI 或语言入口。 |
+| 范围 / 非范围 | 范围：`docs/PLAN-AI-OUTPUT-LANGUAGE.md` 的 D1–D11、`contentLanguage` 写入同步、gate/adapter placement、结构化值角色和回归证据。非范围：全局 seed 翻译、Canon/上下文翻译、新表/新 registry、`adopt()` 语言阻断和 UI 设计。 |
+| 依赖 / 内部阶段 | Fase 0 只做现状表征；后续依次依赖 Fase 0 → gate 合同 → 持久化屏障 → Codex/字段角色 → shadow/evals/enforcement，并以 Fase 7 收口 outline/simulation materializers。权威计划为 [`PLAN-AI-OUTPUT-LANGUAGE.md`](../PLAN-AI-OUTPUT-LANGUAGE.md)。 |
+| 三注册表四问 | 读：`CONTEXT_SOURCES` + `assembleContext()`；写：`FIELD_REGISTRY` + `AdoptionSchema` + `adopt()`；表：现有 `PROJECT_TABLES`，不新增表；缺失：Fase 0 仅记录当前 gate、写屏障和 placement/值校验缺口，不另建 registry。 |
+| Fase 0 完成边界 | 测试和文档只冻结当前行为，明确尚无写屏障/fail-closed、outline 双 materialization 和结构化语言校验；不宣称未来契约已实现。 |
 
 ## 三、严格施工顺序
 

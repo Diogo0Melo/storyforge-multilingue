@@ -42,6 +42,25 @@ describe('C group: structured extraction foundation', () => {
     }])
   })
 
+  it('codex parser preserves multilingual values literally without language validation', () => {
+    const parsed = parseCodexEntries(JSON.stringify([{
+      name: 'Lúmen-界',
+      icon: '🗺️',
+      summary: 'A cidade guarda memórias / 城市保存记忆',
+      description: 'La ville n’oublie personne · 아무도 잊지 않는다',
+      fields: { rank: '階位 / níveis de poder' },
+      tags: ['矿材'],
+      importance: 3,
+    }]), ['rank'])
+
+    expect(parsed[0]).toMatchObject({
+      name: 'Lúmen-界',
+      summary: 'A cidade guarda memórias / 城市保存记忆',
+      description: 'La ville n’oublie personne · 아무도 잊지 않는다',
+      fields: { rank: '階位 / níveis de poder' },
+    })
+  })
+
   it('location parser only accepts registered location tags', () => {
     expect(parseLocations(JSON.stringify([{
       name: '黑潮港',

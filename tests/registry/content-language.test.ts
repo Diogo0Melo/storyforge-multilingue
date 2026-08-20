@@ -144,3 +144,11 @@ describe('G1 import/export roundtrip preserves contentLanguage', () => {
     expect(resolved).toBe('pt-BR')
   })
 })
+
+describe('Fase 0 · contentLanguage persistido em valores multilíngues', () => {
+  it('resolver preserva literalmente cada idioma suportado, sem validação linguística adicional', () => {
+    for (const lang of ['pt-BR', 'en', 'zh-CN'] as const) {
+      expect(resolveProjectContentLanguage({ contentLanguage: lang }, 'en')).toBe(lang)
+    }
+  })
+})

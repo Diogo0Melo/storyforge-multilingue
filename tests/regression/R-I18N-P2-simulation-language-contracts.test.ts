@@ -21,6 +21,7 @@ import {
   NPC_EVOLUTION_NARRATIVE_FIELDS,
   parseNpcEvolutionCandidate,
 } from '../../src/lib/simulation/npc-evolution'
+import { applyOutputLanguageGate, hasOutputLanguageConstraint } from '../../src/lib/ai/output-language'
 import {
   buildTtrpgEncounterPrompt,
   buildTtrpgGmPrompt,
@@ -241,6 +242,32 @@ describe('R-I18N-P2 · 模拟严格 JSON 调用的语言契约', () => {
     expect(buildNpcEvolutionPrompt(npcBase)[0].content).not.toContain(DIRECTIVE_HEADER)
     expect(buildTtrpgGmPrompt(gmBase)[0].content).not.toContain(DIRECTIVE_HEADER)
     expect(buildTtrpgEncounterPrompt(encounterBase)[0].content).not.toContain(DIRECTIVE_HEADER)
+  })
+
+  it('当前 simulation 路径由 system 指令物化，language-neutral gate 不再添加第二个全局约束', async () => {
+    const messages = buildNpcEvolutionPrompt({
+      authorRequest: '让他警惕起来',
+      targetEntityKey: 'npc:gatekeeper',
+      targetName: '守门人',
+      runtimeContext: '冻结上下文',
+      contentLanguage: 'pt-BR',
+    })
+    const system = messages.find(message => message.role === 'system')
+    expect(system).toBeDefined()
+    expect(system!.content).toContain(DIRECTIVE_HEADER)
+    expect(system!.content.split(DIRECTIVE_HEADER).length - 1).toBe(1)
+
+    // 当前调用点显式为 language-neutral；阶段 0 记录 gate 不会把 system
+    // 指令再物化到 user 末尾，也不宣称这已经完成全局 placement 收口。
+    const gated = await applyOutputLanguageGate(messages, {
+      category: 'simulation.npc-evolution',
+      outputKind: 'language-neutral',
+    })
+    expect(gated).toEqual(messages)
+    expect(hasOutputLanguageConstraint(gated)).toBe(false)
+    const gatedSystem = gated.find(message => message.role === 'system')
+    expect(gatedSystem).toBeDefined()
+    expect(gatedSystem!.content.split(DIRECTIVE_HEADER).length - 1).toBe(1)
   })
 
   it('解析后 JSON 键、canonical 枚举与实体键保持原样，不做解析后翻译', () => {

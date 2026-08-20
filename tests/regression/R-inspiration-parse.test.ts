@@ -1,5 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { parseReverseOutput } from '../../src/lib/ai/inspiration-reverse'
+import {
+  parseReverseMultiWorldOutput,
+  parseReverseOutput,
+} from '../../src/lib/ai/inspiration-reverse'
 
 // 一份最小可用的反推 JSON（字段可空，解析器只要能取到对象即可）
 const REVERSE_JSON = {
@@ -72,5 +75,52 @@ describe('R-inspiration-parse（灵感反推解析健壮性 · 社区反馈"第�
   it('完全不是 JSON（模型拒答）→ 返回 null，不抛异常', () => {
     expect(parseReverseOutput('抱歉，我无法根据这个灵感生成设定。')).toBeNull()
     expect(parseReverseOutput('')).toBeNull()
+  })
+
+  it('多世界解析保留多语言自由文本值的字面量', () => {
+    const output = JSON.stringify({
+      storyCore: {
+        logline: 'A cidade guarda memórias / 城市保存记忆',
+        theme: 'mémoire et esperança',
+        centralConflict: '記憶を失うことと希望の選択',
+        plotPattern: '旅と帰還',
+        mainPlot: 'The archive opens at dawn.',
+      },
+      worlds: [{
+        name: 'Lúmen-界',
+        type: 'primary',
+        worldOrigin: 'Uma maré de luz atravessa 雾海。',
+        powerHierarchy: '階位 / níveis de poder',
+        continentLayout: '西岸—costa oeste',
+        climateByRegion: '暖流与 chuva tropical',
+        historyLine: 'La ville n’oublie personne.',
+        races: '人类 / humanos / 人間',
+        factionLayout: 'Arquivo Azul · 青档案局',
+        entryCondition: 'Only by invitation / 仅限邀请',
+        powerRestriction: 'sem tradução: 禁止跨界',
+      }],
+      characters: [{
+        name: 'Mira 星',
+        roleWeight: 'main',
+        moralAxis: 'neutral',
+        orderAxis: 'lawful',
+        shortDescription: 'une cartographe / 一名制图师',
+        personality: 'curieuse e 坚韧',
+        background: 'Née près de 海港。',
+        motivation: 'Encontrar la última puerta',
+        arc: '从怀疑到信任',
+        homeWorld: 'Lúmen-界',
+        isCrossWorld: false,
+      }],
+    })
+
+    const parsed = parseReverseMultiWorldOutput(output)
+    expect(parsed).not.toBeNull()
+    expect(parsed!.storyCore.logline).toBe('A cidade guarda memórias / 城市保存记忆')
+    expect(parsed!.worlds[0].name).toBe('Lúmen-界')
+    expect(parsed!.worlds[0].factionLayout).toBe('Arquivo Azul · 青档案局')
+    expect(parsed!.worlds[0].entryCondition).toBe('Only by invitation / 仅限邀请')
+    expect(parsed!.characters[0].personality).toBe('curieuse e 坚韧')
+    expect(parsed!.characters[0].homeWorld).toBe('Lúmen-界')
   })
 })

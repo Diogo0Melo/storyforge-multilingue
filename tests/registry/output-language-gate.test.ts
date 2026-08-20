@@ -92,6 +92,27 @@ describe('WS-3A buildOutputLanguageConstraint', () => {
 })
 
 describe('WS-3A gate 注入矩阵（uiLocale=zh-CN）', () => {
+  it('golden：旧 outputKind 矩阵的当前 materialization 形状', async () => {
+    const ptProject = await addProject('pt-BR')
+    const enProject = await addProject('en')
+    const cases = [
+      { outputKind: 'creative' as const, projectId: ptProject, expected: PORTUGUESE_OUTPUT_CONSTRAINT },
+      { outputKind: 'mixed' as const, projectId: enProject, expected: ENGLISH_OUTPUT_CONSTRAINT },
+      { outputKind: 'functional-prose' as const, projectId: ptProject, expected: SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT },
+      { outputKind: 'functional-structured' as const, projectId: ptProject, expected: '' },
+      { outputKind: 'language-neutral' as const, projectId: enProject, expected: '' },
+    ]
+    for (const testCase of cases) {
+      const result = await applyOutputLanguageGate(baseMessages(), {
+        category: 'chapter.content',
+        projectId: testCase.projectId,
+        outputKind: testCase.outputKind,
+      })
+      if (testCase.expected) expect(lastUser(result).endsWith(testCase.expected)).toBe(true)
+      else expect(result).toEqual(baseMessages())
+    }
+  })
+
   it('creative + 项目 contentLanguage=pt-BR → 注入 pt-BR 约束', async () => {
     const projectId = await addProject('pt-BR')
     const result = await applyOutputLanguageGate(baseMessages(), {
@@ -279,5 +300,26 @@ describe('WS-3A 双重注入守卫', () => {
     expect(hasOutputLanguageConstraint(appendOutputLanguageConstraint(baseMessages(), 'zh-CN'))).toBe(true)
     expect(hasOutputLanguageConstraint(appendOutputLanguageConstraint(baseMessages(), 'pt-BR'))).toBe(true)
     expect(hasOutputLanguageConstraint(appendOutputLanguageConstraint(baseMessages(), 'en'))).toBe(true)
+  })
+
+  it('当前守卫会把恰好以已知约束结尾的作者自定义 prompt 误认为 StoryForge 约束', async () => {
+    const authorPrompt: ChatMessage[] = [{
+      role: 'user',
+      content: [
+        '作者自己的提示：请保留下面这段原文作为实验材料。',
+        PORTUGUESE_OUTPUT_CONSTRAINT,
+      ].join('\n\n'),
+    }]
+    const projectId = await addProject('en')
+
+    // Fase 0 只冻结现状：endsWith 守卫不区分作者文字与 StoryForge 注入块，
+    // 因此这里不会替换为项目语言，也不会追加第二个约束。
+    expect(hasOutputLanguageConstraint(authorPrompt)).toBe(true)
+    const result = await applyOutputLanguageGate(authorPrompt, {
+      category: 'chapter.content',
+      projectId,
+      outputKind: 'creative',
+    })
+    expect(result).toEqual(authorPrompt)
   })
 })
