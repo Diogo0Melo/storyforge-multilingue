@@ -19,14 +19,18 @@ export type AITaskRoutes = Partial<Record<AITaskKind, string>>
  * Declarative output-language placement. This matrix is keyed by exact task
  * categories and deliberately does not depend on model, provider, or preset.
  */
-export type OutputLanguagePlacement = 'textual-fallback' | 'native-system'
+export type OutputLanguagePlacement =
+  | 'textual-fallback'
+  | 'native-system'
+  | 'native-system-field-contract'
 
 export const OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY = Object.freeze({
   'outline.volume': 'textual-fallback',
   'outline.chapter': 'textual-fallback',
-  'simulation.ttrpg-encounter': 'native-system',
-  'simulation.ttrpg-gm': 'native-system',
-  'simulation.npc-evolution': 'native-system',
+  'simulation.chatgame': 'native-system',
+  'simulation.ttrpg-encounter': 'native-system-field-contract',
+  'simulation.ttrpg-gm': 'native-system-field-contract',
+  'simulation.npc-evolution': 'native-system-field-contract',
 } as const satisfies Record<string, OutputLanguagePlacement>)
 
 /** Alias emphasizing that this is the central declarative capability matrix. */

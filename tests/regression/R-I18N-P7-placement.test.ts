@@ -5,10 +5,14 @@
  * fallback block, while simulation keeps its field-level system directive.
  */
 import { describe, expect, it } from 'vitest'
+import i18n from '../../src/i18n'
 import {
   applyOutputLanguageGate,
+  buildOutputLanguageConstraint,
+  detectOutputLanguagePolicyBlock,
   hasOutputLanguageConstraint,
 } from '../../src/lib/ai/output-language'
+import { trimMessagesToFit } from '../../src/lib/ai/context-budget'
 import {
   buildStoryForgeOutputPolicyBlock,
   SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT,
@@ -19,6 +23,7 @@ import {
   buildChapterOutlinePrompt,
   buildVolumeOutlinePrompt,
 } from '../../src/lib/ai/adapters/outline-adapter'
+import { buildChatGamePrompt } from '../../src/lib/simulation/chatgame'
 import {
   OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY,
   resolveOutputLanguagePlacement,
@@ -45,16 +50,18 @@ function countOccurrences(value: string, marker: string): number {
 }
 
 describe('R-I18N-P7 · declarative placement matrix', () => {
-  it('maps the five exact categories and defaults to textual-fallback', () => {
+  it('maps the six exact categories and defaults to textual-fallback', () => {
     expect(OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY).toEqual({
       'outline.volume': 'textual-fallback',
       'outline.chapter': 'textual-fallback',
-      'simulation.ttrpg-encounter': 'native-system',
-      'simulation.ttrpg-gm': 'native-system',
-      'simulation.npc-evolution': 'native-system',
+      'simulation.chatgame': 'native-system',
+      'simulation.ttrpg-encounter': 'native-system-field-contract',
+      'simulation.ttrpg-gm': 'native-system-field-contract',
+      'simulation.npc-evolution': 'native-system-field-contract',
     })
     expect(resolveOutputLanguagePlacement('outline.volume')).toBe('textual-fallback')
-    expect(resolveOutputLanguagePlacement('simulation.ttrpg-gm')).toBe('native-system')
+    expect(resolveOutputLanguagePlacement('simulation.chatgame')).toBe('native-system')
+    expect(resolveOutputLanguagePlacement('simulation.ttrpg-gm')).toBe('native-system-field-contract')
     expect(resolveOutputLanguagePlacement('outline.volume:batch')).toBe('textual-fallback')
     expect(resolveOutputLanguagePlacement('unregistered.category')).toBe('textual-fallback')
   })
@@ -165,7 +172,104 @@ describe('R-I18N-P7 · declarative placement matrix', () => {
     }
   })
 
-  it('rejects native-system routes with textual policy before any second policy is injected', async () => {
+  it('native-system chatgame receives one localized system block and no user block', async () => {
+    const messages = buildChatGamePrompt({
+      runtimeContext: '冻结上下文',
+      characterName: '守门人',
+      userMessage: '你是谁？',
+    })
+    const once = await applyOutputLanguageGate(messages, {
+      category: 'simulation.chatgame',
+      outputKind: 'creative',
+    })
+    const system = once.find(message => message.role === 'system')
+    const user = lastUser(once)
+    const block = buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)
+    expect(system).toBeDefined()
+    expect(system!.content.endsWith(block)).toBe(true)
+    expect(countOccurrences(system!.content, STORYFORGE_OUTPUT_POLICY_START)).toBe(1)
+    expect(countOccurrences(user.content, STORYFORGE_OUTPUT_POLICY_START)).toBe(0)
+
+    const twice = await applyOutputLanguageGate(once, {
+      category: 'simulation.chatgame',
+      outputKind: 'creative',
+    })
+    expect(twice).toEqual(once)
+
+    const explicitNone = await applyOutputLanguageGate(messages, {
+      category: 'simulation.chatgame',
+      outputKind: 'creative',
+      languagePolicy: 'none',
+    })
+    expect(explicitNone).toEqual(messages)
+  })
+
+  it.each(['pt-BR', 'en'] as const)('native-system chatgame localizes the system block for %s only', async lang => {
+    try {
+      await i18n.changeLanguage(lang)
+      const result = await applyOutputLanguageGate(buildChatGamePrompt({
+        runtimeContext: 'frozen runtime context',
+        characterName: 'Gatekeeper',
+        userMessage: 'Who are you?',
+      }), {
+        category: 'simulation.chatgame',
+        outputKind: 'creative',
+      })
+      const system = result.find(message => message.role === 'system')
+      const user = lastUser(result)
+      const block = buildStoryForgeOutputPolicyBlock(buildOutputLanguageConstraint(lang))
+
+      expect(system).toBeDefined()
+      expect(countOccurrences(system!.content, block)).toBe(1)
+      expect(countOccurrences(system!.content, STORYFORGE_OUTPUT_POLICY_START)).toBe(1)
+      expect(user.content).not.toContain(STORYFORGE_OUTPUT_POLICY_START)
+      expect(detectOutputLanguagePolicyBlock(result)).toBeUndefined()
+    } finally {
+      await i18n.changeLanguage('zh-CN')
+    }
+  })
+
+  it('native-system chatgame keeps its system block intact after final trimming', async () => {
+    const result = await applyOutputLanguageGate(buildChatGamePrompt({
+      runtimeContext: 'frozen runtime context '.repeat(1_200),
+      characterName: '守门人',
+      userMessage: '你是谁？',
+    }), {
+      category: 'simulation.chatgame',
+      outputKind: 'creative',
+    })
+    const system = result.find(message => message.role === 'system')
+    expect(system).toBeDefined()
+
+    const trimmed = trimMessagesToFit(
+      result,
+      'qwen',
+      'qwen3.7-plus-thinking',
+      128,
+      1_024,
+    )
+    const trimmedSystem = trimmed.messages.find(message => message.role === 'system')
+    const trimmedUser = lastUser(trimmed.messages)
+
+    expect(trimmed.trimmed).toBe(true)
+    expect(trimmedSystem).toEqual(system)
+    expect(countOccurrences(trimmedSystem!.content, STORYFORGE_OUTPUT_POLICY_START)).toBe(1)
+    expect(trimmedUser.content).not.toContain(STORYFORGE_OUTPUT_POLICY_START)
+    expect(detectOutputLanguagePolicyBlock(trimmed.messages)).toBeUndefined()
+  })
+
+  it('native-system cria system no início quando o prompt não possui um', async () => {
+    const messages: ChatMessage[] = [{ role: 'user', content: 'pedido autoral' }]
+    const result = await applyOutputLanguageGate(messages, {
+      category: 'simulation.chatgame',
+      outputKind: 'creative',
+    })
+    expect(result[0].role).toBe('system')
+    expect(result[1]).toEqual(messages[0])
+    expect(countOccurrences(result[0].content, STORYFORGE_OUTPUT_POLICY_START)).toBe(1)
+  })
+
+  it('field-contract routes reject textual policy before any second policy is injected, including none plus mixed', async () => {
     const cases = [
       { outputKind: 'mixed' as const },
       { outputKind: 'mixed' as const, languagePolicy: 'none' as const },
@@ -181,7 +285,7 @@ describe('R-I18N-P7 · declarative placement matrix', () => {
       await expect(applyOutputLanguageGate(messages, {
         category: 'simulation.ttrpg-gm',
         ...policy,
-      })).rejects.toThrow(/native-system placement/)
+      })).rejects.toThrow(/native-system-field-contract placement/)
       expect(messages.every(message => !message.content.includes(STORYFORGE_OUTPUT_POLICY_START))).toBe(true)
     }
   })

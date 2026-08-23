@@ -20,9 +20,10 @@
 
 O StoryForge já possui um gate de idioma de saída (`applyOutputLanguageGate` em
 `src/lib/ai/output-language.ts`) aplicado na borda de rede (`chat()`/`streamChat()` em
-`src/lib/ai/client.ts`). Ele resolve o idioma do projeto via IndexedDB e injeta uma restrição
- textual na última mensagem `user`. Evidências de campo (imagens 229–240) mostram que isso é
-insuficiente:
+`src/lib/ai/client.ts`). Ele resolve o idioma do projeto via IndexedDB e, por padrão, materializa
+uma restrição textual na última mensagem `user`; rotas com capability nativa usam o placement
+correspondente. Evidências de campo (imagens 229–240) mostram que o comportamento textual
+isolado é insuficiente:
 
 - Extração estruturada (`codex.extract`, chamada por `src/components/codex/CodexPanel.tsx` com
   `outputKind: 'functional-structured'`) **não recebe nenhuma restrição de idioma**, e seu
@@ -36,9 +37,13 @@ insuficiente:
   constraints conhecidas, não distinguindo bloco criado pelo StoryForge de texto arbitrário.
 - Já existem **materializadores de idioma fora do gate central**: outline resolve o idioma do
   projeto e injeta exemplos/diretiva no próprio prompt; simulation injeta diretiva de idioma em
-  mensagens `system` (§4, linhas "Materializadores paralelos"). `chat()`/`streamChat()` são o
-  **choke point alvo**, não o único materializador atual — outline/simulation precisam de
-  inventário e consolidação para garantir uma única materialização efetiva por rota (I1).
+  mensagens `system` (§4, linhas "Materializadores paralelos"). A implementação atual mantém
+  `textual-fallback` como padrão, mas o gate também suporta `native-system` genérico; a matriz
+  declarativa em `src/lib/ai/task-routing.ts` registra `simulation.chatgame` nessa categoria e
+  classifica `simulation.npc-evolution`, `simulation.ttrpg-gm` e
+  `simulation.ttrpg-encounter` como `native-system-field-contract`. Nestas três rotas, o adapter
+  mantém a diretiva JSON de campos narrativos própria e o gate não injeta uma segunda política.
+  A alteração de placement não traduz seeds nem altera persistência.
 
 **Direção congelada:** uma única política lógica de idioma, declarada por call site via
 `languagePolicy` em `AICallMeta`, resolvida na borda, materializada uma única vez por
@@ -124,23 +129,23 @@ adequado **ou** registrar formalmente a decisão de não criar novo ID (com just
 
 | Área | Evidência |
 |---|---|
-| Gate de idioma | `src/lib/ai/output-language.ts`: `applyOutputLanguageGate` é chamado por `chat()`/`streamChat()` em `src/lib/ai/client.ts` — o **choke point alvo**, mas não o único materializador atual (ver linhas "Materializadores paralelos"). `functional-structured`/`language-neutral` **não injetam**; `functional-prose` usa idioma da UI; `creative`/`mixed` resolvem `contentLanguage` do projeto via `db.projects.get(meta.projectId)` + `resolveProjectContentLanguage` (`src/lib/ai/content-language.ts`). Sem projeto → fallback uiLocale com `console.debug`. |
+| Gate de idioma | `src/lib/ai/output-language.ts`: `applyOutputLanguageGate` é chamado por `chat()`/`streamChat()` em `src/lib/ai/client.ts`. A resolução usa a capability declarada em `src/lib/ai/task-routing.ts`: o padrão continua `textual-fallback`, enquanto `native-system` materializa um único bloco em mensagem `system`; `native-system-field-contract` deixa a diretiva própria do adapter intacta. `functional-structured`/`language-neutral` **não injetam**; `functional-prose` usa idioma da UI; `creative`/`mixed` resolvem `contentLanguage` do projeto via `db.projects.get(meta.projectId)` + `resolveProjectContentLanguage` (`src/lib/ai/content-language.ts`). Sem projeto → fallback uiLocale com `console.debug`. |
 | Guarda anti-dupla | `hasOutputLanguageConstraint()` (`output-language.ts`) aceita **qualquer uma** das três constraints (`ALL_OUTPUT_CONSTRAINTS`: zh/pt/en) via `endsWith` na última mensagem `user` — não distingue bloco StoryForge de texto do usuário. |
-| Trim/proteção e transporte | `src/lib/ai/client.ts`: `detectInjectedOutputConstraint` + `trimMessagesToFit` (de `src/lib/ai/context-budget.ts`) protegem a constraint injetada; se não preservável, a chamada é rejeitada (coberto por `tests/regression/R-G2A-language-constraint-trim.test.ts`). Body OpenAI-compatible com `messages`; branching por provider em `buildRequest` (poe/deepseek/glm/longcat/default). **Materialização vigente é `textual-fallback`**: `appendOutputLanguageConstraint`/`appendUserConstraint` anexa a constraint à última mensagem `user`; `buildRequest` **não** injeta `system`/`developer` de idioma hoje. Retry HTTP 429/503 existe **somente em `streamChat`** (loop de até 2 retries); `chat()` não possui o mesmo loop — o retry semântico futuro (D8) é mecanismo separado deste. Adapter placement **não** é capability declarativa hoje. |
-| Persistência | `src/stores/project.ts`: `createProject` normaliza `contentLanguage` (`normalizeContentLanguage`); `updateProject` é update genérico (`db.projects.update`) sem normalização específica e sem fila/barreira. `src/components/project/ProjectInfoPanel.tsx` salva o formulário no botão Save (chama `updateProject`; lê idioma resolvido via `resolveProjectContentLanguage`). |
+| Trim/proteção e transporte | `src/lib/ai/client.ts`: `detectInjectedOutputConstraint` + `trimMessagesToFit` (de `src/lib/ai/context-budget.ts`) protegem a constraint textual injetada; se não preservável, a chamada é rejeitada (coberto por `tests/regression/R-G2A-language-constraint-trim.test.ts`). Body OpenAI-compatible com `messages`; branching por provider em `buildRequest` (poe/deepseek/glm/longcat/default). `appendOutputLanguageConstraint`/`appendUserConstraint` mantém o `textual-fallback`; `appendSystemOutputLanguageConstraint` materializa o `native-system` genérico. Retry HTTP 429/503 existe **somente em `streamChat`** (loop de até 2 retries); `chat()` não possui o mesmo loop — o retry semântico futuro (D8) é mecanismo separado deste. |
+| Persistência | `src/stores/project.ts`: `createProject` e updates de `contentLanguage` normalizam via `normalizeContentLanguage`; esses writes são enfileirados por `projectId` e `flushPendingProjectWrites` é aguardado pelo gate. `src/components/project/ProjectInfoPanel.tsx` salva o formulário no botão Save (chama `updateProject`; lê idioma resolvido via `resolveProjectContentLanguage`). A implementação de placement descrita nesta atualização não altera persistência, schema ou lifecycle de projetos. |
 | Codex | `src/components/codex/CodexPanel.tsx` (`handleExtractEntries`) chama `chat(buildCodexExtractPrompt(...), aiConfig, { category: 'codex.extract', projectId, outputKind: 'functional-structured' })` → sem restrição de idioma. Template `codex.extract` vem de `usePromptStore` (seed em `src/lib/ai/prompt-seeds-tools.ts`, chinês). Parser `parseCodexEntries` (`src/lib/ai/adapters/structured-extract-adapter.ts`) não valida idioma. |
 | Reverse inspiration | `src/hooks/useIncrementalInspiration.ts` usa `outputKind: 'mixed'`, category `inspiration.reverse`; parsers `parseReverseOutput`/`parseReverseMultiWorldOutput` em `src/lib/ai/inspiration-reverse.ts` não validam idioma; `src/lib/agent/inspiration-copilot.ts` reutiliza os mesmos builders. |
 | Materializadores paralelos (outline) | `src/lib/outline/generation-plan.ts` (`buildOutlineGenerationPlan`) resolve `contentLanguage` via `resolveProjectContentLanguage` e o passa aos builders de `src/lib/ai/adapters/outline-adapter.ts` (`resolveOutlineTitleExamples` injeta exemplos de título por idioma no prompt). Ao mesmo tempo `src/lib/outline/generation-node.ts` declara `outputKind: 'mixed'` com `projectId` para `outline.volume`/`outline.chapter` → o gate **também** injeta a constraint → **risco de dupla materialização**, congelado pelo payload da Fase 0. |
 | Materializadores paralelos (outline workshop) | O outline workshop reutiliza builders/rotas de outline e, portanto, herda os exemplos materializados pelo adapter e a política textual quando a chamada percorre `mixed`/gate; não há materializador lógico independente registrado. A separação de placement ainda é lacuna de auditoria. |
-| Materializadores paralelos (simulation) | `src/components/simulation/SimulationRuntimePanel.tsx` resolve o idioma (`resolveProjectContentLanguage`) e o passa a `src/lib/simulation/ttrpg.ts` e `src/lib/simulation/npc-evolution.ts`, que materializam diretiva narrativa de idioma em mensagens `system` (diretiva de campos narrativos, inclusive em chamadas JSON estrito cujos call sites declaram `language-neutral` para o gate não injetar). Caminho fora do gate central — inventariar/consolidar na Fase 7; Fase 0 registra que não há segunda constraint global no payload caracterizado. |
+| Materializadores paralelos (simulation) | `src/components/simulation/SimulationRuntimePanel.tsx` resolve o idioma (`resolveProjectContentLanguage`) e o passa a `src/lib/simulation/ttrpg.ts` e `src/lib/simulation/npc-evolution.ts`, que materializam diretiva narrativa de idioma em mensagens `system` por campo JSON. As três rotas (`simulation.npc-evolution`, `simulation.ttrpg-gm` e `simulation.ttrpg-encounter`) estão registradas como `native-system-field-contract`; seus call sites declaram `language-neutral` para o gate não injetar texto genérico. |
 | Voronoi/map | O caminho Voronoi/map consome idioma como contrato de dados/nomeação quando aplicável, mas não possui materializador próprio de idioma de saída; permanece dependente da política do call site/gate ou do contrato de adapter existente. A Fase 0 não cria placement paralelo. |
-| Chatgame | O caminho `chatgame` produz saída user-facing dentro das rotas de simulação/chat e depende do gate central e/ou do contrato de idioma da rota; não há materializador de idioma independente inventariado nesta fase. Auditoria de placement fica para as fases posteriores. |
+| Chatgame | `simulation.chatgame` está registrado em `src/lib/ai/task-routing.ts` como `native-system`. O gate materializa uma única política no `system` do prompt de chatgame; não há bloco textual adicional na última mensagem `user`. |
 | Creative/mixed | Caminhos `creative`/`mixed` que chegam a `chat()`/`streamChat()` dependem do gate central atual, resolvendo projeto e anexando a constraint textual; eles não constituem uma segunda fonte de política, mas podem coexistir com materializadores de adapter já listados. |
 | adopt() | `src/lib/registry/adopt.ts` tem muitos callers e também recebe dados humanos/importados — **não deve** virar detector global de idioma (D7). Cobertura: `tests/registry/adopt.test.ts`, `tests/registry/adopt-callers.test.ts`. |
 | Três registros | `CONTEXT_SOURCES` (`src/lib/registry/context-sources.ts`) e `assembleContext` (`src/lib/registry/assemble-context.ts`) devem continuar preservando conteúdo original (sem tradução); `FIELD_REGISTRY` (`src/lib/registry/field-registry.ts`) e `AdoptionSchema` (`src/lib/registry/adoption-schema.ts`, `ADOPTION_SCHEMAS`/`ADOPTION_EXTENSIONS`) são o lugar dos papéis de campo; `PROJECT_TABLES` (`src/lib/registry/project-tables.ts`) sem tabela nova. |
-| Testes / evidência Fase 0 | A caracterização direcionada cobre gate/golden e contraexemplo autoral, payload final de `chat()`/`streamChat()`, races de `contentLanguage`, parse reverse multiworld, valores Codex e contrato system/language-neutral de simulation em `tests/regression/R-I18N-P0-*.test.ts` e arquivos de registry/regressão permitidos. Os testes registram lacunas atuais — payload/placement único, barreira/fail-closed, semântica de valores e bloqueio/retry ainda não são implementados. Permanecem relevantes `tests/regression/R-G2A-language-constraint-trim.test.ts` (trim protegido + `detectInjectedOutputConstraint`), regressões de outline e `R-I18N-P2-workshop-language-contracts.test.ts`. |
+| Testes / evidência Fase 0 | A caracterização direcionada cobre gate/golden e contraexemplo autoral, payload final de `chat()`/`streamChat()`, races de `contentLanguage`, parse reverse multiworld, valores Codex e contrato system/language-neutral de simulation em `tests/regression/R-I18N-P0-*.test.ts` e arquivos de registry/regressão permitidos. A matriz de placement e o comportamento `native-system` de chatgame têm cobertura em `tests/regression/R-I18N-P7-placement.test.ts`; permanecem relevantes `tests/regression/R-G2A-language-constraint-trim.test.ts` (trim protegido + `detectInjectedOutputConstraint`), regressões de outline e `R-I18N-P2-workshop-language-contracts.test.ts`. |
 | Campo (imagens 229–240) | Codex produziu chinês com UI pt e fonte pt/en; reverse/Canon propagaram chinês; tela exibiu `contentLanguage` English; timing/persistência da captura incerto. Erro `无效的令牌` (token inválido) é problema upstream separado, fora deste escopo. |
-| Git | Branch de origem legada `feat/i18n-legacy`, que contém a fonte local do i18n refeito; branch atual de execução `feat/i18n/phase-1-policy-gate`, criada a partir dela; `vite.config.ts` modificado, `.opencode/` não rastreado e `docs/PLAN-AI-OUTPUT-LANGUAGE.md` não commitado no working tree. O `origin/main` publicado está obsoleto/disponível para substituição e não é base de execução. Novas fases usam `feat/i18n/<fase-ou-unidade>`, preservando mudanças pré-existentes. |
+| Git | Branch atual de execução (evidência desta revisão): `feat/i18n/phase-8-seed-lifecycle`. O `origin/main` publicado está obsoleto/disponível para substituição e não é base de execução. Novas fases usam `feat/i18n/<fase-ou-unidade>`, preservando mudanças pré-existentes. |
 
 ## 5. Matriz de blast radius
 
@@ -152,9 +157,9 @@ adequado **ou** registrar formalmente a decisão de não criar novo ID (com just
 | Restrição de idioma em `codex.extract` | Payload de extração Codex; template seed persistido; budget de contexto (constraint conta tokens) | `CodexPanel.tsx`, `structured-extract-adapter.ts`, `tests/regression/R-AUDIT6-prompt-seed-integrity.test.ts`, trim (`context-budget.ts`) |
 | Papéis de campo (`free-text`/`preserve`/`canonical-id`) | `FIELD_REGISTRY`, `AdoptionSchema`, parsers de extração | `tests/registry/parsers.test.ts`, `tests/registry/adopt.test.ts`, `check:required-tables`, `check:architecture` |
 | Validator shadow/retry | Candidate pipeline antes de `adopt()`; budget de geração | `src/lib/generation/generation-node.ts`, `src/lib/agent/team-execution.ts` (`runBudgetedGenerationNode`), `tests/regression/R-AGENT4-team-budget-canon-retry.test.ts` |
-| Capability de placement por rota | `buildRequest`/adapters; todos os providers | Testes novos de placement único; `tests/regression/R-CF20260702-ai-config-endpoint.test.ts`, `tests/regression/R-CF20260702-language-guard.test.ts` |
+| Capability de placement por rota | `buildRequest`/adapters; todos os providers | Testes de placement único, `tests/regression/R-I18N-P7-placement.test.ts` e bateria real amostrada em 2026-08-20 (§8.1) |
 | Consolidação outline (materializador paralelo) | `src/lib/outline/generation-plan.ts`, `src/lib/ai/adapters/outline-adapter.ts`, `src/lib/outline/generation-node.ts`, `src/components/outline/useOutlineGenerationController.ts`, `src/components/outline/useOutlineBatchGeneration.ts` | Existentes: `tests/regression/R-AUDIT6-outline-generation-plan.test.ts`, `tests/regression/R-PHASE3-outline-title-language.test.ts`, `tests/regression/R-AUDIT6-outline-generation-controller.test.tsx`, `tests/regression/R-AUDIT6-outline-batch-controller.test.tsx`, `tests/regression/R-PIPELINE1-generation-node.test.ts`. Futuros (propostos): payload final de outline com materialização única (adapter OU gate, nunca ambos) |
-| Consolidação simulation (materializador paralelo) | `src/components/simulation/SimulationRuntimePanel.tsx`, `src/lib/simulation/ttrpg.ts`, `src/lib/simulation/npc-evolution.ts` | Existente: `tests/regression/R-I18N-P2-workshop-language-contracts.test.ts`. Futuros (propostos): diretiva única por sessão ttrpg/npc, sem duplicação com o gate |
+| Consolidação simulation (materializador paralelo) | `src/components/simulation/SimulationRuntimePanel.tsx`, `src/lib/simulation/ttrpg.ts`, `src/lib/simulation/npc-evolution.ts` | Contrato explícito `native-system-field-contract` para as três rotas JSON; diretiva única por sessão/campos, sem duplicação com o gate. Existentes: `tests/regression/R-I18N-P2-workshop-language-contracts.test.ts` e `tests/regression/R-I18N-P7-placement.test.ts`. |
 
 ## 6. Contrato de `languagePolicy` (precedência e fallback)
 
@@ -167,7 +172,7 @@ projectId?: number                             // já existe hoje
 
 **Precedência de resolução (na borda, dentro do gate):**
 
-1. `languagePolicy === 'none'` → nenhuma restrição de idioma (ex.: `language-neutral`).
+1. `languagePolicy === 'none'` → em geral, nenhuma restrição textual de idioma é injetada (ex.: `language-neutral`). Há uma exceção de contrato: quando a rota usa `native-system-field-contract`, o guard rejeita antes do retorno `outputKind: 'mixed'` ou uma política textual `project`/`ui`, inclusive a combinação `languagePolicy: 'none'` + `outputKind: 'mixed'`, para evitar um contrato textual conflitante com a diretiva JSON própria do adapter.
 2. `languagePolicy === 'ui'` → idioma atual da UI (`getSupportedUiLang()`).
 3. `languagePolicy === 'project'` →
    a. aguardar barreira de escrita do projeto (§7); falha de write pendente → **abortar fail-closed**;
@@ -210,16 +215,19 @@ Fonte oficial: Project Store/IndexedDB (D3). A mudança de `contentLanguage` dei
 
 Materialização é decidida por **capability da rota/adapter**, nunca por nome de modelo (D4/D11).
 
-**Estado atual (verificado):** a única materialização vigente é `textual-fallback` —
-`appendOutputLanguageConstraint`/`appendUserConstraint` anexando a constraint à última mensagem
-`user`. `buildRequest` **não** injeta mensagem `system`/`developer` de idioma hoje. Os placements
-nativos abaixo são **futuros**, habilitados conforme capability declarada da rota/adapter.
+**Estado atual (verificado):** `textual-fallback` continua sendo o fallback seguro para categorias
+sem registro. O gate também suporta `native-system` genérico e o usa em `simulation.chatgame`;
+as três rotas JSON de simulation usam a categoria explícita `native-system-field-contract`, pois
+seus adapters já possuem contrato próprio de campos narrativos. O placement é declarado por
+categoria em `src/lib/ai/task-routing.ts`, não escolhido por modelo/provider. Esta implementação
+de placement não traduz seeds e não altera persistência.
 
 | Placement | Descrição | Status |
 |---|---|---|
 | `textual-fallback` | Bloco marcado versionado (`[STORYFORGE_OUTPUT_POLICY:v1]` ... `[/STORYFORGE_OUTPUT_POLICY:v1]`) anexado à última mensagem `user`; é a mesma política serializada, não uma segunda | **Atual** (decidido e implementado na Fase 1) |
 | `system/developer` | Papel `system` (ou `developer` quando a rota expuser) no array `messages` OpenAI-compatible | **Futuro**, habilitado por capability de rota/adapter |
-| `native-system` | Instrução em mensagem/campo de sistema nativo da rota (ex.: adapters que já constroem `system` próprio, como simulation hoje) | **Futuro** como capability declarativa — outline/simulation deixam de ser materializadores ad-hoc (Fase 7) |
+| `native-system` | Instrução genérica em mensagem/campo de sistema da rota; o gate cria ou atualiza um único bloco `system` | **Atual** para `simulation.chatgame`; capability declarada em `task-routing.ts` |
+| `native-system-field-contract` | Placement nativo cujo adapter possui contrato explícito de campos JSON; a diretiva própria do adapter não é substituída por uma constraint textual genérica | **Atual** para `simulation.npc-evolution`, `simulation.ttrpg-gm` e `simulation.ttrpg-encounter` |
 
 Regras:
 
@@ -230,6 +238,23 @@ Regras:
 3. `buildRequest` hoje já trata providers de forma estrutural (`NO_STREAM_OPTIONS` para
    glm/wenxin/poe/gemini/ollama/longcat; casos poe/deepseek/glm/longcat/default) — a capability
    matrix se encaixa nesse padrão existente, sem regra semântica nova por provider.
+
+### 8.1 Bateria real amostrada em 2026-08-20
+
+Foi executada uma bateria real com fixtures sintéticas e sem API key. Os casos compararam a
+mesma regra de idioma em `system` versus no fim da mensagem `user`, texto em pt-BR/en/zh-CN e
+JSON estruturado. Esta evidência é limitada às fixtures/rotas amostradas e não constitui
+comparação geral de providers ou prova causal sobre placement.
+
+| Endpoint / modelo | Amostra | Resultado observado | Status |
+|---|---|---|---|
+| `http://localhost:20128/v1` · `deepseek-web/deepseek-v4-pro-think-search` | 6 POSTs; HTTP 4/6 | Idioma correto observável em 3/4 casos textuais e 1/2 casos JSON; ocorreram dois `502 Provider returned empty content` | **degraded** |
+| `http://<private-endpoint>:3001/v1` · `qwen3.7-plus-thinking` | 6 POSTs; HTTP 6/6 | Idioma correto em 4/4 casos textuais e 2/2 casos JSON; chaves, IDs e enums preservados | **verified**, somente para as fixtures/rotas amostradas |
+
+Não houve evidência causal suficiente de que o placement, isoladamente, explicou os dois 502 do
+DeepSeek; portanto, não se afirma superioridade geral. O enforcement não foi promovido: permanece
+em **shadow** até ampliar a amostra, repetir o DeepSeek e cobrir rotas reais. Esta bateria não
+traduz seeds nem altera persistência.
 
 ## 9. Papéis de campo e validação de idioma em JSON estruturado
 
@@ -371,9 +396,9 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
 - **Objetivo:** consolidar todos os materializadores de idioma (incluindo outline e simulation) e a capability matrix (§8) em todas as rotas/adapters ativos, eliminando colocação ad-hoc e dupla materialização.
 - **Etapas:**
   1. **7.1 Inventário final:** fechar o inventário de materializadores (linhas "Materializadores paralelos" de §4): outline (`generation-plan.ts` + `outline-adapter.ts` + `generation-node.ts` com `mixed`), simulation (`SimulationRuntimePanel.tsx` → `ttrpg.ts`/`npc-evolution.ts`) e varredura de caminhos restantes (workflows, agents `agent-*`). Registrar no plano qualquer caminho novo encontrado.
-  2. **7.2 Consolidação:** cada rota passa a ter exatamente uma materialização efetiva (I1). Outline: eliminar a duplicação (adapter OU gate materializa, conforme capability — nunca ambos). Simulation: a diretiva `system` existente vira placement `native-system` declarado por capability ou migra para o placement único da rota.
+  2. **7.2 Consolidação:** cada rota passa a ter exatamente uma materialização efetiva (I1). Outline: eliminar a duplicação (adapter OU gate materializa, conforme capability — nunca ambos). Simulation: `simulation.chatgame` usa `native-system`; `simulation.npc-evolution`, `simulation.ttrpg-gm` e `simulation.ttrpg-encounter` usam `native-system-field-contract` e preservam suas diretivas JSON próprias.
   3. **7.3 Capability matrix:** declaração de capability por rota/adapter em todas as rotas ativas.
-- **Arquivos prováveis:** `src/lib/outline/generation-plan.ts`, `src/lib/ai/adapters/outline-adapter.ts`, `src/lib/outline/generation-node.ts`, `src/components/outline/useOutlineGenerationController.ts`, `src/components/outline/useOutlineBatchGeneration.ts`, `src/components/simulation/SimulationRuntimePanel.tsx`, `src/lib/simulation/ttrpg.ts`, `src/lib/simulation/npc-evolution.ts`, `src/lib/ai/client.ts` (`buildRequest`/adapters), definições de rota em `task-routing.ts`, testes de placement único (propostos).
+- **Arquivos prováveis:** `src/lib/outline/generation-plan.ts`, `src/lib/ai/adapters/outline-adapter.ts`, `src/lib/outline/generation-node.ts`, `src/components/outline/useOutlineGenerationController.ts`, `src/components/outline/useOutlineBatchGeneration.ts`, `src/components/simulation/SimulationRuntimePanel.tsx`, `src/lib/simulation/ttrpg.ts`, `src/lib/simulation/npc-evolution.ts`, `src/lib/ai/client.ts` (`buildRequest`/adapters), definições de rota em `task-routing.ts`, `tests/regression/R-I18N-P7-placement.test.ts` e testes adicionais por rota.
 - **Contrato:** I1 em todas as rotas; placement declarado por capability; nenhuma dupla representação; fallback textual marcado é serialização da mesma política. Isenção temporária de um caminho exige justificativa, fronteira exata e data/critério de remoção documentados (decisão vigente: **sem isenção** para outline/simulation).
 - **Validação:** teste por rota ativa: exatamente uma materialização efetiva no payload final; testes existentes de outline/simulation verdes (`R-AUDIT6-outline-generation-plan`, `R-PHASE3-outline-title-language`, `R-AUDIT6-outline-generation-controller`, `R-AUDIT6-outline-batch-controller`, `R-PIPELINE1-generation-node`, `R-I18N-P2-workshop-language-contracts`); providers sem canal de sistema caem no fallback marcado.
 - **Completude:** **nenhum caller paralelo de materialização de idioma** (inventário 7.1 sem pendências, ou isenções documentadas); matriz §8 coberta por teste para cada rota registrada.
@@ -494,10 +519,9 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
 - **Nenhuma mudança em código, banco, Canon ou testes é feita por este plano.** Este arquivo é
   exclusivamente planejamento; a primeira unidade de entrega executável é a Fase 0 (apenas testes).
 - Toda fase usa **`feat/i18n/<fase-ou-unidade>`**, nunca `main`, e exige leitura prévia de
-  `docs/FORK-MAINTENANCE.md`. A branch de origem legada `feat/i18n-legacy` contém a fonte local do
-  i18n refeito; a branch atual de execução é `feat/i18n/phase-1-policy-gate`, criada a partir
-  dela, preservando `vite.config.ts` modificado, `.opencode/` não rastreado e o plano não commitado.
-  Nas fases seguintes, `feat/i18n/<fase-ou-unidade>` permanece o padrão de branch.
+  `docs/FORK-MAINTENANCE.md`. A branch atual de execução registrada nesta revisão é
+  `feat/i18n/phase-8-seed-lifecycle`. Nas fases seguintes, `feat/i18n/<fase-ou-unidade>` permanece
+  o padrão de branch.
 - Commits de fase são locais e não presumem push. Nunca há push, PR, issue ou envio de dados ao
   upstream; publicação, exclusão, force-push, republicação, alteração de remotes e sincronização
   real são operações separadas, somente com autorização explícita, e publicação apenas para origin.
@@ -510,7 +534,7 @@ saída user-facing (ex.: `consistency-agent.ts`, `chapter-organization.ts`, copi
 ## 17. Checklist anti-desvio (antes de cada fase)
 
 - Li `docs/FORK-MAINTENANCE.md` e confirmei `origin`/`upstream` sem alterar remotes?
-- A branch atual de execução é `feat/i18n/phase-1-policy-gate`, criada a partir da origem legada `feat/i18n-legacy`? Nas fases seguintes, usei `feat/i18n/<fase-ou-unidade>` e preservei o worktree sujo?
+- A branch de execução segue `feat/i18n/<fase-ou-unidade>` e a base adotada para a fase está registrada?
 - Estou usando a base correta: estado local isolado na primeira execução ou nova `origin/main` após republicação autorizada?
 - Estou implementando exatamente o escopo da fase, sem "aproveitar para"?
 - A política de idioma continua única (I1) — sem segundo ponto de decisão e sem segunda materialização efetiva na rota (atenção a outline/simulation)?

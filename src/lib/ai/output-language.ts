@@ -111,6 +111,34 @@ export function appendOutputLanguageConstraint(
 }
 
 /**
+ * Materializes the versioned policy in the last system message. Existing
+ * StoryForge blocks are removed from every message first so a route switch
+ * cannot leave a duplicate block in the user prompt.
+ */
+export function appendSystemOutputLanguageConstraint(
+  messages: ChatMessage[],
+  lang: SupportedLang,
+): ChatMessage[] {
+  const next = messages.map(message => ({ ...message }))
+  for (const message of next) {
+    const hadPolicyBlock = findStoryForgeOutputPolicyBlock(message.content) !== undefined
+    const withoutPolicyBlocks = removeStoryForgeOutputPolicyBlocks(message.content)
+    message.content = hadPolicyBlock && withoutPolicyBlocks.endsWith('\n\n')
+      ? withoutPolicyBlocks.slice(0, -2)
+      : withoutPolicyBlocks
+  }
+
+  const block = buildStoryForgeOutputPolicyBlock(buildOutputLanguageConstraint(lang))
+  const system = [...next].reverse().find(message => message.role === 'system')
+  if (system) {
+    system.content = system.content ? `${system.content}\n\n${block}` : block
+  } else {
+    next.unshift({ role: 'system', content: block })
+  }
+  return next
+}
+
+/**
  * 返回最后一条 user 消息末尾的完整 StoryForge 标记块，供 client 的
  * trim 保护使用。检测逻辑集中在此处，client 不维护第二套 marker 规则。
  */
@@ -181,15 +209,14 @@ export async function applyOutputLanguageGate(
     else languagePolicy = 'none'
   }
 
-  // 2) Native-system routes must not combine their system directive with a
-  // textual policy. Check this before the none early return so an explicit
-  // textual policy cannot silently bypass the route capability.
+  // 2) Field-contract adapters own their system directive. Reject a textual
+  // policy there so the gate cannot create a second, conflicting contract.
   const hasIncompatibleTextualPolicy = meta?.outputKind === 'mixed'
     || languagePolicy === 'project'
     || languagePolicy === 'ui'
-  if (placement === 'native-system' && hasIncompatibleTextualPolicy) {
+  if (placement === 'native-system-field-contract' && hasIncompatibleTextualPolicy) {
     const policyName = meta?.outputKind === 'mixed' ? 'outputKind "mixed"' : `language policy "${languagePolicy}"`
-    const message = `[AI] output-language gate: category "${meta?.category ?? ''}" uses native-system placement and cannot receive textual policy ${policyName}.`
+    const message = `[AI] output-language gate: category "${meta?.category ?? ''}" uses native-system-field-contract placement and cannot receive textual policy ${policyName}.`
     if (import.meta.env.PROD) {
       console.error(message)
       return messages
@@ -197,8 +224,11 @@ export async function applyOutputLanguageGate(
     throw new Error(message)
   }
 
-  // 3) none 不注入文本语言约束。
+  // 3) none 不注入文本语言约束; field-contract adapters also remain untouched.
   if (languagePolicy === 'none') {
+    return messages
+  }
+  if (placement === 'native-system-field-contract') {
     return messages
   }
 
@@ -223,6 +253,10 @@ export async function applyOutputLanguageGate(
     }
   }
 
-  // 5) Only textual-fallback routes materialize the single terminal block.
+  // 5) Native-system routes materialize one system block; the default keeps
+  // the existing terminal user fallback and its trim invariants.
+  if (placement === 'native-system') {
+    return appendSystemOutputLanguageConstraint(messages, lang)
+  }
   return appendOutputLanguageConstraint(messages, lang)
 }
