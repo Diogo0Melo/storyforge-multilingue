@@ -100,9 +100,9 @@ test('分步骤作品进入世界引擎时直接复用完整工作台，不要�
   await page.goto('./')
   await page.getByRole('button', { name: '世界引擎', exact: true }).click()
   await expect(page.getByRole('heading', { name: '完整世界工作台', exact: true })).toBeVisible()
-  await expect(page.getByRole('button', { name: '同步分步骤设定', exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: '继续分步骤创作', exact: true })).toBeVisible()
   await expect(page.getByRole('button', { name: '自然环境', exact: true })).toBeVisible()
-  await page.getByRole('button', { name: '大纲与细纲', exact: true }).click()
+  await page.getByRole('button', { name: '继续分步骤创作', exact: true }).click()
   await expect(page).toHaveURL(/\/storyforge\/workspace\/\d+\?module=outline$/)
 })
 
