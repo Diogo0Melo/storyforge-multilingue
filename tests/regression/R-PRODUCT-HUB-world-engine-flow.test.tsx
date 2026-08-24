@@ -56,6 +56,12 @@ const groupOverviewMarkers = {
 
 const LANGS: UiLang[] = ['zh-CN', 'en', 'pt-BR']
 
+/** 表驱动：单世界分步骤与多世界两条产品形态走完全相同的世界引擎公共流。 */
+const VARIANTS: ReadonlyArray<[boolean, string]> = [
+  [false, '分步骤项目'],
+  [true, '多世界项目'],
+]
+
 let nextSeed = 0
 
 async function seedProject(enableMultiWorld: boolean): Promise<{ id: number; name: string }> {
@@ -145,11 +151,23 @@ async function renderWorldsTab(enableMultiWorld: boolean, lang: UiLang = 'zh-CN'
   return { host, project }
 }
 
-describe('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWorld=false 分步骤项目）', () => {
+/** 监听 scrollIntoView 调用并记录目标元素；happy-dom 缺失时先补 no-op。 */
+function trackScrollIntoView(): { targets: Element[]; spy: ReturnType<typeof vi.spyOn>; restore: () => void } {
+  if (typeof Element.prototype.scrollIntoView !== 'function') {
+    ;(Element.prototype as unknown as Record<string, () => void>).scrollIntoView = () => undefined
+  }
+  const targets: Element[] = []
+  const spy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
+    targets.push(this)
+  })
+  return { targets, spy, restore: () => spy.mockRestore() }
+}
+
+describe.each(VARIANTS)('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWorld=%s %s）', (enableMultiWorld) => {
   it('精选卡同时提供三语本地化的管理设定与继续分步骤 CTA', async () => {
     for (const lang of LANGS) {
       const copy = copyByLang[lang]
-      const { host } = await renderWorldsTab(false, lang)
+      const { host } = await renderWorldsTab(enableMultiWorld, lang)
       const actions = featuredActions(host)
       expect(actions).toHaveLength(2)
       const labels = actions.map(button => button.textContent)
@@ -160,7 +178,7 @@ describe('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWorld=false 分步
   })
 
   it('点击继续分步骤 CTA 经公开 router 进入当前项目大纲模块', async () => {
-    const { host, project } = await renderWorldsTab(false)
+    const { host, project } = await renderWorldsTab(enableMultiWorld)
     const copy = copyByLang['zh-CN']
     const continueButton = featuredActions(host).find(button => button.textContent === copy.engineContinueStepWriting)
     expect(continueButton).toBeTruthy()
@@ -170,7 +188,10 @@ describe('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWorld=false 分步
   })
 
   it('#world-engine-editor 渲染真实工作台契约且不回退到 WorldGroupOverview', async () => {
-    const { host } = await renderWorldsTab(false)
+    const { host } = await renderWorldsTab(enableMultiWorld)
+    // 产品作用域门（engineGroups.groupReady）就绪前会先渲染临时 FeaturePanelFallback；
+    // 先等工作台真正挂载，再断言严格结构。若 fallback 永久化，此等待将超时失败。
+    const workspace = await waitForWorkspace(host)
     const editor = host.querySelector('#world-engine-editor')
     expect(editor).toBeTruthy()
     // 设计稿已移除旧 WORLD CONTENT 区头：编辑器区块直接且仅包含工作台本体。
@@ -178,7 +199,6 @@ describe('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWorld=false 分步
     expect(editor!.firstElementChild).toBe(editor!.querySelector('.sf-world-engine-workspace'))
     expect(editor!.textContent).not.toContain('WORLD CONTENT')
 
-    const workspace = await waitForWorkspace(host)
     expect(workspace.textContent).toContain('完整世界工作台')
     expect(workspace.textContent).toContain('WORLD FOUNDATION / CANON')
     for (const domainLabel of ['世界基础 Canon', '世界资产', '叙事设计', '世界结构', '状态与实例']) {
@@ -193,15 +213,9 @@ describe('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWorld=false 分步
   })
 
   it('管理设定 CTA 滚动定位到同一个 #world-engine-editor 元素', async () => {
-    const targets: Element[] = []
-    if (typeof Element.prototype.scrollIntoView !== 'function') {
-      ;(Element.prototype as unknown as Record<string, () => void>).scrollIntoView = () => undefined
-    }
-    const spy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
-      targets.push(this)
-    })
+    const { targets, spy, restore } = trackScrollIntoView()
     try {
-      const { host } = await renderWorldsTab(false)
+      const { host } = await renderWorldsTab(enableMultiWorld)
       const copy = copyByLang['zh-CN']
       const editor = host.querySelector('#world-engine-editor')
       expect(editor).toBeTruthy()
@@ -212,78 +226,7 @@ describe('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWorld=false 分步
       expect(targets).toEqual([editor])
       expect(spy).toHaveBeenCalledTimes(1)
     } finally {
-      spy.mockRestore()
-    }
-  })
-})
-
-describe('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWorld=true 多世界项目）', () => {
-  it('精选卡同时提供三语本地化的管理设定与继续分步骤 CTA', async () => {
-    for (const lang of LANGS) {
-      const copy = copyByLang[lang]
-      const { host } = await renderWorldsTab(true, lang)
-      const actions = featuredActions(host)
-      expect(actions).toHaveLength(2)
-      const labels = actions.map(button => button.textContent)
-      expect(labels).toContain(copy.engineManageSettings)
-      expect(labels).toContain(copy.engineContinueStepWriting)
-      expect(featuredSection(host).querySelector('h2')?.textContent).toBe(`R-PRODUCT-HUB 引擎项目 ${nextSeed}`)
-    }
-  })
-
-  it('点击继续分步骤 CTA 经公开 router 进入当前项目大纲模块', async () => {
-    const { host, project } = await renderWorldsTab(true)
-    const copy = copyByLang['zh-CN']
-    const continueButton = featuredActions(host).find(button => button.textContent === copy.engineContinueStepWriting)
-    expect(continueButton).toBeTruthy()
-    await act(async () => continueButton!.click())
-    const probe = document.querySelector('[data-testid="workspace-probe"]')
-    expect(probe?.textContent).toBe(`/workspace/${project.id}?module=outline`)
-  })
-
-  it('#world-engine-editor 渲染真实工作台契约且不回退到 WorldGroupOverview', async () => {
-    const { host } = await renderWorldsTab(true)
-    const editor = host.querySelector('#world-engine-editor')
-    expect(editor).toBeTruthy()
-    // 设计稿已移除旧 WORLD CONTENT 区头：编辑器区块直接且仅包含工作台本体。
-    expect(editor!.children).toHaveLength(1)
-    expect(editor!.firstElementChild).toBe(editor!.querySelector('.sf-world-engine-workspace'))
-    expect(editor!.textContent).not.toContain('WORLD CONTENT')
-
-    const workspace = await waitForWorkspace(host)
-    expect(workspace.textContent).toContain('完整世界工作台')
-    expect(workspace.textContent).toContain('WORLD FOUNDATION / CANON')
-    for (const domainLabel of ['世界基础 Canon', '世界资产', '叙事设计', '世界结构', '状态与实例']) {
-      expect(workspace.textContent).toContain(domainLabel)
-    }
-    expect(workspace.textContent).toContain('分步骤叙事投影')
-
-    expect(groupOverviewMarkers.aiSuggestButton.length).toBeGreaterThan(0)
-    expect(editor!.textContent).not.toContain(groupOverviewMarkers.aiSuggestButton)
-    expect(editor!.textContent).not.toContain(groupOverviewMarkers.addWorldButton)
-  })
-
-  it('管理设定 CTA 滚动定位到同一个 #world-engine-editor 元素', async () => {
-    const targets: Element[] = []
-    if (typeof Element.prototype.scrollIntoView !== 'function') {
-      ;(Element.prototype as unknown as Record<string, () => void>).scrollIntoView = () => undefined
-    }
-    const spy = vi.spyOn(Element.prototype, 'scrollIntoView').mockImplementation(function (this: Element) {
-      targets.push(this)
-    })
-    try {
-      const { host } = await renderWorldsTab(true)
-      const copy = copyByLang['zh-CN']
-      const editor = host.querySelector('#world-engine-editor')
-      expect(editor).toBeTruthy()
-      await waitForWorkspace(host)
-      const manageButton = featuredActions(host).find(button => button.textContent === copy.engineManageSettings)
-      expect(manageButton).toBeTruthy()
-      await act(async () => manageButton!.click())
-      expect(targets).toEqual([editor])
-      expect(spy).toHaveBeenCalledTimes(1)
-    } finally {
-      spy.mockRestore()
+      restore()
     }
   })
 })

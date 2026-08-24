@@ -201,6 +201,62 @@ function useSelectedWorldGroupId(project?: Project): number | null {
   return project?.enableMultiWorld ? activeGroupId : null
 }
 
+/**
+ * R-PRODUCT-HUB 世界组作用域桥（非视觉）。
+ *
+ * Product Hub 移除 WorldGroupOverview 后，世界引擎路径不再有项目级
+ * loadAll 调用点，WorldEngineWorkspace 只能读到全局 activeGroupId —— 它可能是
+ * null（从未加载）或另一项目刚访问过的组（陈旧跨项目泄漏），并会一路进入
+ * WorldNarrativeReleasePanel 的实例创建。这里只为多世界项目恢复最小的
+ * 项目级初始化/选择：loadAll(当前项目)；组缺失时 ensurePrimaryGroup(当前项目)。
+ * 不恢复迁移 UI、migrateToMultiWorld、同步 CTA，也不做任何批量数据盖章。
+ *
+ * 返回 groupReady=false 直到“全局 activeGroupId === 本钩子为当前项目解析出的组
+ * 且该组确实属于当前项目”同时成立；调用方必须据此推迟渲染
+ * #world-engine-editor > WorldEngineWorkspace，保证陈旧/null 组永远到不了
+ * 发布面板。就绪后结构保持严格的直接父子关系。
+ */
+function useWorldEngineGroupScope(project?: Project): { groupReady: boolean } {
+  const projectId = project?.id ?? null
+  const enableMultiWorld = project?.enableMultiWorld ?? false
+  const [resolvedGroupId, setResolvedGroupId] = useState<number | null>(null)
+  const activeGroupId = useWorldGroupStore(state => state.activeGroupId)
+  const groups = useWorldGroupStore(state => state.groups)
+
+  useEffect(() => {
+    if (projectId == null || !enableMultiWorld) {
+      setResolvedGroupId(null)
+      return
+    }
+    let cancelled = false
+    setResolvedGroupId(null)
+    void (async () => {
+      await useWorldGroupStore.getState().loadAll(projectId)
+      if (cancelled) return
+      const loaded = useWorldGroupStore.getState()
+      let groupId = loaded.activeGroupId
+      if (groupId == null || !loaded.groups.some(group => group.id === groupId)) {
+        groupId = await useWorldGroupStore.getState().ensurePrimaryGroup(projectId)
+      }
+      if (cancelled) return
+      if (useWorldGroupStore.getState().activeGroupId !== groupId) {
+        useWorldGroupStore.getState().setActiveGroup(groupId)
+      }
+      setResolvedGroupId(groupId)
+    })().catch(() => {
+      if (!cancelled) setResolvedGroupId(null)
+    })
+    return () => { cancelled = true }
+  }, [projectId, enableMultiWorld])
+
+  if (!enableMultiWorld) return { groupReady: true }
+  return {
+    groupReady: activeGroupId != null
+      && activeGroupId === resolvedGroupId
+      && groups.some(group => group.id === activeGroupId && group.projectId === projectId),
+  }
+}
+
 function EmptyProjectState({ onCreate, t }: { onCreate: () => void; t: DomainTFunction }) {
   return <section className="sf-product-empty"><Globe2 className="h-8 w-8" /><h2>{t('productHub.emptyTitle')}</h2><p>{t('productHub.emptyDesc')}</p><Button variant="primary" icon={Plus} onClick={onCreate}>{t('productHub.emptyCreate')}</Button></section>
 }
@@ -250,12 +306,15 @@ function WorldCard({ world, onOpen, t }: { world: ProductWorld; onOpen: () => vo
 }
 
 function WorldEnginePage({ worlds, activeWorld, onSelectWorld, onOpenCreate, onOpenWorldPicker, onImported, onOpenModule, onOpenGame, t }: { worlds: ProductWorld[]; activeWorld?: ProductWorld; onSelectWorld: (world: ProductWorld) => void; onOpenCreate: () => void; onOpenWorldPicker: () => void; onImported: (projectId: number) => void; onOpenModule: (module: SidebarModule) => void; onOpenGame: (product: 'storygame' | 'text-adventure' | 'avg') => void; t: DomainTFunction }) {
+  // 世界组作用域桥：当前项目的组身份解析完成前，不渲染世界引擎工作台，
+  // 发布面板随之不可交互（防止 null/跨项目陈旧组进入实例创建）。
+  const engineGroups = useWorldEngineGroupScope(activeWorld?.project)
   if (!activeWorld) return <><PageHeading eyebrow={t('productHub.enginePageEyebrow')} title={t('productHub.enginePageTitle')} description={t('productHub.enginePageDescShort')} action={<Button variant="primary" icon={Plus} onClick={onOpenCreate}>{t('productHub.engineCreateZero')}</Button>} /><EmptyProjectState onCreate={onOpenCreate} t={t} /><WorldSharingPanel onImported={onImported} /></>
   return <>
     <PageHeading eyebrow={t('productHub.enginePageEyebrow')} title={t('productHub.enginePageTitle')} description={t('productHub.enginePageDescFull')} action={<><Button icon={Hash} onClick={onOpenWorldPicker}>{t('productHub.homeUseCode')}</Button><Button variant="primary" icon={Plus} onClick={onOpenCreate}>{t('productHub.engineCreateZero')}</Button></>} />
     <div className="sf-subnav">{worlds.map(world => <button key={world.code} className={world.code === activeWorld.code ? 'active' : ''} onClick={() => onSelectWorld(world)}><WorldGlyph accent={world.accent} small /><span>{world.name}</span><span>{world.code}</span></button>)}<span className="sf-subnav-spacer" /></div>
     <section className="sf-worlds-featured"><div className="sf-worlds-featured-visual"><WorldGlyph accent={activeWorld.accent} /></div><div className="sf-worlds-featured-copy"><span className="sf-overline">WORLD ENGINE · {activeWorld.source}</span><h2>{activeWorld.name}</h2><p>{activeWorld.description}</p><span className="sf-world-code-large"><Hash className="h-4 w-4" /> {activeWorld.code} · v{activeWorld.version}</span><div className="sf-worlds-featured-actions"><Button variant="primary" icon={ArrowRight} onClick={() => document.getElementById('world-engine-editor')?.scrollIntoView({ behavior: 'smooth' })}>{t('productHub.engineManageSettings')}</Button><Button icon={BookOpenText} onClick={() => onOpenModule('outline')}>{t('productHub.engineContinueStepWriting')}</Button></div></div><div className="sf-worlds-featured-stats"><div><strong>{activeWorld.completeness}%</strong><span>{t('productHub.engineStatsCompleteness')}</span></div><div><strong>v{activeWorld.version}</strong><span>{t('productHub.engineStatsVersion')}</span></div><div><strong>{activeWorld.project.enableMultiWorld ? t('productHub.engineStatsBaseActive') : t('productHub.engineStatsBasePending')}</strong><span>{t('productHub.engineStatsBaseLabel')}</span></div></div></section>
-    <section id="world-engine-editor" className="sf-product-panel"><WorldEngineWorkspace project={activeWorld.project} projection={activeWorld.projection} activeWorkId={activeWorld.project.activeWorkId} onWorkChanged={() => onImported(activeWorld.projectId)} onOpenModule={onOpenModule} onOpenGame={onOpenGame} /></section>
+    <section id="world-engine-editor" className="sf-product-panel">{engineGroups.groupReady ? <WorldEngineWorkspace project={activeWorld.project} projection={activeWorld.projection} activeWorkId={activeWorld.project.activeWorkId} onWorkChanged={() => onImported(activeWorld.projectId)} onOpenModule={onOpenModule} onOpenGame={onOpenGame} /> : <FeaturePanelFallback t={t} />}</section>
     <WorldSharingPanel project={activeWorld.project} onImported={onImported} />
   </>
 }
