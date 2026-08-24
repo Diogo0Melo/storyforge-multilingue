@@ -28,13 +28,51 @@ describe('Phase 1.1a · PROJECT_TABLES 注册表', () => {
       expect(result.ok, result.errors.join('; ')).toBe(true)
     })
 
-    it('登记了全部 58 张表', () => {
-      expect(PROJECT_TABLES.length).toBe(58)   // v48 SIM 会话/事件/检查点→58
+    it('登记了全部 82 张表', () => {
+      expect(PROJECT_TABLES.length).toBe(82)   // v62 MEMORY-1 + 六类文字游戏内容与媒资表
     })
 
     it('每张表名唯一', () => {
       const names = PROJECT_TABLES.map(s => s.name)
       expect(new Set(names).size).toBe(names.length)
+    })
+
+    it('MEMORY-10 为 100% 表登记分配唯一磁盘记忆策略', () => {
+      const allowed = new Set(['editable', 'evidence', 'derived-none', 'not-applicable'])
+      expect(PROJECT_TABLES.every(spec => allowed.has(spec.memoryClassification.classification))).toBe(true)
+      expect(PROJECT_TABLES.filter(spec => spec.memoryClassification.classification === 'editable').map(spec => spec.name).sort())
+        .toEqual(['chapters', 'creativeRules', 'projects', 'storyCores', 'works', 'worlds'])
+      expect(PROJECT_TABLES.find(spec => spec.name === 'agentRunEvents')?.memoryClassification.classification).toBe('evidence')
+      expect(PROJECT_TABLES.find(spec => spec.name === 'retrievalChunks')?.memoryClassification.classification).toBe('derived-none')
+      expect(PROJECT_TABLES.find(spec => spec.name === 'promptTemplates')?.memoryClassification.classification).toBe('not-applicable')
+      expect(PROJECT_TABLES.every(spec => spec.memoryClassification.reason.trim().length > 0)).toBe(true)
+    })
+
+    it('所有非 global 表都有逻辑 owner，C3 核心表已切换到显式字段 locator', () => {
+      const governed = PROJECT_TABLES.filter(spec => spec.owner !== 'global')
+      expect(governed.every(spec => spec.domainOwner != null)).toBe(true)
+      expect(PROJECT_TABLES.find(spec => spec.name === 'worlds')?.domainOwner?.locator.kind).toBe('workspace')
+      expect(PROJECT_TABLES.find(spec => spec.name === 'works')?.domainOwner?.locator).toMatchObject({
+        kind: 'field', owner: 'world', field: 'worldId',
+      })
+      expect(PROJECT_TABLES.find(spec => spec.name === 'storyCores')?.domainOwner).toMatchObject({
+        allowed: ['work'], legacyDefault: 'work', locator: { kind: 'field', owner: 'work', field: 'workId' },
+      })
+      expect(PROJECT_TABLES.find(spec => spec.name === 'chapters')?.domainOwner).toMatchObject({
+        allowed: ['work'], legacyDefault: 'work', locator: { kind: 'field', owner: 'work', field: 'workId' },
+      })
+    })
+
+    it('所有世界发布表都从同一注册表声明用户可选分区', () => {
+      const publishable = PROJECT_TABLES.filter(spec => spec.communityShare === 'world')
+      expect(publishable.length).toBeGreaterThan(0)
+      expect(publishable.every(spec => spec.releaseSection != null)).toBe(true)
+      expect(publishable.filter(spec => spec.releaseSection === 'outline').map(spec => spec.name))
+        .toEqual(expect.arrayContaining(['outlineNodes', 'detailedOutlines']))
+      expect(publishable.filter(spec => spec.releaseSection === 'narrative').map(spec => spec.name))
+        .toEqual(expect.arrayContaining(['storyCores', 'storyArcs', 'narrativeModules', 'narrativeNodes']))
+      expect(publishable.filter(spec => spec.releaseSection === 'characters').map(spec => spec.name))
+        .toEqual(expect.arrayContaining(['characters', 'characterRelations', 'workCharacterBindings']))
     })
   })
 

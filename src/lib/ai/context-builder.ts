@@ -2,9 +2,14 @@ import type { Worldview, StoryCore, PowerSystem, Character, CreativeRules } from
 import type { HistoricalKeyword, HistoricalKeywordCategory } from '../types/history'
 import { KEYWORD_CATEGORY_LABELS } from '../types/history'
 import { DIMENSION_LABELS, ANALYSIS_DIMENSIONS } from '../types/reference'
-import { ensureLegacyActiveReferenceRun } from '../reference-analysis/legacy-bridge'
+import {
+  getActiveReferenceAnalysisRun,
+  getReferenceAnalysisRunChunks,
+} from '../reference-analysis/lifecycle'
 import { loadContextMemo } from '../export/context-snapshot'
 import { db } from '../db/schema'
+import { readOwnedRows, resolveScope } from '../world-engine/scope'
+import type { WorkspaceScope } from '../types/world-ownership'
 import {
   MORAL_AXIS_LABELS,
   normalizeCharacterAxes,
@@ -114,6 +119,7 @@ export function formatStoryCoreBlock(sc: StoryCore | null): string {
   if (!sc) return ''
   const parts = [
     sc.logline && `一句话故事：${sc.logline}`,
+    sc.concept && `故事概念：${sc.concept}`,
     sc.theme && `主题：${sc.theme}`,
     sc.centralConflict && `核心冲突：${sc.centralConflict}`,
     sc.plotPattern && `情节模式：${sc.plotPattern}`,
@@ -236,6 +242,25 @@ export function buildCharacterContext(characters: Character[]): string {
   return parts.join('\n')
 }
 
+/** Full single-character source for targeted edits; unlike roster context it never downshifts NPC fields. */
+export function buildTargetCharacterContext(character: Character | null): string {
+  if (!character) return ''
+  const normalized = {
+    ...character,
+    ...normalizeCharacterAxes(character as unknown as Record<string, unknown>),
+  } as Character
+  const axes = `${ROLE_WEIGHT_LABELS[normalized.roleWeight]} · ${ORDER_AXIS_LABELS[normalized.orderAxis]}${MORAL_AXIS_LABELS[normalized.moralAxis]}`
+  return [
+    `【本次目标角色】${normalized.name}（${axes}）`,
+    ...CHARACTER_DIMENSIONS.map(dimension => {
+      const value = (normalized[dimension.key] as string | undefined)?.trim()
+      const label = getDimensionLabel(dimension.key)
+      return value ? `${label}：${value}` : `${label}：（未填写）`
+    }),
+    normalized.relationships?.trim() ? `人物关系：${normalized.relationships.trim()}` : '人物关系：（未填写）',
+  ].join('\n')
+}
+
 /**
  * Phase G2: 过滤活跃角色
  * 只保留在当前章节范围内活跃的角色（主要角色始终保留）
@@ -264,16 +289,14 @@ export async function buildRefAnalysisContext(refIds: number[]): Promise<string>
   for (const refId of refIds) {
     const ref = await db.references.get(refId)
     if (!ref) continue
-    let activeRun = (await db.referenceAnalysisRuns
-      .where('referenceId').equals(refId).toArray())
-      .find(run => run.status === 'active')
-    if (!activeRun && ref.analysisStatus === 'done') {
-      activeRun = await ensureLegacyActiveReferenceRun(refId)
+    let activeRun
+    try {
+      activeRun = await getActiveReferenceAnalysisRun(refId)
+    } catch {
+      continue
     }
     if (!activeRun || activeRun.status !== 'active') continue
-    const chunks = await db.referenceChunkAnalysis
-      .where('analysisRunId').equals(activeRun.id!)
-      .sortBy('chunkIndex')
+    const chunks = await getReferenceAnalysisRunChunks(refId, activeRun.id!)
 
     if (!chunks.length) continue
 
@@ -308,20 +331,19 @@ export async function buildRefAnalysisContext(refIds: number[]): Promise<string>
  * 从 DB 读取项目的历史事件和关键词，格式化为 AI 可用的上下文。
  * Token 预算控制：最多 2000 字（约上下文窗口的 10%）。
  */
-export async function buildHistoricalContext(projectId: number, worldGroupId?: number | null): Promise<string> {
+export async function buildHistoricalContext(projectId: number, worldGroupId?: number | null, scope?: WorkspaceScope): Promise<string> {
   const MAX_CHARS = 2000
   const parts: string[] = []
   let charCount = 0
   const project = await db.projects.get(projectId)
+  const resolved = scope ?? await resolveScope({ projectId })
   const filterWorldScope = <T extends { worldGroupId?: number | null }>(rows: T[]): T[] => {
     if (!project?.enableMultiWorld) return rows
     return rows.filter(row => (row.worldGroupId ?? null) === (worldGroupId ?? null))
   }
 
   // 1. 正式历史总述与纪年。多世界必须精确匹配，禁止默认世界资料泄漏到其它世界。
-  const histories = filterWorldScope(await db.histories
-    .where('projectId').equals(projectId)
-    .toArray())
+  const histories = filterWorldScope(await readOwnedRows<any>(resolved, 'histories', { owner: 'world' }))
   const history = histories[0]
   const overview = history?.overview?.trim()
   const eraSystem = history?.eraSystem?.trim()
@@ -338,9 +360,7 @@ export async function buildHistoricalContext(projectId: number, worldGroupId?: n
 
   // 正式历史完全为空时才读取旧 Worldview 历史字段，避免同一语义双份注入。
   if (!overview && !eraSystem) {
-    const worldviews = filterWorldScope(await db.worldviews
-      .where('projectId').equals(projectId)
-      .toArray())
+    const worldviews = filterWorldScope(await readOwnedRows<any>(resolved, 'worldviews', { owner: 'world' }))
     const worldview = worldviews[0]
     const legacy = [
       worldview?.historyLine?.trim(),
@@ -355,9 +375,8 @@ export async function buildHistoricalContext(projectId: number, worldGroupId?: n
   }
 
   // 2. 历史时间线事件（按年份排序，取关键事件）
-  const events = filterWorldScope(await db.historicalTimelineEvents
-    .where('projectId').equals(projectId)
-    .sortBy('year'))
+  const events = filterWorldScope((await readOwnedRows<any>(resolved, 'historicalTimelineEvents', { owner: 'world' }))
+    .sort((a, b) => a.year - b.year))
 
   if (events.length > 0) {
     const eventLines: string[] = ['【历史时间线】']
@@ -374,9 +393,7 @@ export async function buildHistoricalContext(projectId: number, worldGroupId?: n
   }
 
   // 3. 历史关键词（按分类分组）
-  const keywords = filterWorldScope(await db.historicalKeywords
-    .where('projectId').equals(projectId)
-    .toArray())
+  const keywords = filterWorldScope(await readOwnedRows<any>(resolved, 'historicalKeywords', { owner: 'world' }))
 
   if (keywords.length > 0) {
     const byCategory = new Map<HistoricalKeywordCategory, HistoricalKeyword[]>()
@@ -412,8 +429,8 @@ export async function buildHistoricalContext(projectId: number, worldGroupId?: n
  * 导致作者建的地点在 AI 写正文时读不到。此函数补齐。
  * @param worldGroupId 多世界：当前世界（importantLocations 暂无世界字段，按项目全量，预算限制）
  */
-export async function buildLocationContext(projectId: number): Promise<string> {
-  const locs = await db.importantLocations.where('projectId').equals(projectId).toArray()
+export async function buildLocationContext(projectId: number, scope?: WorkspaceScope): Promise<string> {
+  const locs = await readOwnedRows<any>(scope ?? await resolveScope({ projectId }), 'importantLocations', { owner: 'world' })
   if (!locs.length) return ''
   const sorted = locs.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)).slice(0, 25)
   const lines = sorted.map(l => {

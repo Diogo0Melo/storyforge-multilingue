@@ -26,6 +26,9 @@ interface Props {
   mode: InspirationResultMode
   pendingDiff: InspirationResultDiff[] | null
   confirming: boolean
+  candidateDraft?: string | null
+  candidateInputSummary?: string
+  onCandidateChange?: (draft: string) => void
   onToggle: (fragmentId: string) => void
   onRemove: (fragmentId: string) => void
   onConfirm: () => void
@@ -39,6 +42,9 @@ export default function InspirationFusionReview({
   mode,
   pendingDiff,
   confirming,
+  candidateDraft = null,
+  candidateInputSummary,
+  onCandidateChange,
   onToggle,
   onRemove,
   onConfirm,
@@ -116,16 +122,32 @@ export default function InspirationFusionReview({
         </div>
       )}
 
-      {pendingDiff && (
+      {(candidateDraft != null || pendingDiff !== null) && (
         <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-3">
           <div className="flex items-center gap-1.5 text-sm font-medium text-amber-400">
             <GitCompareArrows className="h-4 w-4" />
             {t('fusionReview.pendingHeading')}
           </div>
           <p className="text-xs text-text-muted">
-            {t('fusionReview.pendingHint')}
+            {candidateDraft != null
+              ? t('fusionReview.candidateHint')
+              : t('fusionReview.pendingHint')}
           </p>
-          {pendingDiff.length === 0 ? (
+          {candidateInputSummary && (
+            <p className="text-[11px] text-text-muted">{candidateInputSummary}</p>
+          )}
+          {candidateDraft != null && (
+            <textarea
+              aria-label={t('fusionReview.candidateInputAriaLabel')}
+              value={candidateDraft}
+              onChange={event => onCandidateChange?.(event.target.value)}
+              disabled={confirming}
+              className="min-h-64 w-full resize-y rounded border border-border bg-bg-base px-2.5 py-2 font-mono text-[11px] leading-5 text-text-primary"
+            />
+          )}
+          {pendingDiff === null ? (
+            <p className="text-xs text-red-400">{t('fusionReview.candidateInvalid')}</p>
+          ) : pendingDiff.length === 0 ? (
             <p className="text-xs text-text-secondary">{t('fusionReview.noDiff')}</p>
           ) : (
             <div className="max-h-64 space-y-2 overflow-y-auto">
@@ -149,7 +171,7 @@ export default function InspirationFusionReview({
           <div className="flex gap-2">
             <button
               onClick={onConfirm}
-              disabled={confirming}
+              disabled={confirming || pendingDiff === null}
               className="flex items-center gap-1 rounded bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-40"
             >
               <Check className="h-3.5 w-3.5" />

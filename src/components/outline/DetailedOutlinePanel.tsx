@@ -4,23 +4,43 @@ import { useOutlineStore } from '../../stores/outline'
 import { useDetailedOutlineStore } from '../../stores/detailed-outline'
 import { useCharacterStore } from '../../stores/character'
 import { useForeshadowStore } from '../../stores/foreshadow'
-import { useAIStream } from '../../hooks/useAIStream'
-import { createAISessionKey } from '../../stores/ai-generation-session'
-import { buildDetailSceneGeneratePrompt, buildEnhancedDetailPrompt, normalizeParsedScenes, parseEnhancedDetailSmart } from '../../lib/ai/adapters/detail-scene-adapter'
-import { useAIConfigStore } from '../../stores/ai-config'
+import { normalizeParsedScenes, parseEnhancedDetailResult } from '../../lib/ai/adapters/detail-scene-adapter'
 import { batchGenerateDetails, type BatchProgress } from '../../lib/ai/batch-detail-runner'
 import AIStreamOutput from '../shared/AIStreamOutput'
 import { nanoid } from '../../lib/utils/id'
-import { adopt } from '../../lib/registry/adopt'
-import { assembleContext } from '../../lib/registry/assemble-context'
 import type { Project, DetailedOutline, DetailedScene, EmotionArc } from '../../lib/types'
+import { db } from '../../lib/db/schema'
+import { resolveScopeLike } from '../../lib/world-engine/scope'
+import {
+  hashDetailedOutlineSourceSummaryV1,
+  type DetailedOutlineGenerationOperationV1,
+} from '../../lib/agent/run/detailed-outline-generation-durable'
+import {
+  commitDetailedOutlineBatchCandidateV1,
+  detailedOutlineBatchStepIdV1,
+  pauseDetailedOutlineBatchRunV1,
+  readLatestDetailedOutlineBatchCandidatesV1,
+  readLatestRecoverableDetailedOutlineBatchCandidateV1,
+  rejectDetailedOutlineBatchCandidateV1,
+  verifyDetailedOutlineBatchRunV1,
+  type DetailedOutlineBatchCandidateV1,
+} from '../../lib/agent/run/detailed-outline-batch-durable'
 import { useToast } from '../shared/Toast'
 import DetailedOutlineSidebar from './DetailedOutlineSidebar'
 import { useDomainT, type DomainTFunction } from '../../i18n'
 import DetailedSceneCard from './DetailedSceneCard'
+import { useDetailedOutlineGenerationController } from './useDetailedOutlineGenerationController'
+import CreativeArtifactSummary from '../agent/CreativeArtifactSummary'
+import {
+  INITIAL_RECORD_TARGET_CLASS,
+  initialRecordTargetAttributes,
+  useInitialRecordTarget,
+} from '../shared/initial-record-target'
 
 interface Props {
   project: Project
+  /** 外部影响交接指定的章纲节点；仍通过既有细纲面板处理。 */
+  initialNodeId?: number | null
 }
 
 function getEmotionLabels(t: DomainTFunction): Record<EmotionArc, string> {
@@ -38,18 +58,17 @@ export function filterExistingIds(ids: number[], validIds: Set<number>): number[
 }
 
 /** v3 §2.1 — 创作区.细纲（场景拆分 + AI） */
-export default function DetailedOutlinePanel({ project }: Props) {
+export default function DetailedOutlinePanel({ project, initialNodeId }: Props) {
   const { t } = useDomainT('outline')
   const toast = useToast()
   const { nodes, loadAll: loadOutline } = useOutlineStore()
   const { detailedOutlines, loadAll: loadDetailed, getOrCreate, save } = useDetailedOutlineStore()
   const { characters, loadAll: loadCharacters } = useCharacterStore()
-  const aiConfig = useAIConfigStore(s => s.config)
   const emotionLabels = useMemo(() => getEmotionLabels(t), [t])
   const { foreshadows, loadAll: loadForeshadows } = useForeshadowStore()
-  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null)
-  const ai = useAIStream(createAISessionKey(project.id!, 'detail.scene', selectedNodeId ?? 'unselected'))
-  const enhanceAI = useAIStream(createAISessionKey(project.id!, 'detail.enhance', selectedNodeId ?? 'unselected'))
+  const [selectedNodeId, setSelectedNodeId] = useState<number | null>(initialNodeId ?? null)
+  const [pendingBatchCandidate, setPendingBatchCandidate] = useState<DetailedOutlineBatchCandidateV1 | null>(null)
+  const batchDecisionRef = useRef<((decision: 'adopt' | 'reject') => void) | null>(null)
 
   useEffect(() => {
     loadOutline(project.id!)
@@ -64,9 +83,14 @@ export default function DetailedOutlinePanel({ project }: Props) {
     [nodes],
   )
 
+  useEffect(() => {
+    if (initialNodeId != null) setSelectedNodeId(initialNodeId)
+  }, [initialNodeId])
+
   // 当前选中章节的细纲
   const currentChapter = chapterNodes.find(n => n.id === selectedNodeId)
   const currentDetailed = detailedOutlines.find(d => d.outlineNodeId === selectedNodeId)
+  useInitialRecordTarget(initialNodeId, currentChapter?.id === initialNodeId)
   const validCharacterIds = useMemo(
     () => new Set(characters.map(c => c.id).filter((id): id is number => id != null)),
     [characters],
@@ -75,6 +99,54 @@ export default function DetailedOutlinePanel({ project }: Props) {
     () => new Set(foreshadows.map(f => f.id).filter((id): id is number => id != null)),
     [foreshadows],
   )
+  const reloadDetailed = useCallback(() => loadDetailed(project.id!), [loadDetailed, project.id])
+  const detailGeneration = useDetailedOutlineGenerationController({
+    projectId: project.id!,
+    outlineNodeId: selectedNodeId,
+    worldGroupId: currentChapter?.worldGroupId ?? null,
+    chapterTitle: currentChapter?.title ?? '',
+    chapterSummary: currentChapter?.summary ?? '',
+    currentDetailed,
+    validCharacterIds,
+    validForeshadowIds,
+    reloadDetailed,
+    suspendRecovery: !!pendingBatchCandidate,
+  })
+  const {
+    ai,
+    enhanceAI,
+    isRecovering,
+    pendingCandidate: pendingDetailedCandidate,
+    buildDetailContext,
+    adoptDetailedPatch,
+    generateScenes,
+    generateEnhanced,
+    acceptCandidate,
+    dismissCandidate,
+    clearPendingCandidate,
+    restoreEnhanced,
+  } = detailGeneration
+
+  useEffect(() => {
+    let active = true
+    void (async () => {
+      try {
+        const scope = await resolveScopeLike(project.id!)
+        const candidate = await readLatestRecoverableDetailedOutlineBatchCandidateV1({ scope })
+        if (!active || !candidate) return
+        clearPendingCandidate()
+        setPendingBatchCandidate(candidate)
+        setSelectedNodeId(candidate.outlineNodeId)
+        restoreEnhanced({
+          output: candidate.output,
+          operation: `batch-durable:${candidate.runId}:${candidate.outlineNodeId}`,
+        })
+      } catch (error) {
+        console.error('[DetailedOutline] batch candidate recovery failed', error)
+      }
+    })()
+    return () => { active = false }
+  }, [clearPendingCandidate, project.id, restoreEnhanced])
 
   const ensureDetailed = async () => {
     if (!currentChapter) return null
@@ -112,111 +184,151 @@ export default function DetailedOutlinePanel({ project }: Props) {
     await updateScenes(currentDetailed.scenes.filter(s => s.sceneId !== sceneId))
   }
 
-  const adoptDetailedPatch = useCallback(async (
-    outlineNodeId: number,
-    patch: Partial<DetailedOutline>,
-  ) => {
-    const result = await adopt({
-      projectId: project.id!,
-      target: 'detailedOutlines',
-      mode: 'add',
-      data: { outlineNodeId, ...patch },
-    })
-    await loadDetailed(project.id!)
-    return result
-  }, [project.id, loadDetailed])
-
-  const buildDetailContext = useCallback(async (outlineNodeId: number) => {
-    const node = nodes.find(n => n.id === outlineNodeId)
-    const assembled = await assembleContext({
-      projectId: project.id!,
-      worldGroupId: node?.worldGroupId ?? null,
-      outlineNodeId,
-      provider: aiConfig.provider,
-      model: aiConfig.model,
-      sourceKeys: ['chapterOutline', 'canonAssertions', 'worldview', 'storyCore', 'characterDrivenPlan', 'powerSystem', 'cultivationProgress', 'codex', 'characters', 'creativeRules', 'worldRules', 'historical', 'locations'],
-    })
-    const charIdx = assembled.included.indexOf('characters')
-    return {
-      worldContext: assembled.text,
-      characterContext: charIdx >= 0 ? assembled.segments[charIdx]?.content ?? '' : '',
-    }
-  }, [project.id, nodes, aiConfig.provider, aiConfig.model])
-
   const handleAIGenerate = async () => {
     if (!currentChapter) return
-    const ctx = await buildDetailContext(currentChapter.id!)
-    const messages = buildDetailSceneGeneratePrompt(
-      currentChapter.title,
-      currentChapter.summary || '',
-      ctx.worldContext,
-      ctx.characterContext,
-      '',
-    )
-    ai.start(messages, undefined, { category: 'detail.scene', projectId: project.id!, outputKind: 'mixed' })
+    try {
+      await generateScenes()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('detailed.generateScenesFailed'))
+    }
   }
 
   // D2: {t('detailed.enhanceDetail')}
   const handleEnhancedGenerate = async () => {
     if (!currentChapter) return
-    const idx = chapterNodes.indexOf(currentChapter)
-    const prevSummary = idx > 0 ? (chapterNodes[idx - 1].summary || '') : ''
-    const nextSummary = idx < chapterNodes.length - 1 ? (chapterNodes[idx + 1].summary || '') : ''
-    const { worldContext: worldCtx } = await buildDetailContext(currentChapter.id!)
-
-    const charCtx = characters
-      .filter(c => c.roleWeight === 'main')
-      .map(c => `[ID:${c.id}] ${c.name}（${c.orderAxis}/${c.moralAxis}）`)
-      .join('\n')
-
-    const foreshadowCtx = foreshadows
-      .filter(f => f.status !== 'resolved')
-      .map(f => `[ID:${f.id}] ${f.name}（${f.type}）：${f.description}`)
-      .join('\n')
-
-    const messages = buildEnhancedDetailPrompt(
-      currentChapter.title,
-      currentChapter.summary || '',
-      prevSummary, nextSummary,
-      worldCtx, charCtx, foreshadowCtx,
-    )
-    enhanceAI.start(messages, undefined, { category: 'detail.enhance', projectId: project.id!, outputKind: 'mixed' })
+    try {
+      await generateEnhanced()
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('detailed.generateEnhancedFailed'))
+    }
   }
 
-  const handleAcceptEnhanced = async (text: string) => {
-    const parsed = await parseEnhancedDetailSmart(text, aiConfig)
-    if (!parsed) {
-      toast.error(t('detailed.parseEnhancedFailed'))
+  const handleAcceptDetailed = useCallback(async (
+    operation: DetailedOutlineGenerationOperationV1,
+    text: string,
+  ) => {
+    const batchPending = pendingBatchCandidate
+    if (batchPending) {
+      if (operation !== 'enhanced' || !currentChapter?.id || batchPending.outlineNodeId !== currentChapter.id || batchPending.output !== text) {
+        toast.error(t('detailed.batchCandidateChanged'))
+        return
+      }
+      const decide = batchDecisionRef.current
+      if (decide) {
+        batchDecisionRef.current = null
+        setPendingBatchCandidate(null)
+        enhanceAI.reset()
+        decide('adopt')
+        return
+      }
+      const parsed = parseEnhancedDetailResult(text)
+      if (!parsed?.scenes?.length) {
+        toast.error(t('detailed.batchCandidateParseFailed'))
+        return
+      }
+      const patch: Partial<DetailedOutline> = {
+        openingHook: parsed.openingHook?.trim() || '',
+        endingCliffhanger: parsed.endingCliffhanger?.trim() || '',
+        sceneLocation: parsed.sceneLocation?.trim() || '',
+        emotionArc: parsed.emotionArc as EmotionArc | undefined,
+        appearingCharacterIds: filterExistingIds(parsed.appearingCharacterIds ?? [], validCharacterIds),
+        foreshadowIds: filterExistingIds(parsed.foreshadowIds ?? [], validForeshadowIds),
+        scenes: normalizeParsedScenes(parsed.scenes, ids => filterExistingIds(ids, validCharacterIds)),
+        lastUsedSummary: currentChapter.summary || '',
+      }
+      try {
+        const scope = await resolveScopeLike(project.id!)
+        const committed = await commitDetailedOutlineBatchCandidateV1({
+          scope,
+          runId: batchPending.runId,
+          candidate: batchPending,
+          output: text,
+          currentSourceSummaryHash: () => hashDetailedOutlineSourceSummaryV1(currentChapter.summary || ''),
+          adopt: async () => {
+            const result = await adoptDetailedPatch(currentChapter.id!, patch, scope)
+            if (!result.written.length || result.typeErrors.length || result.fkErrors.length || result.skipped.length) {
+              throw new Error(t('detailed.batchCandidateWriteFailed'))
+            }
+          },
+          postState: async () => {
+            const row = await db.detailedOutlines.where('outlineNodeId').equals(currentChapter.id!).first()
+            return row ? { outlineNodeId: row.outlineNodeId, scenes: row.scenes, lastUsedSummary: row.lastUsedSummary ?? '' } : null
+          },
+        })
+        const expectedIds = committed.contract.scope.outlineNodeIds ?? []
+        const allSucceeded = expectedIds.every(outlineNodeId => (
+          committed.projection.steps[detailedOutlineBatchStepIdV1(outlineNodeId)]?.status === 'succeeded'
+        ))
+        if (allSucceeded) {
+          const candidates = await readLatestDetailedOutlineBatchCandidatesV1({
+            scope,
+            runId: committed.run.id,
+            includeSucceeded: true,
+          })
+          const postStates = await Promise.all(expectedIds.map(async outlineNodeId => (
+            db.detailedOutlines.where('outlineNodeId').equals(outlineNodeId).first()
+          )))
+          await verifyDetailedOutlineBatchRunV1({
+            scope,
+            runId: committed.run.id,
+            candidates,
+            postStates,
+          })
+        } else {
+          await pauseDetailedOutlineBatchRunV1({
+            scope,
+            snapshot: committed,
+            reason: t('detailed.batchCandidatePartialReason'),
+          })
+        }
+        setPendingBatchCandidate(null)
+        enhanceAI.reset()
+        await loadDetailed(project.id!)
+        toast.success(t('detailed.adoptRecoveredBatchSuccess'))
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : t('detailed.adoptRecoveredBatchFailed'))
+      }
       return
     }
-    if (!currentChapter?.id) return
-
-    const patch: Partial<DetailedOutline> = {}
-    if (parsed.openingHook) patch.openingHook = parsed.openingHook
-    if (parsed.endingCliffhanger) patch.endingCliffhanger = parsed.endingCliffhanger
-    if (parsed.sceneLocation) patch.sceneLocation = parsed.sceneLocation
-    if (parsed.emotionArc) patch.emotionArc = parsed.emotionArc as EmotionArc
-    if (parsed.appearingCharacterIds) {
-      patch.appearingCharacterIds = filterExistingIds(parsed.appearingCharacterIds, validCharacterIds)
+    try {
+      const accepted = await acceptCandidate(operation, text)
+      if (accepted) {
+        toast.success(operation === 'scenes'
+          ? t('detailed.adoptScenesSuccess', { count: 1 })
+          : t('detailed.adoptEnhancedSuccess'))
+      }
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t('detailed.adoptGenericFailed'))
     }
-    if (parsed.foreshadowIds) {
-      patch.foreshadowIds = filterExistingIds(parsed.foreshadowIds, validForeshadowIds)
-    }
+  }, [acceptCandidate, adoptDetailedPatch, currentChapter, enhanceAI, loadDetailed, pendingBatchCandidate, project.id, t, toast, validCharacterIds, validForeshadowIds])
 
-    // 如果 AI 返回了场景，也写入
-    if (parsed.scenes && parsed.scenes.length > 0) {
-      const newScenes = normalizeParsedScenes(
-        parsed.scenes,
-        ids => filterExistingIds(ids, validCharacterIds),
-      )
-      patch.scenes = newScenes
+  const handleDismissDetailed = useCallback(async (operation: DetailedOutlineGenerationOperationV1) => {
+    const batchPending = pendingBatchCandidate
+    if (batchPending) {
+      if (operation !== 'enhanced') return
+      const decide = batchDecisionRef.current
+      if (decide) {
+        batchDecisionRef.current = null
+        setPendingBatchCandidate(null)
+        enhanceAI.reset()
+        decide('reject')
+        return
+      }
+      try {
+        const scope = await resolveScopeLike(project.id!)
+        await rejectDetailedOutlineBatchCandidateV1({
+          scope,
+          runId: batchPending.runId,
+          candidate: batchPending,
+        })
+      } finally {
+        setPendingBatchCandidate(null)
+        enhanceAI.reset()
+      }
+      return
     }
-
-    // Phase 30.3: 同时快照当前大纲摘要
-    patch.lastUsedSummary = currentChapter?.summary || ''
-    await adoptDetailedPatch(currentChapter.id, patch)
-    enhanceAI.reset()
-  }
+    await dismissCandidate(operation)
+  }, [dismissCandidate, enhanceAI, pendingBatchCandidate, project.id])
 
   const totalWords = currentDetailed?.scenes.reduce((s, sc) => s + (sc.estimatedWords || 0), 0) ?? 0
 
@@ -241,39 +353,51 @@ export default function DetailedOutlinePanel({ project }: Props) {
 
   const handleBatchDetail = useCallback(async () => {
     if (batchProgress) return // 已在运行
-    const baseCtx = await assembleContext({
-      projectId: project.id!,
-      worldGroupId: null,
-      provider: aiConfig.provider,
-      model: aiConfig.model,
-      sourceKeys: ['canonAssertions', 'worldview', 'storyCore', 'characterDrivenPlan', 'powerSystem', 'cultivationProgress', 'codex', 'characters', 'creativeRules', 'worldRules', 'historical', 'locations'],
-    })
-    const worldCtx = baseCtx.text
-    const charCtx = characters
-      .filter(c => c.roleWeight === 'main')
-      .map(c => `[ID:${c.id}] ${c.name}（${c.orderAxis}/${c.moralAxis}）`)
-      .join('\n')
-    const foreshadowCtx = foreshadows
-      .filter(f => f.status !== 'resolved')
-      .map(f => `[ID:${f.id}] ${f.name}（${f.type}）：${f.description}`)
-      .join('\n')
-
     const ac = new AbortController()
     batchAbortRef.current = ac
 
     try {
+      const scope = await resolveScopeLike(project.id!)
       const result = await batchGenerateDetails({
         chapters: chapterNodes,
         existingDetails: detailedOutlines,
-        worldContext: worldCtx,
-        // 多世界：逐章用本章所属世界的上下文
-        worldContextResolver: project.enableMultiWorld
-          ? async (chId) => (await buildDetailContext(chId)).worldContext
-          : undefined,
-        characterContext: charCtx,
-        foreshadowContext: foreshadowCtx,
+        scope,
+        contextResolver: async outlineNodeId => {
+          const worldGroupId = nodes.find(node => node.id === outlineNodeId)?.worldGroupId ?? null
+          const context = await buildDetailContext(outlineNodeId, scope, worldGroupId)
+          return {
+            worldGroupId,
+            worldContext: context.worldContext,
+            characterContext: context.characterContext,
+            foreshadowContext: context.foreshadowContext,
+            assembled: context.assembled,
+          }
+        },
+        onCandidate: ({ chapter, candidate }) => new Promise(resolve => {
+          setSelectedNodeId(chapter.id!)
+          clearPendingCandidate()
+          setPendingBatchCandidate(candidate)
+          restoreEnhanced({
+            output: candidate.output,
+            operation: `batch-durable:${candidate.runId}:${candidate.outlineNodeId}`,
+          })
+          batchDecisionRef.current = resolve
+        }),
         onSave: async (outlineNodeId, data) => {
-          await adoptDetailedPatch(outlineNodeId, data)
+          const adoption = await adoptDetailedPatch(outlineNodeId, data, scope)
+          if (!adoption.written.length || adoption.typeErrors.length || adoption.fkErrors.length || adoption.skipped.length) {
+            throw new Error('批量细纲候选未能经正式注册表完整写入。')
+          }
+        },
+        onPostState: async outlineNodeId => {
+          const row = await db.detailedOutlines.where('outlineNodeId').equals(outlineNodeId).first()
+          return row ? {
+            outlineNodeId: row.outlineNodeId,
+            scenes: row.scenes,
+            openingHook: row.openingHook ?? '',
+            endingCliffhanger: row.endingCliffhanger ?? '',
+            lastUsedSummary: row.lastUsedSummary ?? '',
+          } : null
         },
         onProgress: setBatchProgress,
         signal: ac.signal,
@@ -285,14 +409,22 @@ export default function DetailedOutlinePanel({ project }: Props) {
       }
     } finally {
       batchAbortRef.current = null
+      batchDecisionRef.current = null
       // 3 秒后清除进度信息
       setTimeout(() => setBatchProgress(null), 3000)
     }
-  }, [batchProgress, characters, foreshadows, chapterNodes, detailedOutlines, project.id, project.enableMultiWorld, loadDetailed, adoptDetailedPatch, buildDetailContext, aiConfig.provider, aiConfig.model])
+  }, [adoptDetailedPatch, batchProgress, buildDetailContext, chapterNodes, clearPendingCandidate, detailedOutlines, loadDetailed, nodes, project.id, restoreEnhanced])
 
   const handleBatchStop = useCallback(() => {
     batchAbortRef.current?.abort()
-  }, [])
+    const decide = batchDecisionRef.current
+    if (decide) {
+      batchDecisionRef.current = null
+      setPendingBatchCandidate(null)
+      enhanceAI.reset()
+      decide('reject')
+    }
+  }, [enhanceAI])
 
   return (
     <div className="h-full flex">
@@ -307,7 +439,12 @@ export default function DetailedOutlinePanel({ project }: Props) {
       />
 
       {/* 右侧：细纲编辑 */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div
+        {...initialRecordTargetAttributes(currentChapter?.id === initialNodeId, currentChapter?.id)}
+        className={`flex-1 overflow-y-auto p-6 ${
+          currentChapter?.id === initialNodeId ? INITIAL_RECORD_TARGET_CLASS : ''
+        }`}
+      >
         {!currentChapter ? (
           <div className="h-full flex items-center justify-center text-text-muted text-sm">
             {t('detailed.selectPrompt')}
@@ -356,14 +493,14 @@ export default function DetailedOutlinePanel({ project }: Props) {
               </button>
               <button
                 onClick={handleAIGenerate}
-                disabled={ai.isStreaming || enhanceAI.isStreaming}
+                disabled={isRecovering || ai.isStreaming || enhanceAI.isStreaming || !!pendingDetailedCandidate || !!pendingBatchCandidate}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-accent text-sm rounded hover:bg-accent/20 disabled:opacity-50"
               >
                 <Sparkles className="w-4 h-4" /> {t('detailed.aiSplitScenes')}
               </button>
               <button
                 onClick={handleEnhancedGenerate}
-                disabled={ai.isStreaming || enhanceAI.isStreaming}
+                disabled={isRecovering || ai.isStreaming || enhanceAI.isStreaming || !!pendingDetailedCandidate || !!pendingBatchCandidate}
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-success/10 text-success text-sm rounded hover:bg-success/20 disabled:opacity-50"
               >
                 <Wand2 className="w-4 h-4" /> {t('detailed.enhanceDetail')}
@@ -375,32 +512,19 @@ export default function DetailedOutlinePanel({ project }: Props) {
               <div className="mb-4">
                 <AIStreamOutput
                   output={ai.output} isStreaming={ai.isStreaming} error={ai.error} tokenUsage={ai.tokenUsage}
+                  editable
                   onStop={ai.stop}
-                  onAccept={async (text) => {
-                    try {
-                      if (!currentChapter.id) return
-                      const parsed = await parseEnhancedDetailSmart(text, aiConfig)
-                      const newScenes = normalizeParsedScenes(
-                        parsed?.scenes,
-                        ids => filterExistingIds(ids, validCharacterIds),
-                      )
-                      if (newScenes.length === 0) {
-                        toast.error(t('detailed.adoptScenesFailed'))
-                        return
-                      }
-                      await adoptDetailedPatch(currentChapter.id, {
-                        scenes: [...(currentDetailed?.scenes || []), ...newScenes],
-                        lastUsedSummary: currentChapter.summary || '',
-                      })
-                      toast.success(t('detailed.adoptScenesSuccess', { count: newScenes.length }))
-                    } catch (err) {
-                      console.error('[DetailedOutline] 采纳失败:', err)
-                      toast.error(t('detailed.adoptGenericFailed'))
-                    }
-                    ai.reset()
-                  }}
+                  onAccept={text => { void handleAcceptDetailed('scenes', text) }}
+                  onDismiss={() => { void handleDismissDetailed('scenes') }}
                   onRetry={handleAIGenerate}
                 />
+                {pendingDetailedCandidate?.candidate.operation === 'scenes'
+                  && pendingDetailedCandidate.candidate.creativeArtifact && (
+                  <CreativeArtifactSummary
+                    artifact={pendingDetailedCandidate.candidate.creativeArtifact}
+                    narrativeBrief={pendingDetailedCandidate.candidate.narrativeBrief}
+                  />
+                )}
               </div>
             )}
 
@@ -409,10 +533,19 @@ export default function DetailedOutlinePanel({ project }: Props) {
               <div className="mb-4">
                 <AIStreamOutput
                   output={enhanceAI.output} isStreaming={enhanceAI.isStreaming} error={enhanceAI.error} tokenUsage={enhanceAI.tokenUsage}
+                  editable
                   onStop={enhanceAI.stop}
-                  onAccept={handleAcceptEnhanced}
+                  onAccept={text => { void handleAcceptDetailed('enhanced', text) }}
+                  onDismiss={() => { void handleDismissDetailed('enhanced') }}
                   onRetry={handleEnhancedGenerate}
                 />
+                {pendingDetailedCandidate?.candidate.operation === 'enhanced'
+                  && pendingDetailedCandidate.candidate.creativeArtifact && (
+                  <CreativeArtifactSummary
+                    artifact={pendingDetailedCandidate.candidate.creativeArtifact}
+                    narrativeBrief={pendingDetailedCandidate.candidate.narrativeBrief}
+                  />
+                )}
               </div>
             )}
 

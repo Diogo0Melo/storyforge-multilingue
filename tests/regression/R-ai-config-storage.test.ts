@@ -4,6 +4,7 @@ import { PROVIDER_MODELS, PROVIDER_PRESETS } from '../../src/lib/types'
 
 const CONFIG_KEY = 'storyforge-ai-config'
 const SESSION_KEY = 'storyforge-ai-api-key-session'
+const PRESET_SESSION_KEYS = 'storyforge-ai-preset-api-keys-session'
 const REMEMBER_KEY = 'storyforge-ai-api-key-remember'
 
 async function freshStore() {
@@ -15,6 +16,7 @@ async function freshStore() {
 afterEach(() => {
   localStorage.clear()
   sessionStorage.clear()
+  vi.unstubAllGlobals()
   vi.resetModules()
 })
 
@@ -63,6 +65,66 @@ describe('R-AI-CONFIG · API Key 存储策略', () => {
 
     const presets = JSON.parse(localStorage.getItem('storyforge-ai-presets') || '[]')
     expect(presets[0].config.apiKey).toBe('')
+  })
+
+  it('session-only 模式按预设隔离 API Key，跨 provider 切换和刷新都不串用', async () => {
+    const useAIConfigStore = await freshStore()
+    useAIConfigStore.getState().setConfig({
+      provider: 'agnes',
+      model: 'agnes-2.5-flash',
+      baseUrl: 'https://apihub.agnes-ai.com/v1',
+      apiKey: 'agnes-session-key',
+    })
+    const agnesId = useAIConfigStore.getState().saveAsPreset('Agnes')
+    useAIConfigStore.getState().setConfig({
+      provider: 'doubao',
+      model: 'doubao-1-5-pro-32k-250115',
+      baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+      apiKey: 'doubao-session-key',
+    })
+    const doubaoId = useAIConfigStore.getState().saveAsPreset('豆包文本')
+
+    const persistedPresets = JSON.parse(localStorage.getItem('storyforge-ai-presets') || '[]')
+    expect(persistedPresets.map((preset: { config: { apiKey: string } }) => preset.config.apiKey)).toEqual(['', ''])
+    expect(JSON.parse(sessionStorage.getItem(PRESET_SESSION_KEYS) || '{}')).toEqual({
+      [agnesId]: 'agnes-session-key',
+      [doubaoId]: 'doubao-session-key',
+    })
+
+    useAIConfigStore.getState().applyPreset(agnesId)
+    expect(useAIConfigStore.getState().config.apiKey).toBe('agnes-session-key')
+    useAIConfigStore.getState().applyPreset(doubaoId)
+    expect(useAIConfigStore.getState().config.apiKey).toBe('doubao-session-key')
+
+    const reloadedStore = await freshStore()
+    reloadedStore.getState().applyPreset(agnesId)
+    expect(reloadedStore.getState().config.apiKey).toBe('agnes-session-key')
+    reloadedStore.getState().applyPreset(doubaoId)
+    expect(reloadedStore.getState().config.apiKey).toBe('doubao-session-key')
+    reloadedStore.getState().deletePreset(doubaoId)
+    expect(JSON.parse(sessionStorage.getItem(PRESET_SESSION_KEYS) || '{}')).toEqual({
+      [agnesId]: 'agnes-session-key',
+    })
+  })
+
+  it('缺少预设会话 Key 时不跨 provider 继承当前 Key', async () => {
+    const useAIConfigStore = await freshStore()
+    useAIConfigStore.getState().setConfig({
+      provider: 'doubao',
+      model: 'doubao-1-5-pro-32k-250115',
+      apiKey: '',
+    })
+    const doubaoId = useAIConfigStore.getState().saveAsPreset('无 Key 豆包')
+    useAIConfigStore.getState().setConfig({
+      provider: 'agnes',
+      model: 'agnes-2.5-flash',
+      apiKey: 'agnes-only-key',
+    })
+
+    useAIConfigStore.getState().applyPreset(doubaoId)
+
+    expect(useAIConfigStore.getState().config.provider).toBe('doubao')
+    expect(useAIConfigStore.getState().config.apiKey).toBe('')
   })
 
   it('应用预设后修改配置仍保留可覆盖的来源预设', async () => {
@@ -118,5 +180,126 @@ describe('R-AI-CONFIG · API Key 存储策略', () => {
     useAIConfigStore.getState().switchProvider('longcat')
     expect(useAIConfigStore.getState().config.baseUrl).toBe('https://api.longcat.chat/openai/v1')
     expect(useAIConfigStore.getState().config.model).toBe('LongCat-2.0')
+  })
+
+  it('Agnes provider 使用当前官方模型 ID 和上下文预设', async () => {
+    expect(PROVIDER_PRESETS.agnes?.baseUrl).toBe('https://apihub.agnes-ai.com/v1')
+    expect(PROVIDER_PRESETS.agnes?.model).toBe('agnes-2.5-flash')
+    expect(PROVIDER_MODELS.agnes?.map(model => model.value)).toEqual([
+      'agnes-2.5-flash',
+      'agnes-1.5-flash',
+      'agnes-2.0-flash',
+    ])
+
+    expect(getModelPreset('agnes', 'agnes-2.5-flash')).toMatchObject({
+      maxContext: 524_288,
+      maxOutput: 65_536,
+    })
+    expect(getModelPreset('agnes', 'agnes-1.5-flash').maxContext).toBe(262_144)
+    expect(getModelPreset('agnes', 'agnes-2.0-flash').maxContext).toBe(262_144)
+
+    const useAIConfigStore = await freshStore()
+    useAIConfigStore.getState().switchProvider('agnes')
+    expect(useAIConfigStore.getState().config.baseUrl).toBe('https://apihub.agnes-ai.com/v1')
+    expect(useAIConfigStore.getState().config.model).toBe('agnes-2.5-flash')
+  })
+
+  it('加载时无损迁移 Agnes 历史大小写模型 ID', async () => {
+    localStorage.setItem(CONFIG_KEY, JSON.stringify({
+      provider: 'agnes',
+      apiKey: 'agnes-key',
+      model: 'Agnes-2.0-Flash',
+      baseUrl: 'https://apihub.agnes-ai.com/v1',
+      temperature: 0.7,
+      maxTokens: 0,
+    }))
+
+    const useAIConfigStore = await freshStore()
+
+    expect(useAIConfigStore.getState().config.model).toBe('agnes-2.0-flash')
+    expect(useAIConfigStore.getState().config.apiKey).toBe('agnes-key')
+    expect(JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}')).toMatchObject({
+      provider: 'agnes',
+      apiKey: 'agnes-key',
+      model: 'agnes-2.0-flash',
+    })
+    expect(getModelPreset('agnes', 'Agnes-2.0-Flash').maxContext).toBe(262_144)
+  })
+
+  it('豆包 provider 使用当前方舟在线推理模型并迁移旧模型名', async () => {
+    expect(PROVIDER_PRESETS.doubao?.baseUrl).toBe('https://ark.cn-beijing.volces.com/api/v3')
+    expect(PROVIDER_PRESETS.doubao?.model).toBe('doubao-1-5-pro-32k-250115')
+    expect(PROVIDER_MODELS.doubao?.map(model => model.value)).toEqual([
+      'doubao-1-5-pro-32k-250115',
+      'deepseek-v4-flash-ga-260731',
+      'deepseek-v4-pro-260425',
+      'deepseek-v4-flash-260425',
+    ])
+    expect(getModelPreset('doubao', 'doubao-1-5-pro-32k-250115')).toMatchObject({
+      maxContext: 32_000,
+      maxOutput: 4_096,
+    })
+    expect(getModelPreset('doubao', 'doubao-pro-32k').maxContext).toBe(32_000)
+    expect(getModelPreset('doubao', 'deepseek-v4-flash-ga-260731')).toMatchObject({
+      maxContext: 128_000,
+      maxOutput: 8_192,
+    })
+    expect(getModelPreset('doubao', 'deepseek-v4-pro-260425')).toMatchObject({
+      maxContext: 128_000,
+      maxOutput: 16_384,
+    })
+
+    localStorage.setItem(CONFIG_KEY, JSON.stringify({
+      provider: 'doubao',
+      apiKey: '',
+      model: 'doubao-pro-32k',
+      baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
+      temperature: 0.7,
+      maxTokens: 0,
+    }))
+    const useAIConfigStore = await freshStore()
+    expect(useAIConfigStore.getState().config.model).toBe('doubao-1-5-pro-32k-250115')
+    expect(JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}').model).toBe('doubao-1-5-pro-32k-250115')
+  })
+})
+
+describe('R-AI-CONFIG · 连接测试错误分类', () => {
+  it('把方舟 403 AccountOverdueError 识别为账户欠费而不是 Key 权限不足', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 403,
+      text: async () => JSON.stringify({
+        error: {
+          code: 'AccountOverdueError',
+          message: 'The request failed because your account has an overdue balance.',
+        },
+      }),
+    }))
+    const useAIConfigStore = await freshStore()
+    useAIConfigStore.getState().setConfig({ apiKey: 'ark-test' })
+
+    const result = await useAIConfigStore.getState().testConnection()
+
+    expect(result.ok).toBe(false)
+    expect(result.statusCode).toBe(403)
+    expect(result.message).toContain('账户存在逾期欠费')
+    expect(result.message).not.toContain('API Key 权限不足')
+  })
+
+  it('不把 HTTP 402 余额不足误报为连接成功', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({
+      ok: false,
+      status: 402,
+      text: async () => JSON.stringify({ error: { message: 'insufficient balance' } }),
+    }))
+    const useAIConfigStore = await freshStore()
+    useAIConfigStore.getState().setConfig({ apiKey: 'ark-test' })
+
+    const result = await useAIConfigStore.getState().testConnection()
+
+    expect(result.ok).toBe(false)
+    expect(result.statusCode).toBe(402)
+    expect(result.message).toContain('账户余额不足')
+    expect(result.message).not.toContain('连接成功')
   })
 })

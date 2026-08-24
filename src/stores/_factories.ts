@@ -12,6 +12,7 @@
 import { create } from 'zustand'
 import type { Table, UpdateSpec } from 'dexie'
 import { db } from '../lib/db/schema'
+import { getTableSpec, readOwnedRows, resolveScopeLike, stampNewRecord, type WorkspaceScopeLike } from '../lib/world-engine/scope'
 
 const now = () => Date.now()
 
@@ -40,7 +41,7 @@ export type ProjectSingletonStore<K extends string, T extends ProjectScopedRecor
   loading: boolean
   /** 当前加载的世界组（null = 单世界 / 未指定，Phase 25.4） */
   activeWorldGroupId: number | null
-  loadAll: (projectId: number, worldGroupId?: number | null) => Promise<void>
+  loadAll: (scope: WorkspaceScopeLike, worldGroupId?: number | null) => Promise<void>
   save: (data: Partial<T>) => Promise<void>
 } & { [P in K]: T | null }
 
@@ -83,16 +84,20 @@ export function createProjectSingletonStore<K extends string, T extends ProjectS
     return {
       ...initialState,
 
-      loadAll: async (projectId: number, worldGroupId: number | null = null) => {
+      loadAll: async (scopeInput: WorkspaceScopeLike, worldGroupId: number | null = null) => {
         set({ loading: true, activeWorldGroupId: worldGroupId } as unknown as Partial<State> as State)
+        const scope = await resolveScopeLike(scopeInput)
+        const owner = getTableSpec(String(table)).domainOwner?.legacyDefault
+        const scopedRows = await readOwnedRows<T>(scope, String(table), {
+          owner: owner === 'world' || owner === 'work' ? owner : undefined,
+        })
         let record: T | undefined
         if (worldGroupId == null) {
           // 单世界 / 未指定：取第一条
-          record = await getTable().where('projectId').equals(projectId).first()
+          record = scopedRows[0]
         } else {
           // 多世界：取匹配该世界组的记录
-          const all = await getTable().where('projectId').equals(projectId).toArray()
-          record = all.find(r => (r as { worldGroupId?: number | null }).worldGroupId === worldGroupId)
+          record = scopedRows.find(r => (r as { worldGroupId?: number | null }).worldGroupId === worldGroupId)
         }
         set({ [key]: record ?? null, loading: false } as unknown as Partial<State> as State)
       },
@@ -106,7 +111,11 @@ export function createProjectSingletonStore<K extends string, T extends ProjectS
         // （与 saveWorldview 同类修复：单例表应每 (projectId, worldGroupId) 仅一条）
         const projectId = data.projectId ?? (current as { projectId?: number } | null)?.projectId
         if (!current?.id && projectId != null) {
-          const all = await getTable().where('projectId').equals(projectId).toArray()
+          const scope = await resolveScopeLike(projectId)
+          const owner = getTableSpec(String(table)).domainOwner?.legacyDefault
+          const all = await readOwnedRows<T>(scope, String(table), {
+            owner: owner === 'world' || owner === 'work' ? owner : undefined,
+          })
           current = (activeWorldGroupId == null
             ? (all.find(r => ((r as { worldGroupId?: number | null }).worldGroupId ?? null) === null) ?? all[0])
             : all.find(r => (r as { worldGroupId?: number | null }).worldGroupId === activeWorldGroupId)) ?? null
@@ -126,7 +135,8 @@ export function createProjectSingletonStore<K extends string, T extends ProjectS
 
         if (data.projectId) {
           const ts = now()
-          const toInsert = {
+          const scope = await resolveScopeLike(data.projectId)
+          const toInsert = stampNewRecord(scope, String(table), {
             ...(defaults as object),
             projectId: data.projectId,
             // 多世界模式下盖章当前世界组（单世界时为 null，不影响）
@@ -134,7 +144,9 @@ export function createProjectSingletonStore<K extends string, T extends ProjectS
             createdAt: ts,
             updatedAt: ts,
             ...data,
-          } as T
+          } as T, {
+            owner: getTableSpec(String(table)).domainOwner?.legacyDefault === 'world' ? 'world' : 'work',
+          })
           const id = (await getTable().add(toInsert)) as number
           set({
             [key]: { ...toInsert, id },

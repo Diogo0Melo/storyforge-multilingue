@@ -6,8 +6,9 @@ import { useWorldGroupStore } from '../../stores/world-group'
 import { useAIStream } from '../../hooks/useAIStream'
 import { createAISessionKey } from '../../stores/ai-generation-session'
 import { assembleContext } from '../../lib/registry/assemble-context'
+import { OUTLINE_GENERATION_SOURCE_KEYS } from '../../lib/outline/harness'
 import {
-  parseVolumeOutlineSmart, parseChapterOutlineSmart,
+  parseChapterOutlineOutput, parseVolumeOutlineOutput,
   type ParsedVolume, type ParsedChapter,
 } from '../../lib/ai/parse-outline-output'
 import { useAIConfigStore } from '../../stores/ai-config'
@@ -30,13 +31,15 @@ import { useOutlineGenerationController } from './useOutlineGenerationController
 import { useOutlineChapterCountEstimate } from './useOutlineChapterCountEstimate'
 import { useOutlineChapterDrag } from './useOutlineChapterDrag'
 import { decodeGenerationOperation } from '../../lib/outline/generation-request'
+import { useInitialRecordTarget } from '../shared/initial-record-target'
 
 interface Props {
   project: Project
   onOpenChapter?: (nodeId: number) => void
+  initialNodeId?: number | null
 }
 
-export default function OutlinePanel({ project, onOpenChapter }: Props) {
+export default function OutlinePanel({ project, onOpenChapter, initialNodeId }: Props) {
   const { t, lang } = useDomainT('outline')
   // 语言感知的列表连接（跳过原因等）
   const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
@@ -70,6 +73,26 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
   const normalizedNodes = useMemo(() => nodes.map(normalizeOutlineNode), [nodes])
   const volumes = getTopLevelVolumes(normalizedNodes)
   const selectedVol = volumes.find(v => v.id === selectedVolId) || null
+  const initialTargetVolumeId = useMemo(() => {
+    if (initialNodeId == null) return null
+    const byId = new Map(normalizedNodes.filter(node => node.id != null).map(node => [node.id!, node]))
+    let current = byId.get(initialNodeId)
+    const seen = new Set<number>()
+    while (current?.id != null && !seen.has(current.id)) {
+      seen.add(current.id)
+      if (current.type === 'volume') return current.id
+      current = current.parentId == null ? undefined : byId.get(current.parentId)
+    }
+    return null
+  }, [initialNodeId, normalizedNodes])
+
+  useEffect(() => {
+    if (initialTargetVolumeId != null) setSelectedVolId(initialTargetVolumeId)
+  }, [initialTargetVolumeId])
+  useInitialRecordTarget(
+    initialNodeId,
+    initialTargetVolumeId != null && selectedVolId === initialTargetVolumeId,
+  )
 
   useOutlineChapterCountEstimate({
     selectedVolumeId: selectedVolId,
@@ -181,32 +204,19 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     } : undefined,
   }), [parameterValues, systemOverride, userOverride])
 
-  const buildOutlineAssembledContext = useCallback(async (worldGroupId: number | null, outlineNodeId?: number | null) => {
+  const buildOutlineAssembledContext = useCallback(async (
+    worldGroupId: number | null,
+    outlineNodeId?: number | null,
+    priorOutlineCandidateText?: string,
+  ) => {
     return await assembleContext({
       projectId: project.id!,
       worldGroupId,
       outlineNodeId: outlineNodeId ?? null,
+      priorOutlineCandidateText,
       provider: aiConfig.provider,
       model: aiConfig.model,
-      sourceKeys: [
-        'canonAssertions',
-        'worldview',
-        'storyCore',
-        'characterDrivenPlan',
-        'powerSystem',
-        'cultivationProgress',
-        'codex',
-        'characters',
-        'creativeRules',
-        'worldRules',
-        'historical',
-        'locations',
-        'foreshadows',
-        'storyArcs',
-        'storylineProgress',
-        'existingVolumeOutlines',
-        'writtenChapterProgress',
-      ],
+      sourceKeys: [...OUTLINE_GENERATION_SOURCE_KEYS],
     })
   }, [project.id, aiConfig.provider, aiConfig.model])
 
@@ -222,6 +232,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     clearPreview: clearGenerationPreview,
     onInfo: toast.info,
     onError: toast.error,
+    onOutlineRecovered: () => loadAll(project.id!),
   })
 
   const handleAIVolumes = () => { void generation.prepare({ kind: 'volumes' }) }
@@ -236,7 +247,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     setRestructuring(true)
     try {
       if (generation.moduleKey === 'outline.volume') {
-        const parsed = await parseVolumeOutlineSmart(text, aiConfig)
+        const parsed = parseVolumeOutlineOutput(text)
         if (parsed.length === 0) {
           toast.error(t('adopt.parseVolumesFailed'))
           return
@@ -250,7 +261,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
           setPreviewVolumes(parsed)
         }
       } else {
-        const parsed = await parseChapterOutlineSmart(text, aiConfig)
+        const parsed = parseChapterOutlineOutput(text)
         if (parsed.length === 0) {
           toast.error(t('adopt.parseChaptersFailed'))
           return
@@ -272,20 +283,42 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
   const handleConfirmVolumes = async () => {
     if (!previewVolumes) return
     const targetId = previewTargetId
+    const existingCount = volumes.length
+    await generation.beginAdoption(targetId != null ? {
+      version: 1,
+      kind: 'single-volume',
+      targetId,
+      summary: previewVolumes[0]?.summary ?? '',
+    } : {
+      version: 1,
+      kind: 'volumes',
+      items: previewVolumes,
+      startingOrder: existingCount,
+      baseExistingTitles: volumes.map(volume => volume.title),
+    })
     ai.reset()
     if (targetId != null) {
-      const result = await adoptGeneratedOutlineSummary(project.id!, targetId, previewVolumes[0]?.summary ?? '')
-      if (!result.written) {
-        toast.error(t('adopt.volumeSummaryWriteFailed', { reason: result.reason }))
+      let result: Awaited<ReturnType<typeof adoptGeneratedOutlineSummary>>
+      try {
+        result = await adoptGeneratedOutlineSummary(project.id!, targetId, previewVolumes[0]?.summary ?? '')
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '未知错误'
+        await generation.failAdoption(message)
+        toast.error(`写入本卷卷纲时出错：${message}。`)
         return
       }
+      if (!result.written) {
+        await generation.failAdoption(result.reason ?? '未能写入本卷卷纲')
+        toast.error(t('adopt.volumeSummaryWriteFailed', { reason: result.reason ?? t('adopt.unknownSkipReason') }))
+        return
+      }
+      await generation.completeAdoption({ kind: 'single-volume', targetId, result })
       await loadAll(project.id!)
       setPreviewVolumes(null)
       setPreviewTargetId(null)
       toast.success(t('adopt.volumeSummaryWritten'))
       return
     }
-    const existingCount = volumes.length
     let result: Awaited<ReturnType<typeof adoptGeneratedOutlineItems>>
     try {
       result = await adoptGeneratedOutlineItems({
@@ -297,8 +330,14 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
       })
     } catch (err) {
       console.error('[Outline] 写入卷失败:', err)
-      toast.error(t('adopt.volumeWriteError', { error: err instanceof Error ? err.message : String(err) }))
+      await generation.failAdoption(err instanceof Error ? err.message : '写入卷时发生未知错误')
+      toast.error(t('adopt.volumeWriteError', { error: err instanceof Error ? err.message : t('common:unknownError') }))
       return
+    }
+    if (result.writtenCount === 0) {
+      await generation.failAdoption(result.skippedReasons.join('；') || '未写入任何卷')
+    } else {
+      await generation.completeAdoption({ kind: 'volumes', items: previewVolumes, result })
     }
     await loadAll(project.id!)
     setPreviewVolumes(null)
@@ -318,28 +357,61 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
     if (!previewChapters) return
     const targetId = previewTargetId
     const operation = decodeGenerationOperation(ai.operation)
+    const destinationVolume = targetId == null
+      ? operation?.kind === 'chapters'
+        ? volumes.find(volume => volume.id === operation.volumeId) ?? null
+        : selectedVol
+      : null
+    if (targetId == null && !destinationVolume) {
+      await generation.failAdoption('目标卷不存在，未写入章节大纲')
+      return
+    }
+    const existingChapters = destinationVolume
+      ? nodes.filter(node => node.parentId === destinationVolume.id && node.type === 'chapter')
+      : []
+    await generation.beginAdoption(targetId != null ? {
+      version: 1,
+      kind: 'single-chapter',
+      targetId,
+      summary: previewChapters[0]?.summary ?? '',
+    } : {
+      version: 1,
+      kind: 'chapters',
+      destinationVolumeId: destinationVolume!.id!,
+      items: previewChapters,
+      startingOrder: existingChapters.length,
+      baseExistingTitles: existingChapters.map(chapter => chapter.title),
+    })
     ai.reset()
     if (targetId != null) {
-      const result = await adoptGeneratedOutlineSummary(project.id!, targetId, previewChapters[0]?.summary ?? '')
-      if (!result.written) {
-        toast.error(t('adopt.chapterSummaryWriteFailed', { reason: result.reason }))
+      let result: Awaited<ReturnType<typeof adoptGeneratedOutlineSummary>>
+      try {
+        result = await adoptGeneratedOutlineSummary(project.id!, targetId, previewChapters[0]?.summary ?? '')
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '未知错误'
+        await generation.failAdoption(message)
+        toast.error(`写入本章章纲时出错：${message}。`)
         return
       }
+      if (!result.written) {
+        await generation.failAdoption(result.reason ?? '未能写入本章章纲')
+        toast.error(t('adopt.chapterSummaryWriteFailed', { reason: result.reason ?? t('adopt.unknownSkipReason') }))
+        return
+      }
+      await generation.completeAdoption({ kind: 'single-chapter', targetId, result })
       await loadAll(project.id!)
       setPreviewChapters(null)
       setPreviewTargetId(null)
       toast.success(t('adopt.chapterSummaryWritten'))
       return
     }
-    const destinationVolume = operation?.kind === 'chapters'
-      ? volumes.find(volume => volume.id === operation.volumeId) ?? null
-      : selectedVol
     if (!destinationVolume) return
-    const existingCount = nodes.filter(node => node.parentId === destinationVolume.id && node.type === 'chapter').length
+    const existingCount = existingChapters.length
     let result: Awaited<ReturnType<typeof adoptGeneratedOutlineItems>>
     try {
       result = await adoptGeneratedOutlineItems({
         projectId: project.id!,
+        worldGroupId: destinationVolume.worldGroupId ?? null,
         parentId: destinationVolume.id!,
         type: 'chapter',
         items: previewChapters,
@@ -347,8 +419,19 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
       })
     } catch (err) {
       console.error('[Outline] 写入章节失败:', err)
-      toast.error(t('adopt.chapterWriteError', { error: err instanceof Error ? err.message : String(err) }))
+      await generation.failAdoption(err instanceof Error ? err.message : '写入章节时发生未知错误')
+      toast.error(t('adopt.chapterWriteError', { error: err instanceof Error ? err.message : t('common:unknownError') }))
       return
+    }
+    if (result.writtenCount === 0) {
+      await generation.failAdoption(result.skippedReasons.join('；') || '未写入任何章节')
+    } else {
+      await generation.completeAdoption({
+        kind: 'chapters',
+        destinationVolumeId: destinationVolume.id,
+        items: previewChapters,
+        result,
+      })
     }
     await loadAll(project.id!)
     setPreviewChapters(null)
@@ -374,15 +457,17 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
   }
 
   const batch = useOutlineBatchGeneration({
-    projectId: project.id!,
+    project,
     multiWorldEnabled: Boolean(project.enableMultiWorld),
     volumes,
     nodes,
     hint,
     // Phase 3: 批量章纲使用项目 RESOLVED 内容语言（D1：持久化值 → UI 语言回退）
     contentLanguage: resolveProjectContentLanguage(project, getSupportedUiLang()),
+    runOptions: generationRunOptions,
     assembleContext: buildOutlineAssembledContext,
     reloadOutline: () => loadAll(project.id!),
+    onInfo: toast.info,
     onError: toast.error,
   })
 
@@ -393,6 +478,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
       volumes={volumes}
       nodes={normalizedNodes}
       selectedVolumeId={selectedVolId}
+      initialTargetNodeId={initialNodeId}
       multiWorldEnabled={Boolean(project.enableMultiWorld)}
       worldGroups={worldGroups}
       aiStreaming={ai.isStreaming}
@@ -474,6 +560,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
           onStop={ai.stop}
           onAccept={handlePreviewAccept}
           onRetry={() => { void generation.retry() }}
+          onDismiss={() => { void generation.dismissCandidate() }}
           onConfirmVolumes={() => { void handleConfirmVolumes() }}
           onConfirmChapters={() => { void handleConfirmChapters() }}
           onCancelPreview={clearGenerationPreview}
@@ -482,6 +569,7 @@ export default function OutlinePanel({ project, onOpenChapter }: Props) {
         <OutlineVolumeDetail
           volume={selectedVol}
           nodes={normalizedNodes}
+          initialTargetNodeId={initialNodeId}
           multiWorldEnabled={Boolean(project.enableMultiWorld)}
           worldGroups={worldGroups}
           aiStreaming={ai.isStreaming}

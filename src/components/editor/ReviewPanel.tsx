@@ -17,12 +17,12 @@ import {
   type ConsistencyAuditResult,
 } from '../../lib/ai/adapters/consistency-audit-adapter'
 import {
-  persistConsistencyAgentCandidate,
-  runConsistencyAgent,
   toConsistencyAuditResult,
   type ConsistencyAgentRun,
 } from '../../lib/agent/consistency-agent'
 import { AgentTeamBudgetTracker } from '../../lib/agent/team-budget'
+import { runDurableConsistencyAuditV1 } from '../../lib/agent/run/consistency-audit-durable'
+import { resolveScopeLike } from '../../lib/world-engine/scope'
 import { useAIConfigStore } from '../../stores/ai-config'
 
 interface Props {
@@ -68,6 +68,7 @@ export default function ReviewPanel(props: Props) {
 
   const ai = useAIStream(createAISessionKey(projectId, 'review.run', chapterId))
   const [auditMode, setAuditMode] = useState<ConsistencyAuditMode>('fast')
+  const [consistencyRunning, setConsistencyRunning] = useState(false)
   const [consistencyError, setConsistencyError] = useState('')
   const [localConsistencyRun, setLocalConsistencyRun] = useState<ConsistencyAgentRun | null>(
     props.consistencyRun ?? null,
@@ -125,14 +126,15 @@ export default function ReviewPanel(props: Props) {
 
   const handleRunConsistency = async () => {
     setConsistencyError('')
+    setConsistencyRunning(true)
     try {
       await props.onBeforeConsistencyRun?.()
       const config = useAIConfigStore.getState().config
       const budget = new AgentTeamBudgetTracker(
         useAIConfigStore.getState().agentTeamBudgetProfile,
       )
-      const candidate = await runConsistencyAgent({
-        projectId,
+      const result = await runDurableConsistencyAuditV1({
+        scope: await resolveScopeLike(projectId),
         chapterId,
         outlineNodeId,
         worldGroupId: worldGroupId ?? null,
@@ -150,12 +152,14 @@ export default function ReviewPanel(props: Props) {
           configOverrides: { maxTokens: auditMode === 'fast' ? 4_000 : 6_000 },
         }),
       })
-      const run = await persistConsistencyAgentCandidate(candidate)
+      const { run, candidate } = result
       setLocalConsistencyRun(run)
       setConsistency(chapterId, toConsistencyAuditResult(candidate))
       props.onConsistencyRun?.(run)
     } catch (error) {
       setConsistencyError(error instanceof Error ? error.message : t('review.consistencyAgentFailed'))
+    } finally {
+      setConsistencyRunning(false)
     }
   }
 
@@ -197,7 +201,7 @@ export default function ReviewPanel(props: Props) {
           {activeTab === 'review' && reviewResult && onReviseByReport && (
             <button
               onClick={() => onReviseByReport(reviewResult)}
-              disabled={ai.isStreaming}
+              disabled={ai.isStreaming || consistencyRunning}
               title={t('review.btnReviseByReportTitle')}
               className="flex items-center gap-1 px-3 py-1.5 text-xs bg-emerald-500/10 text-emerald-400 rounded-md hover:bg-emerald-500/20 disabled:opacity-50 transition-colors"
             >
@@ -207,11 +211,11 @@ export default function ReviewPanel(props: Props) {
           )}
           <button
             onClick={handleRun}
-            disabled={ai.isStreaming || !chapterContent}
+            disabled={ai.isStreaming || consistencyRunning || !chapterContent}
             className="flex items-center gap-1 px-3 py-1.5 text-xs bg-accent text-white rounded-md hover:bg-accent-hover disabled:opacity-50 transition-colors"
           >
-            {ai.isStreaming ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
-            {ai.isStreaming ? t('review.btnDetecting') : t('review.btnStartDetection')}
+            {ai.isStreaming || consistencyRunning ? <Loader2 className="w-3 h-3 animate-spin" /> : null}
+            {ai.isStreaming || consistencyRunning ? t('review.btnDetecting') : t('review.btnStartDetection')}
           </button>
           <button onClick={onClose} className="p-1 text-text-muted hover:text-text-primary rounded">
             <X className="w-4 h-4" />
@@ -265,7 +269,7 @@ export default function ReviewPanel(props: Props) {
           </div>
         )}
 
-        {!currentResult && !ai.isStreaming && (
+        {!currentResult && !ai.isStreaming && !consistencyRunning && (
           <div className="text-center py-8 text-text-muted text-sm">
             {t('review.emptyHint', { mode: activeTab === 'consistency' ? (auditMode === 'fast' ? t('review.consistencyFastGuard') : t('review.consistencyDeepAudit')) : activeTab === 'review' ? t('review.tabReview') : activeTab === 'antiAI' ? t('review.tabAntiAI') : t('review.tabReadability') })}
           </div>

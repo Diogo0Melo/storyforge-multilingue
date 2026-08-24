@@ -139,7 +139,8 @@ test('语言切换三段往返:zh-CN → pt-BR → en → zh-CN', async ({ page 
   await selectLanguage(page, 'Português (Brasil)')
   await expectLangState(page, 'pt-BR')
   // Settings page "Outros" section heading (pt-BR)
-  await expect(page.getByText('Outros', { exact: true })).toBeVisible()
+  const ptLanguageSettings = page.getByRole('heading', { name: 'Outros', exact: true }).locator('xpath=..')
+  await expect(ptLanguageSettings.getByText('Outros', { exact: true })).toBeVisible()
   // Common "Idioma" label replaces zh-CN "语言"
   await expect(page.getByText('Idioma', { exact: true })).toBeVisible()
   // Gate 1: workspace labels reflect pt-BR
@@ -149,7 +150,8 @@ test('语言切换三段往返:zh-CN → pt-BR → en → zh-CN', async ({ page 
   await selectLanguage(page, 'English')
   await expectLangState(page, 'en')
   // Settings page "Other" section heading (en)
-  await expect(page.getByText('Other', { exact: true })).toBeVisible()
+  const enLanguageSettings = page.getByRole('heading', { name: 'Other', exact: true }).locator('xpath=..')
+  await expect(enLanguageSettings.getByText('Other', { exact: true })).toBeVisible()
   // Common "Language" label
   await expect(page.getByText('Language', { exact: true })).toBeVisible()
   // Gate 1: workspace labels reflect en
@@ -158,7 +160,8 @@ test('语言切换三段往返:zh-CN → pt-BR → en → zh-CN', async ({ page 
   // --- Switch back to zh-CN (round-trip) ---
   await selectLanguage(page, '中文')
   await expectLangState(page, 'zh-CN')
-  await expect(page.getByText('其他', { exact: true })).toBeVisible()
+  const languageSettings = page.getByRole('heading', { name: '其他', exact: true }).locator('xpath=..')
+  await expect(languageSettings.getByText('其他', { exact: true })).toBeVisible()
   await expect(page.getByText('语言', { exact: true })).toBeVisible()
   // Gate 1: workspace labels reflect zh-CN
   await assertWorkspaceLabels(page, 'zh-CN')

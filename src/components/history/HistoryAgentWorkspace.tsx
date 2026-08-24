@@ -1,19 +1,13 @@
-import { ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
-import type { UseAIStreamReturn } from '../../hooks/useAIStream'
-import AIStreamOutput from '../shared/AIStreamOutput'
+import { Loader2, ShieldCheck, Sparkles, Trash2 } from 'lucide-react'
+import type { HistoryAgentLaneState } from './useHistoryAI'
 import { useDomainT } from '../../i18n'
 
-export type HistoryAgentViewState = Pick<
-  UseAIStreamReturn,
-  'output' | 'isStreaming' | 'error' | 'tokenUsage' | 'stop'
->
+export type HistoryAgentViewState = HistoryAgentLaneState
 
 interface Props {
   canEdit: boolean
   consultActive: boolean
   stormActive: boolean
-  consultPreparing: boolean
-  stormPreparing: boolean
   consultAI: HistoryAgentViewState
   stormAI: HistoryAgentViewState
   savedConsult?: string
@@ -24,8 +18,12 @@ interface Props {
   onConsult: () => void
   onStorm: () => void
   onDelete: () => void
-  onAcceptConsult: (text: string) => void
-  onAcceptStorm: (text: string) => void
+  onAcceptConsult: () => void
+  onAcceptStorm: () => void
+  onRejectConsult: () => void
+  onRejectStorm: () => void
+  onRetryConsult: () => void
+  onRetryStorm: () => void
   onClearConsult: () => void
   onClearStorm: () => void
 }
@@ -34,8 +32,6 @@ export default function HistoryAgentWorkspace({
   canEdit,
   consultActive,
   stormActive,
-  consultPreparing,
-  stormPreparing,
   consultAI,
   stormAI,
   savedConsult,
@@ -48,12 +44,16 @@ export default function HistoryAgentWorkspace({
   onDelete,
   onAcceptConsult,
   onAcceptStorm,
+  onRejectConsult,
+  onRejectStorm,
+  onRetryConsult,
+  onRetryStorm,
   onClearConsult,
   onClearStorm,
 }: Props) {
   const { t } = useDomainT('history')
-  const showConsultOutput = consultActive && !!(consultAI.output || consultAI.isStreaming || consultAI.error)
-  const showStormOutput = stormActive && !!(stormAI.output || stormAI.isStreaming || stormAI.error)
+  const consultBlocked = consultAI.busy || consultAI.candidate != null || consultAI.unsafeRunId != null
+  const stormBlocked = stormAI.busy || stormAI.candidate != null || stormAI.unsafeRunId != null
 
   return (
     <>
@@ -62,19 +62,19 @@ export default function HistoryAgentWorkspace({
           <button
             type="button"
             onClick={onConsult}
-            disabled={consultAI.isStreaming || consultPreparing || !canEdit}
+            disabled={consultBlocked || !canEdit}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-500/10 text-blue-400 text-xs font-medium rounded-lg hover:bg-blue-500/20 transition-colors disabled:opacity-50"
           >
-            <ShieldCheck className="w-3.5 h-3.5" />
+            {consultAI.busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ShieldCheck className="w-3.5 h-3.5" />}
             {t('agentWorkspace.consultButton')}
           </button>
           <button
             type="button"
             onClick={onStorm}
-            disabled={stormAI.isStreaming || stormPreparing || !canEdit}
+            disabled={stormBlocked || !canEdit}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-500/10 text-purple-400 text-xs font-medium rounded-lg hover:bg-purple-500/20 transition-colors disabled:opacity-50"
           >
-            <Sparkles className="w-3.5 h-3.5" />
+            {stormAI.busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
             {t('agentWorkspace.stormButton')}
           </button>
         </div>
@@ -91,38 +91,24 @@ export default function HistoryAgentWorkspace({
         )}
       </div>
 
-      {showConsultOutput && (
-        <div className="mt-3">
-          <p className="text-[10px] text-blue-400 mb-1 flex items-center gap-1">
-            <ShieldCheck className="w-3 h-3" /> {t('agentWorkspace.consultAgentLabel')}
-          </p>
-          <AIStreamOutput
-            output={consultAI.output}
-            isStreaming={consultAI.isStreaming}
-            error={consultAI.error}
-            tokenUsage={consultAI.tokenUsage}
-            onStop={consultAI.stop}
-            onAccept={onAcceptConsult}
-            onRetry={onConsult}
-          />
-        </div>
+      {consultActive && consultAI.candidate && (
+        <CandidateResult
+          mode="consult"
+          state={consultAI}
+          onAccept={onAcceptConsult}
+          onReject={onRejectConsult}
+          onRetry={onRetryConsult}
+        />
       )}
 
-      {showStormOutput && (
-        <div className="mt-3">
-          <p className="text-[10px] text-purple-400 mb-1 flex items-center gap-1">
-            <Sparkles className="w-3 h-3" /> {t('agentWorkspace.stormAgentLabel')}
-          </p>
-          <AIStreamOutput
-            output={stormAI.output}
-            isStreaming={stormAI.isStreaming}
-            error={stormAI.error}
-            tokenUsage={stormAI.tokenUsage}
-            onStop={stormAI.stop}
-            onAccept={onAcceptStorm}
-            onRetry={onStorm}
-          />
-        </div>
+      {stormActive && stormAI.candidate && (
+        <CandidateResult
+          mode="storm"
+          state={stormAI}
+          onAccept={onAcceptStorm}
+          onReject={onRejectStorm}
+          onRetry={onRetryStorm}
+        />
       )}
 
       {savedConsult && !consultActive && (
@@ -148,6 +134,73 @@ export default function HistoryAgentWorkspace({
         />
       )}
     </>
+  )
+}
+
+function CandidateResult({
+  mode,
+  state,
+  onAccept,
+  onReject,
+  onRetry,
+}: {
+  mode: 'consult' | 'storm'
+  state: HistoryAgentLaneState
+  onAccept: () => void
+  onReject: () => void
+  onRetry: () => void
+}) {
+  const isConsult = mode === 'consult'
+  const Icon = isConsult ? ShieldCheck : Sparkles
+  const { lang } = useDomainT('history')
+  const localized = (zh: string, pt: string, en: string) => lang === 'pt-BR' ? pt : lang === 'zh-CN' ? zh : en
+  return (
+    <div className={`mt-3 rounded-lg border p-3 ${isConsult ? 'border-blue-400/30' : 'border-purple-400/30'} bg-bg-base`}>
+      <div className={`mb-2 flex items-center gap-1 text-[10px] font-medium ${isConsult ? 'text-blue-400' : 'text-purple-400'}`}>
+        <Icon className="h-3 w-3" />
+        {isConsult
+          ? localized('历史考据持久候选', 'Candidato persistente de verificação histórica', 'Persistent historical-research candidate')
+          : localized('头脑风暴持久候选', 'Candidato persistente de brainstorming', 'Persistent brainstorming candidate')}
+      </div>
+      <div className="max-h-80 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-text-secondary">
+        {state.candidate?.result}
+      </div>
+      {state.message && <p className="mt-2 text-[10px] text-text-muted">{state.message}</p>}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onAccept}
+          disabled={state.busy}
+          className="rounded-md bg-accent px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
+        >
+          {state.busy
+            ? localized('处理中…', 'Processando…', 'Processing…')
+            : state.adoptionPending
+              ? localized('继续确认与终验', 'Continuar confirmação e verificação', 'Continue confirmation and verification')
+              : localized('确认写入', 'Confirmar gravação', 'Confirm write')}
+        </button>
+        {!state.adoptionPending && (
+          <>
+            <button
+              type="button"
+              onClick={onReject}
+              disabled={state.busy}
+              className="rounded-md border border-border px-3 py-1.5 text-xs text-text-secondary disabled:opacity-50"
+            >
+              {localized('拒绝候选', 'Rejeitar candidato', 'Reject candidate')}
+            </button>
+            <button
+              type="button"
+              onClick={onRetry}
+              disabled={state.busy}
+              className="rounded-md border border-border px-3 py-1.5 text-xs text-text-secondary disabled:opacity-50"
+            >
+              {localized('拒绝并重试', 'Rejeitar e tentar novamente', 'Reject and retry')}
+            </button>
+          </>
+        )}
+      </div>
+    </div>
   )
 }
 
@@ -178,11 +231,7 @@ function SavedAgentResult({
           {label}
         </span>
         {canEdit && (
-          <button
-            type="button"
-            onClick={onClear}
-            className="text-[10px] text-text-muted hover:text-red-400"
-          >
+          <button type="button" onClick={onClear} className="text-[10px] text-text-muted hover:text-red-400">
             {clearLabel}
           </button>
         )}

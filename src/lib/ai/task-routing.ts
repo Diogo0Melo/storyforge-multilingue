@@ -27,7 +27,6 @@ export type OutputLanguagePlacement =
 export const OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY = Object.freeze({
   'outline.volume': 'textual-fallback',
   'outline.chapter': 'textual-fallback',
-  'simulation.chatgame': 'native-system',
   'simulation.ttrpg-encounter': 'native-system-field-contract',
   'simulation.ttrpg-gm': 'native-system-field-contract',
   'simulation.npc-evolution': 'native-system-field-contract',
@@ -75,7 +74,6 @@ const EXTRACTION_PREFIXES = [
   'chapter.memory',
   'character.structure',
   'foreshadow.structure',
-  'ai.restructure',
   'import.',
   // WS-3A（fail-safe 前置）：此前未分类的结构化抽取类 category。
   // 缺省推导 extraction → outputKind functional-structured（不注入文本语言约束）。
@@ -93,6 +91,16 @@ const ANALYSIS_PREFIXES = [
   // WS-3A（fail-safe 前置）：eval harness 调用（'eval.ns1.judge' 以点分后代命中；
   // 'eval.ns10' 等相似名不再误匹配）。
   // 缺省推导 analysis → outputKind functional-structured。
+  // Evaluation transports are functional structured output. Register each
+  // production harness category centrally so the output-language gate stays
+  // strict and unknown eval categories still fail closed.
+  'eval.h4.verifier',
+  'eval.h86.generator',
+  'eval.h86.verifier',
+  'eval.crel.legacy-generator',
+  'eval.crel.generator',
+  'eval.crel.repair',
+  'eval.crel.verifier',
   'eval.ns0',
   'eval.ns1',
 ]

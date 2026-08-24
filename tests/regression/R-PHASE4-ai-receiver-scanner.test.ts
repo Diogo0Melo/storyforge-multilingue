@@ -133,8 +133,8 @@ describe('R-PHASE4 · AI receiver 通用调用点扫描器', () => {
 
     const editorRel = 'src/components/editor/ChapterEditor.tsx'
     const editorCallees = scanAiCallSites(readSrc(editorRel), editorRel).map(call => call.callee)
-    expect(editorCallees).toContain('stateAI.start')
     expect(editorCallees).toContain('memoryAI.start')
+    expect(editorCallees).not.toContain('stateAI.start')
   })
 
   it('manual 集成:命名空间调用进入 category 表,不产生新的未分类调用', () => {
@@ -149,8 +149,10 @@ describe('R-PHASE4 · AI receiver 通用调用点扫描器', () => {
 
     const editorRel = 'src/components/editor/ChapterEditor.tsx'
     const editor = classify(readSrc(editorRel), editorRel)
-    // stateAI.start 的 state.extract 此前对 manual 不可见;chapter.memory 现有 ai.start 与 memoryAI.start 两处
-    expect(editor.byCategory['state.extract']?.length ?? 0).toBeGreaterThanOrEqual(1)
-    expect(editor.byCategory['chapter.memory']?.length ?? 0).toBeGreaterThanOrEqual(2)
+    // State extraction is now part of the durable post-adoption organization
+    // run; the legacy direct receiver is intentionally retired. Chapter memory
+    // remains a namespaced receiver call.
+    expect(editor.byCategory['state.extract']?.length ?? 0).toBe(0)
+    expect(editor.byCategory['chapter.memory']?.length ?? 0).toBeGreaterThanOrEqual(1)
   })
 })

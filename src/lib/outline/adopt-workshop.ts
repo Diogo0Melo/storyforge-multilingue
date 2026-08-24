@@ -5,6 +5,7 @@ import {
   parseEnhancedDetailResult,
 } from '../ai/adapters/detail-scene-adapter'
 import { adopt } from '../registry/adopt'
+import type { WorkspaceScope } from '../types/world-ownership'
 
 export interface AdoptWorkshopResult {
   ok: boolean
@@ -18,6 +19,7 @@ const VALID_EMOTION_ARCS: EmotionArc[] = ['rising', 'falling', 'flat', 'wave', '
 export async function adoptChapterOutlineWorkshopResult(input: {
   raw: string
   projectId: number
+  scope?: WorkspaceScope
   outlineNodeId: number
   chapterSummary: string
   validCharacterIds: Set<number>
@@ -58,6 +60,7 @@ export async function adoptChapterOutlineWorkshopResult(input: {
   }
   const result = await adopt({
     projectId: input.projectId,
+    scope: input.scope,
     target: 'detailedOutlines',
     mode: 'add',
     data: { outlineNodeId: input.outlineNodeId, ...patch },

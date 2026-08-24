@@ -10,23 +10,21 @@
  */
 import { useState, useMemo, useRef, useCallback, useEffect } from 'react'
 import {
-  ChevronDown, ChevronRight, Loader2, Sparkles,
-  Users2,
+  AlertTriangle, Check, ChevronDown, ChevronRight, Loader2, RotateCcw, Sparkles,
+  Users2, X,
 } from 'lucide-react'
 import type { Reference, ReferenceAnalysisRun, ReferenceChunkAnalysis, AnalysisDimension } from '../../lib/types'
 import { DIMENSION_LABELS, DIMENSION_LABEL_KEYS } from '../../lib/types/reference'
 import {
-  mergeAnalysisResults, buildSummaryPrompt,
-  collectCharacterCraftTexts, buildCharacterMergePrompt, parseCharacterMergeOutput,
+  mergeAnalysisResults,
+  collectCharacterCraftTexts,
   type MergedAnalysisResult, type MergedDimension, type AIMergedCharacter,
 } from '../../lib/reference-analysis/merge-analysis'
-import { chat, resolveRequestConfig } from '../../lib/ai/client'
-import { getAIConfigRequiredMessage, isAIConfigReady } from '../../lib/ai/config-readiness'
 import { useAIConfigStore } from '../../stores/ai-config'
-import { extractJSON } from '../../lib/ai/adapters/import-adapter'
 import { useToast } from '../shared/Toast'
-import { updateReferenceAnalysisDerived } from '../../lib/reference-analysis/lifecycle'
 import { useDomainT } from '../../i18n'
+import type { ReferenceDerivedModeV1 } from '../../lib/reference-analysis/derived-agent-baseline'
+import { useReferenceDerivedAI, type ReferenceDerivedLaneState } from './useReferenceDerivedAI'
 
 const DIM_COLORS: Partial<Record<AnalysisDimension, string>> = {
   narrativeStyle:     'text-blue-400',
@@ -59,13 +57,24 @@ interface Props {
 export default function AnalysisReportViewer({ reference, run, chunks, isHistorical }: Props) {
   const { t } = useDomainT('project')
   const toast = useToast()
+  const aiConfig = useAIConfigStore(state => state.config)
   const [view, setView] = useState<'merged' | 'chunks'>('merged')
   const [activeDim, setActiveDim] = useState<string | null>(null)
-  const [generatingSummary, setGeneratingSummary] = useState(false)
-  const [aggregatingChars, setAggregatingChars] = useState(false)
   const [summaryJSON, setSummaryJSON] = useState(run.analysisSummary)
   const [charactersJSON, setCharactersJSON] = useState(run.mergedCharacters)
   const contentRef = useRef<HTMLDivElement>(null)
+
+  const handleCommitted = useCallback((mode: ReferenceDerivedModeV1, resultJson: string) => {
+    if (mode === 'summary') setSummaryJSON(resultJson)
+    else setCharactersJSON(resultJson)
+  }, [])
+  const derivedAI = useReferenceDerivedAI({
+    projectId: reference.projectId,
+    analysisRunId: run.id!,
+    aiConfig,
+    onCommitted: handleCommitted,
+    onError: toast.error,
+  })
 
   useEffect(() => {
     setSummaryJSON(run.analysisSummary)
@@ -106,66 +115,9 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }, [])
 
-  // AI full-book summary
-  const handleGenerateSummary = async () => {
-    if (!reference.id || !run.id) return
-    setGeneratingSummary(true)
-    try {
-      const { system, user } = buildSummaryPrompt(
-        reference.title, reference.author || '', merged, isHistorical,
-      )
-      const config = useAIConfigStore.getState().config
-      const meta = { category: 'reference.summary', outputKind: 'functional-structured', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } } as const
-      const effectiveConfig = resolveRequestConfig(config, meta).config
-      if (!isAIConfigReady(effectiveConfig)) throw new Error(getAIConfigRequiredMessage(effectiveConfig))
-      const output = await chat(
-        [{ role: 'system', content: system }, { role: 'user', content: user }],
-        { ...config, maxTokens: 4096 },
-        { category: 'reference.summary', outputKind: 'functional-structured', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } },
-      )
-      const json = extractJSON(output)
-      if (json) {
-        const summaryStr = JSON.stringify(json)
-        await updateReferenceAnalysisDerived(run.id, { analysisSummary: summaryStr })
-        setSummaryJSON(summaryStr)
-      }
-    } catch (err) {
-      toast.error(t('analysisReport.summaryFailed', { message: err instanceof Error ? err.message : String(err) }))
-    } finally {
-      setGeneratingSummary(false)
-    }
-  }
+  const handleGenerateSummary = () => derivedAI.run('summary')
 
-  // AI character card aggregation (replaces regex name scraping, fully deduplicates)
-  const handleAggregateCharacters = async () => {
-    if (!reference.id || !run.id) return
-    setAggregatingChars(true)
-    try {
-      const craftTexts = collectCharacterCraftTexts(chunks)
-      if (craftTexts.length === 0) throw new Error(t('analysisReport.noCraftTexts'))
-      const config = useAIConfigStore.getState().config
-      const meta = { category: 'reference.characters', outputKind: 'functional-structured', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } } as const
-      const effectiveConfig = resolveRequestConfig(config, meta).config
-      if (!isAIConfigReady(effectiveConfig)) throw new Error(getAIConfigRequiredMessage(effectiveConfig))
-      const { system, user } = buildCharacterMergePrompt(
-        reference.title, reference.author || '', craftTexts,
-      )
-      const output = await chat(
-        [{ role: 'system', content: system }, { role: 'user', content: user }],
-        { ...config, maxTokens: 4096 },
-        { category: 'reference.characters', outputKind: 'functional-structured', projectId: reference.projectId, configOverrides: { maxTokens: 4096 } },
-      )
-      const characters = parseCharacterMergeOutput(output)
-      if (characters.length === 0) throw new Error(t('analysisReport.noParsedCharacters'))
-      const next = JSON.stringify(characters)
-      await updateReferenceAnalysisDerived(run.id, { mergedCharacters: next })
-      setCharactersJSON(next)
-    } catch (err) {
-      toast.error(t('analysisReport.aggregateFailed', { message: err instanceof Error ? err.message : String(err) }))
-    } finally {
-      setAggregatingChars(false)
-    }
-  }
+  const handleAggregateCharacters = () => derivedAI.run('characters')
 
   // Non-empty dimensions
   const nonEmptyDims = merged.dimensions.filter(d => d.items.length > 0)
@@ -260,16 +212,33 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
           {view === 'merged' && !summaryJSON && (
             <button
               onClick={handleGenerateSummary}
-              disabled={generatingSummary || nonEmptyDims.length === 0}
+              disabled={derivedAI.summary.busy || derivedAI.summary.candidate != null || nonEmptyDims.length === 0}
               className="flex items-center gap-1 px-3 py-1.5 text-xs bg-accent text-white rounded-lg hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
-              {generatingSummary
+              {derivedAI.summary.busy
                 ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 : <Sparkles className="w-3.5 h-3.5" />}
-              {generatingSummary ? t('analysisReport.generatingSummary') : t('analysisReport.generateSummaryButton')}
+              {derivedAI.summary.busy ? t('analysisReport.generatingSummary') : t('analysisReport.generateSummaryButton')}
             </button>
           )}
         </div>
+
+        <ReferenceDerivedCandidatePanel
+          mode="summary"
+          lane={derivedAI.summary}
+          onAccept={() => derivedAI.accept('summary')}
+          onReject={() => derivedAI.reject('summary')}
+          onRetry={() => derivedAI.retry('summary')}
+          onAbandon={() => derivedAI.abandonUnsafe('summary')}
+        />
+        <ReferenceDerivedCandidatePanel
+          mode="characters"
+          lane={derivedAI.characters}
+          onAccept={() => derivedAI.accept('characters')}
+          onReject={() => derivedAI.reject('characters')}
+          onRetry={() => derivedAI.retry('characters')}
+          onAbandon={() => derivedAI.abandonUnsafe('characters')}
+        />
 
         {view === 'merged' ? (
           <MergedView
@@ -278,7 +247,8 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
             aiCharacters={aiCharacters}
             hasCharacterCraft={hasCharacterCraft}
             onAggregate={handleAggregateCharacters}
-            aggregating={aggregatingChars}
+            aggregating={derivedAI.characters.busy}
+            aggregatePending={derivedAI.characters.candidate != null}
           />
         ) : (
           <ChunkListView chunks={chunks} isHistorical={isHistorical} />
@@ -289,9 +259,126 @@ export default function AnalysisReportViewer({ reference, run, chunks, isHistori
 }
 
 // ── Merged view ────────────────────────────────────────────────────
+function ReferenceDerivedCandidatePanel({
+  mode,
+  lane,
+  onAccept,
+  onReject,
+  onRetry,
+  onAbandon,
+}: {
+  mode: ReferenceDerivedModeV1
+  lane: ReferenceDerivedLaneState
+  onAccept: () => void
+  onReject: () => void
+  onRetry: () => void
+  onAbandon: () => void
+}) {
+  const { t, lang } = useDomainT('project')
+  if (!lane.candidate && lane.unsafeRunId == null && !lane.message) return null
+  const isChinese = lang === 'zh-CN'
+  const localizedFallback = (zh: string, pt: string, en: string) => lang === 'pt-BR' ? pt : isChinese ? zh : en
+  const label = mode === 'summary'
+    ? t('analysisReport.fullBookSummary')
+    : t('analysisReport.derivedCharactersLabel', {
+        defaultValue: localizedFallback('角色卡聚合', 'Consolidação de fichas', 'Character-card consolidation'),
+      })
+  let preview: unknown = null
+  try { preview = lane.candidate ? JSON.parse(lane.candidate.resultJson) : null } catch { /* verified runner owns parsing */ }
+
+  return (
+    <div
+      className="rounded-xl border border-amber-400/30 bg-amber-500/5 p-3 space-y-3"
+      data-testid={`reference-derived-${mode}-candidate`}
+    >
+      <div className="flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-amber-400" />
+        <h3 className="text-sm font-medium text-text-primary">
+          {label}{isChinese ? '' : ' · '}{t('analysisReport.derivedCandidate', {
+            defaultValue: localizedFallback('持久候选', 'candidato persistente', 'review candidate'),
+          })}
+        </h3>
+        {lane.candidate && <span className="text-[10px] text-text-muted">Run #{lane.runId}</span>}
+      </div>
+      {lane.message && <p className="text-xs text-text-muted">{lane.message}</p>}
+      {lane.unsafeRunId != null && (
+        <div className="flex items-start gap-2 text-xs text-amber-300">
+          <AlertTriangle className="w-4 h-4 shrink-0" />
+          <span>{t('analysisReport.derivedUnsafe', { defaultValue: localizedFallback(
+            '模型结果是否返回无法判定；系统不会自动重试，以免产生双调用。',
+            'O resultado do modelo é incerto; a repetição automática foi desativada para evitar uma chamada duplicada.',
+            'The model result is uncertain; automatic retry is disabled to avoid a duplicate call.',
+          ) })}</span>
+        </div>
+      )}
+      {lane.candidate && mode === 'summary' && Boolean(preview) && typeof preview === 'object' && !Array.isArray(preview) && (
+        <div className="space-y-2 max-h-72 overflow-y-auto">
+          {Object.entries(preview as Record<string, unknown>).map(([key, value]) => (
+            <div key={key} className="rounded-lg border border-border/40 bg-bg-surface p-2">
+              <div className="text-[10px] text-amber-400 mb-1">{DIMENSION_LABELS[key as AnalysisDimension] ?? key}</div>
+              <p className="text-xs text-text-primary whitespace-pre-wrap">{String(value)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {lane.candidate && mode === 'characters' && Array.isArray(preview) && (
+        <div className="space-y-2 max-h-72 overflow-y-auto">
+          {(preview as AIMergedCharacter[]).map(card => <AICharacterCard key={card.name} card={card} />)}
+        </div>
+      )}
+      <div className="flex flex-wrap justify-end gap-2">
+        {lane.unsafeRunId != null && (
+          <button
+            type="button"
+            onClick={onAbandon}
+            disabled={lane.busy}
+            className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border border-amber-400/40 text-amber-300 disabled:opacity-50"
+          >
+            <X className="w-3.5 h-3.5" /> {t('analysisReport.abandonUnsafe', { defaultValue: localizedFallback('放弃不可判定运行', 'Abandonar execução incerta', 'Abandon uncertain run') })}
+          </button>
+        )}
+        {lane.candidate && !lane.adoptionPending && (
+          <>
+            <button
+              type="button"
+              onClick={onReject}
+              disabled={lane.busy}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border border-border text-text-muted disabled:opacity-50"
+            >
+              <X className="w-3.5 h-3.5" /> {t('analysisReport.rejectCandidate', { defaultValue: localizedFallback('拒绝', 'Rejeitar', 'Reject') })}
+            </button>
+            <button
+              type="button"
+              onClick={onRetry}
+              disabled={lane.busy}
+              className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded border border-border text-text-secondary disabled:opacity-50"
+            >
+              <RotateCcw className="w-3.5 h-3.5" /> {t('analysisReport.retryCandidate', { defaultValue: localizedFallback('重试', 'Tentar novamente', 'Retry') })}
+            </button>
+          </>
+        )}
+        {lane.candidate && (
+          <button
+            type="button"
+            onClick={onAccept}
+            disabled={lane.busy}
+            className="inline-flex items-center gap-1 px-3 py-1 text-xs rounded bg-accent text-white disabled:opacity-50"
+          >
+            {lane.busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+            {lane.adoptionPending
+              ? t('analysisReport.continueAdoption', { defaultValue: localizedFallback('继续确认', 'Continuar revisão', 'Continue review') })
+              : t('analysisReport.adoptCandidate', { defaultValue: localizedFallback('确认写入', 'Adotar', 'Adopt') })}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Merged view ────────────────────────────────────────────────────
 
 function MergedView({
-  merged, summaryMap, aiCharacters, hasCharacterCraft, onAggregate, aggregating,
+  merged, summaryMap, aiCharacters, hasCharacterCraft, onAggregate, aggregating, aggregatePending,
 }: {
   merged: MergedAnalysisResult
   summaryMap: Record<string, string>
@@ -299,8 +386,14 @@ function MergedView({
   hasCharacterCraft: boolean
   onAggregate: () => void
   aggregating: boolean
+  aggregatePending: boolean
 }) {
-  const { t } = useDomainT('project')
+  const { t, lang } = useDomainT('project')
+  const candidatePendingLabel = lang === 'zh-CN'
+    ? '候选待确认'
+    : lang === 'pt-BR'
+      ? 'Candidato aguardando revisão'
+      : 'Candidate awaiting review'
   const hasSummary = Object.keys(summaryMap).length > 0
 
   return (
@@ -340,12 +433,14 @@ function MergedView({
             {hasCharacterCraft && (
               <button
                 onClick={onAggregate}
-                disabled={aggregating}
+                disabled={aggregating || aggregatePending}
                 className="ml-auto inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg border border-purple-400/30 text-purple-400 hover:bg-purple-500/10 transition disabled:opacity-50"
               >
                 {aggregating
                   ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> {t('analysisReport.aggregating')}</>
-                  : <><Sparkles className="w-3.5 h-3.5" /> {aiCharacters.length > 0 ? t('analysisReport.reAggregate') : t('analysisReport.aggregateCharacters')}</>}
+                  : aggregatePending
+                    ? <><Sparkles className="w-3.5 h-3.5" /> {t('analysisReport.candidatePending', { defaultValue: candidatePendingLabel })}</>
+                    : <><Sparkles className="w-3.5 h-3.5" /> {aiCharacters.length > 0 ? t('analysisReport.reAggregate') : t('analysisReport.aggregateCharacters')}</>}
               </button>
             )}
           </div>

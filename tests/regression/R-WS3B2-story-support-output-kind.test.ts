@@ -2,7 +2,7 @@
  * WS-3B Phase 2 · P2-E Wave 2 · story-support lane：调用点显式声明 outputKind。
  *
  * 契约（orchestrator 批准）：
- * - story-arc.generate / emotion.beat 是严格 JSON 信封但内含读者面向的弧线/节拍散文，
+ * - agent.outline.story-arcs / emotion.beat 是严格 JSON 信封但内含读者面向的弧线/节拍散文，
  *   调用点显式声明 outputKind: 'mixed'（client gate 注入项目 contentLanguage 约束）。
  * - foreshadow.suggest 是读者面向的建议散文，声明 outputKind: 'creative'。
  * - foreshadow.structure 是纯 JSON 结构化采纳调用，保持既有
@@ -38,39 +38,27 @@ function expectAllOccurrencesDeclare(
 }
 
 describe('WS-3B P2-E Wave 2 · story-support lane outputKind 源码锚定', () => {
-  it('story-arc.generate 声明 mixed（JSON 信封内含读者面向弧线散文），保留 projectId', () => {
-    const source = readSource('src/components/outline/StoryArcPanel.tsx')
-    expectAllOccurrencesDeclare(source, "category: 'story-arc.generate'", 'StoryArcPanel.tsx', 'mixed')
-    expect(source).toContain(
-      "{ category: 'story-arc.generate', projectId: project.id!, outputKind: 'mixed' }",
-    )
+  it('agent.outline.story-arcs durable copilot 声明 mixed（JSON 信封内含读者面向弧线散文），保留 projectId', () => {
+    const source = readSource('src/lib/agent/story-arc-copilot.ts')
+    expect(source).toContain("input.routingCategory ?? 'agent.outline.story-arcs'")
+    expect(source.match(/category: (?:routingCategory|input\.routingCategory),[\s\S]{0,100}outputKind: 'mixed'/g)?.length).toBe(2)
   })
 
   it('emotion.beat 声明 mixed（JSON 信封内含读者面向节拍散文），保留 projectId', () => {
-    const source = readSource('src/components/editor/EmotionBeatCard.tsx')
-    expectAllOccurrencesDeclare(source, "category: 'emotion.beat'", 'EmotionBeatCard.tsx', 'mixed')
-    expect(source).toContain("{ category: 'emotion.beat', projectId, outputKind: 'mixed' }")
+    const source = readSource('src/lib/agent/run/emotion-beat-durable.ts')
+    expectAllOccurrencesDeclare(source, "category: 'emotion.beat'", 'emotion-beat-durable.ts', 'mixed')
+    expect(source).toContain('projectId: input.scope.projectId')
   })
 
-  it('foreshadow.suggest 的 ai.start 调用声明 creative（读者面向建议）', () => {
-    const source = readSource('src/components/foreshadow/ForeshadowPanel.tsx')
-    expect(source).toContain(
-      "ai.start(messages, undefined, { category: 'foreshadow.suggest', projectId: project.id!, outputKind: 'creative' })",
-    )
-    // 非 AI 调用的配置解析出现点保持原形状（不挂 outputKind）
-    expect(source).toContain("resolveRequestConfig(config, { category: 'foreshadow.suggest' })")
+  it('foreshadow.suggest durable entrypoint 声明 creative（读者面向建议）', () => {
+    const source = readSource('src/lib/agent/run/foreshadow-suggestions-durable.ts')
+    expectAllOccurrencesDeclare(source, "category: 'foreshadow.suggest'", 'foreshadow-suggestions-durable.ts', 'creative')
+    expect(source).toContain('generateForeshadowSuggestionCandidateV1')
   })
 
-  it('foreshadow.structure 保持 functional-structured（纯 JSON 采纳，规则 D 不注入）', () => {
-    const source = readSource('src/components/foreshadow/ForeshadowPanel.tsx')
-    expectAllOccurrencesDeclare(
-      source,
-      "category: 'foreshadow.structure'",
-      'ForeshadowPanel.tsx',
-      'functional-structured',
-    )
-    expect(source).toContain(
-      "{ category: 'foreshadow.structure', projectId: project.id!, outputKind: 'functional-structured' }",
-    )
+  it('foreshadow durable lane 不保留 retired structure 直连调用，建议候选保持 creative', () => {
+    const source = readSource('src/lib/agent/run/foreshadow-suggestions-durable.ts')
+    expect(source).not.toContain("category: 'foreshadow.structure'")
+    expect(source).toContain("outputKind: 'creative'")
   })
 })

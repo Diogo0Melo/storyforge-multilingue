@@ -98,7 +98,7 @@ export default function CharacterNPCPanel({ project }: Props) {
                 <span className="flex-shrink-0 text-[11px] text-text-muted whitespace-nowrap" title={t('npc.filledTitle')}>{t('npc.filledCount', { count: filled })}</span>
                 <CharacterSupplementAction
                   character={c}
-                  projectId={project.id!}
+                  project={project}
                   worldGroupId={c.homeWorldGroupId ?? null}
                   onDone={() => loadAll(project.id!)}
                   compact

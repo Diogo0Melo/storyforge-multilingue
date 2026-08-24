@@ -136,6 +136,18 @@
     "contextTierLabel": "Nível de entrada de contexto",
     "contextTierAria": "Nível de entrada de contexto para {{label}}",
     "noPresetsWarning": "Salve pelo menos uma predefinição antes de vincular tarefas a modelos dedicados.",
+    "reliabilityLabel": "Ativar engenharia de confiabilidade criativa",
+    "reliabilityAria": "Ativar engenharia de confiabilidade criativa",
+    "reliabilityDescriptionEnabled": "Somente problemas estruturais identificáveis recebem um reparo direcionado controlado; avisos subjetivos nunca repetem automaticamente.",
+    "reliabilityDescriptionDisabled": "No modo desativado há apenas uma geração; validação e edição do autor não chamam o modelo novamente.",
+    "qualityModeLabel": "Modo do resultado criativo",
+    "qualityModeAria": "Modo do resultado criativo",
+    "qualityModeDescription": "Controla as verificações estruturais após a geração e a política de reparo direcionado.",
+    "qualityModes": {
+      "economy": { "label": "Econômico", "description": "Gera uma vez sem reparo direcionado" },
+      "balanced": { "label": "Equilibrado", "description": "Permite um reparo direcionado controlado" },
+      "refine": { "label": "Refinar", "description": "Usa contexto mais completo para um reparo direcionado controlado" }
+    },
     "tasks": {
       "creation": {
         "label": "Geração criativa",
@@ -256,6 +268,64 @@
       "readyWithEmbedding": "Índice de recuperação pronto: {{chapters}} capítulos escaneados, {{chunks}} blocos atuais; árvore de resumos com {{summaryChapters}} capítulos, {{summaryVolumes}} volumes, {{summaryBooks}} livros; vetores semânticos totalmente prontos.",
       "completed": "Concluído: {{chapters}} capítulos escaneados, {{rebuiltChapters}} capítulos / {{chunks}} blocos reconstruídos; árvore de resumos com {{summaryChapters}} capítulos, {{summaryVolumes}} volumes, {{summaryBooks}} livros; {{embedded}} blocos embutidos nesta execução, {{skipped}} blocos já prontos ignorados",
       "failed": "Falha ao construir índice: {{error}} (índices existentes continuam usáveis; falhas de embedding voltam automaticamente para busca por palavras-chave)"
+    }
+  },
+  "creativeReliabilityCommunity": {
+    "title": "Feedback de confiabilidade criativa",
+    "description": "Este é um período experimental de observação da comunidade; ele não prova que a ferramenta realiza 80% do trabalho pelo autor. O A/B com autores independentes e o gate de qualidade original deixaram de bloquear esta rodada de desenvolvimento; os resultados anteriores não passaram por isso, e a avaliação futura usará feedback real enviado voluntariamente pelos autores.",
+    "usageTitle": "Limites de uso e custos",
+    "usage": {
+      "limits": "O modo Econômico permite no máximo 1 geração; Equilibrado e Refinar permitem no máximo 1 geração mais 1 reparo direcionado. Uma terceira chamada nunca fica oculta, e provedores não são trocados automaticamente.",
+      "costs": "Os custos dependem do seu provedor e modelo; valores estimados só aparecem quando o preço está cadastrado. Caso contrário, são exibidos apenas os tokens e a duração informados pelo provedor.",
+      "validation": "Regras locais e verificações da máquina encontram apenas problemas estruturais; não substituem o julgamento do autor sobre continuar editando a história.",
+      "rollback": "Para reverter imediatamente, desative “Ativar engenharia de confiabilidade criativa” no Roteamento de modelos por tarefa acima; candidatos existentes e conteúdo adotado não são afetados."
+    },
+    "stageLabel": "Etapa da experiência",
+    "stageAria": "Etapa da experiência de feedback criativo",
+    "outcomeLabel": "Resultado final",
+    "outcomeAria": "Resultado do feedback criativo",
+    "ratingLabel": "Utilidade (1–5)",
+    "ratingAria": "Utilidade do feedback criativo",
+    "editMinutesLabel": "Tempo restante estimado de edição (minutos)",
+    "editMinutesAria": "Minutos estimados de edição do feedback criativo",
+    "tagsLegend": "Principais problemas (selecione todos os aplicáveis)",
+    "tagAria": "Problema do feedback criativo: {{tag}}",
+    "save": "Registrar esta experiência",
+    "export": "Exportar JSON do feedback ({{count}})",
+    "clear": "Limpar registros locais",
+    "privacyBeforeLink": "Isto não coleta títulos de livros, IDs de projetos, prosa, prompts, saída do modelo ou chaves de API, e nunca faz upload automático. Após exportar, você pode ",
+    "privacyAfterLink": "enviá-lo voluntariamente; em caso de erro técnico, também pode anexar o pacote de diagnóstico privado gerado por “Gerenciamento de dados → Baixar informações de diagnóstico”.",
+    "stages": {
+      "storyArc": "Arco da história",
+      "outline": "Esboço de volume / capítulo",
+      "detailedOutline": "Esboço de cena",
+      "prose": "Candidato de prosa",
+      "longForm": "Escrita contínua de longa duração"
+    },
+    "outcomes": {
+      "kept": "Mantido em grande parte",
+      "edited": "Usado após edição",
+      "discarded": "Descartado"
+    },
+    "tags": {
+      "irrelevant": "Desviou das configurações",
+      "stalled": "Enredo não avança",
+      "infodump": "Excesso de informações",
+      "structure": "Problema estrutural",
+      "continuity": "Inconsistência de continuidade",
+      "cost": "Custo alto",
+      "latency": "Lento demais",
+      "other": "Outro"
+    },
+    "messages": {
+      "saved": "Salvo neste dispositivo; nenhuma chamada de IA foi feita e nada foi enviado.",
+      "saveError": "Falha ao salvar o feedback",
+      "exported": "JSON do feedback gerado; os mantenedores só o recebem se você enviá-lo à comunidade.",
+      "clearTitle": "Limpar o feedback criativo local?",
+      "clearMessage": "Isto excluirá {{count}} registros estruturados de feedback salvos neste navegador. Obras, candidatos e configuração de IA não serão alterados.",
+      "clearConfirm": "Limpar feedback",
+      "clearCancel": "Manter",
+      "cleared": "Registros locais de feedback limpos."
     }
   },
   "modelList": {
@@ -412,13 +482,13 @@
     "newVariableTitle": "Adicionar variável",
     "newVariableMessage": "Nomes de variáveis podem conter apenas letras, dígitos e sublinhado.",
     "userPromptTemplateLabel": "Modelo de User Prompt",
-    "templateSyntaxHint": "Suporta <code>{{var}}</code> e <code>{{#if var}}...{{/if}}</code>"
+    "templateSyntaxHint": "Suporta <code>&#123;&#123;var&#125;&#125;</code> e <code>&#123;&#123;#if var&#125;&#125;...&#123;&#123;/if&#125;&#125;</code>"
   },
   "promptParameters": {
     "title": "Parâmetros ajustáveis",
     "add": "Adicionar parâmetro",
-    "empty": "Sem parâmetros ainda. Declare parâmetros para referenciá-los nos modelos com <code>{{key}}</code>; opcionais podem ser envolvidos por <code>{{#if usesKey}}...{{/if}}</code>.",
-    "keyPlaceholder": "chave (usada como {{key}})",
+    "empty": "Sem parâmetros ainda. Declare parâmetros para referenciá-los nos modelos com <code>&#123;&#123;key&#125;&#125;</code>; opcionais podem ser envolvidos por <code>&#123;&#123;#if usesKey&#125;&#125;...&#123;&#123;/if&#125;&#125;</code>.",
+    "keyPlaceholder": "chave (usada como &#123;&#123;key&#125;&#125;)",
     "labelPlaceholder": "Nome exibido na UI",
     "defaultPlaceholder": "Valor padrão",
     "optionalToggle": "Permitir desativar",
@@ -452,7 +522,8 @@
     "addPlaceholder": "Cole o conteúdo do exemplo",
     "noExamplesError": "Nenhum exemplo encontrado na saída da IA; tente novamente ou adicione manualmente",
     "generateError": "Falha ao gerar: {{error}}",
-    "tip": "Dica: até 3 bons exemplos e 2 contraexemplos são anexados ao prompt (para evitar desperdício de tokens)."
+    "tip": "Dica: até 3 bons exemplos e 2 contraexemplos são anexados ao prompt (para evitar desperdício de tokens).",
+    "draftNotice": "As alterações de exemplos ficam no rascunho atual; clique em “Salvar” no topo para aplicar."
   },
   "promptModuleKeys": {
     "worldviewDimension": "Construção de Mundo · Geração de dimensões",
@@ -1043,6 +1114,18 @@
     "chapterExpand": {
       "name": "Interno - Expansão de Texto",
       "description": "Expande e enriquece o texto, adicionando detalhes, psicologia e ambiente, sem alterar o enredo."
+    },
+    "chapterCondense": {
+      "name": "Interno - Condensação de Texto",
+      "description": "Comprime a prosa local preservando fatos, causalidade, posições dos personagens e limites de informação."
+    },
+    "chapterRewrite": {
+      "name": "Interno - Reescrita Fiel",
+      "description": "Reescreve a prosa local com outra expressão, preservando os fatos da história e os limites de informação."
+    },
+    "chapterCheck": {
+      "name": "Interno - Revisão de Prosa Local",
+      "description": "Verifica problemas comprováveis na prosa local e retorna um relatório sem gerar texto substituto."
     },
     "chapterDeAi": {
       "name": "Interno - Reescrita Anti-IA",

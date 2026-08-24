@@ -79,7 +79,7 @@
 
 ### 1.2 灵感反推（侧栏：inspiration）
 
-**对应表**：无自有表（写入到 `worldviews` / `storyCores` / `characters` / `worldGroups`）
+**对应表**：`inspirationWorkspaces`（碎片与确认版本）；世界观、故事核心、角色和世界组只在版本确认后的独立作者采纳动作中写入
 
 **字段**（本面板内的用户输入与中间态）：
 | 字段 | 含义 |
@@ -93,34 +93,32 @@
 #### 动作①：灵感反推（单世界）
 - **触发**：🔘 手动，点"反推"按钮
 - **读**：
-  - `projects.name`、`projects.genre`、`projects.description`
-  - `用户输入: 碎片输入`
+  - 作者本轮勾选的已保存碎片；碎片 ID 固定到主 Agent durable plan
+  - `read_inspiration_workspace → CONTEXT_SOURCES + assembleContext()`，未勾选碎片不读取
 - **提示词**：`inspiration.reverse`
-- **写**（用户审核 → 分批采纳）：
-  - `worldviews.worldOrigin / powerHierarchy / continentLayout / climateByRegion / historyLine / races / factionLayout`（覆盖，按 v3 字段）
-  - `storyCores.theme / centralConflict / plotPattern / mainPlot / logline`（覆盖）
+- **首次确认写入**：结构化候选可编辑/拒绝/确认；确认只经 `adopt(inspirationWorkspaces)` 新增版本，不自动写 Canon
+- **后续显式采纳**：
+  - `worldviews.worldOrigin / powerHierarchy / continentLayout / climateByRegion / historyLine / races / factionLayout`
+  - `storyCores.theme / centralConflict / plotPattern / mainPlot / logline`
   - `characters`（批量新建）
-- **采纳方式**：用户在面板上分别点"写入世界观/写入故事核心/写入角色"或"一键全部采纳"
+- **采纳方式**：版本确认后，用户在面板上分别点"写入世界观/写入故事核心/写入角色"或"一键全部采纳"
 
 #### 动作②：灵感反推（多世界）
 - **触发**：🔘 手动，多世界模式下点"反推"按钮
-- **读**：
-  - `projects.name / genre`
-  - `worldGroups.全世界概览`
-  - `用户输入: 碎片输入`（含可指明"我想要斗破/遮天/完美三个世界..."这种意图）
+- **读**：与单世界相同，只读取作者勾选的已保存碎片，并按多世界模式构造结构化候选
 - **提示词**：`inspiration.reverse.multiworld`
-- **写**：
+- **首次确认写入**：只新增 `inspirationWorkspaces.versions`；以下均为版本确认后的独立显式采纳：
   - `worldGroups`（批量新建多世界）
   - 每个世界对应的 `worldviews`（带 worldGroupId 盖章）
   - `characters`（带 homeWorldGroupId 或 isCrossWorld）
 
-> ⚠️ 已知风险：字段映射严格按 v3，AI 若吐 `summary` 等旧字段会被忽略；建议未来走"R-2 统一写回 + 别名映射"根治。
+> HARNESS-34：旧面板级 `useAIStream`、直接模型调用和组件级上下文装配已删除；候选进入主 Agent durable Run，刷新后仍可编辑、拒绝或确认。当前工程证据不代表真实模型生成质量已经提升。
 
 ---
 
 ### 1.3 项目参考（侧栏：references）
 
-**对应表**：`references` + `referenceChunkAnalysis`
+**对应表**：`references` + `referenceAnalysisRuns` + `referenceChunkAnalysis` + `referenceAnalysisSources`
 
 **字段**：
 | 字段 | 含义 |
@@ -145,19 +143,17 @@
 
 #### 动作②：全书 AI 总结
 - **触发**：🔘 手动，分析完后点"生成总结"
-- **读**：
-  - `referenceChunkAnalysis.所有块.各维度`（按维度合并取样）
-  - `references.title / author`
-- **提示词**：`reference.summarize`
-- **写**：`references.analysisSummary（JSON 覆盖）`
+- **读**：只经 `referenceDerivedBaseline` 读取当前 Work 中精确参考、精确分析版本、来源声明与该版本全部分块维度取样
+- **提示词 / 解析**：`inspiration.reference-summary`；一次调用只接受与非空维度同序的 exact-key 纯 JSON
+- **运行证据**：HARNESS-74 durable 候选冻结来源 baseline、版本/投影原字段、Context Manifest、Prompt 和模型输出；未知结果不自动重试，刷新恢复不重复调用
+- **写**：确认前零写入；确认后经 CAS + `adopt(referenceAnalysisRuns.analysisSummary)` 写目标版本，仅当版本仍 active 时同步 `adopt(references.analysisSummary)` 兼容投影
 
 #### 动作③：AI 角色卡聚合
 - **触发**：🔘 手动，点"AI 整理角色卡"
-- **读**：
-  - `referenceChunkAnalysis.所有块.characterCraft`（人物塑造维度）
-  - `references.title / author`
-- **提示词**：`reference.aggregate-characters`
-- **写**：`references.mergedCharacters（JSON 覆盖）`
+- **读**：只经 `referenceDerivedBaseline` 读取当前 Work 中精确参考、精确分析版本、来源声明与该版本 `characterCraft` 分析
+- **提示词 / 解析**：`inspiration.reference-characters`；一次调用只接受根键 `characters`，每项严格为唯一 `name/role/summary/analysis` 四字段
+- **运行证据**：与总结使用独立 durable lane；候选、拒绝、重试、确认和不可判定运行显式放弃均绑定原 Run
+- **写**：确认前零写入；确认后经 CAS + `adopt(referenceAnalysisRuns.mergedCharacters)` 写目标版本，仅 active 版本同步 `adopt(references.mergedCharacters)` 兼容投影
 
 #### 动作④：采纳引用到创作规则
 - **触发**：🔘 手动，"作为创作参考引用"
@@ -204,7 +200,7 @@
 **字段**：
 | 字段 | 含义 |
 |---|---|
-| `worldGroups.name / icon / type / description / powerRestriction / entryCondition / order` | 世界 |
+| `worldGroups.name / icon / type / description / powerRestriction / entryCondition / order / plannedChapterCount` | 世界 |
 | `worldGroupLinks.fromGroupId / toGroupId / linkType / label / description` | 世界间关系（诸天/穿越/飞升/分支） |
 
 **AI 动作**：
@@ -212,24 +208,25 @@
 #### 动作①：AI 建议多个世界（WorldGroupOverview）
 - **触发**：🔘 手动，多世界模式下"AI 建议"按钮
 - **读**：
-  - `projects.name / genre / description`
-  - `worldviews / storyCores / characters`（已有项目内容）
-  - `worldGroups.全世界概览`（已建世界）
-  - `用户输入提示`
+  - `manualText`：作者当次输入的世界方向
+  - `worldGroups`：当前 World 已建世界目录
+  - `storyCore`：当前 Work 故事核心
 - **提示词**：`world-group.suggest`
-- **解析**：`parseWorldSuggestOutput → SuggestedWorld[]`
-- **写**：`worldGroups（批量新建，用户审核采纳）`，可选 `worldGroupLinks（关系）`
+- **解析**：`parseWorldSuggestOutputStrictV1`；只接受 2～4 项 exact-key JSON，每项仅含 `name / type / description / entryCondition / powerRestriction / plannedChapterCount`；拒绝 Markdown、`primary`、额外/缺失字段、批内或与已有世界同名及越界值
+- **运行证据**：`world-origin.world-suggest` durable 候选冻结 World/Work、项目提示、完整世界目录/关系/故事核心、Context Manifest、Prompt 和一次模型调用；未知结果暂停且不自动重试
+- **写**：确认前零正式写入；作者勾选任意非空子集后，冻结选择与顺序，只在上游、Context 和 Prompt 仍 fresh 时经 `FIELD_REGISTRY + AdoptionSchema + adopt(worldGroups)` 原子新增 `name / type / description / icon / order / entryCondition / powerRestriction / plannedChapterCount`。`worldGroupLinks` 不由该 AI 动作写入，世界关系继续人工管理
 
 #### 动作②：AI 扩写单个世界设定（WorldGroupDetail）
-- **触发**：🔘 手动，世界详情页"AI 扩写本世界"
+- **触发**：🔘 手动，世界详情页“AI 扩写世界观”；名称、类型或描述有未保存改动时拒绝生成
 - **读**：
-  - `worldGroups[当前].name / description / 设定草稿`
-  - `worldGroups.其它世界概览`（避免雷同 + 保证差异化）
-  - `storyCores.theme / centralConflict`
-  - `用户输入提示`
+  - `manualText`：已保存目标世界组的名称、类型与描述
+  - `worldGroups`：当前 World 的世界目录
+  - `storyCore`：当前 Work 的故事核心
+  - `worldview`：目标世界组的正式世界观 baseline
 - **提示词**：`world-group.expand`
-- **解析**：`parseWorldExpandOutput → ExpandedWorldview`
-- **写**：本世界的 `worldviews（覆盖各字段：worldOrigin / powerHierarchy / continentLayout / climateByRegion / historyLine / races / factionLayout）` 🌍按世界
+- **解析**：`parseWorldExpandOutputStrictV1`；只接受七个 exact-key、2～30000 字符的非空 JSON 文本字段，拒绝 Markdown、缺失项、额外项和静默默认值
+- **运行证据**：`world-origin.worldview-expand` durable 候选绑定 World/Work/世界组、完整正式 baseline、非目标字段、Context Manifest、Prompt 与一次模型调用；未知结果窗口暂停且不自动重试
+- **写**：确认前零正式写入；作者确认且目标组、Context、Prompt 和 baseline 仍一致后，在事务中经 `FIELD_REGISTRY + adopt(worldviews)` 原子覆盖 `worldOrigin / powerHierarchy / continentLayout / climateByRegion / historyLine / races / factionLayout`，其它字段保持不变 🌍按世界
 
 ---
 
@@ -262,40 +259,15 @@
 | `powerHierarchy` | 力量体系 |
 | `divineDesign` | 神明设定（结构体：hasDivinity/divineRank/divineNames/divineRules） |
 
-**AI 动作**：
+**AI 动作（HARNESS-32）**：
 
-#### 动作①：世界来源 AI 生成
-- **触发**：🔘 手动，字段旁"AI 生成"按钮
-- **读**：
-  - `storyCores.theme / centralConflict`
-  - `worldviews.powerHierarchy / divineDesign`（当前世界已写部分）
-  - `当前字段值: worldOrigin`
-  - `用户输入提示`
-  - `worldRulesProfiles`（节点清单作约束）
-- **提示词**：`worldview.dimension`（dimension='世界来源'）
-- **写**：`worldviews.worldOrigin（覆盖）` 🌍按世界
+三个字段共用现有 `world-foundation-agent`，由 `world-origin.worldview-field` Skill 冻结目标字段、输入状态、上下文预算和写权限；每次只返回一个严格候选：
 
-#### 动作②：力量体系 AI 生成
-- **触发**：🔘 手动
-- **读**：
-  - `storyCores.theme / centralConflict`
-  - `worldviews.worldOrigin / divineDesign`
-  - `当前字段值: powerHierarchy`
-  - `用户输入提示`
-  - `worldRulesProfiles`
-- **提示词**：`worldview.dimension`（dimension='力量体系'）
-- **写**：`worldviews.powerHierarchy（覆盖）` 🌍按世界
+```json
+{"field":"worldOrigin","value":"候选正文"}
+```
 
-#### 动作③：神明设定 AI 生成
-- **触发**：🔘 手动
-- **读**：
-  - `storyCores.theme`
-  - `worldviews.worldOrigin / powerHierarchy`
-  - `当前字段值: divineDesign`
-  - `用户输入提示`
-  - `worldRulesProfiles`
-- **提示词**：`worldview.dimension`（dimension='神明设定'）
-- **写**：`worldviews.divineDesign（覆盖 JSON）` 🌍按世界
+`powerHierarchy` 和 `divineDesign` 只需替换 `field`。神明字段的 `value` 必须是严格的 `hasDivinity/divineRank/divineNames/divineRules` 对象，不再先生成长文本再额外调用模型拆分。Skill 通过 `CONTEXT_SOURCES + assembleContext()` 读取世界观、规则/事实、故事核心、力量、词条、角色、故事线、卷纲和参考资料；世界基座为空、部分填写和完整填写分别走创建、反推补全和受约束变更。候选刷新可恢复、可编辑、可拒绝；确认前 `worldviews` 零写入，确认后只经 `adopt(target=worldviews)`，完整世界观快照/CAS 和终态回读阻止旧候选覆盖新修改。人工字段编辑、力量词条、神明词条和 Prompt 配置继续保留。
 
 ---
 
@@ -309,23 +281,16 @@
 | `worldStructure` | 世界结构 |
 | `worldDimensions` | 疆域尺寸 |
 | `continentLayout` | 大陆/地貌分布 |
-| `regionDimensions` | 区域分布/重镇 |
 | `mountainsRivers` | 山川水系 |
 | `climateByRegion` | 气候环境 |
-| `naturalResources` | 自然物产（结构体：rareCreatures/herbs/minerals/others） |
+| `naturalResourceOverview` | 自然物产总体概述 |
 
 **AI 动作**：
 
-#### 动作①~⑦：各字段 AI 生成（统一模式）
-- **触发**：🔘 手动，每个字段旁有独立"AI 生成"按钮（共 7 个）
-- **读**（每个动作都一样的模式，差异只在 dimension 名）：
-  - `worldviews.worldOrigin / powerHierarchy / historyLine`（上游基础设定）
-  - `worldviews` 本面板其它已写字段（避免互相矛盾）
-  - `当前字段值: 该字段`
-  - `用户输入提示`
-  - `worldRulesProfiles`
-- **提示词**：`worldview.dimension`（dimension 分别为：'世界结构'/'疆域尺寸'/'地貌分布'/'重镇分布'/'山川水系'/'气候环境'/'自然物产'）
-- **写**：`worldviews.对应字段（覆盖）` 🌍按世界
+#### 动作①~⑥：各字段 AI 生成（统一 Skill）
+- **触发**：🔘 手动，每个字段旁有独立按钮。
+- **目标字段**：`worldStructure`、`worldDimensions`、`continentLayout`、`mountainsRivers`、`climateByRegion`、`naturalResourceOverview`。
+- **合同**：`{"field":"目标字段","value":"候选正文"}`；上下文、预算、反推和采纳规则与 2.3 相同。
 
 > 🟡 已知问题：当前自然物产是自由文本，Phase 35-b 后会迁到 codex 词条；届时本动作改为"写入 codex 矿物/草药/异兽词条"。
 
@@ -342,22 +307,19 @@
 | `worldEvents` | 世界大事记 |
 | `races` | 种族民族 |
 | `factionLayout` | 势力分布 |
-| `politicsEconomyCulture` | 政治/经济/文化 |
+| `regionDimensions` | 城池重镇与区域格局 |
+| `politicsOverview` | 政治制度 |
+| `economyOverview` | 经济制度 |
+| `cultureOverview` | 文化制度 |
 | `internalConflicts` | 矛盾冲突 |
 | `itemDesign` | 道具设计 |
 
 **AI 动作**：
 
-#### 动作①~⑦：各字段 AI 生成
-- **触发**：🔘 手动，每字段独立按钮
-- **读**（统一模式）：
-  - `worldviews.worldOrigin / powerHierarchy / continentLayout`（自然铺垫）
-  - 本面板其它字段（互相参照）
-  - `当前字段值`
-  - `用户输入提示`
-  - `worldRulesProfiles`
-- **提示词**：`worldview.dimension`（dimension 分别为：'世界历史线'/'世界大事记'/'种族民族'/'势力分布'/'政经文化'/'矛盾冲突'/'道具设计'）
-- **写**：`worldviews.对应字段（覆盖）` 🌍按世界
+#### 动作①~⑨：各字段 AI 生成（统一 Skill）
+- **触发**：🔘 手动，每字段独立按钮；正式历史年表仍是单独入口。
+- **目标字段**：`races`、`factionLayout`、`regionDimensions`、`politicsOverview`、`economyOverview`、`cultureOverview`、`internalConflicts`、`itemDesign`，以及保留人工维护的历史字段不进入本 Skill。
+- **合同**：`{"field":"目标字段","value":"候选正文"}`；上下文、预算、反推和采纳规则与 2.3 相同。
 
 > 🟡 已知问题：势力/道具迁到 codex 后，本面板动作的"写"目标改为 codex 词条；属 Phase 35-b。
 
@@ -415,7 +377,8 @@
 - **候选契约**：宏观参数 + 命名实体 + 规模 + 八向方位/距离；explicit 必须带用户消息
   逐字证据，AI 不输出坐标或数据库 ID
 - **本地决议**：闭集/枚举/证据校验 → 确定性空间求解 → Voronoi 命名实体对齐
-- **写**：`worldNodes.mapConfigJSON（作者手动触发后覆盖；手动比例尺增量写回）` 🌍按世界
+- **运行证据**：`world-origin.map-config` durable 候选绑定目标节点、Context Manifest、Prompt、原配置 baseline 与终验 receipt；模型结果不可判定时不自动重试
+- **写**：作者确认后才以 exact-field CAS 经 `adopt(worldNodes.mapConfigJSON)` 覆盖；手动比例尺继续增量写回 🌍按世界
 
 ---
 
@@ -456,13 +419,11 @@
 
 #### 动作①~⑦：每个字段 AI 生成
 - **触发**：🔘 手动，每个字段独立按钮
-- **读**（统一模式）：
-  - `worldviews.worldOrigin / powerHierarchy / races / factionLayout / historyLine`
-  - `storyCores.其它已写字段`
-  - `当前字段值`
-  - `用户输入提示`
-- **提示词**：`story.generate`（dimension 分别为：一句话故事 / 故事概念 / 主题 / 核心冲突 / 故事模式 / 主线 / 复线）
-- **写**：`storyCores.对应字段（覆盖）`
+- **执行**：主 Agent → `world-origin.story-core`，每轮固定一个目标字段与 expand/rewrite/polish 模式
+- **读**：Skill 声明的 `projectStatus / canonAssertions / worldview / storyCore / powerSystem / codex / characters / storyArcs / existingVolumeOutlines`，统一经 `assembleContext()`；按预算压缩并保留全文救援证据
+- **候选**：严格 `{ "field": "目标字段", "value": "候选内容" }`；刷新可恢复，可编辑或拒绝
+- **提示词配置**：`story.generate` 面板参数和自定义要求会转入受约束 Agent 请求，不改变 Skill 写权限
+- **写**：作者确认后只经 `adopt(target=storyCores)` 覆盖对应字段；确认前零写入，完整故事核心 snapshot/CAS 防止旧候选覆盖新编辑
 
 ---
 
@@ -539,7 +500,7 @@
   - `characters.阵容统计`（已有角色名单、缺口）
   - `用户输入提示`
 - **提示词**：`character.generate`
-- **解析**：AI 输出 → `parseCharacterOutput`（normalizeRole 自动把中文/英文 role 归一）
+- **解析**：分步骤 AI 入口已收口到 `character.create` Skill 的严格 JSON 候选解析；未知字段、非法枚举、缺少姓名/简介和重复角色在确认前阻断。
 - **写**：`characters（新建）` 🌍按世界（盖 homeWorldGroupId）
 
 #### 动作②：单个角色单字段 AI 生成（CharacterFieldGenerator）
@@ -555,9 +516,9 @@
 #### 动作③：角色解析（粘贴文本结构化）
 - **触发**：🔘 手动，"粘贴文本 → AI 解析为角色"
 - **读**：`用户粘贴的角色描述自由文本`
-- **提示词**：内置 systemPrompt（parse-character-output.ts，非 prompt-seeds 模板）
+- **提示词**：由 `character.create` Skill 绑定 `character-copilot-v1`，继续复用 `character.generate` 的正式模板和 Prompt 配置入口。
 - **调用方式**：直接走 `chat()` 非流式（不经 useAIStream），等待 JSON 输出
-- **解析**：`parseCharacterOutput`（含 `normalizeRole` 兜底：中文 role 自动归一为英文枚举）
+- **解析**：由 `character.create` Skill 的结构化候选合同负责；确认后只经 `adopt(characters)` 写回，旧自由文本解析旁路已下线。
 - **写**：`characters（新建）` 含所有字段
 
 ---
@@ -621,15 +582,19 @@
 
 **AI 动作**：
 
-#### 动作①：各维度 AI 生成
-- **触发**：🔘 手动，每字段旁按钮
-- **读**：
-  - `worldviews`（全字段 worldCtx）
-  - `storyCores.theme / centralConflict / mainPlot`
-  - `当前字段值`
-  - `用户输入提示`
-- **提示词**：`rules.generate`（dimension：写作风格/叙事视角/基调氛围/禁止事项/一致性规则/特殊要求/参考作品）
-- **写**：`creativeRules.对应字段（覆盖；prohibitions/consistencyRules 走 JSON 数组）`
+#### 动作①：写作风格 / 基调氛围 / 特殊要求 AI 建议（HARNESS-39）
+- **触发**：🔘 手动，三个字段旁的“AI 建议”按钮
+- **Agent / Skill**：`world-foundation-agent / world-origin.creative-rules`
+- **读**：`projectStatus / worldview / storyCore / creativeRules`，只经
+  `CONTEXT_SOURCES + assembleContext()`；按实际输入选择空输入创建、部分输入参考创建或完整输入受约束建议
+- **提示词**：继续复用 `rules.generate` 的激活模板，领域 Copilot 追加单字段和严格 JSON 合同
+- **候选**：只允许 `{field,value}`，`field` 仅可为
+  `writingStyle / atmosphere / specialRequirements`；刷新可恢复、可编辑、可拒绝
+- **写**：确认前 `creativeRules` 零写入；确认后只经
+  `adopt(target=creativeRules, mode=replace)` 写入本轮目标字段
+- **校验**：完整创作规则 snapshot/CAS、字段错投/未知字段/未变化候选拒绝、正式后状态回读和 terminal receipt
+- **人工编辑**：叙事视角、禁忌、一致性规则、参考作品和引用能力保持人工维护；基调统一保存到规范字段
+  `atmosphere`，旧 `toneAndMood` 仅作为读取兼容
 
 ---
 
@@ -683,7 +648,7 @@
 
 ### 4.3 角色驱动（侧栏：character-driven-plot）
 
-**对应表**：无自有表（产出建议性剧情，可写回大纲）
+**对应表**：`characterDrivenPlans`（方案、版本和生成结果）→ `outlineNodes`（作者二次采纳的卷/章）
 
 **字段**：用户在面板上选择/输入 角色 + 弧线意图
 
@@ -692,14 +657,14 @@
 #### 动作①：基于角色弧线生成剧情
 - **触发**：🔘 手动
 - **读**：
-  - `projects.name / genre`
-  - `worldviews`（全字段）
-  - `characters[选中].各字段` + 用户给每个角色填的"弧线意图"
-  - `worldRulesProfiles`
-  - `用户输入提示`
-- **提示词**：`character-driven-plot`
-- **解析**：`parsePlotOutput`（卷级剧情结构）
-- **写**：用户审核 → 可采纳到 `outlineNodes`（批量新建卷+章）
+  - 固定方案 ID 经 `read_character_driven_plan → characterDrivenPlan` 读取角色起点、终点和作者要求；重新生成时不注入旧生成结果
+  - 世界观、故事核心、叙事蓝图、角色、规则、故事线、已有卷纲和已写进度经 `CONTEXT_SOURCES + assembleContext()` 读取
+  - 上下文预算、压缩和全文回退由 `outline.character-driven` Skill 冻结
+- **提示词**：大纲 Agent 的 `outline.character-driven` Skill；保留 `plot.character-driven` Prompt 配置
+- **解析/校验**：`parseCharacterDrivenCandidateDraftV1` 严格 JSON；校验额外字段、卷章数量、重复标题、未知角色、角色弧覆盖和信息释放约束
+- **第一次确认写入**：只经 `adopt(recordId, target=characterDrivenPlans)` 更新 `generatedVolumes/status`；候选生成前后对方案做 snapshot/CAS
+- **第二次确认写入**：作者勾选卷后，`adoptCharacterDrivenVolumes()` 逐项经 `adopt(target=outlineNodes)` 新增卷/章；不改故事核心或正文
+- **运行证据**：固定方案 ID、Context Manifest、候选、编辑/拒绝/确认、重试和刷新恢复进入主 Agent durable Run；旧 `useAIStream → parsePlotOutput` 入口已删除
 
 ---
 
@@ -719,15 +684,28 @@
 
 #### 动作①：AI 规划故事线
 - **触发**：🔘 手动
-- **读**：
-  - `projects.name / genre`
-  - `worldviews`（全字段）
-  - `storyCores.theme / centralConflict / logline / mainPlot`
-  - `outlineNodes`（已有大纲摘要）
-  - 已有 `storyArcs`（避免重复）
-- **提示词**：`storyArc.plan`
-- **解析**：`parseStoryArcResult`
-- **写**：`storyArcs（新建）`
+- **Agent / Skill**：主 Agent → `outline` Agent → `outline.story-arcs`
+- **读**：Skill 声明的 `projectStatus`、`canonAssertions`、`worldview`、`storyCore`、
+  `characterDrivenPlan`、`powerSystem`、`cultivationProgress`、`codex`、`characters`、
+  `creativeRules`、`worldRules`、`historical`、`locations`、`storyArcs`、`storylineProgress`、
+  `existingVolumeOutlines`、`writtenChapterProgress`，统一由 `assembleContext()` 装配并记录实际输入证据
+- **输入处理**：区分 empty / partial / complete；按 Skill 压缩策略控制预算，超出物理窗口时拒绝静默裁剪
+- **提示词版本**：`story-arc-copilot-v1`
+- **解析 / 硬校验**：`parseStoryArcCandidateDraft()`；拒绝未知字段、非法 main/sub、重复名称、阶段不足和非法卷范围
+- **过程**：模型只生成可编辑 durable 候选；作者可拒绝或修改，修改后重新 gate；刷新恢复不重复模型调用
+- **写**：作者确认后唯一经 `adopt({ target: 'storyArcs' })` 新建；snapshot/CAS 和终态 verifier 校验正式结果
+- **保留功能**：人工新增、编辑和删除故事线继续使用原面板能力
+
+#### 动作②：映射已写章节的故事线进度与交汇（HARNESS-40）
+- **触发**：🔘 在动态进度面板选择已写章节后手动映射
+- **Agent / Skill**：主 Agent → `outline` Agent → `outline.storyline-progress`
+- **读**：`projectStatus`、`storyArcs`、`storylineProgress`、`chapterContent`，只经
+  `CONTEXT_SOURCES + assembleContext()` 装配；目标章节 ID 固定在任务中，正文全文不进入 durable snapshot
+- **输出**：严格 `{progress,crossings,newArcs}` 聚合候选；`progress` 只能引用登记故事线/阶段，所有引用必须有正文逐字证据；`newArcs` 只是疑似新线候选
+- **过程治理**：章节正文 hash、故事线边界和动态投影版本组成 snapshot/CAS；候选可刷新恢复、编辑、拒绝；章节或故事线变化后旧候选 stale
+- **写**：作者确认后一次性经 `adopt()` 原子写入 `storylineProgress`、`storylineCrossings` 和作者确认的新 `storyArcs`，不自动为新线创建进度
+- **校验**：闭集 ID、阶段归属、状态枚举、交汇去重、正文逐字引文、项目作用域、正式后状态回读和 terminal receipt
+- **保留功能**：章节选择、动态进度/交汇展示、人工故事线维护继续保留；旧面板 `useAIStream` 和直接采纳旁路已删除
 
 ---
 
@@ -813,12 +791,12 @@
 - **提示词**：`summary`
 - **写**：`chapters.summary（覆盖）`
 
-#### 动作⑨：情感节拍提取
+#### 动作⑨：情感节拍规划
 - **触发**：🔘 手动（EmotionBeatCard）
-- **读**：`chapters[当前].title / summary / content` + `worldCtx / charCtx` + `chapters[上一章].正文末尾`
-- **提示词**：`emotion-beat`
-- **解析**：`parseEmotionBeats`
-- **写**：`emotionBeatCards`（关联当前章节）
+- **读**：只经 Context Gateway 的 `chapterOutline / detailedOutline / previousChapterEnding / worldview / storyCore / characters / creativeRules`
+- **Skill**：`prose.emotion-beats`，提示词执行版本 `prose-emotion-beats-v1`
+- **解析**：严格 exact-key JSON；整体弧线 + 3–6 个唯一节拍，每拍五字段均非空
+- **写**：模型输出先持久化为 durable 候选，确认前不写业务表；作者确认后才经 `adopt(emotionBeatCards)` 写入当前章节卡并签发 terminal receipt
 
 #### 动作⑩：质量审校（ReviewPanel）
 - **触发**：🔘 手动
@@ -846,6 +824,38 @@
 - **提示词**：`anti-ai`
 - **解析**：`parseAntiAIResult`
 - **写**：无（仅展示）
+
+#### 动作⑬：人工修正后的后续章纲摘要重建（HARNESS-77/78）
+- **触发**：🔘 作者从当前章节完成影响项人工修正并取得 fresh H57 plan，再对目标的直接上游正文记录“已确认”复核后，选择一个仍受影响的后续章纲，点击“AI 重建章纲候选”
+- **Agent / Skill**：`outline / outline.impact-summary-regenerate`；Run 是 H57 的直接 child，绑定父 Run/receipt/output、当前 plan/graph/item 与 H50 直接依赖 review receipt
+- **读**：只经 `chapterContent / chapterOutline / adjacentChapterOutlines / canonAssertions / storyCore / characters / storyArcs / writtenChapterProgress / consistencyReport` 与 `assembleContext()`；正文与目标章纲必须 full delivery，正式目标 baseline 只由治理层用于 CAS
+- **解析**：严格 exact-key JSON `{summary,reason,evidenceRefs}`；证据引用只能来自实际进入模型的 Context 分段。一次模型调用，未知结果不自动重试
+- **依赖门**：目标 `dependencyNodeIds` 必须逐项映射到 current plan；下游正文依赖缺少 fresh `acknowledged` review 或仍为“需人工处理”时，模型调用和新 H77 Run 均为零。proof 随候选冻结，恢复、采纳和终验都会重新核对
+- **候选 / 恢复**：候选持久化且 `portable:false`，确认前正式摘要零写；刷新恢复同一候选不重复模型调用，拒绝后可显式创建新 child
+- **写**：作者确认且 H57、来源、非目标上游 Context、Prompt 与目标 baseline 均 fresh 时，事务内二次 CAS 后只经 `adopt(outlineNodes, merge-diffs)` 写 `summary`；正文、事实、title、锁定节点和其它字段不改
+- **终验**：回读正式摘要并签发绑定 H57 lineage 的 terminal receipt；终验后目标或上游变化会撤销旧完成证明
+
+#### 动作⑭：人工修正后的单事件故事年表重建（HARNESS-79）
+- **触发**：🔘 作者取得 fresh H57 current plan、完成目标直接依赖复核后，选择一个仍受影响的既有年表事件，点击“AI 重建年表候选”
+- **Agent / Skill**：既有 Prose Agent / `prose.story-timeline-extraction`；Run 是 H57 的直接 child，并与 H77 共用同一依赖证明门
+- **读**：模型只经 `chapterContent / storyTimelineTarget` 与 `assembleContext()` 读取目标章节当前正文和精确正式事件；目标必须属于当前 Work 且绑定有效章节
+- **解析**：严格 exact-key JSON `{storyTime,importance,description,reason,evidenceRefs}`；`importance` 只能为 1～3 整数，证据只能引用实际 Context 分段。一次模型调用，未知结果不自动重试
+- **候选 / 恢复**：不可便携候选冻结 H57 parent/item、依赖 receipts、章节正文、目标完整 baseline、Context 和 Prompt；确认前正式年表零写，刷新恢复不重复模型调用
+- **写**：作者确认且全部证据仍 fresh 时，只经 `adopt(storyTimelineEvents, merge-diffs)` 更新 `storyTime / importance / description`；`id / title / chapterId / chapterTitle / order / createdAt` 不变，不新增、删除、重排或重命名事件
+- **终验**：回读精确正式事件并签发绑定 H57 lineage 的 receipt；父计划、proof、正文或目标漂移会阻断恢复/采纳或撤销旧完成证明。整章集合提取仍由 §4.11① 独立承担
+
+#### 动作⑮：H57 跨类型下游调度（HARNESS-80，零模型控制面）
+- **触发**：🔘 恢复 fresh H57 current plan，或作者完成复核、确定性重建、生成候选确认/拒绝后自动刷新只读投影
+- **读**：H57 `remaining/new` 与 graph/plan、H50 current review、H58/H77/H79 current pending/terminal evidence；不读取模型 Context，不建立新的 AI 输入
+- **投影**：按稳定拓扑产生 `blocked / ready / awaiting-confirmation / needs-manual-action / completed` 五态和 canonical `scheduleHash`。目标自身“已确认”直接完成，“需人工处理”必须回到既有 H52～57 链
+- **并发**：H77/H79 共用一个 generation slot；已有活动 child 时新请求在模型前停止，并发创建由同 relation、parent mutation lock 和唯一父子索引收敛为一个 Run
+- **写**：schedule 零 Canon 写、零 `adopt()`、零新表/队列；只有作者显式选择的既有 H77/H79 child 按各自协议写 ledger。界面仅展示 ready 目标，不自动执行或批量调用模型
+
+#### 动作⑯：H57 下游执行器政策闭集（HARNESS-81，零模型控制面）
+- **触发**：🔘 每次从 fresh H57 item 构造 H80 schedule 时自动解析；作者无需额外点击
+- **政策**：只接受当前 planner 已登记的 kind/action/table/mode/nodeId 组合和正整数记录 ID；`source-record` 另限制为已有精确人工面板覆盖的 14 个表，并固定映射到 H58 确定性重建、H77 章纲、H79 年表或 H50/H52～57 作者复核/人工修正；未知或错配组合立即停止调度
+- **人工边界**：正文、事实、来源记录和当前章纲不自动覆盖；`storylineProgress / storylineCrossings / stateCards / itemLedger` 属于耦合或整章集合产物，单条 H57 item 不能扩大为 H40/H20/H63 的集合替换，只能进入现有精确人工面板
+- **读 / 写**：只读冻结 item 与来源章纲 ID，输出 policy id、理由和人工模块并进入 `scheduleHash`。零模型、零 Context、零 Canon 写、零新 Run/表/schema
 
 ---
 
@@ -942,7 +952,7 @@
 |---|---|
 | `name / tags / description / significance / parentId / sortOrder` | 地点（树状） |
 
-**AI 动作**：（当前面板**无 AI 直接生成动作**，手动 CRUD）
+**AI 动作**：“AI 从正文提取”会读取当前 Work 全部已写正文和当前 World 的已有地点，以 durable 长任务逐分块提取。已完成分块有 checkpoint，刷新后从下一分块继续；模型结果不可判定时不会自动重试。全部分块完成后才显示候选，作者勾选确认后才经 `adopt(importantLocations)` 写入地点树顶层。手动 CRUD 、树层级和标签编辑保留。
 
 **作为上游被读取**：章节正文生成时被 `buildLocationContext` 注入
 
@@ -977,10 +987,11 @@
 
 #### 动作①：一键从已写章节提取物品流水 🔄
 - **触发**：🔘 手动
-- **读**：所有已写章节 `chapters[content]`，逐章
+- **读**：只经 Context Gateway 的 `chapterContent / itemLedger / characters`；支持全部已写章或自定义起止章
+- **Skill**：`prose.inventory-extraction`，提示词执行版本 `inventory-extract-v1`
 - **提示词**：`inventory.extract`
-- **解析**：`parseInventoryEvents`
-- **写**：`itemLedger（每章先 deleteByChapter 再批量新建，防重复）`
+- **解析**：严格 exact-key JSON；动作仅 `gain/consume`、数量为正整数、持有人必填；所有分块完成后才持久化候选
+- **写**：确认前零正式写入；作者冻结选择后按 `itemLedger.replaceScope=['chapterId']` 逐章事务替换并签发 terminal receipt，空候选表示清理所选章旧结果
 
 ---
 
@@ -997,10 +1008,18 @@
 
 #### 动作①：一键从已写章节提取故事年表 🔄
 - **触发**：🔘 手动
-- **读**：所有已写章节 `chapters[content]`
-- **提示词**：`story.timeline`
-- **解析**：`parseStoryEvents`
-- **写**：`storyTimelineEvents（每章先 deleteByChapter 再批量新建）`
+- **读**：模型只经 Context Gateway 的 `chapterContent` 读取当前 Work 的全部已写正文；正式年表仅由治理层回读作 CAS
+- **Skill**：`prose.story-timeline-extraction`，提示词执行版本 `story-timeline-extract-v1`
+- **提示词**：`story-timeline.extract`
+- **解析**：严格 exact-key JSON；`importance` 仅允许 1～3 整数，候选按 `chapterId + title` 去重；所有分块完成后才持久化候选
+- **写**：确认前零正式写入；作者冻结选择后按 `storyTimelineEvents.replaceScope=['chapterId']` 逐章事务替换，章内 `order` 压缩为 `0..n-1` 并签发 terminal receipt；空选择表示明确清理目标已写章
+
+#### 动作②：从影响计划重建一个既有年表事件（HARNESS-79）
+- **触发**：🔘 当前章节的 H57 修正后计划中存在就绪的 `review-derived-state + timeline-event` 项，且目标直接依赖均已有 fresh `acknowledged` review
+- **读**：只经 `chapterContent / storyTimelineTarget → assembleContext()` 读取目标章正文和精确旧事件；正式 baseline 同时供 Harness 做完整 CAS
+- **Skill / 解析**：复用 `prose.story-timeline-extraction`，只接受 `{storyTime,importance,description,reason,evidenceRefs}`；候选持久化且 `portable:false`
+- **写**：确认前零正式写入；确认后只经 `adopt(storyTimelineEvents, merge-diffs)` 更新时间、重要性和描述，身份、标题、章节归属、顺序及创建时间冻结
+- **边界**：不新增、删除、重排、重命名事件，不自动级联其它影响项；集合级重新提取继续使用动作①
 
 ---
 
@@ -1038,11 +1057,12 @@
 
 **AI 动作**：
 
-#### 动作①：测试运行某个模板（PromptExamplesEditor）
+#### 动作①：AI 生成模板好示例 / 反例（PromptExamplesEditor）
 - **触发**：🔘 手动
-- **读**：`promptTemplates[当前]` + 用户给的示例参数
-- **提示词**：被测试的模板自身
-- **写**：无（仅展示输出）
+- **读**：只读取 `PromptTemplateEditor` 当前未保存 draft 中的 `systemPrompt / userPromptTemplate`；不读取项目、World、Work 或 Canon 上下文
+- **提示词**：固定 `prompt.examples` 元提示词，要求基于当前模板生成好示例或反例
+- **写**：模型输出只经 `onChange` 加入父组件内存 draft；作者另行点击顶部「保存」后，才由 Prompt store 写入全局、本机且不随项目导出的 `promptTemplates.examples`。系统模板保持只读；此处不是项目业务写入，不建立 durable Agent Run
+- **证据**：HARNESS-75 的 `authoring-draft` 反例证明生成后数据库零写、离开页面丢弃未保存草稿、显式保存后才落库，配置缺失零调用
 
 #### 动作②：工作流执行（WorkflowRunner）
 - **触发**：🔘 手动
@@ -1159,6 +1179,7 @@
 
 **读取世界观+故事核心+角色（中范围）**：
 - 世界观各字段、故事核心各字段、创作规则各字段、卷大纲、章大纲、伏笔建议、故事线、角色生成、场景考证
+- 历史考据/头脑风暴（HARNESS-73：只读登记世界观、历史基线与精确事件/关键词目标；候选确认后才写正式结果字段）
 
 **读取全部上游（最大范围，章节正文级）**：
 - 章节正文生成、续写（§4.5 ①②）
@@ -1173,9 +1194,9 @@
 **下游提取（从正文派生）**：
 - 状态提取（§4.5 ⑥⑦）
 - 物品流水提取（§4.10 ①）
-- 故事年表提取（§4.11 ①）
+- 故事年表提取与单事件影响重建（§4.11 ①②）
 - 关系网建议（§3.2 ①）
-- 情感节拍提取（§4.5 ⑨）
+- 情感节拍规划（§4.5 ⑨）
 - 章节摘要生成（§4.5 ⑧）
 
 ---
@@ -1186,7 +1207,11 @@
 
 ### `worldviews.worldOrigin`（世界来源）
 - **被写入**：世界起源 AI 生成（§2.3①）/ 灵感反推（§1.2①②）/ AI 建议世界 / 导入解析
-- **被读取**：自然环境/人文环境/故事核心各字段生成、角色生成、卷大纲、章大纲、细纲、章节正文、伏笔建议、故事线、场景考证、上下文快照、HTML 导出设定集
+- **被读取**：自然环境/人文环境/故事核心各字段生成、角色生成、卷大纲、章大纲、细纲、章节正文、伏笔建议、故事线、场景考证、历史考据/头脑风暴、上下文快照、HTML 导出设定集
+
+### `historicalTimelineEvents.aiConsult` / `aiBrainstorm` 与 `historicalKeywords.aiConsult` / `aiBrainstorm`
+- **被写入**：历史考据/头脑风暴 Agent 的持久候选经作者确认后，通过 `FIELD_REGISTRY` / `AdoptionSchema` 精确采纳
+- **被读取**：历史面板结果展示；后续同一目标的 Context 基线快照（用于 CAS 与刷新恢复，不能作为未确认旁路写入）
 
 ### `worldviews.factionLayout`（势力分布）
 - **被写入**：人文环境 AI 生成（§2.5）/ 灵感反推 / 导入解析
@@ -1202,7 +1227,7 @@
 
 ### `chapters.content`（章节正文）
 - **被写入**：章节正文 AI 生成/续写（§4.5①②）、选区润色/扩写/去 AI（§4.5③④⑤）、自动保存、导入正文
-- **被读取**：状态提取、物品提取、年表提取、关系提取、摘要生成、情感节拍、审校、追读力、反 AI 检测、上一章正文末尾（下章生成时）
+- **被读取**：状态提取、物品提取、年表提取、关系提取、摘要生成、审校、追读力、反 AI 检测、上一章正文末尾（下章生成和情感节拍规划时）
 
 ### `creativeRules.atmosphere`（基调）
 - **被写入**：创作规则 AI 生成（§4.1）

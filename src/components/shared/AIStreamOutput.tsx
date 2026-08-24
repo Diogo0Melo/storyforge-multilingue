@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Square, Check, RotateCcw, Loader2, ThumbsUp, ThumbsDown, Braces, ChevronDown, ChevronRight, X } from 'lucide-react'
 import { usePromptStore } from '../../stores/prompt'
 import type { PromptModuleKey, PromptExample } from '../../lib/types/prompt'
@@ -26,6 +26,12 @@ interface AIStreamOutputProps {
   placeholder?: string
   /** P15：传入则显示「⭐ 好示例 / 💩 坏示例」标记按钮，写入对应模板的 examples */
   moduleKey?: PromptModuleKey
+  /** 允许作者在确认前直接修订候选；修订文本只会在点击采纳时提交校验。 */
+  editable?: boolean
+  /** durable 写入与终验进行中时锁定候选操作。 */
+  busy?: boolean
+  /** 采纳生命周期开始后禁止关闭候选。 */
+  closeDisabled?: boolean
 }
 
 /**
@@ -43,25 +49,33 @@ export default function AIStreamOutput({
   placeholder,
   moduleKey,
   tokenUsage,
+  editable = false,
+  busy = false,
+  closeDisabled = false,
 }: AIStreamOutputProps) {
-  const hasOutput = output.length > 0
+  const [editableOutput, setEditableOutput] = useState(output)
+  useEffect(() => setEditableOutput(output), [output])
+  const displayedOutput = editable && !isStreaming ? editableOutput : output
+  const hasOutput = displayedOutput.length > 0
   const [marked, setMarked] = useState<'good' | 'bad' | null>(null)
   const [showRaw, setShowRaw] = useState(false)
+  const [pendingAction, setPendingAction] = useState<'accept' | 'dismiss' | null>(null)
+  const controlsBusy = busy || pendingAction !== null
   const { t } = useDomainT('shared')
 
   // 检测是否结构化输出（JSON）——这类内容是给程序解析的，不该让用户直接读原始 JSON
-  const trimmed = output.trimStart()
+  const trimmed = displayedOutput.trimStart()
   const isStructured = hasOutput && (
     trimmed.startsWith('{') || trimmed.startsWith('[') || /^```(?:json)?\s*[[{]/.test(trimmed)
   )
 
   /** 把当前输出存为模板的好/坏示例 */
   const handleMark = async (kind: 'good' | 'bad') => {
-    if (!moduleKey || !output.trim()) return
+    if (!moduleKey || !displayedOutput.trim()) return
     const tpl = usePromptStore.getState().getActive(moduleKey)
     const example: PromptExample = {
       id: `ex-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-      text: output.trim().slice(0, 2000), // 限制长度
+      text: displayedOutput.trim().slice(0, 2000), // 限制长度
       source: 'user-marked',
       rating: kind === 'good' ? 5 : 1,
       createdAt: Date.now(),
@@ -75,9 +89,32 @@ export default function AIStreamOutput({
     setMarked(kind)
   }
 
+  const handleAccept = async () => {
+    if (!onAccept || controlsBusy) return
+    setPendingAction('accept')
+    try {
+      // The durable caller owns validation, writing, and verification. Keep the
+      // candidate locked until that lifecycle has settled.
+      await onAccept(displayedOutput)
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
+  const handleDismiss = async () => {
+    if (!onDismiss || controlsBusy || closeDisabled) return
+    setPendingAction('dismiss')
+    try {
+      // Dismissal is also awaited so it cannot race an in-flight adoption.
+      await onDismiss()
+    } finally {
+      setPendingAction(null)
+    }
+  }
+
   // Phase 21.1: 生成中 token 估算（中文 ≈ 1.5 token/字，英文 ≈ 1.3 token/word）
-  const estimatedOutputTokens = isStreaming && !tokenUsage && output.length > 0
-    ? Math.round(output.length * 1.5)
+  const estimatedOutputTokens = isStreaming && !tokenUsage && displayedOutput.length > 0
+    ? Math.round(displayedOutput.length * 1.5)
     : null
 
   return (
@@ -102,6 +139,14 @@ export default function AIStreamOutput({
               </p>
             )}
           </div>
+        ) : editable && hasOutput && !isStreaming ? (
+          <textarea
+            aria-label={t('aiStream.editableCandidateAria')}
+            value={editableOutput}
+            disabled={controlsBusy}
+            onChange={event => setEditableOutput(event.target.value)}
+            className="min-h-[260px] w-full resize-y rounded border border-border bg-bg-surface p-3 font-mono text-xs leading-5 text-text-primary outline-none focus:border-accent disabled:cursor-not-allowed disabled:opacity-60"
+          />
         ) : isStructured ? (
           // 结构化（JSON）输出：不直接展示原始 JSON，给友好提示 + 可折叠原文
           <div className="space-y-2">
@@ -130,12 +175,12 @@ export default function AIStreamOutput({
               {showRaw ? t('aiStream.hideRaw') : t('aiStream.showRaw')}
             </button>
             {showRaw && (
-              <pre className="text-xs text-text-muted bg-bg-base/50 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-60">{output}</pre>
+              <pre className="text-xs text-text-muted bg-bg-base/50 rounded p-2 overflow-x-auto whitespace-pre-wrap max-h-60">{displayedOutput}</pre>
             )}
           </div>
         ) : hasOutput ? (
           <div className="text-text-primary text-sm leading-relaxed whitespace-pre-wrap">
-            {output}
+            {displayedOutput}
             {isStreaming && (
               <span className="inline-block w-1.5 h-4 bg-accent ml-0.5 animate-pulse" />
             )}
@@ -153,7 +198,7 @@ export default function AIStreamOutput({
       {/* 操作栏 */}
       <div className="flex items-center justify-between px-4 py-2 bg-bg-elevated border-t border-border">
         <span className="text-text-muted text-xs flex items-center gap-2">
-          {hasOutput && <span>{t('aiStream.charCount', { count: output.length })}</span>}
+          {hasOutput && <span>{t('aiStream.charCount', { count: displayedOutput.length })}</span>}
           {tokenUsage ? (
             <span title={`Input ${tokenUsage.inputTokens} + Output ${tokenUsage.outputTokens}`}>
               {t('aiStream.tokenStats', {
@@ -181,6 +226,7 @@ export default function AIStreamOutput({
               {(hasOutput || error) && (
                 <button
                   onClick={onRetry}
+                  disabled={controlsBusy}
                   className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-bg-hover text-text-secondary rounded-md hover:text-text-primary transition-colors"
                 >
                   <RotateCcw className="w-3 h-3" />
@@ -192,7 +238,7 @@ export default function AIStreamOutput({
                 <>
                   <button
                     onClick={() => handleMark('good')}
-                    disabled={marked === 'good'}
+                    disabled={marked === 'good' || controlsBusy}
                     title={t('aiStream.markGoodTitle')}
                     className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors ${
                       marked === 'good'
@@ -205,7 +251,7 @@ export default function AIStreamOutput({
                   </button>
                   <button
                     onClick={() => handleMark('bad')}
-                    disabled={marked === 'bad'}
+                    disabled={marked === 'bad' || controlsBusy}
                     title={t('aiStream.markBadTitle')}
                     className={`flex items-center gap-1.5 px-2 py-1.5 text-xs rounded-md transition-colors ${
                       marked === 'bad'
@@ -220,21 +266,27 @@ export default function AIStreamOutput({
               )}
               {hasOutput && !error && onAccept && (
                 <button
-                  onClick={() => onAccept(output)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-accent text-white rounded-md hover:bg-accent-hover transition-colors"
+                  onClick={() => { void handleAccept() }}
+                  disabled={controlsBusy}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-accent text-white rounded-md hover:bg-accent-hover transition-colors disabled:opacity-40"
                 >
-                  <Check className="w-3 h-3" />
+                  {busy || pendingAction === 'accept'
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <Check className="w-3 h-3" />}
                   {t('aiStream.accept')}
                 </button>
               )}
               {/* G2：关闭/弃用——不满意可直接关掉，保留原文不写回 */}
               {onDismiss && (hasOutput || error) && (
                 <button
-                  onClick={onDismiss}
+                  onClick={() => { void handleDismiss() }}
+                  disabled={controlsBusy || closeDisabled}
                   title={t('aiStream.dismissTitle')}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-bg-hover text-text-muted rounded-md hover:text-text-primary transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs bg-bg-hover text-text-muted rounded-md hover:text-text-primary transition-colors disabled:opacity-40"
                 >
-                  <X className="w-3 h-3" />
+                  {pendingAction === 'dismiss'
+                    ? <Loader2 className="w-3 h-3 animate-spin" />
+                    : <X className="w-3 h-3" />}
                   {t('aiStream.dismiss')}
                 </button>
               )}

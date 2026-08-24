@@ -2,7 +2,44 @@
 
 > 配套 `DATA-FLOW-MAP.md`（文字总表）。这里用 Mermaid 把整个项目的功能、上下文注入、读写/提取/反推关系画出来。
 > GitHub / VS Code Markdown Preview Mermaid 等会自动渲染成图。
-> 创建：2026-06-04｜本文档与 DATA-FLOW-MAP 同步更新。
+> 创建：2026-06-04｜Agent + Harness 主路径更新：2026-08-17。
+
+> **阅读提示**：本文后续大图保留领域表、记忆和上下游细节；早期图中的 `build*Context → adapter → AI` 表示领域数据关系，不再代表组件可以直接调用模型。当前所有正式创作入口必须经过下方统一主路径和 AI 入口登记。
+
+---
+
+## 当前统一 Agent + Harness 主路径
+
+```mermaid
+flowchart LR
+    UI["产品入口 / 作者请求"] --> AG["Master Agent / 领域 Skill"]
+    AG --> RC["Run Contract<br/>目标 · 权限 · 版本 · 预算"]
+    RC --> CTX["CONTEXT_SOURCES<br/>assembleContext()"]
+    CTX --> GEN["一次生成<br/>必要时最多一次定向修复"]
+    GEN --> ART["CreativeArtifact<br/>草稿 · 片段 · 问题 · 假设 · 用量"]
+    ART --> AUTHOR{"作者决定"}
+    AUTHOR -->|编辑 / 拒绝| HOLD["保持候选<br/>Canon 不变"]
+    AUTHOR -->|确认| ADOPT["FIELD_REGISTRY<br/>AdoptionSchema + adopt()"]
+    ADOPT --> CANON["正式设定 / 大纲 / 正文"]
+    CANON --> IMPACT["终态回读 / 记忆 / 影响 DAG"]
+
+    RC -.-> LEDGER["agentRuns / events / checkpoints<br/>hash · lineage · receipt"]
+    GEN -.-> LEDGER
+    ART -.-> LEDGER
+    IMPACT -.-> LEDGER
+    LIFE["PROJECT_TABLES<br/>作用域 · 导入导出 · 删除 · 迁移 · remap"] -.-> CTX
+    LIFE -.-> ADOPT
+    LIFE -.-> LEDGER
+```
+
+统一路径的职责边界：
+
+- 领域关系图回答“哪些资料可能影响哪些产物”；`CONTEXT_SOURCES` 决定本次运行实际允许读取什么。
+- Agent/Skill 决定任务与权限；Harness 负责持久化执行、恢复、失败停止和证据，不替代领域创作逻辑。
+- 模型输出只形成候选。正式写入仍需作者确认并经过 Field/Adoption 注册表。
+- 普通创作质量问题允许以警告和可编辑草稿交付；跨作用域、非法引用、stale 和未登记写入继续硬阻断。
+
+完整架构见 [ARCHITECTURE.md](./ARCHITECTURE.md)，本次更新说明见 [AI-HARNESS-REBUILD-RELEASE-20260817.md](./AI-HARNESS-REBUILD-RELEASE-20260817.md)。
 
 ---
 
@@ -75,6 +112,10 @@ flowchart TB
         AIOUTL["AI 生成卷/章大纲"]
         AIDETAIL["AI 生成细纲"]
         AICHAP["AI 生成章节正文"]
+        AIREGEN["H77 后续章纲摘要重建<br/>outline.impact-summary-regenerate"]
+        AITIMEREGEN["H79 单事件年表重建<br/>prose.story-timeline-extraction"]
+        H80SCHEDULE["H80 H57 下游 schedule<br/>五态 + 共享 generation slot"]
+        H81POLICY["H81 executor policy 闭集<br/>精确形状 + 人工边界"]
         CHAPTERS["📖 章节正文 chapters"]
         DETAILS["细纲 detailedOutlines"]
         EBEAT["情感节拍 emotionBeatCards"]
@@ -156,6 +197,20 @@ flowchart TB
     AIOUTL ==写==> OUTL
     AIDETAIL ==写==> DETAILS
     AICHAP ==写==> CHAPTERS
+    H57PLAN["H57 fresh current plan<br/>remaining/new active items"] ==exact kind/action/table/mode==> H81POLICY
+    H81POLICY ==执行器 + policy reason==> H80SCHEDULE
+    H50DEP["H50 fresh acknowledged review<br/>direct dependency proof"] ==current review evidence==> H80SCHEDULE
+    H80SCHEDULE ==ready + 单活动 slot==> AIREGEN
+    H80SCHEDULE ==ready + 单活动 slot==> AITIMEREGEN
+    H57PLAN ==父 lineage==> AIREGEN
+    H50DEP ==H78 依赖门==> AIREGEN
+    BLDNODE ==登记 Context==> AIREGEN
+    AIREGEN ==作者确认 + CAS + adopt(summary)==> OUTL
+    H57TIME["H57 fresh current plan<br/>remaining/new timeline-event"] ==父 lineage==> AITIMEREGEN
+    H50DEP ==H78 通用依赖门==> AITIMEREGEN
+    CHAPTERS ==chapterContent 登记 Context==> AITIMEREGEN
+    TIME ==storyTimelineTarget 精确 Context==> AITIMEREGEN
+    AITIMEREGEN ==作者确认 + CAS + adopt(三字段)==> TIME
     CHAPTERS --关联--> EBEAT
 
     CHAPTERS ==提取==> STATE
@@ -191,7 +246,7 @@ flowchart TB
     classDef top fill:#9ca3af,stroke:#6b7280,color:#fff;
 
     class WV,SC,PS,WR,HIST,WMAP,CODEX,ITEM,LOC,CHAR,REL,RULES,OUTL,SARC,FORE up
-    class AIOUTL,AIDETAIL,AICHAP,CHAPTERS,DETAILS,EBEAT write
+    class AIOUTL,AIDETAIL,AICHAP,AIREGEN,CHAPTERS,DETAILS,EBEAT write
     class STATE,LEDGER,TIME down
     class CDP,SVERIFY,WGAI,REVIEW,READAB,SUMMARY,INSP,REFER tool
     class FMTWV,FMTSC,FMTPS,BLDWV,BLDCW,BLDNODE,BLDCODEX,BLDCHAR,BLDRULES,BLDFORE,BLDHIST,BLDLOC,BLDWRC,BLDREF,BLDINS,BLDMEM ctx
@@ -215,6 +270,7 @@ flowchart LR
         WR["worldRulesProfiles"]
         LOC["importantLocations"]
         HIST["historical events + keywords"]
+        REF["references + referenceAnalysisRuns<br/>+ referenceChunkAnalysis"]
         RULES["creativeRules"]
     end
 
@@ -234,6 +290,8 @@ flowchart LR
         CCTX["buildCharacterContext<br/>filterActiveCharacters 按出场章节"]
         FCTX["buildForeshadowContext 开放伏笔"]
         HCTX["buildHistoricalContext 历史年表"]
+        HAGCTX["historyAgentBaseline<br/>已保存总述/纪年 + 精确事件/关键词 + 作者边界"]
+        RDCTX["referenceDerivedBaseline<br/>精确参考/版本 + 分块派生输入 + 来源声明"]
         LCTX["buildLocationContext 重要地点"]
         WRCTX["buildWorldRulesContext 真实与幻想"]
         RCTX["buildRefAnalysisContext 引用参考"]
@@ -252,6 +310,8 @@ flowchart LR
     CHAR --> CCTX
     FORE --> FCTX
     HIST --> HCTX
+    HIST --> HAGCTX
+    REF --> RDCTX
     LOC --> LCTX
     WR --> WRCTX
     RULES --> R_RULES
@@ -272,7 +332,9 @@ flowchart LR
         G_RU_PANEL["创作规则生成 rules.generate"]
         G_CH_PANEL["角色生成 character.generate"]
         G_FO_PANEL["伏笔建议 foreshadow.suggest"]
-        G_SA_PANEL["故事线规划 storyArc.plan"]
+        G_HAG["历史考据 / 风暴<br/>world-origin.history-consult / history-storm<br/>durable 候选 → 确认 → adopt(aiConsult|aiBrainstorm)"]
+        G_RD["参考总结 / 角色聚合<br/>inspiration.reference-summary / reference-characters<br/>durable 候选 → 版本写入 → active 投影"]
+        G_SA_PANEL["故事线规划 outline.story-arcs<br/>durable 候选 → 作者确认 → adopt(storyArcs)"]
         G_VOL["卷大纲 outline.volume"]
         G_CHP["章大纲 outline.chapter"]
         G_DET["细纲 detail.scene 或 enhanced"]
@@ -289,6 +351,9 @@ flowchart LR
     SWORLD ==> G_RU_PANEL
     SWORLD ==> G_CH_PANEL
     SWORLD ==> G_FO_PANEL
+    F1 ==> G_HAG
+    HAGCTX ==精确目标快照==> G_HAG
+    RDCTX ==精确版本快照==> G_RD
     SWORLD ==> G_SA_PANEL
     SWORLD ==> G_VOL
     NODECTX ==注入按节点==> G_CHP
@@ -338,9 +403,9 @@ flowchart LR
     classDef aux fill:#0e7490,stroke:#155e75,color:#fff;
     class F1,F2,F3 share
     class SWORLD,MWORLD,NODECTX path
-    class G_WV_PANEL,G_SC_PANEL,G_RU_PANEL,G_CH_PANEL,G_FO_PANEL,G_SA_PANEL,G_VOL,G_CHP,G_DET,G_CONT,G_SV,G_CDP,G_RV,G_READ,G_SUM gen
-    class WV,SC,PS,CHAR,FORE,CODEX,WR,LOC,HIST,RULES,EBEAT_NODE table
-    class CCTX,FCTX,HCTX,LCTX,WRCTX,RCTX,ICTX,MEMO,STX,GENRE,STYLE,CDXCTX,R_RULES,MEM aux
+    class G_WV_PANEL,G_SC_PANEL,G_RU_PANEL,G_CH_PANEL,G_FO_PANEL,G_HAG,G_RD,G_SA_PANEL,G_VOL,G_CHP,G_DET,G_CONT,G_SV,G_CDP,G_RV,G_READ,G_SUM gen
+    class WV,SC,PS,CHAR,FORE,CODEX,WR,LOC,HIST,REF,RULES,EBEAT_NODE table
+    class CCTX,FCTX,HCTX,HAGCTX,RDCTX,LCTX,WRCTX,RCTX,ICTX,MEMO,STX,GENRE,STYLE,CDXCTX,R_RULES,MEM aux
 ```
 
 ---
@@ -444,10 +509,10 @@ flowchart LR
 
     subgraph EXTRACT["🔍 提取适配器"]
         SEX["state-extract-adapter<br/>buildStateExtractPrompt<br/>parseStateDiffs"]
-        IEX["inventory-extract-adapter<br/>buildInventoryExtractPrompt<br/>parseInventoryEvents"]
-        TEX["story-timeline-adapter<br/>buildStoryTimelinePrompt<br/>parseStoryEvents"]
+        IEX["prose.inventory-extraction durable Skill<br/>Context Gateway + strict parser"]
+        TEX["prose.story-timeline-extraction durable Skill<br/>Context Gateway + strict parser"]
         REX["relation-extractor<br/>parseRelationOutput<br/>+ matchRelations 名→id"]
-        EBA["emotion-beat-adapter<br/>buildEmotionBeatPrompt<br/>parseEmotionBeats"]
+        EBA["prose.emotion-beats durable Skill<br/>Context Gateway + strict parser"]
         FCO["foreshadow-adapter<br/>parseForeshadowStructured"]
     end
 
@@ -462,10 +527,13 @@ flowchart LR
 
     subgraph DTABLES["📤 下游表落库"]
         ST["stateCards<br/>applyDiffs 按实体合并字段<br/>防重复"]
-        IL["itemLedger<br/>重新提取前 deleteByChapter<br/>防重复累加"]
-        ST_T["storyTimelineEvents<br/>重新提取前 deleteByChapter"]
+        IC["durable 候选<br/>范围/分块/roster/baseline 冻结"]
+        IL["itemLedger<br/>逐章事务替换 + terminal receipt"]
+        TC["durable 候选<br/>章节/分块/正式 baseline 冻结"]
+        ST_T["storyTimelineEvents<br/>逐章事务替换 + terminal receipt"]
         CR["characterRelations"]
-        EB["emotionBeatCards"]
+        EBC["durable 候选<br/>确认前零业务写入"]
+        EB["emotionBeatCards<br/>adopt + terminal receipt"]
         FO["foreshadows"]
     end
 
@@ -484,10 +552,13 @@ flowchart LR
     MANU_E --> EBA
 
     SEX ==parseStateDiffs==> ST
-    IEX ==parseInventoryEvents==> IL
-    TEX ==parseStoryEvents==> ST_T
+    IEX ==strict candidate==> IC
+    IC ==作者确认 + replaceScope(chapterId)==> IL
+    TEX ==strict candidate==> TC
+    TC ==作者确认 + replaceScope(chapterId)==> ST_T
     REX ==matchRelations==> CR
-    EBA ==parseEmotionBeats==> EB
+    EBA ==strict candidate==> EBC
+    EBC ==作者确认 + adopt==> EB
     FCO ==parseForeshadowStructured==> FO
 
     ST -.按需召回 buildSelectiveStateContext.-> RECALL["写章节时注入<br/>三层记忆 Episodic 层"]
@@ -497,6 +568,7 @@ flowchart LR
     classDef trig fill:#ca8a04,stroke:#a16207,color:#fff;
     classDef src fill:#ea580c,stroke:#c2410c,color:#fff;
     class ST,IL,ST_T,CR,EB,FO table
+    class EBC,IC,TC trig
     class SEX,IEX,TEX,REX,EBA,FCO adp
     class AUTO,MANU_S,MANU_I,MANU_T,MANU_R,MANU_E trig
     class CHAPTERS src
@@ -518,10 +590,10 @@ flowchart LR
 
     subgraph TOOLAI["🛠️ AI 工具适配器"]
         INV["inspiration-reverse<br/>parseReverseOutput<br/>parseReverseMultiWorldOutput"]
-        WGS["world-group-ai<br/>parseWorldSuggestOutput<br/>parseWorldExpandOutput"]
+        WGS["World Origin Agent<br/>world-suggest / worldview-expand<br/>strict durable candidates"]
         REFAN["reference-analysis pipeline<br/>分块分析 + 维度合并<br/>角色聚合 parseCharacterMergeOutput"]
         SCV["scene-verify-adapter<br/>无写回 纯建议"]
-        CDPA["character-driven-plot<br/>parsePlotOutput"]
+        CDPA["Outline Agent<br/>outline.character-driven<br/>严格候选 + durable Run"]
         REV["review-adapter<br/>parseReviewResult"]
         RDB["readability-adapter"]
     end
@@ -537,7 +609,7 @@ flowchart LR
         REV_ADV["审校建议 不写回"]
     end
 
-    BLDWV2["buildWorldContext<br/>或 buildAllWorldsOverview"]
+    BLDWV2["Context Gateway<br/>assembleContext 登记源"]
     BLDCH2["buildCharacterContext"]
     HISTC["buildHistoricalContext"]
     WRC2["buildWorldRulesContext"]
@@ -554,9 +626,9 @@ flowchart LR
     INV ==handleAdoptCharacters==> CH_OUT
     INV ==handleAdoptMultiWorld==> WG_OUT
 
-    WG_OUT ==全世界概览==> WGS
-    WGS ==建议 采纳==> WG_OUT
-    WGS ==扩写 采纳==> WV_OUT
+    WG_OUT ==worldGroups 登记源==> WGS
+    WGS ==候选 选择确认 adopt==> WG_OUT
+    WGS ==七字段候选 确认 adopt==> WV_OUT
 
     REFC --> REFAN
     REFAN ==分块分析 合并 角色聚合==> RA_OUT
@@ -649,7 +721,7 @@ flowchart TB
     subgraph CTX2["📥 按世界读取上下文"]
         BCW["buildCurrentWorldContext<br/>按 wgId 取本世界 wv/ps<br/>+ 项目级 sc + 本世界 codex"]
         BNW["buildNodeWritingContext<br/>沿父链解析所属世界<br/>未归属 走单世界路径"]
-        BAW["buildAllWorldsOverview<br/>跨世界规划 灵感反推用"]
+        BAW["worldGroups Context Source<br/>当前 World 目录<br/>由 assembleContext 统一读取"]
     end
 
     T1 --> BCW
@@ -657,7 +729,7 @@ flowchart TB
     P1 --> BCW
     T10 --> BCW
     BCW --> BNW
-    WG ==全世界摘要==> BAW
+    WG ==登记世界目录==> BAW
 
     subgraph EXP_S["📦 导出/导入"]
         EXP_OUT["exportProjectJSON<br/>worldGroups 用 _exportId index<br/>其它 worldGroupId 同协议重映射<br/>portalsJSON 引用同步 remap"]
@@ -738,6 +810,13 @@ flowchart TB
     FS_C --> ENTRIES
     FS_A --> ENTRIES
 
+    AUTHOR_TEXT["作者指定设定内容"] --> CODEX_GATE["Context Gateway<br/>manualText + codexExtractionBaseline"]
+    CAT_TREE --> CODEX_GATE
+    ENTRIES --> CODEX_GATE
+    CODEX_GATE --> CODEX_RUN["world-origin.codex-extract<br/>durable 分块 + strict 候选"]
+    CODEX_RUN --> CODEX_CONFIRM["作者冻结子集<br/>baseline CAS + adopt"]
+    CODEX_CONFIRM --> ENTRIES
+
     REF["🔗 词条间 ref 关联<br/>矿物 → 可炼器物<br/>器物 → 所需材料<br/>城池 → 所属势力<br/>异兽 → 可产出材料"]
     ENTRIES -.refs.-> REF
     REF -.指向其它词条.-> ENTRIES
@@ -755,7 +834,7 @@ flowchart TB
     classDef inj fill:#16a34a,stroke:#15803d,color:#fff;
     class ROOT_N,ROOT_H,BI_MIN,BI_HERB,BI_BEAST,BI_RACE,BI_FAC,BI_CITY,BI_ART,CUSTOM cat
     class FS_M,FS_H,FS_B,FS_R,FS_F,FS_C,FS_A fs
-    class ENTRIES,REF ent
+    class ENTRIES,REF,CODEX_RUN,CODEX_CONFIRM ent
     class CTXBLD,INJ inj
 ```
 
@@ -875,7 +954,7 @@ flowchart TB
         P17["InspirationPanel"]
         P18["WorldGroup Detail/Overview"]
         P19["ReviewPanel"]
-        P20["EmotionBeatCard"]
+        P20["EmotionBeatCard<br/>durable 候选确认"]
         P21["FloatingToolbar 选区润色"]
         P22["AIFieldCard 通用"]
         P23["InventoryPanel 一键提取"]
@@ -890,6 +969,8 @@ flowchart TB
     HOOK["🪝 useAIStream Hook<br/>start messages overrideConfig meta<br/>meta category projectId<br/>tokenUsage 输出"]
 
     PANELS --> HOOK
+    PANELS ~~~ P20
+    P20 --> AICTX
 
     subgraph CLIENT["🔌 lib/ai/client.ts 唯一出口"]
         STREAM["streamChat msgs config signal result meta<br/>SSE 流式 解析 DONE + usage"]

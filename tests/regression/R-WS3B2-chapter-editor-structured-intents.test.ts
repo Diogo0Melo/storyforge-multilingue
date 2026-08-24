@@ -47,27 +47,28 @@ describe('WS-3B Phase 2 · ChapterEditor 结构化调用点显式 outputKind', (
 
   it('chapter.organize chat 调用点声明 functional-structured 且保留既有行为参数', () => {
     const indexes = allOccurrences(source, "category: 'chapter.organize'")
-    // 一处是 resolveRequestConfig 就绪检查（非 AI 调用），一处是真实 chat 调用
-    expect(indexes.length).toBe(2)
-    const chatCallIndex = indexes.find(index => (
+    // 一处是 resolveRequestConfig 就绪检查（非 AI 调用），另两处是真实 durable 流程 chat 回调
+    expect(indexes.length).toBe(3)
+    const chatCallIndexes = indexes.filter(index => (
       source.slice(index - 200, index).includes('chat(messages, aiConfig')
     ))
-    expect(chatCallIndex, 'chapter.organize 应存在 chat() 调用点').toBeDefined()
-    const callSite = source.slice(chatCallIndex!, chatCallIndex! + 400)
-    expect(callSite).toContain("outputKind: 'functional-structured'")
-    expect(callSite).toContain('projectId: project.id!')
-    // 行为保留：既有覆盖、溢出策略与中止信号不得被意图登记改动
-    expect(callSite).toContain('configOverrides: { maxTokens: 8_000 }')
-    expect(callSite).toContain("contextOverflowPolicy: 'reject'")
-    expect(callSite).toContain('controller.signal')
+    expect(chatCallIndexes, 'chapter.organize 应存在 durable chat() 调用点').toHaveLength(2)
+    for (const chatCallIndex of chatCallIndexes) {
+      const callSite = source.slice(chatCallIndex, chatCallIndex + 400)
+      expect(callSite).toContain("outputKind: 'functional-structured'")
+      expect(callSite).toContain('projectId: project.id!')
+      // 行为保留：既有覆盖、溢出策略与中止信号不得被意图登记改动
+      expect(callSite).toContain('configOverrides: { maxTokens: 8_000 }')
+      expect(callSite).toContain("contextOverflowPolicy: 'reject'")
+      expect(callSite).toContain('controller.signal')
+    }
   })
 
-  it('state.extract stateAI.start 调用点声明 functional-structured', () => {
-    const indexes = allOccurrences(source, "category: 'state.extract'")
-    expect(indexes.length).toBe(1)
-    const callSite = source.slice(Math.max(0, indexes[0] - 120), indexes[0] + 200)
-    expect(callSite).toContain('stateAI.start(messages, undefined')
-    expect(callSite).toContain('projectId: project.id!')
-    expect(callSite).toContain("outputKind: 'functional-structured'")
+  it('state extraction 已收口到 chapter-transition durable state step，不保留 retired 直连调用', () => {
+    expect(source).not.toContain("category: 'state.extract'")
+    expect(source).toContain('commitChapterTransitionStateAdoptionV1')
+    const durableSource = readSource('src/lib/agent/run/chapter-transition-durable.ts')
+    expect(durableSource).toContain("state: 'chapter-transition:state-extraction'")
+    expect(durableSource).toContain('recordChapterTransitionOutputV1')
   })
 })

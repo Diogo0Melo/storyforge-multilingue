@@ -1,19 +1,16 @@
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
-import { detachTemporalFactsForDeletedChapters } from '../lib/fact-ledger/lifecycle'
-import { detachKnowledgeForDeletedChapters } from '../lib/knowledge-ledger/lifecycle'
-import { detachStorylineForDeletedChapters } from '../lib/storyline/lifecycle'
-import { detachCultivationProgressForDeletedChapters } from '../lib/cultivation/progress-lifecycle'
 import { pickBestChapterForOutline } from '../lib/chapters/selectors'
-import { transactionTablesFor } from '../lib/registry/lifecycle'
+import { cascadeDeleteChapterRecords } from '../lib/chapters/lifecycle'
 import type { Chapter } from '../lib/types'
+import { assertRecordInScope, readOwnedRows, resolveReadScopeLike, resolveScopeLike, scopeTransactionTables, stampNewRecord, type WorkspaceScopeLike } from '../lib/world-engine/scope'
 
 interface ChapterStore {
   chapters: Chapter[]
   currentChapter: Chapter | null
   loading: boolean
 
-  loadAll: (projectId: number) => Promise<void>
+  loadAll: (scope: WorkspaceScopeLike) => Promise<void>
   selectChapter: (id: number) => void
   addChapter: (ch: Omit<Chapter, 'id' | 'createdAt' | 'updatedAt'>) => Promise<number>
   getOrCreateByOutlineNode: (
@@ -41,11 +38,10 @@ export const useChapterStore = create<ChapterStore>((set, get) => ({
   currentChapter: null,
   loading: false,
 
-  loadAll: async (projectId: number) => {
+  loadAll: async (scopeInput: WorkspaceScopeLike) => {
     set({ loading: true })
-    const chapters = await db.chapters
-      .where('projectId').equals(projectId)
-      .sortBy('order')
+    const chapters = (await readOwnedRows<Chapter>(await resolveReadScopeLike(scopeInput), 'chapters', { owner: 'work' }))
+      .sort((a, b) => a.order - b.order)
     set({ chapters, loading: false })
   },
 
@@ -55,7 +51,9 @@ export const useChapterStore = create<ChapterStore>((set, get) => ({
   },
 
   addChapter: async (ch) => {
-    const newCh: Chapter = { ...ch, createdAt: now(), updatedAt: now() }
+    const newCh = stampNewRecord(await resolveScopeLike(ch.projectId), 'chapters', {
+      ...ch, createdAt: now(), updatedAt: now(),
+    } as Chapter, { owner: 'work' })
     const id = await db.chapters.add(newCh) as number
     const withId = { ...newCh, id }
     set({ chapters: [...get().chapters, withId] })
@@ -63,23 +61,27 @@ export const useChapterStore = create<ChapterStore>((set, get) => ({
   },
 
   getOrCreateByOutlineNode: async (projectId, outlineNodeId, create) => {
-    const chapter = await db.transaction('rw', db.chapters, async () => {
-      const existing = await db.chapters
+    const scope = await resolveScopeLike(projectId)
+    const chapter = await db.transaction('rw', scopeTransactionTables(db.chapters), async () => {
+      const candidates = await db.chapters
         .where('outlineNodeId')
         .equals(outlineNodeId)
-        .and(row => row.projectId === projectId)
         .toArray()
+      const existing = [] as Chapter[]
+      for (const row of candidates) {
+        if (row.projectId === projectId && await assertRecordInScope(scope, 'chapters', row, { owner: 'work' })) existing.push(row)
+      }
       const best = pickBestChapterForOutline(existing)
       if (best?.id) return best
 
       const ts = now()
-      const newChapter: Chapter = {
+      const newChapter = stampNewRecord(scope, 'chapters', {
         ...create,
         projectId,
         outlineNodeId,
         createdAt: ts,
         updatedAt: ts,
-      }
+      }, { owner: 'work' }) as Chapter
       const id = await db.chapters.add(newChapter) as number
       return { ...newChapter, id }
     })
@@ -95,12 +97,17 @@ export const useChapterStore = create<ChapterStore>((set, get) => ({
   },
 
   updateChapter: async (id, data) => {
+    const beforeMigration = get().chapters.find(c => c.id === id) ?? await db.chapters.get(id)
+    if (!beforeMigration?.projectId) return
+    const scope = await resolveScopeLike(beforeMigration.projectId)
+    const before = await db.chapters.get(id)
+    if (!before || !await assertRecordInScope(scope, 'chapters', before, { owner: 'work' })) return
     const updated = { ...data, updatedAt: now() }
     await db.chapters.update(id, updated)
     if (Object.prototype.hasOwnProperty.call(data, 'content')) {
-      const projectId = get().chapters.find(c => c.id === id)?.projectId ?? (await db.chapters.get(id))?.projectId
+      const projectId = before.projectId
       if (projectId != null) {
-        const summaryNodes = await db.narrativeSummaryNodes.where('projectId').equals(projectId).toArray()
+        const summaryNodes = await readOwnedRows<any>(scope, 'narrativeSummaryNodes', { owner: 'work' })
         for (const node of summaryNodes) {
           if (node.id == null) continue
           if (node.level === 'book' || node.level === 'volume' || node.sourceChapterId === id) {
@@ -134,23 +141,7 @@ export const useChapterStore = create<ChapterStore>((set, get) => ({
 
   cascadeDeleteChapters: async (ids) => {
     if (!ids.length) return
-    // DB 层:删章节 + 紧耦合的情感节拍(按 chapterId),包事务保证原子
-    await db.transaction('rw', transactionTablesFor('deleteChapters'), async () => {
-      await detachTemporalFactsForDeletedChapters(ids)
-      await detachKnowledgeForDeletedChapters(ids)
-      await detachStorylineForDeletedChapters(ids)
-      await detachCultivationProgressForDeletedChapters(ids)
-      await db.chapters.bulkDelete(ids)
-      const beatKeys = (await db.emotionBeatCards
-        .where('chapterId').anyOf(ids).primaryKeys()) as number[]
-      if (beatKeys.length) await db.emotionBeatCards.bulkDelete(beatKeys)
-      const chunkKeys = (await db.retrievalChunks
-        .where('sourceChapterId').anyOf(ids).primaryKeys()) as number[]
-      if (chunkKeys.length) await db.retrievalChunks.bulkDelete(chunkKeys)
-      const summaryKeys = (await db.narrativeSummaryNodes
-        .where('sourceChapterId').anyOf(ids).primaryKeys()) as number[]
-      if (summaryKeys.length) await db.narrativeSummaryNodes.bulkDelete(summaryKeys)
-    })
+    await cascadeDeleteChapterRecords(ids)
     // 注：物品栏/故事年表/伏笔 中以 chapterId 关联的记录保留(含冗余章节标题,属独立产物,
     //     是否随章删除语义不明确,不强删以免误删用户产物)。
     // 内存层:从 chapters 移除,currentChapter 若被删则置空

@@ -2202,3 +2202,128 @@ Agent 和世界 Agent 两次。候选显示约 `4,545 / 80,000 tokens`、`2/7` �
 
 👉 27.1-e 当前范围完成，但不意味着已开放并行自治、投票或长期静默 Agent。下一开发单位
 进入 27.2b“整理本章 Agent”，继续保持后台默认只读、候选可见和作者确认写入。
+### [2026-08-14] Codex · REPORT · HARNESS-71 修炼进度 durable 证据提取 / `feat/harness-rebuild-20260807`
+
+修炼进度分析已从组件直连模型迁入 `prose.cultivation-progress-extraction`。模型只经登记的
+`chapterContent / cultivationProgressExtractionBaseline` 读取目标正文、当前 World 角色与体系
+DAG、规范章序和当前 Work 完整进度 baseline；严格协议只接受闭集 ID、原因和唯一逐字证据，
+不再允许模型自行决定 `transition`。候选可跨刷新恢复，作者选择子集后冻结；确认前正式进度
+零写入。
+
+采纳时在单一事务内重读并 CAS 章节、章序、角色、体系 DAG 与完整进度表，再由系统按规范章序
+和 DAG 计算新增事件及既有后续事件的变化类型，全部经登记采纳层写入并原子归一化。未知模型
+结果不重试，候选崩溃窗、空结果、拒绝、选择冻结、八个采纳中断点、terminal stale 和作用域
+隔离均有反例。旧组件 `chat()`、硬编码 prompt、宽松 parser、内存逐条候选和逐条采纳旁路下线；
+人工删除事件和后续写作反哺开关保留。
+
+定向验证：durable 22 项与既有领域/UI 7 项通过；H59 census 收缩为 17 文件 / 32 调用，分类为
+7 governed、4 auxiliary、6 migration。完整 CI 358 files / 1661 tests 全绿，覆盖率为 81.07%
+statements / 73.50% branches / 78.81% functions / 81.07% lines；3757 模块生产构建、bundle
+budget 与生产依赖审计通过，入口 657.2 KiB / gzip 203.0 KiB。项目 Chromium E2E 47/47，
+修炼用例约 11.3 秒且模型只调用一次；`git diff --check` 通过。
+
+👉 球在 Codex：继续按 census 清理剩余 6 个 migration；下一优先目标为伏笔两段模型链，仍按
+一个真实目标类型冻结 Context、候选、原子采纳和生命周期，禁止建立平行 runtime。
+
+### [2026-08-14] Codex · REPORT · HARNESS-72 伏笔建议 durable 候选与原子采纳 / `feat/harness-rebuild-20260807`
+
+伏笔 AI 建议已从两段组件直连模型迁入 `outline.foreshadow-suggestions`。模型只经登记的 Canon、
+世界、故事、角色、规则、历史、地点与 `foreshadowSuggestionBaseline` 读取当前 Work，一次调用
+直接返回 strict 0～12 项候选；旧“先自由文本、再第二次模型结构化”的链路、内存候选和逐条
+写入旁路已下线。候选可跨刷新恢复，作者可取消不采纳项；确认前正式伏笔零写入。
+
+作者选择冻结后，runner 会复核项目、完整正式伏笔 baseline、上游 Context、实际 Prompt 与模板；
+事务内再次 CAS 后，全部冻结项才经 `FIELD_REGISTRY + AdoptionSchema + adopt(foreshadows)` 原子
+新增，状态固定为 `planned`，章节引用与备注保持空值供作者后续维护。未知模型结果不重试，候选
+崩溃窗、空结果、拒绝、选择冻结、八个采纳中断点、terminal stale、导入取消与 Work 隔离均有
+反例；人工伏笔 CRUD、状态推进与章节关联保留。
+
+定向验证：durable 18 项、组件 UI 2 项、H59 3 项和 Context Gateway 通用预算 3 项通过；H59
+census 收缩为 16 文件 / 30 调用，分类为 7 governed、4 auxiliary、5 migration。完整 CI 360 files /
+1681 tests 全绿，覆盖率为 81.34% statements / 73.68% branches / 78.86% functions / 81.34%
+lines；3759 模块生产构建、bundle budget 与生产依赖审计通过，入口 660.2 KiB / gzip 203.9 KiB。
+项目 Chromium E2E 48/48，伏笔用例约 5.8 秒且模型只调用一次；`git diff --check` 通过。
+
+👉 球在 Codex：继续按 census 清理剩余 5 个 migration；下一优先从 `HistoryPanel` 两个模型入口
+开始，先厘清“只读生成建议”与“正式历史写入”的目标合同，再冻结 Context、候选和采纳边界。
+
+### [2026-08-14] Codex · REPORT · HARNESS-73 历史考据/风暴 durable 定点结果 / `feat/harness-rebuild-20260807`
+
+历史事件与关键词的考据/头脑风暴已从 `HistoryPanel` 两路组件直连模型迁入
+`world-origin.history-consult / world-origin.history-storm`。模型只经登记的 `worldview / historyAgentBaseline`
+读取当前 World/世界组、已保存历史总述/纪年、精确目标和作者边界；严格 Markdown 输出先成为可刷新恢复的
+持久候选，确认前正式结果字段零写入。
+
+作者确认时重新 CAS 来源、Context、Prompt 与目标结果字段的 presence/value，只经
+`FIELD_REGISTRY + AdoptionSchema + adopt()` 写对应 `aiConsult` 或 `aiBrainstorm`；另一结果字段可独立变化。
+未知模型窗口不重试，候选崩溃窗、八个采纳边界、目标删除、导入取消、World/Work/世界组隔离和 terminal
+stale 均有反例。旧两路 `useAIStream`、组件内 Context 和即时写回旁路下线；人工历史 CRUD 与结果清除保留。
+
+定向验证共 46 项通过；H59 census 收缩为 15 文件 / 28 调用，分类为 7 governed、4 auxiliary、
+4 migration。完整 CI 为 361 files / 1699 tests，覆盖率为 81.37% statements / 73.69% branches /
+78.93% functions / 81.37% lines；3761 模块生产构建、bundle budget 与生产依赖审计通过，入口
+664.9 KiB / gzip 205.4 KiB。项目 Chromium E2E 49/49，历史考据用例约 6.3 秒且模型只调用一次；
+`git diff --check` 通过。
+
+👉 球在 Codex：继续按 census 清理剩余 4 个 migration；下一优先审计 `AnalysisReportViewer` 的参考摘要与
+角色合并写入链，冻结报告来源、候选选择、正式写入和数据生命周期，禁止复用导入旁路绕过治理。
+
+### [2026-08-14] Codex · REPORT · HARNESS-75 Prompt 示例生成 authoring-draft 风险裁决 / `feat/harness-rebuild-20260807`
+
+`PromptExamplesEditor` 已按真实数据路径完成风险裁决，没有为清零 census 机械制造 durable 业务 Run。模型只读
+`PromptTemplateEditor` 当前未保存 draft 的 `systemPrompt / userPromptTemplate`，生成结果只经 `onChange`
+进入父组件内存；生成后 `promptTemplates` 与 Agent ledger 均零写。作者必须另点顶部「保存」，才由既有
+Prompt store 写入全局本机配置。`PROJECT_TABLES` 已把该表登记为 `owner=global / exportable=false`，它不属于
+项目 Canon；未保存离开即丢弃正是编辑草稿语义。
+
+UI 现在明确提示“已加入当前草稿，保存后才生效”。`R-HARNESS75-prompt-examples-authoring-draft` 3 项与
+H59 3 项共 6 项定向回归通过，覆盖真实输入/category、DB/ledger 零写、显式保存、离开丢弃、系统模板只读、
+配置缺失和全局表登记。census 保持 14 files / 26 calls，分类变为 7 governed、5 auxiliary、2 migration。
+完整 CI 为 365 files / 1728 tests，覆盖率 81.78% statements / 73.79% branches / 79.15% functions /
+81.78% lines；3765 模块生产构建、bundle budget 与 0 生产依赖漏洞守卫通过，入口仍为 669.7 KiB /
+gzip 207.1 KiB。完整 Chromium E2E 扩展为 51/51，耗时 4.3 分钟；新路径 3.9 秒且模型只调用一次，
+独立精确复跑 1/1（5.5 秒）。
+
+👉 球在 Codex：继续审计并收口两处文风入口；它们写 `userStyleProfiles`，必须依据实际保存/反馈路径决定
+是否共用一个 durable 风格候选体系，不把已经存在的人工校准反馈边界抹掉。
+
+### [2026-08-14] Codex · REPORT · HARNESS-74 参考分析总结/角色聚合 durable 版本派生 / `feat/harness-rebuild-20260807`
+
+参考分析的全书总结与角色聚合已从 `AnalysisReportViewer` 两处直接 `chat()` 迁入
+`inspiration.reference-summary / inspiration.reference-characters`。模型只经登记的
+`referenceDerivedBaseline` 读取当前 Work 的精确参考、精确分析版本、来源声明和该版本分块派生输入；
+总结只接受与非空维度同序的 exact-key JSON，角色只接受 1～80 张唯一四字段角色卡。两路结果先成为
+可刷新恢复的持久候选，确认前版本和当前参考投影均零写入。
+
+作者确认时重新 CAS 来源、Context、Prompt、版本字段和参考投影字段的 presence/value；先经
+`FIELD_REGISTRY + AdoptionSchema + adopt(referenceAnalysisRuns)` 写版本字段，只有目标版本仍 active
+才同步 `adopt(references)` 兼容投影，ready/superseded 版本不会污染当前参考。未知模型窗口不重试，
+候选崩溃窗、版本写后/投影写后的十个采纳边界、目标删除、导入取消、Work/版本隔离和 terminal stale
+均有反例。旧组件内存输出与即时 `updateReferenceAnalysisDerived()` 写回旁路下线；人工版本生命周期保留。
+
+定向验证为 durable 20 项、控制器 3 项、UI 3 项和 H59 3 项，共 29 项；其中控制器反例阻断恢复查询前
+的快速重复运行，证明缺少模型配置时不会创建悬空 Run，且重试会拒绝旧候选后真实创建新 Run。census
+收缩为 14 files / 26 calls，分类为 7 governed、4 auxiliary、3 migration。最终完整 CI 为 364 files /
+1725 tests，覆盖率为 81.41% statements / 73.71% branches / 79.18% functions / 81.41% lines；3765 模块生产构建、bundle budget 与
+生产依赖审计通过，入口 669.7 KiB / gzip 207.1 KiB。项目 Chromium E2E 50/50，参考派生用例约
+8.1 秒且模型只调用一次；最终代码的同路径精确复跑 1/1 通过（9.4 秒）；`git diff --check` 通过。
+
+👉 球在 Codex：继续按 census 清理剩余 3 个 migration；下一优先审计 `PromptExamplesEditor` 的示例生成
+是设置辅助还是需要 durable 证据，按真实语义归类并收口，不为追求清零机械建立业务写入合同。
+
+### [2026-08-17] Codex · REPORT · CREL 转入社区观察 / `feat/harness-community-validation-status`
+
+作者决定将 Harness/CREL 本轮工程正式收口并转入社区观察。独立作者 A/B 与原预注册社区质量门不再
+作为开发、合并或社区预览的阻塞项；该状态明确写为“由产品决策关闭/取代”，没有把 sealed held-out
+成本门 `FAIL` 或作者 A/B `0/6` 改写成通过，也继续禁止“替作者完成 80%”等无证据宣传。
+
+本分支新增正式产品决策记录，同步更新 Changelog、README、中英文说明、当前架构、功能/社区指南、
+Harness 发布与交接文档、CREL 开发与冻结评测证据、路线图、能力基线和已完成索引。设置页反馈入口
+改为“实验性社区观察期”，继续使用纯本地闭集反馈；路线图不再保留旧 A/B/质量门施工项，社区出现
+集中问题后再建立有范围、预算和停止条件的新任务。
+
+验证已通过：CREL-14 设置页定向回归 2/2；完整 `npm run ci` 为 394 files / 1928 tests，全套架构、
+三注册表、路线图、依赖审计、lint、TypeScript、覆盖率、生产构建与 bundle budget 全绿；隔离端口的
+Chromium `npm run ci:e2e` 为 53/53；`git diff --check` 通过。未改 schema、三注册表或用户作品数据。
+
+👉 球在 Codex：rebase 最新 `origin/main` 后提交、开 PR；GitHub CI 全绿后串行合并。

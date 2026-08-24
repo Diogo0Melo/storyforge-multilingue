@@ -6,9 +6,12 @@ import {
   createProseCopilotNode,
   parseProseCandidateDraft,
   prepareProseCopilot,
+  revalidateProseCreativeDraftV1,
+  runProseCreativeReliabilityV1,
   type ProseCopilotInput,
 } from '../../src/lib/agent/prose-copilot'
 import { adoptMasterCandidate } from '../../src/lib/agent/orchestrator'
+import { appendAgentEvent, getOrCreateAgentConversation } from '../../src/lib/agent/conversations'
 import { db } from '../../src/lib/db/schema'
 import {
   adoptGenerationNodeOutput,
@@ -16,8 +19,11 @@ import {
   runGenerationNode,
 } from '../../src/lib/generation/generation-node'
 import { assembleContext } from '../../src/lib/registry/assemble-context'
-import type { AIConfigPreset, AgentEvent, Chapter, OutlineNode, Project } from '../../src/lib/types'
+import type { AIConfigPreset, Chapter, OutlineNode, Project } from '../../src/lib/types'
+import { resolveScopeLike } from '../../src/lib/world-engine/scope'
 import { useAIConfigStore } from '../../src/stores/ai-config'
+import { buildNarrativeBriefV1 } from '../../src/lib/agent/narrative-brief'
+import { AgentTeamBudgetTracker } from '../../src/lib/agent/team-budget'
 
 const longDraft = (marker: string) => (
   `${marker}。退潮后的盐海露出黑色礁脊，守灯人沿着潮痕走向沉默的钟楼。`
@@ -93,6 +99,7 @@ async function makeNodeInput(
   prepared: Awaited<ReturnType<typeof prepareProseCopilot>>,
 ): Promise<ProseCopilotInput> {
   const config = useAIConfigStore.getState().config
+  const scope = await resolveScopeLike(project.id!)
   const assembled = await assembleContext({
     projectId: project.id!,
     worldGroupId: null,
@@ -105,16 +112,24 @@ async function makeNodeInput(
   })
   return {
     project,
+    scope,
     worldGroupId: null,
     authorRequest: prepared.operation === 'continue' ? '续写这一章正文' : '写第一章正文',
     supplementalContext: '',
+    inputGuidance: '',
     operation: prepared.operation,
     outlineNode,
     chapter,
     snapshot: prepared.snapshot,
     assembled,
+    narrativeBrief: buildNarrativeBriefV1({
+      authorRequest: prepared.operation === 'continue' ? '续写这一章正文' : '写第一章正文',
+      assembled,
+    }),
     previousTail: '',
     config,
+    perspectiveCharacterId: prepared.perspectiveCharacterId,
+    informationBoundary: prepared.informationBoundary,
   }
 }
 
@@ -143,9 +158,46 @@ describe('AGENT-1 27.1-d · ChatCopilot 正文闭环', () => {
     expect(prepared.outlineNodeId).toBe(firstId)
     expect(prepared.contextSources).toContain('chapterOutline')
     expect(prepared.contextSources).toContain('worldview')
+    expect(prepared.contextEvidence.inputState).toMatchObject({
+      state: 'partial',
+      handling: 'reference-and-create',
+    })
+    expect(prompt).toContain('partial / reference-and-create')
     expect(prompt).toContain('第一章：海床之光')
     expect(prompt).toContain('盐海每十年退潮')
+    expect(prompt).toContain('本轮叙事任务（运行时合同，不是新增 Canon）')
+    expect(prompt).toContain('不要用世界观介绍代替故事推进')
+    expect(prepared.input.narrativeBrief.entryState).toContain('第一章：海床之光')
     expect(await db.chapters.count()).toBe(0)
+  })
+
+  it('正文 Skill 冻结生成或续写语义，不依赖提示词再次猜测操作', async () => {
+    const { project, firstId } = await seedProject()
+    const now = Date.now()
+    await db.chapters.add({
+      projectId: project.id!,
+      outlineNodeId: firstId,
+      title: '第一章：海床之光',
+      content: '<p>作者已有正文。</p>',
+      wordCount: 7,
+      order: 0,
+      worldGroupId: null,
+      createdAt: now,
+      updatedAt: now,
+    })
+    const continued = await prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '完善第一章内容',
+      skillId: 'prose.continue',
+    })
+    expect(continued.operation).toBe('continue')
+    await expect(prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '完善第一章内容',
+      skillId: 'prose.generate',
+    })).rejects.toThrow('已有正文')
   })
 
   it('主 Agent 正文档位收窄登记源预算并冻结实际输入证据', async () => {
@@ -223,6 +275,219 @@ describe('AGENT-1 27.1-d · ChatCopilot 正文闭环', () => {
       })
     })
     expect(await db.chapters.count()).toBe(0)
+  })
+
+  it('平衡模式对过短正文只做一次定向修复并交付可采纳正文', async () => {
+    const { project } = await seedProject()
+    const firstRaw = '退潮了。'
+    const runAI = vi.fn()
+      .mockResolvedValueOnce(firstRaw)
+      .mockResolvedValueOnce(longDraft('修复后的正文'))
+    const prepared = await prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '写第一章正文',
+    }, { runAI })
+
+    const result = await runProseCreativeReliabilityV1({
+      prepared,
+      budget: new AgentTeamBudgetTracker('balanced'),
+      qualityMode: 'balanced',
+    })
+
+    expect(runAI).toHaveBeenCalledTimes(2)
+    expect(result.draft).toContain('修复后的正文')
+    expect(result.artifact).toMatchObject({
+      status: 'ready',
+      originalText: firstRaw,
+      repair: { callIndex: 2, result: 'repaired' },
+    })
+    const repairPrompt = runAI.mock.calls[1][0]
+      .map((message: { content: string }) => message.content)
+      .join('\n')
+    expect(repairPrompt).toContain('prose-response-invalid')
+    expect(repairPrompt).not.toContain('盐海每十年退潮')
+  })
+
+  it('弱推进只做非阻断提示，不为主观质量自动烧第二次调用', async () => {
+    const { project } = await seedProject()
+    const staticDraft = '盐海、浮空城、黑色礁脊与古老钟楼构成这片土地的全部景观。'
+      + '这里有漫长潮痕、沉默石壁、古老纹章与灰白天空。'.repeat(4)
+    const runAI = vi.fn(async () => staticDraft)
+    const prepared = await prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '写第一章正文',
+    }, { runAI })
+
+    const result = await runProseCreativeReliabilityV1({
+      prepared,
+      budget: new AgentTeamBudgetTracker('balanced'),
+      qualityMode: 'balanced',
+    })
+
+    expect(runAI).toHaveBeenCalledOnce()
+    expect(result.artifact.status).toBe('usable-with-warnings')
+    expect(result.artifact.repair).toBeNull()
+    expect(result.artifact.issues).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        code: 'prose-narrative-motion-weak',
+        disposition: 'advisory',
+        suggestedAction: 'none',
+      }),
+    ]))
+  })
+
+  it('正文唯一一次修复调用失败时保留首次草稿并停止', async () => {
+    const { project } = await seedProject()
+    const firstRaw = '退潮了，但正文还没有展开。'
+    const runAI = vi.fn()
+      .mockResolvedValueOnce(firstRaw)
+      .mockRejectedValueOnce(new Error('provider unavailable'))
+    const prepared = await prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '写第一章正文',
+    }, { runAI })
+
+    const result = await runProseCreativeReliabilityV1({
+      prepared,
+      budget: new AgentTeamBudgetTracker('balanced'),
+      qualityMode: 'balanced',
+    })
+
+    expect(runAI).toHaveBeenCalledTimes(2)
+    expect(result.draft).toBe(firstRaw)
+    expect(result.artifact.status).toBe('manual-repair')
+    expect(result.artifact.callEvidence).toHaveLength(2)
+    expect(result.artifact.repair?.result).toBe('failed')
+  })
+
+  it('作者补足过短正文后只做本地校验，不产生新的 API 调用', async () => {
+    const { project } = await seedProject()
+    const runAI = vi.fn(async () => '太短。')
+    const prepared = await prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '写第一章正文',
+    }, { runAI })
+    const generated = await runProseCreativeReliabilityV1({
+      prepared,
+      budget: new AgentTeamBudgetTracker('balanced'),
+      qualityMode: 'economy',
+    })
+
+    const revalidated = revalidateProseCreativeDraftV1({
+      draft: longDraft('作者补足后的正文'),
+      informationBoundary: prepared.informationBoundary,
+      previousArtifact: generated.artifact,
+    })
+
+    expect(generated.artifact.status).toBe('manual-repair')
+    expect(revalidated.status).toBe('ready')
+    expect(revalidated.callEvidence).toEqual(generated.artifact.callEvidence)
+    expect(runAI).toHaveBeenCalledOnce()
+  })
+
+  it('正文主路径没有显式视角时不注入全体角色认知', async () => {
+    const { project } = await seedProject()
+    const prepared = await prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '写第一章正文',
+    })
+
+    expect(prepared.perspectiveCharacterId).toBeNull()
+    expect(prepared.contextSources).not.toContain('characterKnowledge')
+    expect(prepared.prepared.messages.map(message => message.content).join('\n'))
+      .toContain('未指定视角角色')
+  })
+
+  it('正文显式视角只注入该角色在目标章前已知内容', async () => {
+    const { project, firstId, secondId } = await seedProject()
+    const now = Date.now()
+    const mainId = await db.characters.add({
+      projectId: project.id!,
+      name: '守灯人',
+      roleWeight: 'main',
+      moralAxis: 'neutral',
+      orderAxis: 'neutral',
+      createdAt: now,
+      updatedAt: now,
+    } as any) as number
+    const sideId = await db.characters.add({
+      projectId: project.id!,
+      name: '钟匠',
+      roleWeight: 'supporting',
+      moralAxis: 'neutral',
+      orderAxis: 'neutral',
+      createdAt: now,
+      updatedAt: now,
+    } as any) as number
+    const firstChapterId = await db.chapters.add({
+      projectId: project.id!,
+      outlineNodeId: firstId,
+      title: '第一章：海床之光',
+      content: '',
+      wordCount: 0,
+      status: 'draft',
+      order: 0,
+      notes: '',
+      createdAt: now,
+      updatedAt: now,
+    } as any) as number
+    await db.knowledgeLedger.bulkAdd([
+      {
+        projectId: project.id!,
+        characterId: mainId,
+        characterName: '守灯人',
+        knowledgeKey: 'main.secret',
+        statement: '主角知道潮门会在黎明前关闭',
+        action: 'learn',
+        sourceType: 'chapter',
+        sourceChapterId: firstChapterId,
+        status: 'confirmed',
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        projectId: project.id!,
+        characterId: sideId,
+        characterName: '钟匠',
+        knowledgeKey: 'side.secret',
+        statement: '配角知道钟芯其实被藏在井底',
+        action: 'learn',
+        sourceType: 'chapter',
+        sourceChapterId: firstChapterId,
+        status: 'confirmed',
+        createdAt: now + 1,
+        updatedAt: now + 1,
+      },
+    ] as any)
+
+    const prepared = await prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '写第二章正文',
+      perspectiveCharacterId: mainId,
+    })
+    const context = prepared.prepared.messages.map(message => message.content).join('\n')
+    expect(prepared.perspectiveCharacterId).toBe(mainId)
+    expect(prepared.contextSources).toContain('characterKnowledge')
+    expect(context).toContain('主角知道潮门会在黎明前关闭')
+    expect(context).not.toContain('配角知道钟芯其实被藏在井底')
+    expect(prepared.snapshot.perspectiveCharacterId).toBe(mainId)
+    expect(prepared.outlineNodeId).toBe(secondId)
+  })
+
+  it('正文拒绝不属于当前作用域的视角角色', async () => {
+    const { project } = await seedProject()
+    await expect(prepareProseCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '写第一章正文',
+      perspectiveCharacterId: 999_999,
+    })).rejects.toThrow('视角角色不存在或不属于当前世界')
   })
 
   it('候选可编辑，作者确认眼前正文后写入且不二次调用模型', async () => {
@@ -327,18 +592,23 @@ describe('AGENT-1 27.1-d · ChatCopilot 正文闭环', () => {
       worldGroupId: null,
       authorRequest: '写第二章正文',
     })
-    const event: AgentEvent = {
-      id: 1,
+    const scope = await resolveScopeLike(project.id!)
+    const conversation = await getOrCreateAgentConversation({
       projectId: project.id!,
-      conversationId: 1,
-      sequence: 1,
+      worldGroupId: null,
+      scope,
+    })
+    const event = await appendAgentEvent({
+      projectId: project.id!,
+      conversationId: conversation.id!,
       kind: 'candidate',
       content: '',
-      payload: '{}',
-      createdAt: Date.now(),
-    }
+      payload: {},
+      scope,
+    })
     const message = await adoptMasterCandidate({
       projectId: project.id!,
+      scope,
       worldGroupId: null,
       event,
       payload: {

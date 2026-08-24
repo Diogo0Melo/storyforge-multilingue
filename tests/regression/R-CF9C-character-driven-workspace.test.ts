@@ -96,6 +96,77 @@ describe('R-CF9C · 持久化角色驱动工作区', () => {
     expect((await db.projects.get(projectId))?.activeCharacterDrivenPlanId).toBeNull()
   })
 
+  it('连续输入保存按调用顺序落库，后发完整快照不会被较早 blur 覆盖', async () => {
+    const projectId = await seedProject()
+    const characterId = await db.characters.add({
+      projectId,
+      name: '林舟',
+      role: 'protagonist',
+      roleWeight: 'main',
+      moralAxis: 'good',
+      orderAxis: 'neutral',
+      createdAt: 1,
+      updatedAt: 1,
+    } as any)
+    const planId = await useCharacterDrivenPlanStore.getState().createPlan(projectId, '连续保存方案')
+    const earlier = useCharacterDrivenPlanStore.getState().saveInputs(planId, {
+      arcs: [{
+        characterId, name: '林舟', role: '主角',
+        initialState: '旧起点', targetState: '旧终点',
+      }],
+      userHint: '旧要求',
+    })
+    const latest = useCharacterDrivenPlanStore.getState().saveInputs(planId, {
+      arcs: [{
+        characterId, name: '林舟', role: '主角',
+        initialState: '当前方案起点', targetState: '当前方案终点',
+      }],
+      userHint: '当前方案要求',
+    })
+    await Promise.all([earlier, latest])
+
+    const stored = await db.characterDrivenPlans.get(planId)
+    expect(parseCharacterDrivenPlanArcs(stored?.arcs)[0]).toMatchObject({
+      initialState: '当前方案起点',
+      targetState: '当前方案终点',
+    })
+    expect(stored?.userHint).toBe('当前方案要求')
+  })
+
+  it('角色引用按当前作品的 World scope 校验，并拒绝跨项目激活方案', async () => {
+    const projectId = await seedProject()
+    const foreignProjectId = await seedProject()
+    const foreignCharacterId = await db.characters.add({
+      projectId: foreignProjectId,
+      name: '异项目角色',
+      role: 'protagonist',
+      roleWeight: 'main',
+      moralAxis: 'good',
+      orderAxis: 'neutral',
+      createdAt: 1,
+      updatedAt: 1,
+    } as any)
+    const planId = await useCharacterDrivenPlanStore.getState().createPlan(projectId, '作用域方案')
+
+    await expect(
+      useCharacterDrivenPlanStore.getState().setActivePlan(foreignProjectId, planId),
+    ).rejects.toThrow()
+    expect((await db.projects.get(foreignProjectId))?.activeCharacterDrivenPlanId ?? null).toBeNull()
+
+    await useCharacterDrivenPlanStore.getState().saveInputs(planId, {
+      arcs: [{
+        characterId: foreignCharacterId,
+        name: '异项目角色',
+        role: '主角',
+        initialState: '起点',
+        targetState: '终点',
+      }],
+      userHint: '',
+    })
+    expect(parseCharacterDrivenPlanArcs((await db.characterDrivenPlans.get(planId))?.arcs)[0]?.characterId)
+      .toBeNull()
+  })
+
   it('只读取显式 active 方案；改名用当前名+快照提示，删除角色后保留方案快照', async () => {
     const projectId = await seedProject()
     const characterId = await db.characters.add({
@@ -240,6 +311,11 @@ describe('R-CF9C · 持久化角色驱动工作区', () => {
       createdAt: 1,
       updatedAt: 1,
     } as any)
+
+    // Resolve the workspace ownership before taking the byte-preservation
+    // baseline; migration may add owner metadata to legacy rows.
+    const migrationPlanId = await useCharacterDrivenPlanStore.getState().createPlan(projectId, '迁移基线方案')
+    await useCharacterDrivenPlanStore.getState().deletePlan(migrationPlanId)
     const before = {
       volume: JSON.stringify(await db.outlineNodes.get(legacyVolumeId)),
       chapter: JSON.stringify(await db.outlineNodes.get(legacyChapterId)),

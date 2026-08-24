@@ -3,7 +3,7 @@
  *
  * 纯逻辑层（不含 React），便于测试。负责:
  *   · 选择文件夹 / 校验授权（File System Access API）
- *   · 把某项目的完整数据写成 JSON 落到文件夹（自动备份 + 手动）
+ *   · 在用户明确点击后，把某项目的完整数据写成 JSON 恢复快照
  *   · 从文件夹读回所有 storyforge-*.json（首页「从本地文件夹恢复」用）
  *
  * 句柄持久化在 folder-handle-store.ts（独立 IndexedDB），与本模块配合。
@@ -12,7 +12,18 @@ import { exportProjectJSON, type ProjectExportData } from '../export/json-export
 import { db } from '../db/schema'
 
 interface WindowWithFSA extends Window {
-  showDirectoryPicker?: (opts?: { mode?: 'read' | 'readwrite' }) => Promise<FileSystemDirectoryHandle>
+  showDirectoryPicker?: (opts?: {
+    mode?: 'read' | 'readwrite'
+    id?: string
+    startIn?: FileSystemDirectoryHandle
+  }) => Promise<FileSystemDirectoryHandle>
+}
+
+export interface PickFolderOptions {
+  /** Lets the browser remember the last picker location for this purpose. */
+  id?: string
+  /** Opens a relocation picker at the currently bound project folder when supported. */
+  startIn?: FileSystemDirectoryHandle
 }
 
 /** 浏览器是否支持 File System Access API（仅 Chrome/Edge 等） */
@@ -21,11 +32,11 @@ export function isFSASupported(): boolean {
 }
 
 /** 弹出系统选择框让用户挑一个文件夹（readwrite）。取消返回 null。 */
-export async function pickFolder(): Promise<FileSystemDirectoryHandle | null> {
+export async function pickFolder(options: PickFolderOptions = {}): Promise<FileSystemDirectoryHandle | null> {
   const picker = (window as WindowWithFSA).showDirectoryPicker
   if (!picker) return null
   try {
-    return await picker({ mode: 'readwrite' })
+    return await picker({ mode: 'readwrite', ...options })
   } catch (err) {
     const e = err as { name?: string }
     if (e?.name !== 'AbortError') console.error('[folder] 选择目录失败:', err)
@@ -41,7 +52,14 @@ export async function folderPermissionGranted(
   try {
     const opts = { mode: write ? 'readwrite' : 'read' }
     // queryPermission 尚未进 lib.dom 标准类型
-    const q = await (handle as unknown as { queryPermission?: (o: object) => Promise<string> }).queryPermission?.(opts)
+    const permissionHandle = handle as unknown as {
+      queryPermission?: (o: object) => Promise<string>
+      requestPermission?: (o: object) => Promise<string>
+    }
+    // OPFS directory handles are already origin-authorized and intentionally
+    // expose neither permission method. External picker handles expose them.
+    if (!permissionHandle.queryPermission && !permissionHandle.requestPermission) return true
+    const q = await permissionHandle.queryPermission?.(opts)
     return q === 'granted'
   } catch {
     return false
@@ -59,6 +77,7 @@ export async function ensureFolderPermission(
       queryPermission?: (o: object) => Promise<string>
       requestPermission?: (o: object) => Promise<string>
     }
+    if (!h.queryPermission && !h.requestPermission) return true
     if ((await h.queryPermission?.(opts)) === 'granted') return true
     if ((await h.requestPermission?.(opts)) === 'granted') return true
     return false
@@ -76,8 +95,11 @@ export function backupFilename(projectName: string): string {
   return `storyforge-${safeName(projectName)}.json`
 }
 
-/** 把某项目的完整数据写成 JSON 落到绑定文件夹。返回是否成功。 */
-export async function writeProjectJSONToFolder(
+/**
+ * 把某项目的完整数据写成 JSON 恢复快照。调用方必须位于明确的用户手势内；
+ * MEMORY-0 禁止页面进入、授权恢复或定时器调用本函数。
+ */
+export async function writeProjectSnapshotToFolder(
   handle: FileSystemDirectoryHandle,
   projectId: number,
 ): Promise<boolean> {

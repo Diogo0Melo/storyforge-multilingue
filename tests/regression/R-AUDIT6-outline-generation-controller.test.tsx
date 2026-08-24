@@ -1,10 +1,11 @@
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UseAIStreamReturn } from '../../src/hooks/useAIStream'
 import type { AssembleContextResult } from '../../src/lib/registry/types'
 import type { OutlineNode, Project } from '../../src/lib/types'
 import { useOutlineGenerationController } from '../../src/components/outline/useOutlineGenerationController'
+import { OUTLINE_DURABLE_HARNESS_STORAGE_KEY } from '../../src/lib/outline/harness'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -67,11 +68,17 @@ let controller: ReturnType<typeof useOutlineGenerationController>
 
 function createAI(operation: string | null = null) {
   return {
+    output: '',
+    isStreaming: false,
     operation,
     reset: vi.fn(),
+    restore: vi.fn(),
     setOperation: vi.fn(),
     start: vi.fn(async () => ''),
-  } satisfies Pick<UseAIStreamReturn, 'operation' | 'reset' | 'setOperation' | 'start'>
+  } satisfies Pick<
+    UseAIStreamReturn,
+    'isStreaming' | 'operation' | 'output' | 'reset' | 'restore' | 'setOperation' | 'start'
+  >
 }
 
 async function mount(patch: Partial<Parameters<typeof useOutlineGenerationController>[0]> = {}) {
@@ -102,12 +109,17 @@ async function mount(patch: Partial<Parameters<typeof useOutlineGenerationContro
   return { options, ai }
 }
 
+beforeEach(() => {
+  localStorage.setItem(OUTLINE_DURABLE_HARNESS_STORAGE_KEY, 'disabled')
+})
+
 afterEach(async () => {
   while (mounted.length > 0) {
     const item = mounted.pop()!
     await act(async () => item.root.unmount())
     item.host.remove()
   }
+  localStorage.removeItem(OUTLINE_DURABLE_HARNESS_STORAGE_KEY)
 })
 
 describe('AUDIT-6 · 大纲生成 controller', () => {
@@ -156,6 +168,26 @@ describe('AUDIT-6 · 大纲生成 controller', () => {
     expect(ai.start).toHaveBeenCalledOnce()
     expect(ai.start.mock.calls[0][2]).toEqual({ category: 'outline.chapter', projectId: 1, outputKind: 'mixed' })
     expect(controller.pendingRequest).toBeNull()
+  })
+
+  it('运行追踪初始化失败不能阻断原模型调用', async () => {
+    const malformedAssembly = {
+      ...assembled('仍可发送'),
+      included: ['unregistered-source'],
+    }
+    const ai = createAI()
+    const onError = vi.fn()
+    await mount({
+      ai,
+      onError,
+      assembleContext: vi.fn(async () => malformedAssembly),
+    })
+
+    await act(async () => { await controller.prepare({ kind: 'chapters', volumeId: 1 }) })
+    await act(async () => { await controller.confirm() })
+
+    expect(ai.start).toHaveBeenCalledOnce()
+    expect(onError).not.toHaveBeenCalled()
   })
 
   it('透明模式先停在最终消息闸门，编辑后才把本次副本交给 AI', async () => {

@@ -1,16 +1,22 @@
 import { CTextarea } from '../shared/CompositionInput'
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, X, Sparkles, Microscope, Check } from 'lucide-react'
+import { Check, Loader2, Microscope, Plus, RotateCcw, Sparkles, Trash2, X } from 'lucide-react'
 import { useCreativeRulesStore } from '../../stores/project-singletons'
-import { useWorldviewStore } from '../../stores/worldview'
+import { useWorldGroupStore } from '../../stores/world-group'
 import { useReferenceStore } from '../../stores/reference'
-import { useAIStream } from '../../hooks/useAIStream'
-import { createAISessionKey } from '../../stores/ai-generation-session'
-import { buildRulesGeneratePrompt } from '../../lib/ai/adapters/rules-adapter'
-import { adopt } from '../../lib/registry/adopt'
-import AIStreamOutput from '../shared/AIStreamOutput'
-import { useDomainT } from '../../i18n'
+import {
+  formatCreativeRulesGenerationRequestV1,
+  parseCreativeRulesCandidateDraftV1,
+  type CreativeRulesField,
+} from '../../lib/agent/creative-rules-copilot'
+import { useMasterCopilot, type PendingMasterCandidate } from '../agent/useMasterCopilot'
+import i18n, { useDomainT } from '../../i18n'
 import type { Project, NarrativePOV } from '../../lib/types'
+import {
+  INITIAL_RECORD_TARGET_CLASS,
+  initialRecordTargetAttributes,
+  useInitialRecordTarget,
+} from '../shared/initial-record-target'
 
 const POV_KEYS = {
   'first-person':      { label: 'pov.firstPerson',      desc: 'pov.firstPersonDesc' },
@@ -21,13 +27,19 @@ const POV_KEYS = {
 
 interface Props {
   project: Project
+  initialRulesId?: number | null
 }
 
-export default function CreativeRulesPanel({ project }: Props) {
+export default function CreativeRulesPanel({ project, initialRulesId }: Props) {
   const { t } = useDomainT('rules')
+  const [, setAgentNamespaceReady] = useState(false)
   const { creativeRules, loadAll, save } = useCreativeRulesStore()
-  const { worldview, storyCore, loadAll: loadWorldview } = useWorldviewStore()
   const { references, loadAll: loadRefs } = useReferenceStore()
+  const activeGroupId = useWorldGroupStore(state => state.activeGroupId)
+  const copilot = useMasterCopilot({
+    project,
+    worldGroupId: project.enableMultiWorld ? activeGroupId : null,
+  })
   const [writingStyle, setWritingStyle] = useState('')
   const [narrativePOV, setNarrativePOV] = useState<NarrativePOV>('third-limited')
   const [toneAndMood, setToneAndMood] = useState('')
@@ -36,15 +48,20 @@ export default function CreativeRulesPanel({ project }: Props) {
   const [specialRequirements, setSpecialRequirements] = useState('')
   const [referenceWorks, setReferenceWorks] = useState<string[]>([])
   const [citedRefIds, setCitedRefIds] = useState<number[]>([])
-  const [aiTarget, setAiTarget] = useState<'writingStyle' | 'toneAndMood' | 'specialRequirements' | null>(null)
-  const ai = useAIStream(createAISessionKey(project.id!, 'rules.generate'))
-  const currentAITarget = (ai.operation as typeof aiTarget) ?? aiTarget
+  useInitialRecordTarget(initialRulesId, creativeRules?.id === initialRulesId)
+
+  useEffect(() => {
+    let active = true
+    void i18n.loadNamespaces('agent').then(() => {
+      if (active) setAgentNamespaceReady(true)
+    })
+    return () => { active = false }
+  }, [])
 
   useEffect(() => {
     loadAll(project.id!)
-    loadWorldview(project.id!)
     loadRefs(project.id!)
-  }, [project.id, loadAll, loadWorldview, loadRefs])
+  }, [project.id, loadAll, loadRefs])
 
   useEffect(() => {
     if (creativeRules) {
@@ -63,41 +80,37 @@ export default function CreativeRulesPanel({ project }: Props) {
     await save({ projectId: project.id!, ...data })
   }, [project.id, save])
 
-  /** AI 生成某字段：调 rules.generate 模板 */
-  const generateField = (target: 'writingStyle' | 'toneAndMood' | 'specialRequirements') => {
-    // dimensionMap values are fed to AI prompt — keep Chinese verbatim for prompt context
-    const dimensionMap = {
-      writingStyle: '写作风格',
-      toneAndMood: '基调和氛围',
-      specialRequirements: '特殊创作要求',
-    }
-    setAiTarget(target)
-    ai.setOperation(target)
-    const messages = buildRulesGeneratePrompt(
-      dimensionMap[target],
-      project.name,
-      project.genre || '',
-      worldview?.summary || worldview?.worldOrigin?.slice(0, 200) || '',
-      storyCore?.theme || storyCore?.centralConflict || '',
+  const pendingRulesCandidates = copilot.pendingCandidates.filter(candidate => (
+    candidate.payload.skillId === 'world-origin.creative-rules'
+  ))
+  const hasOtherPendingCandidates = copilot.pendingCandidates.some(candidate => (
+    candidate.payload.skillId !== 'world-origin.creative-rules'
+  ))
+  const generationBlocked = copilot.loading
+    || copilot.busy
+    || copilot.pendingCandidates.length > 0
+    || (project.enableMultiWorld === true && activeGroupId == null)
+
+  const generateField = async (target: CreativeRulesField) => {
+    const instruction = formatCreativeRulesGenerationRequestV1({ field: target })
+    await copilot.submitTargetedRequest(
+      `${instruction} 为“${project.name}”提供可执行建议。`,
+      {
+        id: `creative-rules-${target}`,
+        agentId: 'world-origin',
+        skillId: 'world-origin.creative-rules',
+        instruction,
+      },
     )
-    // fix-5a：读者面向的创作规则散文 → creative（gate 注入项目 resolved contentLanguage）
-    ai.start(messages, undefined, { category: 'rules.generate', projectId: project.id!, outputKind: 'creative' })
   }
 
-  const acceptAi = async (text: string) => {
-    if (!currentAITarget) return
-    if (currentAITarget === 'writingStyle') setWritingStyle(text)
-    else if (currentAITarget === 'toneAndMood') setToneAndMood(text)
-    else if (currentAITarget === 'specialRequirements') setSpecialRequirements(text)
-    await adopt({
-      projectId: project.id!,
-      target: 'creativeRules',
-      mode: 'replace',
-      data: { [currentAITarget]: text },
-    })
-    await loadAll(project.id!)
-    ai.reset()
-    setAiTarget(null)
+  const candidateFor = (field: CreativeRulesField) => pendingRulesCandidates.find(candidate => (
+    candidate.payload.creativeRulesField === field
+  ))
+
+  const adoptCandidate = async (candidate: PendingMasterCandidate) => {
+    const adopted = await copilot.adoptCandidate(candidate)
+    if (adopted) await loadAll(project.id!)
   }
 
   /* ---- 列表操作通用 ---- */
@@ -188,8 +201,37 @@ export default function CreativeRulesPanel({ project }: Props) {
   )
 
   return (
-    <div className="max-w-4xl">
-      <h2 className="text-xl font-bold text-text-primary mb-4">{t('panel.title')}</h2>
+    <div
+      {...initialRecordTargetAttributes(creativeRules?.id === initialRulesId, creativeRules?.id)}
+      className={`max-w-4xl rounded-xl ${
+        creativeRules?.id === initialRulesId ? INITIAL_RECORD_TARGET_CLASS : ''
+      }`}
+    >
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="text-xl font-bold text-text-primary">{t('panel.title')}</h2>
+        {copilot.recoveryAvailable && pendingRulesCandidates.length === 0 && (
+          <button
+            type="button"
+            onClick={() => { void copilot.resume() }}
+            disabled={copilot.loading || copilot.busy}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 border border-border text-text-secondary text-xs rounded disabled:opacity-40 hover:text-accent"
+          >
+            <RotateCcw className="w-3.5 h-3.5" /> {t('agent:chat.resumeButton')}
+          </button>
+        )}
+      </div>
+
+      {copilot.error && (
+        <p className="mb-4 rounded border border-error/30 bg-error/5 px-3 py-2 text-xs text-error">
+          {copilot.error}
+        </p>
+      )}
+
+      {hasOtherPendingCandidates && (
+        <p className="mb-4 rounded border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-text-secondary">
+          {t('agent:candidate.dependsOnWarning', { ids: t('agent:chat.candidateFallbackLabel') })}
+        </p>
+      )}
 
       {/* 写作风格 */}
       <div className="mb-6">
@@ -197,7 +239,7 @@ export default function CreativeRulesPanel({ project }: Props) {
           <label className="text-sm font-medium text-text-secondary">{t('writingStyle.label')}</label>
           <button
             onClick={() => generateField('writingStyle')}
-            disabled={ai.isStreaming}
+            disabled={generationBlocked}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
             <Sparkles className="w-3 h-3" /> {t('writingStyle.aiSuggest')}
@@ -210,15 +252,11 @@ export default function CreativeRulesPanel({ project }: Props) {
           placeholder={t('writingStyle.placeholder')}
           className="w-full h-24 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
-        {currentAITarget === 'writingStyle' && (ai.output || ai.isStreaming || ai.error) && (
-          <div className="mt-2">
-            <AIStreamOutput
-              output={ai.output} isStreaming={ai.isStreaming} error={ai.error} tokenUsage={ai.tokenUsage}
-              onStop={ai.stop} onAccept={acceptAi}
-              onRetry={() => generateField('writingStyle')}
-            />
-          </div>
-        )}
+        <CreativeRulesCandidate
+          candidate={candidateFor('writingStyle')}
+          copilot={copilot}
+          onAdopt={adoptCandidate}
+        />
       </div>
 
       {/* 叙事视角 */}
@@ -253,8 +291,8 @@ export default function CreativeRulesPanel({ project }: Props) {
         <div className="flex items-center justify-between mb-1">
           <label className="text-sm font-medium text-text-secondary">{t('toneAndMood.label')}</label>
           <button
-            onClick={() => generateField('toneAndMood')}
-            disabled={ai.isStreaming}
+            onClick={() => { void generateField('atmosphere') }}
+            disabled={generationBlocked}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
             <Sparkles className="w-3 h-3" /> {t('toneAndMood.aiSuggest')}
@@ -263,19 +301,15 @@ export default function CreativeRulesPanel({ project }: Props) {
         <CTextarea
           value={toneAndMood}
           onChange={e => setToneAndMood(e.target.value)}
-          onBlur={() => saveField({ toneAndMood })}
+          onBlur={() => saveField({ atmosphere: toneAndMood })}
           placeholder={t('toneAndMood.placeholder')}
           className="w-full h-20 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
-        {currentAITarget === 'toneAndMood' && (ai.output || ai.isStreaming || ai.error) && (
-          <div className="mt-2">
-            <AIStreamOutput
-              output={ai.output} isStreaming={ai.isStreaming} error={ai.error} tokenUsage={ai.tokenUsage}
-              onStop={ai.stop} onAccept={acceptAi}
-              onRetry={() => generateField('toneAndMood')}
-            />
-          </div>
-        )}
+        <CreativeRulesCandidate
+          candidate={candidateFor('atmosphere')}
+          copilot={copilot}
+          onAdopt={adoptCandidate}
+        />
       </div>
 
       {/* 禁止事项 */}
@@ -355,7 +389,7 @@ export default function CreativeRulesPanel({ project }: Props) {
           <label className="text-sm font-medium text-text-secondary">{t('specialRequirements.label')}</label>
           <button
             onClick={() => generateField('specialRequirements')}
-            disabled={ai.isStreaming}
+            disabled={generationBlocked}
             className="flex items-center gap-1 px-2 py-1 text-xs text-accent hover:bg-accent/10 rounded transition-colors disabled:opacity-50"
           >
             <Sparkles className="w-3 h-3" /> {t('specialRequirements.aiSuggest')}
@@ -368,16 +402,111 @@ export default function CreativeRulesPanel({ project }: Props) {
           placeholder={t('specialRequirements.placeholder')}
           className="w-full h-24 p-3 bg-bg-surface border border-border rounded-lg text-text-primary text-sm resize-y focus:outline-none focus:border-accent"
         />
-        {currentAITarget === 'specialRequirements' && (ai.output || ai.isStreaming || ai.error) && (
-          <div className="mt-2">
-            <AIStreamOutput
-              output={ai.output} isStreaming={ai.isStreaming} error={ai.error} tokenUsage={ai.tokenUsage}
-              onStop={ai.stop} onAccept={acceptAi}
-              onRetry={() => generateField('specialRequirements')}
-            />
-          </div>
-        )}
+        <CreativeRulesCandidate
+          candidate={candidateFor('specialRequirements')}
+          copilot={copilot}
+          onAdopt={adoptCandidate}
+        />
       </div>
     </div>
+  )
+}
+
+function CreativeRulesCandidate({
+  candidate,
+  copilot,
+  onAdopt,
+}: {
+  candidate?: PendingMasterCandidate
+  copilot: ReturnType<typeof useMasterCopilot>
+  onAdopt: (candidate: PendingMasterCandidate) => Promise<void>
+}) {
+  const { t } = useDomainT('rules')
+  if (!candidate) return null
+  const fieldLabelKey: Record<CreativeRulesField, string> = {
+    writingStyle: 'writingStyle.label',
+    atmosphere: 'toneAndMood.label',
+    specialRequirements: 'specialRequirements.label',
+  }
+  const candidateField = candidate.payload.creativeRulesField
+  const candidateLabel = candidateField
+    ? t(fieldLabelKey[candidateField] as never)
+    : candidate.payload.label
+  let parsed: ReturnType<typeof parseCreativeRulesCandidateDraftV1> | null = null
+  try {
+    parsed = parseCreativeRulesCandidateDraftV1(candidate.event.content)
+  } catch {
+    // Keep the raw editor available so a malformed restored candidate can be repaired or rejected.
+  }
+  const updateValue = (value: string) => {
+    if (!candidate.payload.creativeRulesField) return
+    void copilot.updateCandidate(candidate.event.id!, JSON.stringify({
+      field: candidate.payload.creativeRulesField,
+      value,
+    }, null, 2))
+  }
+  return (
+    <section className="mt-2 border border-accent/30 bg-bg-surface p-3 rounded-lg">
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold text-text-primary">{t('agent:candidate.pendingPrefix', { label: candidateLabel })}</span>
+        <span className="text-[11px] text-text-muted">
+          {candidate.payload.contextEvidence
+            ? t('agent:candidate.inputTokenCount', { count: candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString() })
+            : t('agent:candidate.inputSources', { count: candidate.payload.contextSources.length })}
+        </span>
+      </div>
+      {parsed ? (
+        <CTextarea
+          aria-label={t('agent:candidate.contentAria', { label: candidateLabel })}
+          value={parsed.value}
+          disabled={copilot.busy}
+          onChange={event => updateValue(event.target.value)}
+          className="min-h-28 w-full resize-y text-sm leading-5"
+        />
+      ) : (
+        <>
+          <p className="mb-2 text-xs text-error">{t('agent:candidate.quarantinedReason', { reason: t('agent:artifact.status.unknown') })}</p>
+          <CTextarea
+            aria-label={t('agent:candidate.contentAria', { label: candidateLabel })}
+            value={candidate.event.content}
+            disabled={copilot.busy}
+            onChange={event => { void copilot.updateCandidate(candidate.event.id!, event.target.value) }}
+            className="min-h-32 w-full resize-y font-mono text-xs leading-5"
+          />
+        </>
+      )}
+      {candidate.payload.contextEvidence && (
+        <details className="mt-2 border border-border/60 bg-bg-base px-3 py-2 text-[11px] text-text-muted rounded">
+          <summary className="cursor-pointer text-text-secondary">{t('agent:candidate.evidenceSummary', { count: candidate.payload.contextEvidence.included.length })}</summary>
+          <p className="mt-2 break-words">
+            {t('agent:candidate.includedLine', { items: candidate.payload.contextEvidence.included.join('、') || t('agent:candidate.includedEmpty') })}
+          </p>
+          {candidate.payload.contextEvidence.trimmed.length > 0 && (
+            <p className="mt-1 text-warning">
+              {t('agent:candidate.trimmedLine', { items: candidate.payload.contextEvidence.trimmed.join('、') })}
+            </p>
+          )}
+        </details>
+      )}
+      <div className="mt-3 flex justify-end gap-2">
+        <button
+          type="button"
+          disabled={copilot.busy}
+          onClick={() => { void copilot.rejectCandidate(candidate) }}
+          className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-muted hover:bg-bg-hover hover:text-text-primary rounded disabled:opacity-50"
+        >
+          <Trash2 className="h-3.5 w-3.5" /> {t('agent:candidate.rejectButton')}
+        </button>
+        <button
+          type="button"
+          disabled={copilot.busy || !parsed}
+          onClick={() => { void onAdopt(candidate) }}
+          className="flex items-center gap-1 bg-accent px-3 py-1.5 text-xs text-white hover:opacity-90 rounded disabled:opacity-50"
+        >
+          {copilot.busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
+          {t('agent:candidate.adoptButton')}
+        </button>
+      </div>
+    </section>
   )
 }

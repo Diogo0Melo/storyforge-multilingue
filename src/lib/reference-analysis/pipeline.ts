@@ -22,6 +22,8 @@ import { getT } from '../../i18n'
 import {
   completeReferenceAnalysisRun,
   createReferenceAnalysisRun,
+  getReferenceAnalysisRunChunks,
+  listReferenceAnalysisRuns,
   patchReferenceAnalysisRun,
   readReferenceAnalysisChunks,
 } from './lifecycle'
@@ -164,10 +166,18 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
     listener.onDone?.(refId, false, requestedRunId)
     return
   }
+  let runs: Awaited<ReturnType<typeof listReferenceAnalysisRuns>>
+  try {
+    runs = await listReferenceAnalysisRuns(refId)
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    listener.onActivity?.('error', getT()('project:analysisPipeline.analysisError', { message }))
+    listener.onDone?.(refId, false, requestedRunId)
+    return
+  }
   const run = requestedRunId
-    ? await db.referenceAnalysisRuns.get(requestedRunId)
-    : (await db.referenceAnalysisRuns.where('referenceId').equals(refId).toArray())
-      .filter(candidate => candidate.status === 'analyzing')
+    ? runs.find(candidate => candidate.id === requestedRunId)
+    : runs.filter(candidate => candidate.status === 'analyzing')
       .sort((a, b) => b.version - a.version)[0]
   if (!run?.id || run.referenceId !== refId) {
     listener.onActivity?.('error', getT()('project:analysisPipeline.noPendingRun'))
@@ -202,8 +212,7 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
   listener.onActivity?.('info', getT()('project:analysisPipeline.start', { title: ref.title, version: run.version, chunks: chunks.length, depth }))
 
   // 已有分析 → 断点续跑
-  const existing = await db.referenceChunkAnalysis
-    .where('analysisRunId').equals(run.id).toArray()
+  const existing = await getReferenceAnalysisRunChunks(refId, run.id)
   const doneSet = new Set(existing.map(r => r.chunkIndex))
 
   let rollingContext = ''
@@ -291,8 +300,7 @@ export async function runRefAnalysis(refId: number, requestedRunId?: number): Pr
     }
 
     // 收尾
-    const finalAnalyses = await db.referenceChunkAnalysis
-      .where('analysisRunId').equals(run.id).toArray()
+    const finalAnalyses = await getReferenceAnalysisRunChunks(refId, run.id)
     const successRatio = total > 0 ? finalAnalyses.length / total : 0
     const errMsg = successRatio < 1
       ? getT()('project:analysisPipeline.errorPartial', { total, done: finalAnalyses.length, failed: total - finalAnalyses.length })

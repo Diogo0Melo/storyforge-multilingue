@@ -17,11 +17,14 @@
     "planning": "主 Agent 正在理解目标并安排任务。",
     "completed": "已完成",
     "failedFallback": "失败",
+    "failedWithMessage": "失败：{{message}}",
+    "domainFallback": "领域任务",
     "running": "执行中"
   },
   "candidate": {
     "pendingPrefix": "待确认 · {{label}}",
     "inputSources": "{{count}} 个输入来源",
+    "inputTokenCount": "约 {{count}} tokens",
     "contentAria": "{{label}}候选内容",
     "outputNote": "这是领域 Agent 的真实输出。刷新后仍会保留；只有采纳才会进入项目正式数据。",
     "evidenceSummary": "查看本次实际输入证据 · {{count}} 个来源",
@@ -33,10 +36,22 @@
     "teamBudgetLine": "本轮团队预算约 {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} 次调用 · 语义重试 {{retries}}/{{maxRetries}}",
     "dependsOnWarning": "采纳前需先采纳上游任务：{{ids}}",
     "rejectButton": "拒绝",
-    "adoptButton": "采纳"
+    "adoptButton": "确认写入",
+    "saving": "正在保存候选修改…",
+    "saveFailed": "候选修改保存失败。请再次编辑后重试；采纳和拒绝仍被锁定。",
+    "quarantinedTitle": "候选已保留，等待恢复",
+    "quarantinedReason": "候选保存数据未通过校验：{{reason}}",
+    "quarantinedRecovery": "恢复此候选前无法采纳或拒绝。"
   },
   "errors": {
-    "operationFailed": "操作失败，请稍后重试。"
+    "operationFailed": "操作失败，请稍后重试。",
+    "storyArcSnapshotCorrupted": "故事线候选快照已损坏，已隔离。",
+    "outlineSnapshotCorrupted": "大纲候选快照已损坏，已隔离。",
+    "candidateTextPersistencePending": "候选文本尚未完成保存，无法采纳。",
+    "candidateTextPersistenceFailed": "候选文本未能完成保存，无法采纳。",
+    "candidateMissingOrResolved": "候选不存在或已被解决。",
+    "durableCandidateScopeMissing": "持久候选缺少当前工作区范围，已隔离。",
+    "alert": "错误：{{message}}"
   },
   "composer": {
     "inputAria": "告诉主 Agent 你的目标",
@@ -53,7 +68,66 @@
     "completionCandidates": "后台领域 Agent 已完成，生成了 {{count}} 份候选。请检查、编辑并决定是否采纳。",
     "completionBudget": "本轮团队约使用 {{used}} / {{max}} tokens，{{calls}} 次调用，语义受控重试 {{retries}} 次。",
     "roundFailed": "本轮没有完成：{{message}}",
-    "candidateRejected": "候选已拒绝，没有写入项目。"
+    "resumeSuccess": "已从中断处恢复本轮执行，当前生成了 {{count}} 份候选。请检查并确认。",
+    "resumeFailed": "恢复本轮失败：{{message}}",
+    "candidateRejected": "候选已拒绝，没有写入项目。",
+    "recoveryAvailable": "有一轮中断的后台执行可以恢复。",
+    "resumeButton": "恢复未完成生成"
+  },
+  "preview": {
+    "ariaLabel": "本轮调用预估",
+    "candidateEstimate": "本轮预计 {{count}} 份可编辑候选：{{labels}}。",
+    "callEstimate": "通常 {{usual}} 次模型调用；本轮硬上限 {{max}} 次 / {{tokens}} tokens，达到上限会在调用前停止。",
+    "repairEnabled": "只有可定位的结构问题才允许每份最多追加 1 次定向修复；主观质量提示不会自动重试。",
+    "repairDisabled": "节省模式只调用模型生成 1 次，后续校验和作者修改不再调用模型。",
+    "deferred": "{{labels}}会等你先确认故事规划后，下一轮再生成。",
+    "recoveryNote": "执行中可随时停止；已保存的计划和候选可恢复。",
+    "domain": {
+      "worldOrigin": "世界设定",
+      "character": "角色",
+      "inspiration": "灵感反推",
+      "outline": "故事规划",
+      "prose": "正文"
+    }
+  },
+  "artifact": {
+    "status": {
+      "ready": "可直接采纳",
+      "usableWithWarnings": "可用，但有提示",
+      "manualRepair": "需要手动修复",
+      "blocked": "存在阻断问题",
+      "unknown": "无法读取结果状态"
+    },
+    "callCount": "{{count}} 次模型调用",
+    "tokens": "{{count}} tokens",
+    "tokensIncomplete": "Token 用量不完整",
+    "estimatedCost": "估算费用 ${{amount}}",
+    "costUnavailable": "费用暂无法估算",
+    "modelTime": "模型耗时 {{amount}} ms",
+    "latencyIncomplete": "耗时证据不完整",
+    "repair": {
+      "repaired": "定向修复成功",
+      "partial": "定向修复完成，但仍有提示",
+      "failed": "定向修复未成功，已停止自动调用",
+      "unavailable": "修复证据不可用"
+    },
+    "fragments": "已保留 {{valid}} 个合法片段，拒绝 {{rejected}} 个损坏片段。",
+    "briefSummary": "查看本轮故事推进目标",
+    "brief": {
+      "creativeGoal": "目标：{{value}}",
+      "entryState": "进入时：{{value}}",
+      "protagonistDesire": "人物想要：{{value}}",
+      "obstacle": "当前阻力：{{value}}",
+      "requiredChoice": "必须面对的选择：{{value}}",
+      "stakes": "失败代价：{{value}}",
+      "exitChange": "要发生的变化：{{value}}",
+      "nextPressure": "下一步压力：{{value}}",
+      "mustHonor": "本轮采用的项目依据（来自已登记正式数据）："
+    },
+    "assumptionsSummary": "查看 {{count}} 项临时假设（采纳前不是正式设定）",
+    "issuesSummary": "查看 {{count}} 个问题",
+    "valueUnavailable": "不可用",
+    "ariaLabel": "创作产物状态"
   },
   "copilot": {
     "character": {

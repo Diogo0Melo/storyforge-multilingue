@@ -75,7 +75,9 @@ export function buildOutlineGenerationPlan(input: {
 
   // Phase 3: prompt 边界使用项目 RESOLVED 内容语言（D1：持久化值 → UI 语言回退），
   // 让卷/章纲模板注入对应语言的标题示例；不改变任何持久化标题。
-  const contentLanguage = resolveProjectContentLanguage(project, getSupportedUiLang())
+  const contentLanguage = options.contentLanguage === null
+    ? undefined
+    : options.contentLanguage ?? resolveProjectContentLanguage(project, getSupportedUiLang())
 
   if (request.kind === 'volumes' || request.kind === 'single-volume') {
     const explicitCount = Number(options.parameterValues?.volumeCount)

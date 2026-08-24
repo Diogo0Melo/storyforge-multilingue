@@ -108,7 +108,7 @@
 
 - 不把向量召回或 LLM 软审当作 Canon 判决器。
 - 不为 Phase 38、Phase 39、Agent 各建一套事实库。
-- 不在生成后自动改正文；所有软结果都要经过作者确认。
+- 不让语义结果直接修改已采纳正文；未采纳候选只允许按逐字证据定向修订一次，并在硬门和语义复核通过后继续等待作者确认。
 
 ### 代码与测试入口
 
@@ -130,6 +130,32 @@
 - `tests/canon/storyline-progress.test.ts`
 - `scripts/check-canon-coverage.mjs`
 
+## MEMORY-1 可编辑长期记忆工作区
+
+### 已有能力
+
+- 浏览器 IndexedDB、共同基线和本地硬盘文件形成三方核对；绑定、重新授权和检查本身均为零写入，任一方向同步都要求作者明确确认。
+- Workspace、World、Work、章节 Markdown，以及 Work 级故事核心/创作规则中文 YAML 具有稳定文档身份和受治理反向采纳；外部修改先成为字段候选，再经过作用域、CAS 和影响计划进入 `adopt()`。
+- 所有可导出正式表和 Harness 证据进入只读恢复胶囊；不可变账本、回执和高风险结构不会因外部文件改动被直接重写，派生索引不冒充长期事实。
+- Harness 的成功、失败和取消终态与 `memory.settlement.recorded` 原子提交；候选、作者决定、采纳、验证和结算可由工作区恢复并保持来源链。
+- Fast Guard / Deep Audit 已进入 durable Run：作者显式触发、一次点击最多一次模型调用、报告只作为证据候选；正文变化后旧报告保留并 stale，不自动改稿。
+- 项目创建和“设置 → 项目存储工作区”可选择、显示、重新授权或更换任意硬盘目录；位置选择不写文件，旧目录不删除，恢复项目继承恢复目录。
+- 隔离的十万字级、42 章、多 World/Work 长链覆盖双向修改、冲突、中断、清库恢复、Run 重绑定和恢复后继续创作；真实 Chromium/OPFS 路径覆盖 UI 写盘、外部修改和人工采纳。
+- 文件检查、hash、解析、影响、同步和恢复模型调用为 0；结构化 Canon、角色认知、状态、物品、时间线和来源证据优先，embedding 仅为可删除、可重建、无裁决权的可选索引。
+
+### 当前边界 / 尚未包含
+
+- 当前直接可编辑语义面有意停在低歧义内容；角色、故事线、世界设定、纲要和账本若要开放，仍须逐表通过稳定身份、引用、作用域、冲突、采纳、影响与恢复反例，不能按“全表覆盖”批量放开。
+- 本地工作区不包含云同步、多人协作、Git 自动提交或服务端托管；更换目录不会删除或后台迁移旧目录。
+- 工程保证的是可恢复、可解释、由作者裁决的连续性，不保证模型不会漏报语义矛盾，也不承诺作品永远没有前后冲突。
+
+### 新功能必须复用
+
+- 工作区投影与核对：`src/lib/memory/workspace-projection.ts`、`workspace-impact.ts`、`src/lib/storage/project-storage-workspace.ts`。
+- Harness 结算与恢复：`src/lib/memory/settlement.ts`、`settlement-core.ts`、`consistency-dossier.ts`。
+- 用户入口与操作说明：`src/components/settings/ProjectStorageWorkspacePanel.tsx`、`src/components/data/DataManagementPanel.tsx`、`docs/MEMORY-WORKSPACE-GUIDE.md`。
+- 数据与 AI 治理仍必须经过 `PROJECT_TABLES`、`CONTEXT_SOURCES + assembleContext()`、`FIELD_REGISTRY + AdoptionSchema + adopt()`，不得建立平行同步或写回入口。
+
 ## PIPE-1 透明生成与质量工作坊
 
 ### 已有能力
@@ -143,7 +169,7 @@
 
 ### 当前边界 / 尚未完成
 
-- `AgentRunner` 尚不存在；动态对话/多 Agent 编排归 `AGENT-1`，不得在 PIPE-1 伪造空壳。
+- `GenerationNode` 本身仍不是 durable Harness；实际 `AgentRunner`、run ledger、Context Manifest 与终态回执归 `AGENT-1`，PIPE-1 不复制这些控制面。
 - 闭集引用由模型抽取，代码可拒绝伪造 ID/引文和已声明冲突，但不能证明模型没有漏报未声明的语义。
 - 工坊历史只保留当前会话最近版本；若未来要求跨会话持久化，必须先登记新表、迁移和导入导出，不得偷写 localStorage。
 
@@ -254,7 +280,11 @@
 ### 已有能力
 
 - Codex 分类 schema 项目级共享、词条严格按世界隔离；手动新增、AI 拆分、编辑器提示、
-  ref 选择和 AI 上下文使用同一作用域判定。删词条/世界会清理 JSON 引用和角色种族 FK。
+  ref 选择和 AI 上下文使用同一作用域判定。HARNESS-70 后 AI 拆分只经登记的
+  `manualText / codexExtractionBaseline` 读取来源、分类 schema 与既有词条，长来源分块可续跑，
+  exact-key 候选确认前零写入，作者子集冻结后经 `adopt(codexEntries)` 原子新增；零候选、
+  未知模型窗口、八采纳边界、导入取消和 terminal stale 均有反例。删词条/世界会清理 JSON
+  引用和角色种族 FK。
 - 世界规则、多世界、历史年表、重要地点、地图和角色设计已有产品能力。
 - Phase 36 已为上游设定、正文、下游产物和系统入口建立内容类型标记。
 - Phase 37-a 已交付：DB v41 `cultivationSystems`、多套体系、境界 DAG 分叉/合流编辑、
@@ -383,7 +413,8 @@
 
 ### 已有能力
 
-- 当前 AI 主要是用户触发的单轮生成、流式输出、确认和采纳；已有模型路由和部分 Agent/工具基础。
+- 当前正式 AI 创作已由统一 Agent + durable Harness 承载：Master Agent/领域 Skill 冻结任务、权限、版本与预算，候选、checkpoint、父子 lineage、终态回执和用量进入统一 ledger；作者确认后才经受治理采纳写入 Canon。
+- Agent + Harness / CREL 本轮已阶段性开发完成并进入实验性社区观察：`HARNESS-0～86`、`CREL-0～14` 已进入已完成索引，不再保留旧 A/B、旧质量门或无边界扩充 Harness 的待开发项。分级 `CreativeArtifactV1`、1+1 调用上限、免费确定性归一化、一次定向修复、`NarrativeBrief`、部分设定临时假设、统一预览与本地反馈均复用现有 Harness，不建立平行 Runner 或数据库。历史 held-out FAIL 与作者 A/B 0/6 不变；旧 A/B/质量门已由产品决策关闭为阻塞项，不视为通过。
 - AGENT-1 Tool Registry 当前提供 14 个只读工具：Phase 27.1-a 首批 13 个与 27.1-d 的
   `read_inspiration_workspace` 全部经 `CONTEXT_SOURCES → assembleContext()` 读取，带
   项目/世界/实体/碎片归属校验、独立预算与裁剪元数据。
@@ -420,7 +451,8 @@
   持久化并可见。旧配置默认均衡，完整档保留此前上限。
 - 主 Agent 编排与所有领域调用共享节省/均衡/充分三档单轮总预算；每次调用前按冻结输入与
   最大输出预留判定，候选保存估算 token、调用次数和打回次数。整轮只有一次受预算 Canon
-  打回；现阶段复用领域 GenerationNode gate 和物品持有连续性硬判，网络与软审错误不重试。
+  打回；领域 GenerationNode gate 和物品持有连续性硬判保持确定性。新主 Agent durable run 会把
+  失败调用预算持久化；临时/协议错误最多原样重试一次，同一 fingerprint 再现后停止循环。
 - `agentConversations/agentEvents` 持久保存用户消息、计划、任务状态、候选编辑、确认、拒绝
   和错误；刷新后候选仍可恢复。候选确认继续复用原领域 GenerationNode gate，刷新后则用
   冻结快照重新执行并发校验，不会因会话恢复绕开安全边界。
@@ -439,6 +471,177 @@
   团队预算和调用次数；刷新可恢复，正文变化后旧结果标为过期且不再显示旧角标。报告没有
   adoption 路径，不修改正文、设定、事实、物品或年表。
 - 项目概况、世界组目录、世界大纲树和本地搜索已成为正式上下文源；搜索只做当前项目/世界内的有界短摘，不调用网络或 embedding。
+- 分步骤主 Agent 与正文 Harness 当前有 22 个受治理 Skill、18 个提示词执行版本和一份由 14 个只读工具实际声明派生的 schema hash。新 RunContract 按步骤冻结 Skill/Prompt/Tool 版本，候选 hash 同步绑定；恢复会拒绝版本篡改，HARNESS-18 前无 binding 的旧运行保持原协议兼容。
+- HARNESS-19 已在章节编辑器的正文生成/续写主路径接入 `prose.review` 和 `prose.revise`：信息边界硬门通过后才做证据型语义初审；blocking 必须同时引用候选原文和登记上下文原文，只有明确可局部修复的问题最多修订一次，修订后重跑硬门和语义复核。评审、修订、复核共用团队预算并写入 Context Manifest、冻结执行版本和 durable 事件；通过后仍停在可编辑候选，作者确认才经 `adopt(chapters)` 写回。旧候选可恢复但不会伪造语义证据。
+- HARNESS-20 已将正文确认写回后的自动状态抽取旁路下线：新主路径由同一个 post-adoption durable Run 顺序执行六域综合整理、章节记忆和确定性检索重建。综合整理继续复用既有一次调用解析器与六域作者确认界面，`prose.organize` / `prose.memory` 两个非默认 Skill 冻结各自来源、写入边界、提示词和回归证据；章节记忆写回后才重建层级摘要，避免新摘要仍停留在 pending。只有三步、六域采纳证据和当前正文派生状态全部匹配才有 terminal receipt；历史 Chapter Transition V1 只保留兼容恢复。
+- HARNESS-41 将上述 Run 扩展为四步：在检索/摘要重建成功后执行 `prose.consistency` 确定性 Fast Guard。它只读正文、角色和持有物，不调用模型、不写业务 Canon；候选事件通过 `durableRunId` 与 post-adoption Run 关联，并固定正文 hash、Context Manifest hash、step attempt 和 candidate hash。V2 terminal verifier 只有在候选真实存在且全部 hash 匹配时签发回执；候选事件落库而 ledger 尚未推进的崩溃窗口可恢复且不重复调用模型。旧三步 Run 仍按 V1 verifier 兼容。
+- HARNESS-42 已将章后失败恢复从组件顺序控制提升为确定性恢复计划：`chapter-post-adoption-resume.ts` 按事件历史计算 step action、依赖、attempt 和失败分类；编辑器继续动作复用既有 post-adoption Run，跳过已成功步骤，只重跑可重试失败。过期、不可重试和运行中未知窗口不会被自动重跑；四个 step 的失败证据统一记录 category/action/fingerprint。当前已有计划级回归，真实浏览器关闭重开仍需补充。
+- HARNESS-43 已将正文编辑后的影响分析统一为 `buildEditImpactGraphV1()`：图绑定正文 hash，覆盖事实及其来源记录、后续章节/大纲、章/卷/书摘要、检索块、故事线进度/交汇和状态/物品/年表派生节点；排序后的 graph hash 进入主 Agent 影响报告与 `consistencyReport` 上下文源。图仍是只读证据。
+- HARNESS-44 已在该图基座上增加第一条受限反向 patch：`impact-patch-durable.ts` 创建独立 durable Run 和作者确认候选，绑定源正文 hash、graph hash、Context Manifest、Run/step/attempt 与 candidate hash；仅允许 `outlineNodes.summary`，不允许 `chapters.content`、事实权威状态或 `locked` 数据。确认后经过 `adopt()` 写回并签发引用真实 `adoption.committed` 事件的 terminal receipt；stale、篡改、越界和锁定反例已有 `R-HARNESS44-impact-patch-durable`。
+- HARNESS-45 已将该受限 patch 接入 `ChapterEditor` 的影响分析入口：选择图中的后续大纲节点，填写候选摘要/理由，创建与恢复均回读 durable Run；作者确认/拒绝分别调用受治理写回或记录拒绝事件。恢复会重新核对 candidate/source/graph hash，过期、损坏和跨作用域候选不会显示为可确认项；`R-AUDIT6-chapter-editor-toolbar` 覆盖 UI 转发，仍不改正文、事实权威状态或 locked 数据。
+- HARNESS-46 已新增 `buildImpactRemediationPlanV1()`：对影响图每个节点生成稳定的处理项、责任模式、依赖节点和理由，计划绑定正文/graph hash 并计算 `planHash`；`ChapterEditor` 只展示系统重建与作者复核计数。当前不执行计划，任何后续重建或重跑都必须在新的 durable 执行单元中重新验证这些 hash。
+- HARNESS-47 已新增 `executeImpactRemediationV1()`：只执行计划中 `deterministic` 的 `rebuild-retrieval` / `rebuild-summary` 项，复用既有 `rebuildChapterChunks()` 与 `rebuildProjectNarrativeSummaries()`，不调用模型、不写正文/事实/大纲。Run 固定 `chapterContent` Context Manifest、plan/source hash 和 post-state receipt；完成 Run 可幂等复用，来源正文变化或无可执行项目阻断。`R-HARNESS47-impact-remediation-durable` 覆盖成功、复用、stale、零项目边界。
+- HARNESS-48 已把正文信息边界从“候选可选证据”提升为新合同必需条件：`requiresProseInformationBoundaryV1()` 识别 V2/V3 terminal contract；`isProseGenerationCandidateCurrentV1()` 与 `verifyProseGenerationRunV1()` 对缺失 `informationBoundaryHash` 的新候选 fail-closed，同时保留历史 V1 Run 的兼容读取。`R-HARNESS7-prose-generation-durable` 新增缺边界反例。
+- HARNESS-49 已新增 `replanImpactRemediationV1()` 与正文编辑器“刷新计划”入口：重读当前正文、影响图和三注册表派生节点，生成绑定新 `sourceTextHash + graphHash + planHash` 的处理计划；旧计划 hash 和 changed 标志保留作审计，刷新过程不写业务 Canon。`R-HARNESS49-impact-remediation-replan` 覆盖正文 stale、幂等重规划和损坏计划阻断。
+- HARNESS-50 已新增 `executeImpactAuthorReviewV1()`：只处理影响计划中的 `author-confirmed` 项，以零模型 durable Run 记录作者 `acknowledged` / `needs-manual-action` 决定与理由，并绑定 `sourceTextHash + graphHash + planHash + itemId`、Context Manifest、候选 hash 和 receipt。Run 的写目标为空，不调用 `adopt()`、不产生 `adoption.committed`，两种决定都不代表业务 Canon 已修正；`R-HARNESS50-impact-review-durable` 和事件 schema 回归覆盖幂等回放、stale、越界、非作者项与损坏元数据阻断。
+- HARNESS-51 已新增 `readImpactAuthorReviewsV1()` 并接入 `ChapterEditor`：影响分析/计划刷新后，从现有 Run ledger 回放当前计划每个作者确认项的最新有效决定、理由和 receipt，显示已复核/总作者项；回放重新验证当前 `sourceTextHash + graphHash + planHash`、契约目标和 candidate hash，旧计划或损坏事件不会冒充完成。`R-HARNESS50-impact-review-durable`、`R-AUDIT6-chapter-editor-toolbar` 覆盖回放、stale 和 UI 投影；自动计划恢复及通用人工修正/依赖重跑仍未交付。
+- HARNESS-52 已新增 `impact-handoff.ts`：作者复核结果为 `needs-manual-action` 时，正文编辑器可通过绑定当前正文/影响图/处理计划 hash 的交接协议进入既有事实、状态、物品、故事线、年表、关系、设定、细纲或章节模块；工作区解析交接后展示目标表/记录和计划证据，并可按来源章纲返回正文。该协议是只读导航控制面，不新增修复面板，不写业务 Canon，不调用模型；地址证据不完整或目标不受支持时 fail-closed。`R-HARNESS52-impact-handoff` 与 `R-AUDIT6-chapter-editor-toolbar` 覆盖协议往返、模块映射和入口转发；具体人工修正及依赖重跑仍未交付。
+- HARNESS-53 已新增 `readCurrentImpactAuthorReviewStateV1()`：编辑器重挂载时按当前章节重新构建图和计划，只有 `readImpactAuthorReviewsV1()` 能针对当前 `sourceTextHash + graphHash + planHash` 回放至少一条有效 receipt 时才恢复复核面板；正文或图变化后旧 receipt 不会复活。`ChapterEditor` 将这条恢复与 HARNESS-45 patch 候选恢复并行执行并隔离错误。`R-HARNESS50-impact-review-durable` 覆盖恢复和 stale 反例；尚未产生 Run 证据的临时分析计划仍只存在于当前编辑器会话。
+- HARNESS-54 已将人工交接从“URL 结构正确”收紧为“当前 durable receipt 可回放”：`ImpactHandoffV2` 绑定复核 Run/receipt，`validateCurrentImpactHandoffV2()` 重新验证来源章节/章纲、当前 graph/plan、目标 item 和最新 `needs-manual-action` 决定。工作区只有验签成功才显示可信交接提示；伪造 hash/run/receipt、被后续决定覆盖或正文 stale 均返回空。该路径不新增表、不调用模型、不写 Canon；`R-HARNESS54-impact-handoff-validation` 是反例证据。
+- HARNESS-55 新增 `resolveCurrentImpactHandoffTargetV2()`，从 `PROJECT_TABLES` 验证目标记录仍存在且属于当前 World/Work，并把章节/细纲主键归一为面板实际使用的 `outlineNodeId`。`WorkspacePage` 同时核对 URL 模块和当前可见模块；各既有人工面板按目标 ID 切换页签/列表/筛选、展开层级并高亮记录，不自动进入编辑态或写数据。`R-HARNESS55-impact-target-validation` 与 `R-HARNESS55-impact-target-ui` 覆盖错误模块、缺失/未登记/跨 Work 目标和筛选隐藏反例；修正完成证明与依赖重跑仍未交付。
+- HARNESS-56 新增 `beginImpactManualCorrectionV1()` / `completeImpactManualCorrectionV1()`：从 HARNESS-54/55 的可信 handoff 建立零模型 child Run，把冻结 plan、review Run/receipt、精确目标与正式 pre-state 写入可验签检查点；只有作者在既有面板保存后显式终验、同一目标业务状态 hash 确实变化，才签发绑定 pre/post state 与父 lineage 的 receipt。完成后目标再变会 stale；待处理的本地 ID 检查点导入后取消，terminal receipt 导入后 stale。该路径零 Canon 写入、零 `adopt()`、零模型，`R-HARNESS56-impact-manual-correction` 覆盖恢复、幂等、覆盖/篡改/作用域及导入生命周期；修正后 replan 和依赖重跑仍未交付。
+- HARNESS-57 新增 `executeImpactPostCorrectionReplanV1()` / `readCurrentImpactPostCorrectionReplanV1()`：以 H56 fresh completion Run/receipt 与目标 post-state 为父 lineage，复用 HARNESS-49 planner 重建当前 graph/plan，把旧有新无、两边均有、新有旧无的稳定 item 分别投影为 `resolved / remaining / new`；仍存在的项保守保留，不用模型臆断问题已解决。工作区终验后立即执行并支持刷新补做，来源编辑器恢复当前计划和计数；H56 已消费的旧 review 不再冒充当前复核。执行器会从 `run.created` 到 `verification.accepted` 的任一 durable 边界沿同一 child Run 收敛；`R-HARNESS57-impact-post-correction-replan` 覆盖 9 项分类、幂等、恢复、父 receipt/目标/plan stale、防篡改、UI 与导入生命周期；自动系统重建和生成式下游重跑仍未交付。
+- HARNESS-58/59 已闭合修正后计划的确定性余项执行，并为剩余 UI 模型入口建立可清零 census。H58 只通过 fresh H57 parent 执行检索块/层级摘要，真实 output checkpoint 可在 10 个 durable 边界恢复；H59 的 AST 注册表已进入 CI。HARNESS-60/61/62/63/64 收口角色关系、情感节拍、重要地点、物品栏与故事年表 AI 入口后，census 为 24 个文件 / 39 个静态入口构造点，分类为 7 governed、4 auxiliary、13 migration。该分类不等于 13 个迁移已完成，后续仍须按单一目标表逐项收口。
+- HARNESS-77 已交付第一个绑定 fresh H57 的生成式下游目标：`outline.impact-summary-regenerate` 只接受 H57 `remaining/new` 中非来源章的 `review-outline` 项，重新经九个登记 Context Source 装配当前输入，一次模型调用形成严格 `{summary,reason,evidenceRefs}` 持久候选。child 绑定 H57 Run/receipt/output、plan/graph/item，候选冻结来源、完整 Context/Prompt、非目标上游证据与目标 baseline；确认前 `outlineNodes` 零写，确认时事务内二次 CAS 后只经 `adopt()` 合并 `summary`。八采纳边界、拒绝/重试、刷新恢复、父/来源/Context/目标 stale、锁定/越界、导入取消和 terminal stale 已闭合；H44 作者手填 patch、H58 确定性重建及其它字段仍保持独立边界。
+- HARNESS-78 为 H77 补上 H57 直接依赖证明门：每个目标的 `dependencyNodeIds` 必须映射到同一 current plan，直接上游作者项须有 fresh H50 `acknowledged` terminal receipt；缺证明或 `needs-manual-action` 时模型调用与 H77 Run 均为零。proof 随候选冻结并进入 candidate/contract/terminal receipt，恢复、采纳和终验重新读取逐项匹配；多个目标只按各自证明逐项解锁，不自动确认、批量调用或级联写正文。首个章纲目标的依赖顺序已闭合；其它目标类型和跨类型通用调度仍须按一次一类型扩展。
+- HARNESS-79 已交付第二个绑定 fresh H57 的生成式下游目标：`prose.story-timeline-extraction` 复用于单个既有 `storyTimelineEvents` 记录，只接受 `remaining/new` 的 `review-derived-state + timeline-event` 项。模型只经登记的 `chapterContent / storyTimelineTarget` 读取目标章节正文和精确事件，一次调用形成 strict `{storyTime,importance,description,reason,evidenceRefs}` 不可便携候选；确认前正式年表零写，确认时只经 `adopt(storyTimelineEvents, merge-diffs)` 更新三个可变字段，并冻结 ID、标题、章节归属、顺序和创建时间。H57 parent、逐项依赖 proof、来源/目标/Context/Prompt CAS、八采纳边界、拒绝/显式重试、刷新恢复、导入取消和 terminal stale 已闭合；整章新增/删除/重排仍只由 HARNESS-64 承担。
+- HARNESS-80 已把 H50/H57/H58/H77/H79 的可信 evidence 收口为一个 canonical-hash 下游 schedule：稳定拓扑投影五态与精确完成语义，目标自身 `acknowledged / needs-manual-action` 分别直接完成或强制回到可信人工修正链；H77/H79 共用生成 slot，顺序请求在已有活动 child 时模型前停止，并发请求由 parent mutation lock + 唯一 relation 收敛为一个 child。编辑器只展示 schedule 的 ready 目标和可审计计数，调度损坏时 fail closed；该单元零新表、零新 Agent/模型、零 Canon 写和零自动批量执行。
+- HARNESS-81 已将 H57 当前 planner 的全部节点形状收口为 exact executor policy：摘要/检索只进 H58，非来源章纲只进 H77，精确既有年表事件只进 H79；正文、事实、来源记录、当前章纲、后续正文和耦合/整章集合派生只进 H50/H52～57 作者链。H40 的故事线三域候选与 H20/H63 的状态/物品集合写入不能冒充单条 H57 CAS；policy id、理由和精确人工模块进入 H80 schedule/UI，错 kind/action/table/mode/nodeId 与未来未知类型 fail-closed。由此当前影响图目标类型已有明确完成路径，不再以“继续增加生成式类型”为默认待办；真实模型 H4 评测仍未交付。
+- HARNESS-82 已首次取得 Agnes 2.5 Flash 与 Doubao 1.5 Pro 32K 文本的真实 H4 development 失败证据，并据此保持发布门关闭。H4 页面现在明确区分静态 `fixture/h4-synthetic-corpus` generator 与真实 verifier，显示完整 checkpoint hash、最后协议失败、验证 token/估算成本/累计延迟，支持把验签后的 checkpoint 复制到剪贴板；judge v2 强化逐字唯一证据，v3 将同一契约绑定 OpenAI-compatible JSON object transport，同时保留 v1/v2 artifact 验证。Doubao v1/v3 均在 16/40 终止，Agnes v1/v2/v3 分别在 2/40、13/40、14/40 终止；没有一次达到 90% precision / 80% recall 的完整 development 门，held-out、fan-out、native tool transport 和自动语义审查继续锁定。AI 预设另补齐按 preset id 的 session-only Key：刷新、跨 provider 切换和真实任务路由都能使用各自 Key，而 localStorage 继续为空且无 Key 预设不会继承异 provider Key。该单元交付的是可信负面证据与凭证隔离，不是生成质量收益；真实 generator 主路径 A/B、人工修改量/完成率/p95 和独立人工 held-out 仍缺。
+- HARNESS-83 已把 H4 temperature 0 下的无效同输入重试收口为 `h4-long-consistency-repair-v1` 闭集纠错：仅由确定性 parser 错误码映射六种静态 reason，不携带上一轮输出、错误 message、引文、hidden labels 或期望答案；v4 artifact 将 repair 状态和实际 messages 纳入 hash，checkpoint 再校验它与前一 attempt 失败码一致，旧 v1/v2/v3 继续可验。真实 Doubao 与 Agnes v4 均完整跑完 40/40，证明协议恢复有效，但两者仅命中 15/32 个高严重度硬冲突，precision/recall 分别为 51.7%/46.9% 与 45.5%/46.9%；Doubao 另有 2/2 clean 硬误报，逐字证据仍均为 100%。因此 held-out、fan-out、自动语义审查和发布门继续关闭；该单元不是质量通过，可信 aggregate 与 checkpoint hash 见 `HARNESS-83-VERIFIER-REPAIR-EVIDENCE-20260815.md`。
+- HARNESS-84 已把 v4 development 的主要错误定位为“正确证据对、错误相邻 subtype”，并冻结 judge v5～v7：19 subtype 中文操作定义/判别边界、最多 8 条、clean exact 空根，以及 repair 后静态全约束复核均进入实际 Prompt/hash；旧 v1～v6 消息继续可验。runner 只在 repair 输入变化时使用第三次尝试，相同 reason 不再盲重试；非重试型 4xx 以 `verifier_error_non_retryable` 一次终止。Agnes v7 完成 40/40，但 TP/FP/FN 仅 21/13/11、precision/recall 61.8%/65.6%，仍未过门；Doubao v7 被方舟 `403 AccountOverdueError` 在 0/40 阻断，当前代码实测 1 次 unmetered failure 后停止。held-out 与生产语义 gate 继续关闭；下一步只能用诚实记录每次调用的候选证据定向 adjudication 验证是否可达门槛。
+- HARNESS-85 已交付该定向 adjudication：第二阶段只看到确定性 candidate ID、父 artifact 已逐字验证的 quote pair 和通用 taxonomy，不看到第一阶段 subtype/summary/severity/intent、完整来源或 hidden label。自包含 checkpoint 内嵌父 checkpoint，并逐调用冻结 stage、身份、trace/input/output hash、usage、失败和 derived set；零候选零调用，403 一次终止，429 一次后 `provider-blocked` 且旧失败 checkpoint 可续。真实同模型 Agnes development 26/7/6、78.8%/81.3% 仍 FAIL；冻结同一协议改用独立 DeepSeek V4 Pro 判类后，development 29/3/3、90.6%/90.6%、80/80 调用完整计量并 PASS。随后 sealed held-out 从 H4 的 11/7/5 提升到 14/4/2、77.8%/87.5%，但 precision 与 intent escalation 门仍 FAIL，所以生产 gate 继续关闭。held-out 已消耗，禁止据此调参；设置页支持父 checkpoint 导入、H85 恢复、两阶段 aggregate 与下载/复制/只读 JSON 降级导出。
+- HARNESS-86 已用 6 个不含作者手稿的合成中文世界完成真实故事线 generator 主路径旧入口/Agent + Harness A/B。旧入口复现 `b6b57f4` 前 prompt/parser，Agent 使用生产 `outline.story-arcs` Context/Skill/durable Run；两边共用 Agnes 2.5 Flash，DeepSeek V4 Pro 独立 verifier 不参与修复。checkpoint 逐调用冻结身份、prompt、input/output/trace hash、usage、成本、延迟和失败；生产传输收口为 exact-key `{"storyArcs":[...]}`，JSON object capability 由中央 provider registry 独立于 native tools 登记。最终 v4 两边均只完成 2/6；Agent 成功子集 semantic 0.95、required-fact coverage 29.17%、零未来/错世界泄漏，但 p95/token/cost 为旧入口 1.819x/3.817x/4.773x。旧入口 8/8、Agent 18/18 调用均有 usage，机器门仍因完成率、durable coverage 和预算 FAIL；只有 1 个双方成功配对，hash 绑定人工盲评被 fail closed 阻止，生产 gate 保持关闭。完整内部 checkpoint hash、文件 SHA-256 与五条冻结 development 轨迹见 `HARNESS-86-STORY-ARC-MAIN-PATH-EVIDENCE-20260815.md`；不得用成功子集或某次更好 development 冒充发布通过。
+- 2026-08-15 方舟账户恢复后，设置页使用精确 ID `deepseek-v4-flash-ga-260731` 与 `deepseek-v4-pro-260425` 分别取得 977 ms / 1,263 ms 最小 Chat 成功；方舟 provider 现明确展示豆包与 DeepSeek，并登记三个版本化 DeepSeek 选项及 128K 窗口。其后 DeepSeek V4 Pro 已取得上述 H85 development + held-out 的 token、估算成本、延迟和质量 aggregate，不再只是连接证据；实际扣费仍以服务商账单/资源包为准。`AccountOverdueError` 与 HTTP 402 也不再被连接测试误报成 Key 权限或成功。
+- HARNESS-60 已把 `CharacterRelationPanel` 的组件级模型调用、手拼大纲/正文上下文和逐条 store 写入下线，新 `character.relationships` Skill 只经 `CONTEXT_SOURCES + assembleContext()` 读取当前 World 的角色、关系、大纲摘要和已写正文；严格 JSON/枚举/唯一精确角色名验证后持久化候选。作者勾选冻结为不可便携意图，确认后只经 `adopt(characterRelations)` 和登记的 `characters.relationships` 同步入口写回，最后回读正式关系并签发 terminal receipt。八个采纳持久化边界可沿同一 Run 幂等恢复；多世界上下文隔离、baseline stale、导入取消物理 ID 候选和旧旁路下线均有 `R-HARNESS60-character-relationship-durable` 反例。
+- HARNESS-61 已把 `EmotionBeatCard` 的组件直调、手拼上下文、宽松 parser 与“生成即保存”下线。`prose.emotion-beats` 只读七个登记源，严格 3–6 拍候选绑定章节/章纲/World/Work、Manifest、实际输入和正式卡 baseline；作者确认后才经 `adopt(emotionBeatCards)` 写入。八个采纳边界恢复、导入取消物理 ID 候选与terminal 后人工修改撤销旧 receipt 已有 `R-HARNESS61-emotion-beat-durable` 反例。
+- HARNESS-62 已把 `LocationPanel` 的逐章 `chat()`、手拼正文与已有地点、内存候选和组件内 `adopt()` 下线。`world-origin.locations` 只经 `chapterContent / locations` 登记源读当前 Work/World，长正文分块冻结计划并在每次确定完成后 checkpoint；已完成分块不重试，模型结果不可判定窗口不自动续跑。全部调用完成才持久化严格候选，作者选择后才经 `adopt(importantLocations)` 写入当前 World。八个采纳边界、Work/World 隔离、导入取消和上游/正式状态漂移撤销 receipt 已有 `R-HARNESS62-location-extraction-durable` 反例。
+- HARNESS-63 已把 `InventoryPanel` 的逐章 `chat()`、组件内 Context 拼接、吞掉单章失败和 `deleteByChapter + adopt()` 先删后写下线。`prose.inventory-extraction` 只经 `chapterContent / itemLedger / characters` 登记源读取当前 Work/World；范围、分块、roster 与正式 baseline 进入 durable plan，全部调用后才形成严格候选。作者确认后使用 AdoptionSchema 已登记的 `replaceScope=['chapterId']` 逐章事务替换，跨章进度可恢复；空候选是明确清理目标章，姓名仅唯一匹配时绑定角色 FK。八采纳边界、导入取消、作用域隔离和 terminal stale 已有 `R-HARNESS63-inventory-extraction-durable` 反例。
+- HARNESS-64 已把 `StoryTimelinePanel` 的逐章 `chat()`、组件内 Context/分块/parser、吞错和 `deleteByChapter + adopt()` 先删后写下线。`prose.story-timeline-extraction` 的模型输入只经 `chapterContent` 登记源读取当前 Work；完整正式年表仅由治理层回读作 CAS。计划冻结提示词、章节 Manifest/分块、正文和完整正式 baseline，全部调用后才形成按 `chapterId + title` 去重的严格候选。作者确认后使用 `storyTimelineEvents.replaceScope=['chapterId']` 逐章事务替换并压缩 order；空选择可明确清理目标已写章，短章/其它 Work 保持冻结。八采纳边界、写后 checkpoint 恢复、导入取消、Work 隔离和 terminal stale 已有 `R-HARNESS64-story-timeline-extraction-durable` 反例。
+- HARNESS-65 已把正文选区润色/扩写/缩写/改写与查漏收口为 `prose.selection-edit / prose.selection-check` durable Skill；模型只读冻结 `manualText`，编辑候选确认前零写，确认后通过正文 HTML/文本双 CAS 精确采纳，查漏保持只读。八采纳边界、格式漂移、刷新恢复、导入取消和 terminal stale 已有 `R-HARNESS65-selection-edit-durable` 反例。
+- HARNESS-66 已把 `WorldMapPanel` 的直接 DB 扫描、手拼 Prompt/Context 与模型结果立即 `updateNode(mapConfigJSON)` 下线。`world-origin.map-config` 只经 `worldview / geography / codex / locations` 登记源读取当前 World；严格地图配置先成为不可便携 durable 候选，作者确认后才通过 `worldNodes.mapConfigJSON` FIELD_REGISTRY、record-only AdoptionSchema 与 exact-field CAS 定点采纳。节点名、来源、Prompt、原配置、八采纳边界、导入取消和 terminal stale 由 `R-HARNESS66-world-map-durable` 反例闭合。
+- HARNESS-67 已把 `WorldGroupDetail` 的 `useAIStream`、直接 DB 读故事核心/跨世界 Context 拼装、宽松 parser 和模型返回后立即 `adopt(worldviews)` 下线。`world-origin.worldview-expand` 只经 `manualText / worldGroups / storyCore / worldview` 登记源读取作者已保存的目标世界草稿、当前 Work 与当前 World；严格七字段结果先成为不可便携 durable 候选。作者确认且目标组、Context、Prompt 与完整正式 baseline 均 fresh 后，才在事务中经 `FIELD_REGISTRY + adopt(worldviews)` 原子采纳七字段。八采纳边界、首次创建、写后恢复、导入取消、作用域隔离和 terminal stale 由 `R-HARNESS67-worldview-expand-durable` 反例闭合。
+- HARNESS-68 已把 `WorldGroupOverview` 的 `useAIStream`、内存建议、手拼全世界摘要和直接 `createGroup()` 循环下线。`world-origin.world-suggest` 只经 `manualText / worldGroups / storyCore` 登记源读当前 World/Work，严格 2～4 项建议作为不可便携整批 durable 候选；作者选择的非空子集与最终顺序冻结后，只能在项目提示、世界目录/关系、故事核心、Context 与 Prompt 仍 fresh 时，在同一事务中经 `FIELD_REGISTRY + AdoptionSchema + adopt(worldGroups)` 新增八字段记录。世界关系保持人工 CRUD；八采纳边界、同名/上游 stale、写后恢复、导入取消、World/Work 隔离和 terminal stale 由 `R-HARNESS68-world-suggest-durable` 反例闭合。无运行调用的 `world-group-context.ts` 已删除，不再保留平行 Context builder。
+- HARNESS-69 已把 `WorldConstitutionPanel` 的 `useAIStream`、直接 DB 查主体、宽松 parser 和模型返回后立即写事实候选下线。`world-origin.constitution-extract` 只经 `constitutionScanSources` 登记源读取当前 World/Work 的来源、允许主题和主体；无损闭集必须与 runner 冻结快照逐字一致。strict 0～80 项整批候选确认前零写入；作者批次确认后，在事务内复核来源、主体和完整事实 baseline，才经 `fact-ledger` Adoption Extension 原子新增 `temporalFacts(status=candidate)`。批次确认不等于 Canon，既有逐条确认/互斥明确取代保持第二层门。八采纳边界、未知结果、导入取消、World/Work 隔离和 terminal stale 由 `R-HARNESS69-constitution-extraction-durable` 反例闭合。
+- HARNESS-70 已把 `CodexPanel` 的直接 `chat()`、组件内 `assembleContext()`、宽松 parser、内存候选和直接 `adopt(codexEntries)` 下线。`world-origin.codex-extract` 只经 `manualText / codexExtractionBaseline` 登记源读取作者来源、目标分类/schema 与同世界组既有词条；逐分块 checkpoint 只续跑剩余调用，未知模型结果不重试。strict 0～200 项整批候选确认前零写入；作者子集与顺序冻结后不可改选或取消，事务内复核完整 baseline 后才经登记采纳层原子新增。零候选、八采纳边界、导入取消、World/Work/世界组/分类隔离和 terminal stale 由 `R-HARNESS70-codex-extraction-durable` 反例闭合。
+- HARNESS-71 已把 `CultivationProgressPanel` 的直接 `chat()`、硬编码 prompt、宽松 parser、内存逐条候选和逐条写入下线。`prose.cultivation-progress-extraction` 只经 `chapterContent / cultivationProgressExtractionBaseline` 读取目标正文、角色/体系 DAG、规范章序和完整进度 baseline；strict 候选不接受模型输出 transition，作者选择冻结后由系统按 DAG/章序构造正式投影。事务内二次 CAS、登记批量写入和既有后续 transition 归一化原子完成；零候选、模型未知窗、八采纳边界、上游/正式状态 stale 与作用域隔离由 `R-HARNESS71-cultivation-progress-extraction-durable` 闭合。
+- HARNESS-72 已把 `ForeshadowPanel` 的两次 `useAIStream` 调用、自由文本到宽松结构化的二次模型解析、内存候选和逐条写入下线。`outline.foreshadow-suggestions` 一次调用只经登记的 Canon、世界、故事、角色、规则、历史、地点与 `foreshadowSuggestionBaseline` 读取当前 Work，strict 0～12 项候选确认前零写入；作者选择冻结后，项目、完整正式 baseline、上游 Context 与 Prompt 均 fresh 才在事务内二次 CAS，并经 `FIELD_REGISTRY + AdoptionSchema + adopt(foreshadows)` 原子新增系统固定为 `planned` 的伏笔。空结果、未知模型窗、八采纳边界、导入取消、Work 隔离和 terminal stale 由 `R-HARNESS72-foreshadow-suggestions-durable` 闭合，人工伏笔 CRUD 与章节关联保留。
+- HARNESS-73 已把 `HistoryPanel / useHistoryAI` 的两路 `useAIStream`、组件内 `manualText` 上下文和即时 `adopt()` 接受路径下线。`world-origin.history-consult / world-origin.history-storm` 只经 `worldview / historyAgentBaseline` 读取已保存历史总述、纪年、精确目标与作者边界；事件/关键词共用一个按目标表/字段闭集运行器。严格 Markdown 先成为不可便携候选，确认前正式结果零写入；确认后以原字段 presence/value CAS 只写 `aiConsult` 或 `aiBrainstorm`，另一路结果可独立变化。未知模型窗、候选恢复、八采纳边界、来源/Prompt/目标字段 stale、目标删除、导入取消、World/Work/世界组隔离和 terminal stale 由 `R-HARNESS73-history-agent-durable` 闭合，人工历史 CRUD 与结果清除保留。
+- HARNESS-74 已把 `AnalysisReportViewer` 的总结/角色两处直接 `chat()`、组件内输入取样、内存候选和即时派生写回下线。`inspiration.reference-summary / inspiration.reference-characters` 只经 `referenceDerivedBaseline` 读取当前 Work 的精确参考、精确分析版本、分块分析和来源声明；严格 JSON 先成为不可便携候选。确认后先以字段 presence/value CAS 写版本化 `referenceAnalysisRuns`，仅 active 版本再同步同字段到 `references` 兼容投影；ready/superseded 不污染当前参考。未知模型窗、候选恢复、版本/投影分段写入恢复、十个采纳边界、来源/Prompt/字段 stale、目标删除、导入取消、Work/版本隔离和 terminal stale 由 `R-HARNESS74-reference-derived-durable` 闭合，人工版本生命周期与报告阅读保留。
+- HARNESS-75 对 `PromptExamplesEditor` 完成了风险裁决而没有机械新建业务 Agent。该入口只读取 `PromptTemplateEditor` 当前未保存的全局 Prompt draft，模型结果只经 `onChange` 进入内存；作者另点顶部「保存」后才由既有 Prompt store 写 `promptTemplates`。该表已由 `PROJECT_TABLES` 登记为 `owner=global / exportable=false`，不属于项目 Canon；未保存离开即丢弃、生成后 DB/Agent ledger 零写、显式保存后才落库、系统模板只读与配置缺失零调用由 `R-HARNESS75-prompt-examples-authoring-draft` 锁定。census 因此按事实归为 `authoring-draft` auxiliary，而非伪造 durable receipt。
+- HARNESS-21 已将正文 Run → post-adoption Run 的父子完成关系持久化：RunContract 的 `lineage.parent`
+  与 `agentRuns.parentRunId/parentReceiptHash/parentArtifactHash` 双向核对，父终态回执和正文 hash
+  缺一不可；同一父 Run/关系由唯一索引去重。子 Run 的终态证明通过契约 hash 间接绑定父回执，父回执
+  stale 或正文再次变化时子 receipt 会被撤销。新链支持刷新恢复、全链状态投影和项目导入导出重映射；
+  无 lineage 的 HARNESS-20/历史数据只走兼容分支，不被显示为全链完成。
+- HARNESS-22 已闭合主 Agent 多任务候选的同代依赖 join：新 durable 下游候选冻结上游 task、
+  candidate/output hash 和 Run generation，恢复验证引用版本确实来自当前严格事件历史；作者编辑
+  上游后旧下游仍可查看但不能确认采纳。下游确认前必须回读上游 step 的正式 adoptionHash 与
+  succeeded 状态，不再把对话确认消息等同于业务写入完成。旧无绑定候选保持兼容；本单元未开启
+  fan-out，后续由 HARNESS-23 接续，attempt replan 仍未开启。
+- HARNESS-23 已开启首批受控有限 fan-out：只有作者明确要求且计划包含世界来源、已保存灵感的
+  无依赖、无共享写表叶子时才进入 `fan-out-synthesize`，每波最多并行两个模型调用，durable
+  账本和候选提交仍串行。并发预算计入 outstanding reservation；一叶失败会保留成功候选，恢复
+  只重跑失败叶，汇合任务复用 HARNESS-22 同代 join。大纲、正文、Canon 采纳仍不并行；每叶
+  terminal receipt、通用审计 fan-out 和成本/延迟 A/B 尚未完成，可用独立本地开关回到顺序执行。
+- HARNESS-24 已为主 Agent 候选 DAG 增加失败分类与最多一次有限重规划：失败事件记录 category、action
+  和哈希化 fingerprint，同错第二次出现不再原样 retry。模型只能 patch 失败任务及其下游的指令和
+  依赖；任务身份、Skill、workflow 和三注册表权限冻结。换代事务会局部 stale 受影响候选，显式
+  carry-forward 未受影响的待确认候选，并原子写入新契约代际、计划事件和检查点；新下游只有当前代
+  carry 证据才能引用旧代上游。已确认/已采纳 run 不原地重规划，旧契约不补授权，独立开关可关闭。
+- HARNESS-25 已为新 fan-out 契约增加逐候选确定性步骤回执：回执绑定 step/attempt、candidate/output
+  hash、Context Manifest、verifier 版本和 criteria，并与候选及 Manifest 同事务提交。汇合任务在模型
+  请求前必须取得所有上游 fresh receipt，下游候选再冻结 receipt hash；恢复会拒绝篡改、已失效、跨代
+  或晚于 join 的证据。作者编辑先使旧回执失效，合法稿重签，不合法稿不能进入下游；重规划 carry-forward
+  在新代重签。`agentEvents.durableRunId` 经 DB v53 索引和 `PROJECT_TABLES` 参与导入重映射及删除生命周期，
+  原始 hash-bound payload 不静默改写。历史无策略运行兼容；首批领域语义终验由 HARNESS-27 接续，
+  通用 fan-out 仍未完成。
+- HARNESS-26 已新增去内容化的顺序/fan-out 配对评测记录：冻结 fixture/input/plan hash 及同一生成器
+  provider/model、Prompt/Tool schema 版本，交叉执行两个变体，并要求不同 provider/model 身份的 verifier
+  在生成结束后独立评分。逐例证据和两个既有 benchmark artifact 均可重算，正文、hidden label、未知字段、
+  指标或 hash 篡改均 fail-closed。发布门覆盖至少 6 组样本、完成率、逐步回执、语义/证据非劣、未来与
+  错世界泄漏、p95 延迟、token 和 cost；真实 durable 集成测试已证明同计划能走 1 路顺序与 2 路 fan-out，
+  两边均产生完整步骤回执且不写 Canon。尚无真实外部模型的 6 组通过 artifact，不能宣称 fan-out 已证明净收益。
+- HARNESS-27 已为当前 `world-origin + inspiration -> character` 限定 fan-out 的两个独立叶子增加
+  `world-origin.review` / `inspiration.review` 领域 Skill 和 `candidateSemanticReviewPolicy`。reviewer 只从
+  `assembleContext()` 独立装配的登记源取证，必须与 generator 使用不同 provider/model；blocking 必须有
+  候选逐字引文、登记 source key 和来源逐字引文，缺少该证据的质量意见不能阻断。通过 artifact 绑定
+  candidate、generation、生成/审查 Context Manifest、Prompt/Tool 执行版本和模型响应 hash，再签发 v2
+  step receipt；join、恢复与 terminal receipt 都会 fail-closed 复核。编辑会移除 artifact 并 stale 回执，
+  重新执行生成/终验前不能汇合或采纳；当前没有只复审编辑稿的自动局部入口。replan 会重跑受审叶及
+  全部下游，阻断则暂停给作者。审查成本纳入父候选预算；artifact 复用现有
+  `agentEvents` 的项目生命周期和便携重映射。review/revise/organize/memory 等 Harness 内部 Skill 不能成为
+  顶层生成任务。因真实外部模型发布 artifact 仍缺失，该策略默认关闭，仅显式本地开关可启用；未交付
+  通用审计 fan-out、自动语义修订或更宽的领域白名单。
+- HARNESS-28A–28D 已在既有长篇评测模块冻结 ConStory 五类/19 子型，并建立统一只读证据协议：模型只交
+  `sourceId + quote`，代码用 `chapter-text-v1` 标准化来源、计算 SHA-256 与 UTF-16 半开 offset，拒绝不存在、
+  错来源、重复歧义和同区间 pair。类别和 hard/advisory 由代码派生，intentional/ambiguous 不得升级 hard。
+  H4 artifact 严格绑定 fixture 输入/隐藏标签 hash、来源集合、生成/审查身份、Prompt/benchmark、用量、成本和
+  trace，并支持防篡改导入导出；不保存整篇来源、不写 Canon、不接生产 gate。headless H4 目录现有 40+20
+  个 8,000–12,000 字符的合成长文，四类任务均衡，development 每子型两例、held-out 每子型一例并含 clean、
+  intentional/ambiguous 及中段/远距控制。公开 ID 不携带标签，模型可见投影物理移除 hidden labels；60 例均
+  通过正式证据定位/artifact 路径。headless runner 强制 generator/verifier 身份分离，按例 checkpoint 并可从
+  JSON 恢复；有限重试和调用/token/时长/成本预算包含失败响应用量，无用量失败会阻断发布。aggregate-only
+  scorer 计算 high hard precision/recall、证据回查、作者意图误升级、clean 误报及 Wilson 95% 区间；配对
+  bootstrap 可比较不同长度输出的每万字符错误密度。开发设置页现已迁移到 H4 40+20，逐例验签 checkpoint
+  按 split 存储并可刷新恢复，只展示 aggregate 且可导出完整 artifact；development 通过后才解锁 held-out。
+  旧 NS-0/NS-1 模型 runner、独立语义裁判、结果 key 和按钮已删除，H17 对照保留。sealed 仅指调用/评分 API 隔离而非源码
+  标签保密；H85 后真实外部 verifier 40+20 artifact 与真实浏览器运行已经交付，但 held-out 门禁 FAIL，人工
+  复核和真实创作 generator 质量收益仍未交付。
+- HARNESS-29 已在唯一只读 Agent Runner 上增加 provider 原生工具 transport 基座。默认继续使用
+  `text-json-v1`；只有 capability matrix 已验证且显式启用时才声明 `native-tools-v1`。声明由现有 14 个
+  `AGENT_READ_TOOLS` 派生，动作重新经过同一闭集解析并只由 `executeAgentTool()` 执行，读取仍走
+  `CONTEXT_SOURCES + assembleContext()`，零业务写权限。工具 schema token 纳入物理窗口与 Runner 预算；
+  未知/畸形调用有限失败，不会隐藏回退文本协议。任务路由先冻结真实 provider/model，新 durable Run
+  绑定 transport capability hash，运行中改路由不能偏离合同；HARNESS-29 前旧 Run 不伪造绑定。当前只有
+  模拟 provider 合同测试，开关默认关闭，不能宣称 token、延迟或质量收益。
+- HARNESS-30 已交付 `outline.story-arcs`：故事线请求由主 Agent 路由到现有 `outline` Agent 的专用 Skill，
+  上下文权限、输入状态和压缩策略由 Skill 声明并只经 `assembleContext()` 实现；严格候选契约限制
+  main/sub、阶段、关键事件、转折与卷范围。候选由 durable Run 持久化并等待作者编辑/拒绝/确认，确认前
+  `storyArcs` 零写入，确认后只经 `adopt(target=storyArcs)` 写入；snapshot/CAS、正式状态匹配和 terminal
+  verifier 防止旧候选或被篡改结果签发完成。旧 AI adapter/直接 `addArc()` 入口已删除，人工 CRUD 保留。
+  现有证据为真实 orchestrator、刷新恢复、面板交互和模拟模型回归；生成质量与更完整 Narrative Blueprint
+  仍未完成评测。
+- HARNESS-31 已交付 `world-origin.story-core`：故事核心七字段的 AI 按钮统一进入现有世界基座 Agent，
+  每轮只允许产生一个严格 `{field,value}` 候选。Skill 声明并只经 `assembleContext()` 读取世界、故事核心、
+  力量、词条、角色、故事线和卷纲，支持 empty/partial/complete 输入处理、预算压缩与全文救援；`storyCore`
+  正式来源补齐此前遗漏的 `concept`。候选进入 durable Run，确认前 `storyCores` 零写入，刷新后仍可编辑、
+  拒绝或确认；确认只经 `adopt(target=storyCores)`，完整故事核心 snapshot/CAS、字段错投 gate、正式字段回读
+  和 terminal verifier 阻止过期或篡改结果完成。旧 `story-adapter` 与组件级上下文拼接已删除，七字段人工
+  编辑保留。工程证据覆盖真实 orchestrator、durable 恢复、组件和 Chromium 两次刷新；尚无真实模型质量 A/B。
+- HARNESS-32 已交付 `world-origin.worldview-field`：世界基座起源、自然、人文三面板的 17 个 AI 字段统一进入
+  现有世界基座 Agent 的同一 Skill。Skill 通过 `CONTEXT_SOURCES + assembleContext()` 读取正式基座和下游反推
+  证据，按 empty/partial/complete 选择创建、参考创建或受约束变换，并支持预算压缩/全文救援；每轮只生成一个
+  严格 `{field,value}` 候选。确认前 `worldviews` 零写入，确认后只经 `adopt(worldviews)`，完整基座快照/CAS、
+  durable 刷新恢复、作者编辑/拒绝/确认、字段错投和终态回读均有专项回归与 Chromium 证据。旧
+  `world-origin.complete` 仅保留历史 durable Run 兼容，人工编辑、词条、历史年表和 Prompt 配置保留；当前
+  证据只证明工程闭环和模拟模型合同，不证明真实模型文学质量收益，也不涉及世界引擎体验。
+- HARNESS-33 已交付 `character.create`：分步骤角色面板的普通 AI 入口统一进入现有 Character Agent，同一
+  Skill 经 Tool Registry → `assembleContext()` 读取世界、故事核心、角色、世界规则和历史，按
+  empty/partial/complete 处理，使用受治理压缩预算和完整 roster snapshot/CAS。模型只生成一个严格闭集 JSON
+  候选，确认前 `characters` 零写入，确认后只经 `adopt(characters)`；刷新恢复、编辑、拒绝、同名/未知字段/
+  非法枚举/stale 和终态回归均已覆盖。旧 `useAIStream → parseCharacterOutput` 自由文本旁路及死代码已删除，
+  人工 CRUD、角色轴/维度选择和 Prompt 配置保留；当前不自动创建关系、物品或大纲，也不证明真实模型质量收益。
+- HARNESS-34 已交付 `inspiration.reverse` 主入口收口：分步骤灵感面板通过主 Agent 定向 durable 任务执行，
+  作者勾选的碎片 ID 进入计划、候选 payload 和恢复合同；Skill 只经 `read_inspiration_workspace` 与
+  `assembleContext()` 读取。候选可刷新恢复、编辑、拒绝或确认，确认只经 `adopt(inspirationWorkspaces)`
+  新增版本，不自动写世界观、故事核心、角色或世界组。旧面板级 `useAIStream`、直接模型调用和手工上下文装配
+  已删除；现有碎片库、差异审阅、多世界预览与显式 Canon 采纳保留。当前无真实模型质量、成本或延迟 A/B。
+- HARNESS-35 已交付 `outline.character-driven` 主入口收口：角色驱动开书规划把当前方案 ID 冻结进 durable plan，
+  方案输入只经 `read_character_driven_plan` 读取，其它上游只经 `assembleContext()`；重新生成不注入旧方案结果。
+  候选使用严格卷章合同，并校验额外字段、重复标题、未知角色、角色弧覆盖和信息释放边界。第一次确认只经
+  `adopt(recordId, characterDrivenPlans)` 保存方案，第二次勾选卷才经 `adopt(outlineNodes)` 写正式大纲；旧
+  `useAIStream`、自动保存、弱 parser 和无调用 Prompt 构造模块已删除。人工输入、版本、激活参考、中途重规划和
+  Prompt 配置保留；角色反推世界基座与真实模型质量 A/B 不在本单元完成。
+- HARNESS-36 已交付 `outline.character-revision` 主入口收口：中途重规划把角色变更、保护区、过渡区、策略、
+  锚点和方案 ID 冻结进 durable plan，正式项目资料只经 `assembleContext()` 读取。模型输出须满足严格三档合同，
+  代码拒绝未知/重复节点、已写或保护区 patch 和锚点改名；作者选择固化后只经 `adopt()` 写未来大纲标题/摘要，
+  已有空正文行只同步标题。候选支持刷新恢复、完整 snapshot/CAS、确认后部分中断恢复和 terminal verifier；旧
+  `useAIStream`、Prompt service 与非 durable patch helper 已删除。正文、主线、伏笔和只读影响建议不会自动写入。
+- HARNESS-37 已交付 `outline.details` 单章细纲入口收口：章节正文页与独立细纲页共用同一 durable 控制器，
+  Skill 的读取集合包含章纲、相邻章、当前细纲及世界/故事/角色/规则等登记来源，写权限只覆盖
+  `detailedOutlines` 已登记字段。严格闭集 JSON 在持久候选前执行，协议错误只进入有界失败，不再二次调用模型；
+  候选支持刷新恢复，确认前业务表零写入。确认会重算完整 Context Manifest，任何纳入来源变化均阻断旧候选，
+  确认后只经 `adopt()` 写回并核对正式字段，匹配后才签发 terminal receipt。人工 CRUD、五阶段工坊与
+  HARNESS-10 批量细纲保留；当前只有模拟模型和组件证据，没有真实模型质量 A/B。
+- HARNESS-38 已交付 `character.supplement` 已有角色补全入口收口：四个角色面板保留原按钮、维度选择和反向哺喂
+  开关，但只提交冻结角色 ID、字段闭集和证据开关的定向 durable 任务。`targetCharacter` 精确读取一个角色的完整
+  维度，世界、故事、规则和可选剧情证据只经 `assembleContext()`；逐来源原始内容 hash 用于确认前 stale 检查。
+  模型只返回所选字段的严格 JSON，候选可刷新恢复、按字段编辑、拒绝或确认，确认前正式角色零写入，确认后只经
+  `adopt({ target: 'characters', recordId, mode: 'merge-diffs' })` 并由 terminal verifier 回读。旧组件直调模型、即时写回、
+  宽松 parser 与死适配器已删除；隔离浏览器已覆盖生成、刷新恢复、拒绝、编辑和确认，当前不新建角色/关系、不改正文，
+  也没有真实模型质量 A/B 或完整影响图证据。
+- `check:agent-freshness` 已进入 CI，静态检查每个 Skill 的 owner、提示词版本、45 天复核期限和可定位回归证据；工具 schema 快照另由运行时 hash 回归防漂移。
 - 应用是纯前端、本地 IndexedDB、可导出/导入和多种备份恢复路径。
 - Phase 27.2a 场景考证按钮已存在；多世界、角色、地点、状态和故事线数据可作为未来运行时底座。
 - SIM-1A 已建立共享互动运行时：DB v48 的 `simulationSessions / simulationEvents /
@@ -465,10 +668,11 @@
 
 ### 当前边界 / 尚未完成
 
-- 原生 `tool_calls` 尚未作为 provider 优化接入；主 Agent 当前编排世界来源、灵感反推、
-  新增角色、新增大纲和正文五个已闭环领域；正文只支持空白章生成和显式续写，不覆盖手稿。
+- provider 原生 `tool_calls` 已作为默认关闭的 transport 优化接入唯一只读 Runner；主 Agent 已覆盖世界基座字段、
+  故事核心、灵感反推、角色、故事线、角色驱动开书/中途重规划、普通大纲和正文等受治理 Skill。正文仍只支持
+  空白章生成和显式续写，不覆盖手稿；这些工程闭环不等于真实模型质量已经通过发布门。
 - 后台领域任务目前按依赖顺序执行，不是并行自治团队；当前有三档领域输入预算、一次
-  受控确定性打回、手动“整理本章”和只读一致性 Agent。任意单源权重、更多 Canon 闭集和
+  受控确定性打回、正文采纳后的自动六域整理（也可从原手动入口查看/重跑）和只读一致性 Agent。任意单源权重、更多 Canon 闭集和
   模型投票仍未形成正式产品闭环。
 - SIM-1B 已完成结构化冻结、实体投影和检查点恢复；SIM-1C 已完成 NPC 演进功能闭环：AI 只读
   `simulationRuntime` 冻结运行时上下文并生成严格结构化候选，候选作为提案事件持久化，作者确认/拒绝
@@ -483,6 +687,49 @@
   `createWorldPackage()` 生成带来源编号、许可、署名、用途、内容警告和 SHA-256 的包；`inspectWorldPackage()`
   在导入前拒绝私有表泄漏或篡改，`importWorldPackage()` 为副本分配新 `worldCode` 并保留 `communityOrigin`。
   章节、笔记、Agent/运行时存档、API 配置和个人文风不会进入包。线上账号、云同步、评论和协同仍属于后续后端阶段。
+
+## WORLD-2 世界引擎领域重构
+
+### 已有能力
+
+- WORLD-2A 已完成产品语义纠偏：`enableMultiWorld` 只表示可选的多世界/位面结构；创建世界和打开完整世界工作台都不要求开启它。
+- WORLD-2B 第一垂直切片复用现有分步骤数据和面板，按世界基础、世界资产、叙事设计、世界结构、状态与实例五个领域展示同一份 Canon 与运行数据。
+- `PROJECT_TABLES.worldDomains` 是世界产品投影的唯一表级登记；世界内容覆盖度和 World / Work / Runtime 兼容投影从注册表批量派生，不读取正文进度，不创建第二套表。
+- 世界工作台按领域深链到现有登记工作区模块；分步骤工作区继续作为 Golden Master，旧项目无需迁移或“同步为世界引擎”。
+- WORLD-2C ADR 已接受：`Project` 保留为 `LocalWorkspace` 物理兼容根；显式 World/Work 位于同一工作区，
+  `Work.worldId` 是绑定权威；逻辑 owner 进入现有 `PROJECT_TABLES.domainOwner`，不另建表清单。迁移按
+  “schema 只加不搬 + 运行时逐工作区预检/before-image/单事务盖章”实施，第二作品入口在全链路隔离前隐藏。
+  完整合同见 [WORLD-2C-WORLD-WORK-OWNERSHIP.md](../adr/WORLD-2C-WORLD-WORK-OWNERSHIP.md)。
+- WORLD-2C C1 已完成：DB v49 以空升级新增 World、Work、角色作品绑定和迁移凭证；所有非 global 表在
+  `PROJECT_TABLES.domainOwner` 中完成逻辑分类，现有表仍标记 `compat-project`。新增根和绑定已进入完整备份
+  的便携 ID 重映射与工作区删除生命周期；真实 v48 fixture 证明升级不盖章、不搬移旧内容。
+- WORLD-2C C2 已完成：项目创建和旧工作区首次进入统一经过 ownership service；只读预检从 `PROJECT_TABLES`
+  派生表范围，以 SHA-256 记录主键/owner 指纹而不记录正文；持久化 before-image 后在单事务中创建或采纳默认
+  World/Work、盖默认 owner 并更新兼容镜像。失败回滚、并发幂等、未知归属拒绝和有边界回滚已有反例测试。
+- WORLD-2C C3-C5 已完成：核心 Store、`assembleContext()`、`adopt()`、上下文源和 Agent 记录统一经过
+  `WorkspaceScope` owner gate；严格 v4 便携 owner、v1-v3 兼容、损坏 owner 拒绝、Workspace/World/Work 删除、
+  双作用域原子转换及审计均从 `PROJECT_TABLES` 派生。同一 World 已开放多 Work 创建、切换和删除，双作品
+  Golden Project 与浏览器 E2E 证明世界 Canon 共享而作品内容不串。
+- WORLD-2D 已完成：`narrativeModules` / `narrativeNodes` 是主线、支线、任务、开局、自由探索、条件、效果、
+  选择和后继的可执行合同；五类入口原子创建 `entry -> ending` 最小图，StoryArc 可重复同步而不复制正文。
+  图身份、重复 key、悬空后继、入口、可达性与 JSON 都会严格校验；Work 选择当前叙事，模块可选择本作品或
+  整个 World 作用域。登记的 `activeNarrativeBlueprint` 上下文按 Work 隔离并供分步骤 AI 与 Agent 共同消费。
+- WORLD-2E 已完成：发布分区由 `PROJECT_TABLES` 派生，用户选择世界基础、角色、叙事、大纲和具体叙事模块，
+  正文与私有参考固定排除。修订父链、逐表依赖锁、稳定 SHA-256、差异、事务一致性检查、幂等 Release 和世界包
+  v2 已落地；v2 对表集、records、便携数据、依赖和 hash 严格防篡改，v1 仍按历史合同兼容。
+- WORLD-2F 已完成：SIM 会话绑定 World/Work、可验证 SIM Canon 快照和 Release 便携 NarrativeModule ID；草稿
+  节点图、条件、效果、选择和变量在实例创建时冻结。确定性推进、过期序列拒绝、回放、检查点和分支继承统一
+  使用原 event/reducer；跑团、角色聊天、文字游戏和 NPC 演进四类实例相互隔离，文字游戏已有实际运行入口。
+
+### 当前边界 / 尚未完成
+
+- `Project` 仍是 IndexedDB 兼容存储边界，`worldCode` / `worldVersion` 仍保留为当前 World/Release 的兼容
+  镜像；删除这些镜像需要后续独立 ADR，不能在普通功能改动中顺手移除。
+- 世界完整度当前只表达领域覆盖，不冒充引用完整、Canon 冲突或发布准备度；后续验证能力必须复用三注册表和已有一致性检查器。
+- 本地世界引擎基座完成不等于社区平台完成；账号、云发布、发现、订阅、fork、协作和治理仍属于 PLATFORM-1B/1C。
+- Harness/Agent 执行体系已在分步骤主路径完成重构；WORLD-2、游戏与互动功能可以消费稳定的 World/Work、Context 和发布数据出口，但若增加 AI 生成，必须接入同一 Skill/Run/CreativeArtifact/Adoption 链路，不能在各产品内建立直连旁路。
+- WORLD-2F 完成的是本地共享运行时与冻结绑定，不等于四个上层产品的全部体验都已成熟；新增规则系统、长期
+  记忆、多人协作或玩法 UI 时必须消费该基座，不能另造平行状态机。
 
 ## 新开发前的最小核对清单
 

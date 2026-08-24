@@ -22,10 +22,11 @@ export const WORLDVIEW_ORIGIN_FIELDS: Array<{
 interface Props {
   active: WorldviewOriginFieldKey
   streamingKeys: ReadonlySet<string>
+  pendingKeys?: ReadonlySet<string>
   onSelect: (key: WorldviewOriginFieldKey) => void
 }
 
-export default function WorldviewOriginSidebar({ active, streamingKeys, onSelect }: Props) {
+export default function WorldviewOriginSidebar({ active, streamingKeys, pendingKeys, onSelect }: Props) {
   const { t } = useDomainT('worldview')
   return (
     <div className="w-fit min-w-32 max-w-44 shrink-0 space-y-0.5 pt-1">
@@ -33,6 +34,7 @@ export default function WorldviewOriginSidebar({ active, streamingKeys, onSelect
         const isActive = active === field.key
         const isFieldStreaming = streamingKeys.has(field.key)
         const label = t(FIELD_KEYS[field.key].labelKey)
+        const hasPendingCandidate = pendingKeys?.has(field.key) === true
         return (
           <button
             key={field.key}
@@ -48,6 +50,13 @@ export default function WorldviewOriginSidebar({ active, streamingKeys, onSelect
             <span className={`text-sm font-medium truncate flex-1 ${isActive ? 'text-accent' : 'text-text-primary'}`}>{label}</span>
             {isFieldStreaming && !isActive && (
               <span aria-label={t('origin.streamingAriaLabel', { label })} className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
+            )}
+            {hasPendingCandidate && !isFieldStreaming && (
+              <span
+                aria-label={`${label}有待确认候选`}
+                title="有待确认候选"
+                className="w-2 h-2 rounded-full bg-warning shrink-0"
+              />
             )}
           </button>
         )

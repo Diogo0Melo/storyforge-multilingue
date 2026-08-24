@@ -28,15 +28,34 @@ import type {
   CharacterMoralAxis,
   CharacterOrderAxis,
   CharacterRoleWeight,
+  WorkspaceScope,
 } from '../types'
 import {
+  isLegacyReadScope,
+  readOwnedRows,
+  resolveReadScopeLike,
+  resolveScope,
+  scopeTransactionTables,
+} from '../world-engine/scope'
+import {
+  attachAgentContextInputStateV1,
   mergeContextEvidence,
   resolveAgentContextPolicy,
   splitAgentContextPolicy,
   type AgentContextEvidence,
   type AgentContextProfile,
 } from './context-policy'
-import { executeAgentTool } from './tool-registry'
+import {
+  createAgentContextCompressionSessionV1,
+  type AgentContextCompressionRuntimeV1,
+} from './context-compression'
+import { AGENT_TOOL_BY_NAME, executeAgentTool } from './tool-registry'
+import {
+  buildAgentSkillInputGuidanceV1,
+  resolveAgentSkillInputStateV1,
+  resolveAgentSkillV1,
+  type AgentSkillId,
+} from './skill-registry'
 
 export const MAX_CHARACTER_CANDIDATE_CHARS = 40_000
 const MAX_CHARACTER_NAME_CHARS = 80
@@ -58,10 +77,12 @@ export interface CharacterRosterSnapshot {
 
 export interface CharacterCopilotInput {
   projectId: number
+  scope?: WorkspaceScope
   projectName: string
   genres: string
   worldGroupId: number | null
   authorRequest: string
+  inputGuidance: string
   worldContext: string
   characterContext: string
   contextSources: string[]
@@ -124,8 +145,10 @@ function isVisibleInScope(character: Character, worldGroupId: number | null): bo
 export async function readCharacterRosterSnapshot(
   projectId: number,
   worldGroupId: number | null,
+  scope?: WorkspaceScope,
 ): Promise<CharacterRosterSnapshot> {
-  const rows = await db.characters.where('projectId').equals(projectId).toArray()
+  const resolved = scope ?? await resolveReadScopeLike(projectId)
+  const rows = await readOwnedRows<Character>(resolved, 'characters', { owner: 'world' })
   const serialized = JSON.stringify(
     rows
       .map(character => ({
@@ -266,14 +289,15 @@ function buildCharacterCopilotPrompt(input: CharacterCopilotInput) {
     input.authorRequest,
   )
   const contract = structuredOutputContract()
+  const inputPolicy = input.inputGuidance
   const systemIndex = messages.findIndex(message => message.role === 'system')
   if (systemIndex >= 0) {
     messages[systemIndex] = {
       ...messages[systemIndex],
-      content: `${messages[systemIndex].content}\n\n${contract}`,
+      content: `${messages[systemIndex].content}\n\n${inputPolicy}\n\n${contract}`,
     }
   } else {
-    messages.unshift({ role: 'system', content: contract })
+    messages.unshift({ role: 'system', content: `${inputPolicy}\n\n${contract}` })
   }
   return messages
 }
@@ -303,8 +327,10 @@ function candidateIssues(
 
 export async function prepareCharacterCopilot(input: {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   authorRequest: string
+  skillId?: AgentSkillId
   /** 主 Agent 可把尚未写库的上游候选作为本轮显式证据传入，绝不冒充 Canon。 */
   supplementalContext?: string
   routingCategory?: string
@@ -312,6 +338,7 @@ export async function prepareCharacterCopilot(input: {
   /** 节点级 AI preset 的解析结果；未提供时沿用全局路由配置。 */
   configOverride?: AIConfig
   generationOverrides?: { temperature?: number; maxTokens?: number }
+  contextCompressionRuntime?: AgentContextCompressionRuntimeV1
   signal?: AbortSignal
 }): Promise<PreparedCharacterCopilot> {
   const project = await db.projects.get(input.projectId)
@@ -320,44 +347,80 @@ export async function prepareCharacterCopilot(input: {
     throw new Error(getT()('agent:copilot.character.multiWorldRequired'))
   }
   const worldGroupId = project.enableMultiWorld ? input.worldGroupId : null
-  const beforeRead = await readCharacterRosterSnapshot(input.projectId, worldGroupId)
+  const readScope = input.scope ?? await resolveReadScopeLike(input.projectId)
+  const scope = isLegacyReadScope(readScope) ? undefined : readScope
+  const beforeRead = await readCharacterRosterSnapshot(input.projectId, worldGroupId, scope)
   const routingCategory = input.routingCategory ?? 'character.generate'
   const config = input.configOverride ?? resolveRequestConfig(
     useAIConfigStore.getState().config,
     { category: routingCategory },
   ).config
   const contextProfile = input.contextProfile ?? 'full'
-  const contextPolicy = resolveAgentContextPolicy('agent-character', contextProfile)
-  const [worldPolicy, characterPolicy] = splitAgentContextPolicy(contextPolicy, [18_000, 10_500])
+  const skill = resolveAgentSkillV1('character', input.skillId)
+  const authorRequest = assertAuthorRequest(input.authorRequest)
+  const compression = input.contextCompressionRuntime
+    ? createAgentContextCompressionSessionV1({
+        policy: skill.contextCompression,
+        config,
+        projectId: input.projectId,
+        authorRequest,
+        routingCategory,
+        signal: input.signal,
+        runtime: input.contextCompressionRuntime,
+      })
+    : undefined
+  const tools = skill.readToolNames.map(name => AGENT_TOOL_BY_NAME.get(name)!)
+  if (tools.length < 2 || tools.some(tool => !tool)) {
+    throw new Error(`Agent Skill ${skill.id} 的只读工具契约无效`)
+  }
+  const contextPolicy = resolveAgentContextPolicy(skill.contextTaskKind, contextProfile)
+  const toolPolicies = splitAgentContextPolicy(
+    contextPolicy,
+    tools.map(tool => tool.inputBudgetTokens),
+  )
   const executionContext = {
     projectId: input.projectId,
     worldGroupId,
     provider: config.provider,
     model: config.model,
+    sourceTransformer: compression?.sourceTransformer,
   }
-  const [worldview, characters] = await Promise.all([
-    executeAgentTool('read_worldview', { ...executionContext, contextPolicy: worldPolicy }, {}),
-    executeAgentTool('read_characters', { ...executionContext, contextPolicy: characterPolicy }, {}),
-  ])
-  if (!worldview.ok) throw new Error(worldview.error || getT()('agent:copilot.character.cannotReadWorldview'))
-  if (!characters.ok) throw new Error(characters.error || getT()('agent:copilot.character.cannotReadCharacters'))
-  const afterRead = await readCharacterRosterSnapshot(input.projectId, worldGroupId)
+  const toolResults = await Promise.all(tools.map((tool, index) => (
+    executeAgentTool(tool.name, { ...executionContext, contextPolicy: toolPolicies[index] }, {})
+  )))
+  const failed = toolResults.find(result => !result.ok)
+  if (failed && !failed.ok) throw new Error(failed.error || '无法读取角色生成所需的正式上下文。')
+  const charactersIndex = tools.findIndex(tool => tool.name === 'read_characters')
+  const characters = charactersIndex >= 0 ? toolResults[charactersIndex] : null
+  if (!characters?.ok) throw new Error('角色 Skill 缺少 read_characters 正式来源。')
+  const afterRead = await readCharacterRosterSnapshot(input.projectId, worldGroupId, scope)
   if (beforeRead.serialized !== afterRead.serialized) throw new CharacterCopilotStaleError()
 
+  const contextResults = toolResults.map(result => result.meta)
+  const inputState = resolveAgentSkillInputStateV1(skill, contextResults)
+  const contextEvidence = attachAgentContextInputStateV1(
+    mergeContextEvidence(contextProfile, contextResults),
+    inputState,
+  )
+  const inputGuidance = buildAgentSkillInputGuidanceV1(skill, inputState)
   const nodeInput: CharacterCopilotInput = {
     projectId: input.projectId,
+    scope,
     projectName: project.name,
     genres: project.genres?.join('/') || project.genre || '',
     worldGroupId,
-    authorRequest: assertAuthorRequest(input.authorRequest),
+    authorRequest,
+    inputGuidance,
     worldContext: [
-      worldview.content,
+      ...toolResults
+        .filter((_, index) => index !== charactersIndex)
+        .map(result => result.content),
       input.supplementalContext?.trim()
         ? `【本轮上游候选（尚未采纳，不属于 Canon）】\n${input.supplementalContext.trim()}`
         : '',
     ].filter(Boolean).join('\n\n'),
     characterContext: characters.content,
-    contextSources: [...new Set([...worldview.meta.included, ...characters.meta.included])],
+    contextSources: [...new Set(toolResults.flatMap(result => result.meta.included))],
     snapshot: afterRead,
     config,
     generationOverrides: input.generationOverrides,
@@ -370,7 +433,7 @@ export async function prepareCharacterCopilot(input: {
     prepared: prepareGenerationNode(node, nodeInput),
     contextSources: nodeInput.contextSources,
     snapshot: afterRead,
-    contextEvidence: mergeContextEvidence(contextProfile, [worldview.meta, characters.meta]),
+    contextEvidence,
   }
 }
 
@@ -382,14 +445,15 @@ export function createCharacterCopilotNode(
   dependencies: CharacterCopilotDependencies = {},
 ): GenerationNode<CharacterCopilotInput, CharacterCopilotCandidate, AdoptResult> {
   const readCurrent = dependencies.readCurrent
-    ?? (() => readCharacterRosterSnapshot(input.projectId, input.worldGroupId))
-  const saveCharacter = dependencies.saveCharacter ?? (candidate => db.transaction(
-    'rw',
-    db.characters,
-    db.temporalFacts,
-    async () => {
+    ?? (() => readCharacterRosterSnapshot(input.projectId, input.worldGroupId, input.scope))
+  const saveCharacter = dependencies.saveCharacter ?? (async candidate => {
+    const workspaceScope = await resolveScope({ projectId: input.projectId, scope: input.scope })
+    return db.transaction(
+      'rw',
+      scopeTransactionTables(db.characters, db.temporalFacts),
+      async () => {
       // 将最终重复/过期检查与 adopt 写回锁进同一事务，避免多标签页在二者之间插入同名角色。
-      const lockedCurrent = await readCharacterRosterSnapshot(input.projectId, input.worldGroupId)
+      const lockedCurrent = await readCharacterRosterSnapshot(input.projectId, input.worldGroupId, workspaceScope)
       if (lockedCurrent.serialized !== input.snapshot.serialized) {
         throw new CharacterCopilotStaleError()
       }
@@ -398,6 +462,7 @@ export function createCharacterCopilotNode(
       }
       return adopt({
         projectId: input.projectId,
+        scope: workspaceScope,
         worldGroupId: input.worldGroupId,
         target: 'characters',
         mode: 'add',
@@ -406,8 +471,9 @@ export function createCharacterCopilotNode(
           isCrossWorld: false,
         },
       })
-    },
-  ))
+      },
+    )
+  })
   const runAI = dependencies.runAI ?? (messages => chat(messages, input.config, {
     category: input.routingCategory ?? 'character.generate',
     projectId: input.projectId,
@@ -459,23 +525,25 @@ export function createCharacterCopilotNode(
 /** 节点执行器与聊天副驾共用的正式角色采纳入口。 */
 export async function adoptCharacterCopilotCandidate(input: {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   snapshot: CharacterRosterSnapshot
   candidate: CharacterCopilotCandidate
 }): Promise<AdoptResult> {
   const parsed = parseCharacterCandidateDraft(JSON.stringify(input.candidate))
+  const workspaceScope = await resolveScope({ projectId: input.projectId, scope: input.scope })
   return db.transaction(
     'rw',
-    db.characters,
-    db.temporalFacts,
+    scopeTransactionTables(db.characters, db.temporalFacts),
     async () => {
-      const current = await readCharacterRosterSnapshot(input.projectId, input.worldGroupId)
+      const current = await readCharacterRosterSnapshot(input.projectId, input.worldGroupId, workspaceScope)
       if (current.serialized !== input.snapshot.serialized) throw new CharacterCopilotStaleError()
       if (current.visibleNames.includes(normalizeName(parsed.name))) {
         throw new CharacterCopilotDuplicateError(parsed.name)
       }
       return adopt({
         projectId: input.projectId,
+        scope: workspaceScope,
         worldGroupId: input.worldGroupId,
         target: 'characters',
         mode: 'add',
@@ -486,4 +554,34 @@ export async function adoptCharacterCopilotCandidate(input: {
       })
     },
   )
+}
+
+function compactCharacterRequestText(value: string | null | undefined, max: number): string {
+  return (value ?? '').trim().replace(/\s+/g, ' ').slice(0, max)
+}
+
+/**
+ * 分步骤角色面板与主 Agent 共用的任务合同入口。
+ * Prompt 参数仍可见、可审计，但不再由组件直接拼接上下文或决定写回路径。
+ */
+export function formatCharacterGenerationRequestV1(input: {
+  hint?: string
+  parameterValues?: Record<string, unknown>
+  systemOverride?: string | null
+  userOverride?: string | null
+}): string {
+  const parts = [
+    '生成一名新角色。只创建角色候选，不修改世界观、故事核心、故事线、大纲、物品或已有角色。',
+  ]
+  const hint = compactCharacterRequestText(input.hint, 640)
+  if (hint) parts.push(`作者要求与本轮维度：${hint}`)
+  if (input.parameterValues && Object.keys(input.parameterValues).length) {
+    const serialized = compactCharacterRequestText(JSON.stringify(input.parameterValues), 240)
+    if (serialized) parts.push(`模板参数：${serialized}`)
+  }
+  const systemOverride = compactCharacterRequestText(input.systemOverride, 160)
+  if (systemOverride) parts.push(`自定义系统要求：${systemOverride}`)
+  const userOverride = compactCharacterRequestText(input.userOverride, 160)
+  if (userOverride) parts.push(`自定义用户要求：${userOverride}`)
+  return parts.join('\n').slice(0, 1_000)
 }

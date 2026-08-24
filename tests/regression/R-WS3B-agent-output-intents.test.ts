@@ -90,7 +90,7 @@ describe('WS-3B · agent 调用点输出语义意图', () => {
     const plan = await createMasterAgentPlan({
       projectId,
       worldGroupId: null,
-      request: '设计一个守灯人角色',
+      request: '设计盐城世界观，并设计一个守灯人角色',
     })
 
     expect(plan.tasks.map(task => task.agentId)).toEqual(['character'])

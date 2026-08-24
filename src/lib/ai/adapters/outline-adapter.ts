@@ -7,6 +7,8 @@ import { appendUserConstraint } from './prompt-guards'
 export interface RunOptions {
   parameterValues?: Record<string, unknown>
   overrides?: { systemPrompt?: string; userPromptTemplate?: string }
+  /** Batch callers may explicitly resolve to no language and require neutral examples. */
+  contentLanguage?: SupportedLang | null
 }
 
 /**

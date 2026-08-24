@@ -3,6 +3,7 @@ import { prepareWorldOriginCopilot } from '../../src/lib/agent/world-origin-copi
 import { adoptGenerationNodeOutput } from '../../src/lib/generation/generation-node'
 import { db } from '../../src/lib/db/schema'
 import { PROJECT_TABLES } from '../../src/lib/registry/project-tables'
+import { ensureWorkspaceOwnership } from '../../src/lib/world-engine/ownership'
 
 async function projectTableCounts() {
   return Object.fromEntries(await Promise.all(PROJECT_TABLES.map(async spec => (
@@ -44,6 +45,7 @@ describe('AGENT-1 · ChatCopilot 注册表真实链路', () => {
       createdAt: now,
       updatedAt: now,
     }) as number
+    await ensureWorkspaceOwnership(projectId)
     const before = await projectTableCounts()
 
     const prepared = await prepareWorldOriginCopilot({
@@ -54,6 +56,11 @@ describe('AGENT-1 · ChatCopilot 注册表真实链路', () => {
 
     expect(prepared.contextSources).toContain('projectStatus')
     expect(prepared.contextSources).toContain('worldview')
+    expect(prepared.contextEvidence.inputState).toMatchObject({
+      state: 'partial',
+      handling: 'reference-and-create',
+    })
+    expect(prepared.prepared.messages.some(message => message.content.includes('partial / reference-and-create'))).toBe(true)
     expect(prepared.prepared.messages.some(message => message.content.includes('旧世界由潮汐孕育'))).toBe(true)
 
     const adopted = await adoptGenerationNodeOutput(

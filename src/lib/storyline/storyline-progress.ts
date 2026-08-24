@@ -11,12 +11,21 @@ import type {
   StorylineCrossing,
   StorylineProgress,
   StorylineProgressStatus,
+  WorkspaceScope,
 } from '../types'
 import { STORYLINE_PROGRESS_STATUSES, parseStages } from '../types'
 import { adopt } from '../registry/adopt'
 import { db } from '../db/schema'
 import { htmlToPlainText } from '../utils/html'
 import { resolveCanonicalChapterSequence } from '../ai/chapter-memory/canonical-chapter-sequence'
+import {
+  assertRecordInScope,
+  readOwnedRows,
+  resolveReadScopeLike,
+  resolveScope,
+  scopeTransactionTables,
+} from '../world-engine/scope'
+import { hashCanonicalValue } from '../agent/run/hash'
 
 export interface StorylineProgressCandidate {
   kind: 'progress'
@@ -127,7 +136,7 @@ export function parseStorylineProgressResult(args: {
     const arcId = finiteId(item.arcId)
     const boundary = arcId == null ? undefined : arcsById.get(arcId)
     const status = String(item.status ?? '').trim() as StorylineProgressStatus
-    const quote = String(item.quote ?? '').trim()
+    const quote = String(item.quote ?? item.evidenceQuote ?? '').trim()
     const note = String(item.progressNote ?? '').trim()
     const stageIdRaw = item.currentStageId == null ? null : String(item.currentStageId).trim()
     const stageId = stageIdRaw || null
@@ -154,7 +163,7 @@ export function parseStorylineProgressResult(args: {
     const rawA = finiteId(item.arcIdA)
     const rawB = finiteId(item.arcIdB)
     const note = String(item.note ?? '').trim()
-    const quote = String(item.quote ?? '').trim()
+    const quote = String(item.quote ?? item.evidenceQuote ?? '').trim()
     if (
       rawA == null || rawB == null || rawA === rawB
       || !arcsById.has(rawA) || !arcsById.has(rawB)
@@ -171,7 +180,7 @@ export function parseStorylineProgressResult(args: {
   const newArcs = arrayOfRecords(parsed.newArcs).flatMap((item): NewStorylineCandidate[] => {
     const name = String(item.name ?? '').trim()
     const description = String(item.description ?? '').trim()
-    const evidenceQuote = String(item.quote ?? '').trim()
+    const evidenceQuote = String(item.quote ?? item.evidenceQuote ?? '').trim()
     const arcType = String(item.type ?? '').trim() as 'main' | 'sub'
     const key = normalizeName(name)
     if (
@@ -190,16 +199,20 @@ export async function acceptStorylineProgressCandidate(args: {
   projectId: number
   chapterId: number
   candidate: StorylineProgressCandidate
+  scope?: WorkspaceScope
 }): Promise<number> {
+  const scope = await resolveScope({ projectId: args.projectId, scope: args.scope })
   const chapter = await assertChapterEvidence(
-    args.projectId,
+    scope,
     args.chapterId,
     args.candidate.evidenceQuote,
   )
-  await assertArcStageBoundary(args.projectId, args.candidate.arcId, args.candidate.currentStageId)
-  const existing = await db.storylineProgress.where('arcId').equals(args.candidate.arcId).first()
+  await assertArcStageBoundary(scope, args.candidate.arcId, args.candidate.currentStageId)
+  const existing = (await readOwnedRows<StorylineProgress>(scope, 'storylineProgress', { owner: 'work' }))
+    .find(row => row.arcId === args.candidate.arcId)
   const result = await adopt({
     projectId: args.projectId,
+    scope,
     target: 'storylineProgress',
     mode: existing?.id != null ? 'replace' : 'add',
     ...(existing?.id != null ? { recordId: existing.id } : {}),
@@ -221,22 +234,25 @@ export async function acceptStorylineCrossingCandidate(args: {
   projectId: number
   chapterId: number
   candidate: StorylineCrossingCandidate
+  scope?: WorkspaceScope
 }): Promise<number> {
+  const scope = await resolveScope({ projectId: args.projectId, scope: args.scope })
   if (args.candidate.arcIdA === args.candidate.arcIdB) throw new Error('故事线不能与自身交汇')
   const chapter = await assertChapterEvidence(
-    args.projectId,
+    scope,
     args.chapterId,
     args.candidate.evidenceQuote,
   )
   await Promise.all([
-    assertArcStageBoundary(args.projectId, args.candidate.arcIdA, null),
-    assertArcStageBoundary(args.projectId, args.candidate.arcIdB, null),
+    assertArcStageBoundary(scope, args.candidate.arcIdA, null),
+    assertArcStageBoundary(scope, args.candidate.arcIdB, null),
   ])
   const [arcIdA, arcIdB] = args.candidate.arcIdA < args.candidate.arcIdB
     ? [args.candidate.arcIdA, args.candidate.arcIdB]
     : [args.candidate.arcIdB, args.candidate.arcIdA]
   const result = await adopt({
     projectId: args.projectId,
+    scope,
     target: 'storylineCrossings',
     mode: 'add',
     data: {
@@ -255,13 +271,16 @@ export async function acceptStorylineCrossingCandidate(args: {
 export async function acceptNewStorylineCandidate(args: {
   projectId: number
   candidate: NewStorylineCandidate
+  scope?: WorkspaceScope
 }): Promise<number> {
-  const existing = await db.storyArcs.where('projectId').equals(args.projectId).toArray()
+  const scope = await resolveScope({ projectId: args.projectId, scope: args.scope })
+  const existing = await readOwnedRows<StoryArc>(scope, 'storyArcs', { owner: 'work' })
   if (existing.some(arc => normalizeName(arc.name) === normalizeName(args.candidate.name))) {
     throw new Error('同名故事线已登记，请重新映射后再处理')
   }
   const result = await adopt({
     projectId: args.projectId,
+    scope,
     target: 'storyArcs',
     mode: 'add',
     data: {
@@ -274,16 +293,118 @@ export async function acceptNewStorylineCandidate(args: {
   return requireWrittenId(result, '新故事线')
 }
 
+/**
+ * Durable storyline mapping adoption. A single author confirmation commits the
+ * complete mapping candidate through the existing adoption registry. New arcs
+ * remain static registrations; they do not receive progress automatically.
+ */
+export async function adoptStorylineAnalysisCandidates(args: {
+  projectId: number
+  chapterId: number
+  snapshot: { serialized: string; chapterContentHash: string; arcs: ArcBoundary[] }
+  candidate: StorylineAnalysisCandidates
+  scope?: WorkspaceScope
+}): Promise<Awaited<ReturnType<typeof adopt>>> {
+  const scope = await resolveScope({ projectId: args.projectId, scope: args.scope })
+  const chapter = await assertChapterEvidence(scope, args.chapterId, firstEvidenceQuote(args.candidate))
+  const content = htmlToPlainText(chapter.content || '')
+  const contentHash = await hashStorylineContent(content)
+  if (contentHash !== args.snapshot.chapterContentHash) {
+    throw new Error('正文已变化，候选证据不再成立，请重新映射')
+  }
+  const arcs = await readOwnedRows<StoryArc>(scope, 'storyArcs', { owner: 'work' })
+  const parsed = parseStorylineProgressResult({
+    raw: JSON.stringify(args.candidate),
+    chapterContent: content,
+    arcs,
+  })
+  if (
+    parsed.progress.length + parsed.crossings.length + parsed.newArcs.length === 0
+  ) throw new Error('故事线候选没有通过确定性证据校验。')
+  return db.transaction(
+    'rw',
+    scopeTransactionTables(db.storylineProgress, db.storylineCrossings, db.storyArcs, db.chapters),
+    async () => {
+      const results: Awaited<ReturnType<typeof adopt>>[] = []
+      for (const candidate of parsed.progress) {
+        await assertArcStageBoundary(scope, candidate.arcId, candidate.currentStageId)
+        const existing = (await readOwnedRows<StorylineProgress>(scope, 'storylineProgress', { owner: 'work' }))
+          .find(row => row.arcId === candidate.arcId)
+        results.push(assertCommittedAdoptResult(await adopt({
+          projectId: args.projectId,
+          scope,
+          target: 'storylineProgress',
+          mode: existing?.id != null ? 'replace' : 'add',
+          ...(existing?.id != null ? { recordId: existing.id } : {}),
+          data: {
+            arcId: candidate.arcId,
+            currentStageId: candidate.currentStageId,
+            status: candidate.status,
+            progressNote: candidate.progressNote,
+            lastActiveChapterId: args.chapterId,
+            lastActiveChapterTitle: chapter.title,
+            involvedEntities: candidate.involvedEntities,
+            evidenceQuote: candidate.evidenceQuote,
+          },
+        }), '故事线进度'))
+      }
+      for (const candidate of parsed.crossings) {
+        if (candidate.arcIdA === candidate.arcIdB) throw new Error('故事线不能与自身交汇')
+        await assertArcStageBoundary(scope, candidate.arcIdA, null)
+        await assertArcStageBoundary(scope, candidate.arcIdB, null)
+        const [arcIdA, arcIdB] = candidate.arcIdA < candidate.arcIdB
+          ? [candidate.arcIdA, candidate.arcIdB]
+          : [candidate.arcIdB, candidate.arcIdA]
+        results.push(assertCommittedAdoptResult(await adopt({
+          projectId: args.projectId,
+          scope,
+          target: 'storylineCrossings',
+          mode: 'add',
+          data: {
+            arcIdA,
+            arcIdB,
+            chapterId: args.chapterId,
+            chapterTitle: chapter.title,
+            note: candidate.note,
+            evidenceQuote: candidate.evidenceQuote,
+          },
+        }), '故事线交汇'))
+      }
+      const existingNames = new Set(arcs.map(arc => normalizeName(arc.name)))
+      for (const candidate of parsed.newArcs) {
+        const key = normalizeName(candidate.name)
+        if (existingNames.has(key)) throw new Error(`同名故事线“${candidate.name}”已登记，请重新映射。`)
+        existingNames.add(key)
+        results.push(assertCommittedAdoptResult(await adopt({
+          projectId: args.projectId,
+          scope,
+          target: 'storyArcs',
+          mode: 'add',
+          data: {
+            name: candidate.name,
+            type: candidate.arcType,
+            description: candidate.description,
+            stages: [],
+          },
+        }), '新故事线'))
+      }
+      return mergeAdoptResults(results)
+    },
+  )
+}
+
 export async function readStorylineProgressContext(
   projectId: number,
   chapterId?: number | null,
+  scope?: WorkspaceScope,
 ): Promise<string> {
+  const resolved = scope ?? await resolveReadScopeLike(projectId)
   const [arcs, rawProgress, rawCrossings, chapters, outlineNodes] = await Promise.all([
-    db.storyArcs.where('projectId').equals(projectId).toArray(),
-    db.storylineProgress.where('projectId').equals(projectId).toArray(),
-    db.storylineCrossings.where('projectId').equals(projectId).toArray(),
-    chapterId != null ? db.chapters.where('projectId').equals(projectId).toArray() : Promise.resolve([]),
-    chapterId != null ? db.outlineNodes.where('projectId').equals(projectId).toArray() : Promise.resolve([]),
+    readOwnedRows<StoryArc>(resolved, 'storyArcs', { owner: 'work' }),
+    readOwnedRows<StorylineProgress>(resolved, 'storylineProgress', { owner: 'work' }),
+    readOwnedRows<StorylineCrossing>(resolved, 'storylineCrossings', { owner: 'work' }),
+    chapterId != null ? readOwnedRows<any>(resolved, 'chapters', { owner: 'work' }) : Promise.resolve([]),
+    chapterId != null ? readOwnedRows<any>(resolved, 'outlineNodes', { owner: 'work' }) : Promise.resolve([]),
   ])
   let progress = rawProgress
   let crossings = rawCrossings
@@ -332,17 +453,21 @@ export async function readStorylineProgressContext(
   return lines.join('\n')
 }
 
-async function assertArcStageBoundary(projectId: number, arcId: number, stageId: string | null): Promise<void> {
+async function assertArcStageBoundary(scope: WorkspaceScope, arcId: number, stageId: string | null): Promise<void> {
   const arc = await db.storyArcs.get(arcId)
-  if (!arc || arc.projectId !== projectId) throw new Error('故事线不存在或不属于当前项目')
+  if (!arc || !await assertRecordInScope(scope, 'storyArcs', arc, { owner: 'work' })) {
+    throw new Error('故事线不存在或不属于当前作品')
+  }
   if (stageId != null && !parseStages(arc.stages).some(stage => stage.id === stageId)) {
     throw new Error('阶段不属于目标故事线')
   }
 }
 
-async function assertChapterEvidence(projectId: number, chapterId: number, quote: string) {
+async function assertChapterEvidence(scope: WorkspaceScope, chapterId: number, quote: string) {
   const chapter = await db.chapters.get(chapterId)
-  if (!chapter || chapter.projectId !== projectId) throw new Error('章节不存在或不属于当前项目')
+  if (!chapter || !await assertRecordInScope(scope, 'chapters', chapter, { owner: 'work' })) {
+    throw new Error('章节不存在或不属于当前作品')
+  }
   const content = htmlToPlainText(chapter.content || '')
   if (!isExactQuote(content, quote)) throw new Error('正文已变化，候选证据不再成立，请重新映射')
   return chapter
@@ -389,6 +514,59 @@ function isExactQuote(content: string, quote: string): boolean {
 
 function normalizeName(name: string): string {
   return name.trim().toLocaleLowerCase()
+}
+
+function firstEvidenceQuote(candidate: StorylineAnalysisCandidates): string {
+  return candidate.progress[0]?.evidenceQuote
+    || candidate.crossings[0]?.evidenceQuote
+    || candidate.newArcs[0]?.evidenceQuote
+    || ''
+}
+
+async function hashStorylineContent(content: string): Promise<string> {
+  return hashCanonicalValue(content)
+}
+
+function mergeAdoptResults(results: Awaited<ReturnType<typeof adopt>>[]): Awaited<ReturnType<typeof adopt>> {
+  return results.reduce((merged, result) => ({
+    ...merged,
+    written: [...merged.written, ...result.written],
+    aliasMapped: [...merged.aliasMapped, ...result.aliasMapped],
+    skipped: [...merged.skipped, ...result.skipped],
+    unknown: [...merged.unknown, ...result.unknown],
+    typeErrors: [...merged.typeErrors, ...result.typeErrors],
+    fkErrors: [...merged.fkErrors, ...result.fkErrors],
+  }), {
+    written: [],
+    aliasMapped: [],
+    skipped: [],
+    unknown: [],
+    typeErrors: [],
+    fkErrors: [],
+  } as Awaited<ReturnType<typeof adopt>>)
+}
+
+function assertCommittedAdoptResult(
+  result: Awaited<ReturnType<typeof adopt>>,
+  label: string,
+): Awaited<ReturnType<typeof adopt>> {
+  if (
+    result.written.length !== 1
+    || result.skipped.length > 0
+    || result.unknown.length > 0
+    || result.typeErrors.length > 0
+    || result.fkErrors.length > 0
+  ) {
+    const reason = result.skipped[0]?.reason
+      ?? result.unknown[0]
+      ?? result.typeErrors[0]?.field
+      ?? (result.fkErrors[0]
+        ? `${result.fkErrors[0].field}=${String(result.fkErrors[0].refValue)}`
+        : undefined)
+      ?? '未知原因'
+    throw new Error(`${label}采纳未完整写入：${reason}`)
+  }
+  return result
 }
 
 export type { StorylineProgress, StorylineCrossing }

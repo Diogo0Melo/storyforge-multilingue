@@ -117,6 +117,38 @@ function withRole(spec: FieldSpec, role: FieldRole): FieldSpec {
 }
 
 export const FIELD_REGISTRY: FieldSpec[] = [
+  // MEMORY-5: author-edited workspace roots. Stable identities, owner IDs,
+  // active pointers and derived counters remain outside the editable surface.
+  text('projects', 'name'),
+  longtext('projects', 'description'),
+  arr('projects', 'genres'),
+  enumeration('projects', 'status', ['drafting', 'ongoing', 'paused', 'completed']),
+  num('projects', 'targetWordCount'),
+  enumeration('projects', 'creativeMode', ['fantasy', 'historical']),
+  bool('projects', 'enableMultiWorld'),
+
+  text('worlds', 'name'),
+  longtext('worlds', 'description'),
+
+  text('works', 'title'),
+  longtext('works', 'description'),
+  arr('works', 'genres'),
+  enumeration('works', 'status', ['drafting', 'ongoing', 'paused', 'completed']),
+  num('works', 'targetWordCount'),
+  text('works', 'writingStyleId'),
+  text('works', 'methodologyId'),
+
+  // HARNESS-68: AI may propose new World-owned worldGroups only through the
+  // registered collection adoption boundary. Owner IDs and timestamps are stamped.
+  text('worldGroups', 'name', ['世界名称']),
+  enumeration('worldGroups', 'type', ['traversal', 'instance', 'parallel', 'ascension', 'custom']),
+  longtext('worldGroups', 'description', ['世界描述']),
+  text('worldGroups', 'icon', ['世界图标']),
+  num('worldGroups', 'order', ['世界顺序']),
+  longtext('worldGroups', 'entryCondition', ['进入条件']),
+  longtext('worldGroups', 'powerRestriction', ['能力限制']),
+  num('worldGroups', 'plannedChapterCount', ['预计章节数']),
+
   // worldviews: legacy free-text fields still used by existing panels.
   longtext('worldviews', 'geography', ['地理']),
   longtext('worldviews', 'history', ['旧历史']),
@@ -147,6 +179,26 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   longtext('worldviews', 'cultureOverview', ['文化概述', '文化制度概述']),
   longtext('worldviews', 'internalConflicts', ['conflicts', '内部矛盾']),
   longtext('worldviews', 'itemDesign', ['items', 'artifactDesign', '道具设计']),
+
+  // 世界引擎人工/确定性初始化共用的正式世界基础字段。
+  // 这些表已经由 PROJECT_TABLES 管理生命周期；登记后，演示安装器也必须经 adopt() 写入，
+  // 不能为了预置内容另开直接写库旁路。
+  object('worldRulesProfiles', 'entries', ['世界规则条目']),
+  arr('worldRulesProfiles', 'customNodes', ['自定义世界规则节点']),
+  longtext('worldRulesProfiles', 'globalNote', ['世界规则总则']),
+
+  longtext('geographies', 'overview', ['地理总述']),
+  json('geographies', 'locations', ['地理地点']),
+  json('geographies', 'worldMapData', ['世界地图数据']),
+
+  longtext('histories', 'overview', ['历史总述']),
+  longtext('histories', 'eraSystem', ['纪年体系']),
+  json('histories', 'events', ['历史事件']),
+
+  text('powerSystems', 'name', ['力量体系名称']),
+  longtext('powerSystems', 'description', ['力量体系描述']),
+  json('powerSystems', 'levels', ['力量层级']),
+  longtext('powerSystems', 'rules', ['力量体系规则']),
 
   // storyCores: storyLines 作为旧字段别名归一到 mainPlot。
   withRole(longtext('storyCores', 'theme', ['主题']), 'free-text'),
@@ -279,6 +331,7 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   num('chapters', 'wordCount'),
   enumeration('chapters', 'status', ['outline', 'draft', 'revised', 'polished', 'final'], chapterStatusAliases, ['状态']),
   num('chapters', 'order'),
+  num('chapters', 'perspectiveCharacterId', ['叙事视角角色']),
   longtext('chapters', 'notes', ['笔记']),
 
   num('detailedOutlines', 'outlineNodeId'),
@@ -292,6 +345,13 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   enumeration('detailedOutlines', 'emotionArc', ['rising', 'falling', 'flat', 'wave', 'climax']),
   arr('detailedOutlines', 'prohibitions'),
   longtext('detailedOutlines', 'lastUsedSummary'),
+
+  // AI 情感节拍候选确认后经 adopt() 定点更新当前章节卡。
+  num('emotionBeatCards', 'chapterId'),
+  text('emotionBeatCards', 'chapterTitle'),
+  longtext('emotionBeatCards', 'overallArc'),
+  json('emotionBeatCards', 'beats'),
+  enumeration('emotionBeatCards', 'source', ['ai', 'manual']),
 
   // foreshadows / story arcs
   text('foreshadows', 'name', ['伏笔名']),
@@ -397,6 +457,9 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   num('importantLocations', 'parentId'),
   num('importantLocations', 'sortOrder'),
 
+  // HARNESS-66: AI map configurations may update one existing world node only.
+  json('worldNodes', 'mapConfigJSON', ['地图配置']),
+
   text('itemLedger', 'itemName', ['物品名']),
   enumeration('itemLedger', 'action', ['gain', 'consume'], { 获得: 'gain', 消耗: 'consume', 失去: 'consume' }),
   num('itemLedger', 'quantity', ['数量']),
@@ -479,6 +542,10 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   json('inspirationWorkspaces', 'fragments'),
   json('inspirationWorkspaces', 'versions'),
 
+  // STORY-1: AI 只能定点更新既有角色驱动方案的候选结果，不能创建或改写方案输入。
+  json('characterDrivenPlans', 'generatedVolumes'),
+  enumeration('characterDrivenPlans', 'status', ['draft', 'generated', 'adopted']),
+
   num('referenceChunkAnalysis', 'referenceId'),
   num('referenceChunkAnalysis', 'analysisRunId'),
   num('referenceChunkAnalysis', 'chunkIndex'),
@@ -510,6 +577,15 @@ export const FIELD_REGISTRY: FieldSpec[] = [
   longtext('historicalTimelineEvents', 'aiBrainstorm'),
   longtext('historicalKeywords', 'aiConsult'),
   longtext('historicalKeywords', 'aiBrainstorm'),
+
+  // HARNESS-76: durable style learning may replace only the generated profile
+  // and its deterministic sampling receipt. Revision pairs and calibration
+  // feedback remain explicit author actions outside this AI write boundary.
+  longtext('userStyleProfiles', 'profile'),
+  bool('userStyleProfiles', 'enabled'),
+  json('userStyleProfiles', 'sourceChapterIds'),
+  num('userStyleProfiles', 'sampleCount'),
+  num('userStyleProfiles', 'sampleWords'),
 
   enumeration('stateCards', 'category', ['character', 'location', 'item', 'faction', 'event']),
   text('stateCards', 'entityName', ['角色名', '实体名']),

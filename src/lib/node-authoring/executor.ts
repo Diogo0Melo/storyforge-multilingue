@@ -2,9 +2,14 @@ import { getT } from '../../i18n'
 import { estimateTokens } from '../ai/context-budget'
 import { chat } from '../ai/client'
 import { useAIConfigStore } from '../../stores/ai-config'
+import {
+  isCreativeReliabilityRuntimeEnabledV1,
+  parseCreativeArtifactV1,
+  resolveCreativeQualityPolicyV1,
+} from '../agent/creative-reliability'
 import { db } from '../db/schema'
 import { adopt } from '../registry/adopt'
-import type { NodeFlow, NodeRunRecord } from '../types'
+import type { NodeFlow, NodeRunRecord, WorkspaceScope } from '../types'
 import { AUTHORING_NODE_BY_ID, authoringDynamicOutputKind } from './catalog'
 import {
   hashAuthoringText,
@@ -24,6 +29,7 @@ import type {
 } from './contracts'
 import { safeAuthoringGraphJson } from './contracts'
 import { adoptDomainCandidate, executeDomainNode } from './domain-execution'
+import { assertRecordInScope, readOwnedRows, resolveScopeLike, stampNewRecord } from '../world-engine/scope'
 
 export interface AuthoringRunSnapshot {
   nodeId: string
@@ -58,6 +64,7 @@ export interface AuthoringExecutionPlan {
   completedNodeIds: string[]
   pendingNodeIds: string[]
   estimatedAiCalls: number
+  estimatedMaxAiCalls: number
   estimatedMaxOutputTokens: number
   createdAt: number
 }
@@ -168,8 +175,12 @@ export function buildAuthoringExecutionPlan(input: {
     ? allOrdered.filter(node => input.runNodeIds?.has(node.id))
     : allOrdered
   let estimatedAiCalls = 0
+  let estimatedMaxAiCalls = 0
   let estimatedMaxOutputTokens = 0
-  const defaultMaxTokens = useAIConfigStore.getState().config.maxTokens
+  const aiState = useAIConfigStore.getState()
+  const defaultMaxTokens = aiState.config.maxTokens > 0 ? aiState.config.maxTokens : 16_000
+  const reliabilityEnabled = isCreativeReliabilityRuntimeEnabledV1()
+  const reliabilityPolicy = resolveCreativeQualityPolicyV1(aiState.creativeQualityMode)
   for (const node of ordered) {
     const template = AUTHORING_NODE_BY_ID.get(node.templateId)
     const usesAI = template?.capability === 'generate-field'
@@ -182,14 +193,24 @@ export function buildAuthoringExecutionPlan(input: {
       'control.count',
       numberConfig(node, 'candidateCount', 1),
     ))))
-    const maxTokens = Math.max(100, Math.round(graphControlNumber(
+    const requestedMaxTokens = graphControlNumber(
       input.graph,
       node,
       'control.max-tokens',
       numberConfig(node, 'maxTokens', defaultMaxTokens),
-    )))
+    )
+    const maxTokens = requestedMaxTokens > 0
+      ? Math.max(100, Math.round(requestedMaxTokens))
+      : 16_000
+    const canRepairOnce = reliabilityEnabled
+      && reliabilityPolicy.allowAutomaticRepair
+      && (node.templateId === 'outline.volume'
+        || node.templateId === 'outline.chapter'
+        || node.templateId === 'chapter.prose')
+    const maxCalls = canRepairOnce ? count * 2 : count
     estimatedAiCalls += count
-    estimatedMaxOutputTokens += count * maxTokens
+    estimatedMaxAiCalls += maxCalls
+    estimatedMaxOutputTokens += maxCalls * maxTokens
   }
   const orderedNodeIds = ordered.map(node => node.id)
   return {
@@ -200,6 +221,7 @@ export function buildAuthoringExecutionPlan(input: {
     completedNodeIds: [],
     pendingNodeIds: [...orderedNodeIds],
     estimatedAiCalls,
+    estimatedMaxAiCalls,
     estimatedMaxOutputTokens,
     createdAt: Date.now(),
   }
@@ -216,7 +238,18 @@ export function parseAuthoringExecutionPlan(value: string | null | undefined): A
       || !Array.isArray(parsed.completedNodeIds)
       || !Array.isArray(parsed.pendingNodeIds)
     ) return null
-    return parsed as AuthoringExecutionPlan
+    const estimatedAiCalls = Number.isInteger(parsed.estimatedAiCalls) && (parsed.estimatedAiCalls ?? -1) >= 0
+      ? parsed.estimatedAiCalls!
+      : 0
+    const estimatedMaxAiCalls = Number.isInteger(parsed.estimatedMaxAiCalls)
+      && (parsed.estimatedMaxAiCalls ?? -1) >= estimatedAiCalls
+      ? parsed.estimatedMaxAiCalls!
+      : estimatedAiCalls
+    return {
+      ...(parsed as AuthoringExecutionPlan),
+      estimatedAiCalls,
+      estimatedMaxAiCalls,
+    }
   } catch {
     return null
   }
@@ -227,10 +260,20 @@ function parseRunMaps(run: NodeRunRecord): {
   candidates: AuthoringCandidateMap
 } {
   try {
-    return {
-      snapshots: JSON.parse(run.inputSnapshotsJson || '{}') as AuthoringRunSnapshotMap,
-      candidates: JSON.parse(run.nodeResultsJson || '{}') as AuthoringCandidateMap,
+    const snapshots = JSON.parse(run.inputSnapshotsJson || '{}') as AuthoringRunSnapshotMap
+    const candidates = JSON.parse(run.nodeResultsJson || '{}') as AuthoringCandidateMap
+    for (const [nodeId, candidate] of Object.entries(candidates)) {
+      if (!candidate || typeof candidate !== 'object' || Array.isArray(candidate)) {
+        throw new Error(`节点 ${nodeId} 的候选记录无效。`)
+      }
+      if (candidate.creativeArtifacts !== undefined) {
+        if (!Array.isArray(candidate.creativeArtifacts) || candidate.creativeArtifacts.length > 8) {
+          throw new Error(`节点 ${nodeId} 的创作产物证据无效。`)
+        }
+        candidate.creativeArtifacts = candidate.creativeArtifacts.map(item => parseCreativeArtifactV1(item))
+      }
     }
+    return { snapshots, candidates }
   } catch {
     throw new Error(getT()('node-authoring:executor.runRecordCorrupted'))
   }
@@ -240,6 +283,7 @@ async function executeNode(input: {
   node: AuthoringNodeInstance
   inputs: AuthoringInputEnvelope[]
   projectId: number
+  scope: WorkspaceScope
   worldGroupId: number | null
   signal?: AbortSignal
 }): Promise<{
@@ -250,6 +294,7 @@ async function executeNode(input: {
   sourceEvidence?: AuthoringRunSnapshot['sourceEvidence']
   semantic: AuthoringCandidate['semantic']
   domain?: AuthoringCandidateDomain
+  creativeArtifacts?: AuthoringCandidate['creativeArtifacts']
 }> {
   const template = AUTHORING_NODE_BY_ID.get(input.node.templateId)
   if (!template) throw new Error(getT()('node-authoring:executor.templateMissing', { templateId: input.node.templateId }))
@@ -258,6 +303,7 @@ async function executeNode(input: {
     const binding = await readAuthoringCanonBinding({
       node,
       projectId: input.projectId,
+      scope: input.scope,
       worldGroupId: input.worldGroupId,
       contextBudget: numberConfig(node, 'contextBudget', 12_000),
     })
@@ -285,6 +331,7 @@ async function executeNode(input: {
     const binding = await readAuthoringCanonBinding({
       node,
       projectId: input.projectId,
+      scope: input.scope,
       worldGroupId: input.worldGroupId,
       contextBudget: numberConfig(node, 'contextBudget', 12_000),
     })
@@ -333,12 +380,19 @@ async function executeNode(input: {
     return { output: variants.join('\n\n--- 候选分隔 ---\n\n'), variants, semantic: 'candidate' }
   }
   if (template.capability === 'generate-field' || template.capability === 'generate-collection') {
+    const aiState = useAIConfigStore.getState()
     const domain = await executeDomainNode({
       node,
       inputs,
       projectId: input.projectId,
+      scope: input.scope,
       worldGroupId: input.worldGroupId,
       aiConfig: requestedAIConfig(node, inputs),
+      creativeReliability: {
+        enabled: isCreativeReliabilityRuntimeEnabledV1(),
+        qualityMode: aiState.creativeQualityMode,
+        budgetProfile: aiState.agentTeamBudgetProfile,
+      },
       signal: input.signal,
     })
     if (domain) return domain
@@ -351,6 +405,7 @@ async function executeNode(input: {
       ? await readAuthoringCanonBinding({
           node,
           projectId: input.projectId,
+          scope: input.scope,
           worldGroupId: input.worldGroupId,
           contextBudget: numberConfig(node, 'contextBudget', 16_000),
         })
@@ -426,12 +481,19 @@ export async function adoptAuthoringCandidate(input: {
   nodeId: string
   output: string
 }) {
+  if (input.flow.id == null) throw new Error('请先保存节点图。')
+  const scope = await resolveScopeLike(input.flow.projectId)
+  const storedFlow = await db.nodeFlows.get(input.flow.id)
+  if (!storedFlow || !await assertRecordInScope(scope, 'nodeFlows', storedFlow, { owner: 'work' })) {
+    throw new Error('节点图不存在或不属于当前作品。')
+  }
   const parsed = parseAuthoringGraph(input.flow.graphJson)
   const node = parsed.graph.nodes.find(item => item.id === input.nodeId)
   if (!node) throw new Error(getT()('node-authoring:executor.candidateNodeMissing'))
   if (node.binding?.mode === 'live') throw new Error(getT()('node-authoring:executor.liveBindingReadOnly'))
   const template = AUTHORING_NODE_BY_ID.get(node.templateId)
-  const latestRuns = await db.nodeRuns.where('flowId').equals(input.flow.id!).toArray()
+  const latestRuns = (await readOwnedRows<NodeRunRecord>(scope, 'nodeRuns', { owner: 'work' }))
+    .filter(run => run.flowId === input.flow.id)
   latestRuns.sort((left, right) => right.startedAt - left.startedAt)
   let expectedSignature: AuthoringRunSignature | undefined
   let latestDomain: AuthoringCandidate['domain']
@@ -451,6 +513,7 @@ export async function adoptAuthoringCandidate(input: {
     const currentTarget = await readAuthoringTargetFingerprint({
       node,
       projectId: input.flow.projectId,
+      scope,
       worldGroupId: input.flow.worldGroupId ?? null,
     })
     if (currentTarget && !currentTarget.ambiguous && currentTarget.hash !== expectedSignature.targetHash) {
@@ -463,6 +526,7 @@ export async function adoptAuthoringCandidate(input: {
       domain: latestDomain,
       output: input.output,
       projectId: input.flow.projectId,
+      scope,
       worldGroupId: input.flow.worldGroupId ?? null,
     })
     if (adopted) return adopted
@@ -473,6 +537,7 @@ export async function adoptAuthoringCandidate(input: {
     const recordId = await resolveAuthoringBoundRecordId({
       node,
       projectId: input.flow.projectId,
+      scope,
       worldGroupId: input.flow.worldGroupId ?? null,
       target: write.target,
     })
@@ -481,6 +546,7 @@ export async function adoptAuthoringCandidate(input: {
     }
     return adopt({
       projectId: input.flow.projectId,
+      scope,
       worldGroupId: input.flow.worldGroupId ?? null,
       target: write.target,
       ...(recordId == null ? {} : { recordId }),
@@ -500,6 +566,7 @@ export async function adoptAuthoringCandidate(input: {
   if (!data.length) throw new Error(getT()('node-authoring:executor.noAdoptableRecords'))
   return adopt({
     projectId: input.flow.projectId,
+    scope,
     worldGroupId: input.flow.worldGroupId ?? null,
     target: write.target,
     mode: write.mode === 'replace' ? 'add-many' : write.mode,
@@ -525,6 +592,53 @@ async function persistAuthoringRun(
   })
 }
 
+/**
+ * Called only after the normal domain adoption path succeeds. It records the
+ * author's edited candidate without starting another model call, so a failed
+ * graph can resume from the next node instead of paying to regenerate the same
+ * artifact.
+ */
+export async function persistAdoptedAuthoringCandidate(input: {
+  flow: NodeFlow
+  runId: number
+  nodeId: string
+  output: string
+}): Promise<NodeRunRecord> {
+  if (input.flow.id == null) throw new Error('请先保存节点图。')
+  const scope = await resolveScopeLike(input.flow.projectId)
+  const run = await db.nodeRuns.get(input.runId)
+  if (!run || run.flowId !== input.flow.id
+    || !await assertRecordInScope(scope, 'nodeRuns', run, { owner: 'work' })) {
+    throw new Error('节点运行记录不存在或不属于当前节点图。')
+  }
+  const plan = parseAuthoringExecutionPlan(run.executionPlanJson)
+  if (!plan) throw new Error('节点运行计划损坏，不能保存作者修复。')
+  const { snapshots, candidates } = parseRunMaps(run)
+  const candidate = candidates[input.nodeId]
+  if (!candidate) throw new Error('当前运行中没有这个候选。')
+  const edited = input.output !== candidate.output
+  const { errors: _errors, ...candidateWithoutErrors } = candidate
+  candidates[input.nodeId] = {
+    ...candidateWithoutErrors,
+    output: input.output,
+    status: 'adopted',
+    ...(edited || candidate.authorEditedAfterArtifact ? { authorEditedAfterArtifact: true } : {}),
+  }
+  const stillBlocked = plan.completedNodeIds.some(nodeId => candidates[nodeId]?.status === 'blocked')
+  const completed = plan.pendingNodeIds.length === 0 && !stillBlocked
+  const updatedAt = Date.now()
+  const status = completed ? 'completed' : run.status
+  const completedAt = completed ? updatedAt : run.completedAt
+  await persistAuthoringRun(input.runId, status, snapshots, candidates, plan, completedAt)
+  return {
+    ...run,
+    status,
+    nodeResultsJson: JSON.stringify(candidates),
+    updatedAt,
+    completedAt,
+  }
+}
+
 export async function runAuthoringGraph(input: {
   flow: NodeFlow
   targetNodeId?: string | null
@@ -537,6 +651,11 @@ export async function runAuthoringGraph(input: {
   onUpdate?: (update: AuthoringRunUpdate) => void
 }): Promise<AuthoringRunUpdate> {
   if (input.flow.id == null) throw new Error(getT()('node-authoring:executor.saveGraphFirst'))
+  const scope = await resolveScopeLike(input.flow.projectId)
+  const storedFlow = await db.nodeFlows.get(input.flow.id)
+  if (!storedFlow || !await assertRecordInScope(scope, 'nodeFlows', storedFlow, { owner: 'work' })) {
+    throw new Error('节点图不存在或不属于当前作品。')
+  }
   const parsed = parseAuthoringGraph(input.flow.graphJson)
   const issues = validateAuthoringGraph(parsed.graph)
   if (issues.length) throw new Error(issues.map(issue => issue.message).join('；'))
@@ -556,7 +675,8 @@ export async function runAuthoringGraph(input: {
 
   if (input.resumeRunId != null) {
     const existing = await db.nodeRuns.get(input.resumeRunId)
-    if (!existing || existing.flowId !== input.flow.id || existing.projectId !== input.flow.projectId) {
+    if (!existing || existing.flowId !== input.flow.id
+      || !await assertRecordInScope(scope, 'nodeRuns', existing, { owner: 'work' })) {
       throw new Error(getT()('node-authoring:executor.resumeRunMissing'))
     }
     if (existing.status !== 'paused' && existing.status !== 'failed') {
@@ -568,6 +688,10 @@ export async function runAuthoringGraph(input: {
     }
     ;({ snapshots, candidates } = parseRunMaps(existing))
     const completed = new Set(previousPlan.completedNodeIds)
+    const unresolved = previousPlan.completedNodeIds.filter(nodeId => candidates[nodeId]?.status === 'blocked')
+    if (unresolved.length) {
+      throw new Error('上次运行保留了需要手动修复的候选；请先编辑并确认采纳，再继续下游节点。')
+    }
     ordered = previousPlan.orderedNodeIds
       .filter(nodeId => !completed.has(nodeId))
       .map(nodeId => parsed.graph.nodes.find(node => node.id === nodeId))
@@ -588,12 +712,17 @@ export async function runAuthoringGraph(input: {
   } else {
     if (input.baseRunId != null) {
       const base = await db.nodeRuns.get(input.baseRunId)
-      if (!base || base.flowId !== input.flow.id || base.projectId !== input.flow.projectId) {
+      if (!base || base.flowId !== input.flow.id
+        || !await assertRecordInScope(scope, 'nodeRuns', base, { owner: 'work' })) {
         throw new Error(getT()('node-authoring:executor.staleBaseMissing'))
+      }
+      const basePlan = parseAuthoringExecutionPlan(base.executionPlanJson)
+      if (!basePlan || basePlan.graphHash !== plan.graphHash) {
+        throw new Error('节点图已变化，不能复用旧运行候选；请开始一次新的运行。')
       }
       ;({ snapshots, candidates } = parseRunMaps(base))
     }
-    const row: NodeRunRecord = {
+    const row = stampNewRecord(scope, 'nodeRuns', {
       projectId: input.flow.projectId,
       flowId: input.flow.id,
       status: 'running',
@@ -604,7 +733,7 @@ export async function runAuthoringGraph(input: {
       startedAt: now,
       updatedAt: now,
       completedAt: null,
-    }
+    } as NodeRunRecord, { owner: 'work' }) as NodeRunRecord
     runId = await db.nodeRuns.add(row) as number
     run = { ...row, id: runId }
   }
@@ -627,12 +756,14 @@ export async function runAuthoringGraph(input: {
         node,
         inputs,
         projectId: input.flow.projectId,
+        scope,
         worldGroupId: input.flow.worldGroupId ?? null,
         signal: input.signal,
       })
       const targetFingerprint = await readAuthoringTargetFingerprint({
         node,
         projectId: input.flow.projectId,
+        scope,
         worldGroupId: input.flow.worldGroupId ?? null,
       })
       snapshots[node.id].sourceHash = executed.sourceHash
@@ -647,20 +778,43 @@ export async function runAuthoringGraph(input: {
         aiPresetId: stringConfig(node, 'aiPresetId') || undefined,
         executorVersion: 'FLOW-3B.2',
       }
+      const selectedArtifact = executed.creativeArtifacts?.[0]
+      const reliabilityBlocked = selectedArtifact?.status === 'manual-repair'
+        || selectedArtifact?.status === 'blocked'
       candidates[node.id] = {
         nodeId: node.id,
-        status: node.binding?.mode === 'live' ? 'adopted' : 'candidate',
+        status: node.binding?.mode === 'live' ? 'adopted' : reliabilityBlocked ? 'blocked' : 'candidate',
         output: executed.output,
         ...(executed.variants ? { variants: executed.variants } : {}),
+        ...(executed.creativeArtifacts ? {
+          creativeArtifacts: executed.creativeArtifacts,
+          selectedVariantIndex: 0,
+        } : {}),
         ...('domain' in executed ? { domain: executed.domain } : {}),
         semantic: executed.semantic,
         signature,
+        ...(reliabilityBlocked ? {
+          errors: selectedArtifact.issues.map(issue => issue.message),
+        } : {}),
         createdAt: Date.now(),
       }
       plan = {
         ...plan,
         completedNodeIds: Array.from(new Set([...plan.completedNodeIds, node.id])),
         pendingNodeIds: plan.pendingNodeIds.filter(nodeId => nodeId !== node.id),
+      }
+      if (reliabilityBlocked) {
+        const completedAt = Date.now()
+        await persistAuthoringRun(runId, 'failed', snapshots, candidates, plan, completedAt)
+        const failed = {
+          ...run,
+          status: 'failed' as const,
+          updatedAt: completedAt,
+          completedAt,
+          executionPlanJson: JSON.stringify(plan),
+        }
+        emit(failed)
+        return { run: failed, snapshots, candidates }
       }
       await persistAuthoringRun(runId, 'running', snapshots, candidates, plan, null)
       emit({ ...run, updatedAt: Date.now(), executionPlanJson: JSON.stringify(plan) })

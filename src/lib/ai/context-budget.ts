@@ -9,6 +9,7 @@
  */
 
 import type { AIProvider, ChatMessage } from '../types'
+import { normalizeProviderModel } from '../types/ai'
 import {
   CONTINUITY_CORE_END,
   CONTINUITY_CORE_START,
@@ -61,6 +62,10 @@ export const MODEL_CONTEXT_PRESETS: Record<string, ModelContextPreset> = {
 
   // Doubao
   'doubao': { label: '豆包默认', maxContext: 32_000, maxOutput: 4_096 },
+  'doubao:doubao-1-5-pro-32k-250115': { label: 'Doubao 1.5 Pro 32K', maxContext: 32_000, maxOutput: 4_096 },
+  'doubao:deepseek-v4-flash-ga-260731': { label: 'DeepSeek V4 Flash 正式版（火山方舟）', maxContext: 128_000, maxOutput: 8_192 },
+  'doubao:deepseek-v4-pro-260425': { label: 'DeepSeek V4 Pro（火山方舟）', maxContext: 128_000, maxOutput: 16_384 },
+  'doubao:deepseek-v4-flash-260425': { label: 'DeepSeek V4 Flash（火山方舟）', maxContext: 128_000, maxOutput: 8_192 },
 
   // GLM
   'glm': { label: 'GLM 默认', maxContext: 128_000, maxOutput: 4_096 },
@@ -77,10 +82,11 @@ export const MODEL_CONTEXT_PRESETS: Record<string, ModelContextPreset> = {
   'nvidia:mistralai/mistral-large-2-instruct': { label: 'Mistral Large 2', maxContext: 128_000, maxOutput: 4_096 },
   'nvidia:nvidia/llama-3.1-nemotron-70b-instruct': { label: 'Nemotron 70B', maxContext: 128_000, maxOutput: 4_096 },
 
-  // Agnes AI(清华系免费 · 1M 上下文)
-  'agnes': { label: 'Agnes 默认', maxContext: 1_000_000, maxOutput: 8_192 },
-  'agnes:agnes-1.5-flash': { label: 'Agnes 1.5 Flash', maxContext: 1_000_000, maxOutput: 8_192 },
-  'agnes:Agnes-2.0-Flash': { label: 'Agnes 2.0 Flash', maxContext: 1_000_000, maxOutput: 8_192 },
+  // Agnes AI（官方模型目录 2026-07-30；2.0 的临时 1M 窗口已撤回）
+  'agnes': { label: 'Agnes 默认', maxContext: 524_288, maxOutput: 65_536 },
+  'agnes:agnes-2.5-flash': { label: 'Agnes 2.5 Flash', maxContext: 524_288, maxOutput: 65_536 },
+  'agnes:agnes-1.5-flash': { label: 'Agnes 1.5 Flash', maxContext: 262_144, maxOutput: 65_536 },
+  'agnes:agnes-2.0-flash': { label: 'Agnes 2.0 Flash', maxContext: 262_144, maxOutput: 65_536 },
 
   // LongCat(美团 · OpenAI 兼容 · 1M 上下文)
   'longcat': { label: 'LongCat 默认', maxContext: 1_000_000, maxOutput: 128_000 },
@@ -113,7 +119,7 @@ export const MODEL_CONTEXT_PRESETS: Record<string, ModelContextPreset> = {
 /** 获取模型的上下文窗口预设 */
 export function getModelPreset(provider: AIProvider, model: string): ModelContextPreset {
   // 先精确匹配 provider:model
-  const exact = MODEL_CONTEXT_PRESETS[`${provider}:${model}`]
+  const exact = MODEL_CONTEXT_PRESETS[`${provider}:${normalizeProviderModel(provider, model)}`]
   if (exact) return exact
   // 再用 provider 默认
   const fallback = MODEL_CONTEXT_PRESETS[provider]
@@ -285,6 +291,7 @@ export function trimMessagesToFit(
   model: string,
   maxOutput?: number,
   contextWindowOverride?: number,
+  reservedInputTokensOrProtectedConstraint: number | string = 0,
   protectedConstraint?: string,
 ): TrimmedMessagesResult {
   const preset = getModelPreset(provider, model)
@@ -295,21 +302,43 @@ export function trimMessagesToFit(
   const safetyMargin = Math.round(maxContext * 0.05)
   const inputBudget = maxContext - outputBudget - safetyMargin
   const copy = messages.map(message => ({ ...message }))
+  // The sixth argument accepts either upstream request overhead or the local
+  // language constraint; the seventh argument is the explicit combined form.
+  const reservedInputTokens = typeof reservedInputTokensOrProtectedConstraint === 'number'
+    ? reservedInputTokensOrProtectedConstraint
+    : 0
+  const requestedConstraint = typeof reservedInputTokensOrProtectedConstraint === 'string'
+    ? reservedInputTokensOrProtectedConstraint
+    : protectedConstraint
 
   // G2A：把受保护约束从基础消息中剥离，使其不参与裁剪、只参与预算预留
   let constraint: string | undefined
-  if (protectedConstraint) {
+  if (requestedConstraint) {
     const lastUser = [...copy].reverse().find(message => message.role === 'user')
-    if (lastUser && lastUser.content.endsWith(protectedConstraint)) {
-      lastUser.content = lastUser.content.slice(0, lastUser.content.length - protectedConstraint.length)
+    if (lastUser && lastUser.content.endsWith(requestedConstraint)) {
+      lastUser.content = lastUser.content.slice(0, lastUser.content.length - requestedConstraint.length)
       if (lastUser.content.endsWith('\n\n')) {
         lastUser.content = lastUser.content.slice(0, -2)
       }
-      constraint = protectedConstraint
+      constraint = requestedConstraint
     }
   }
   const constraintTokens = constraint ? estimateTokens(constraint) : 0
-  const baseBudget = inputBudget - constraintTokens
+  const reserved = Number.isFinite(reservedInputTokens)
+    ? Math.max(0, Math.floor(reservedInputTokens))
+    : 0
+  const baseBudget = inputBudget - constraintTokens - reserved
+
+  if (requestedConstraint && !constraint) {
+    return {
+      messages: messages.map(message => ({ ...message })),
+      trimmed: false,
+      totalInputTokens: messages.reduce((sum, message) => sum + estimateTokens(message.content), 0) + reserved,
+      inputBudget,
+      protectedEnvelopePreserved: false,
+      constraintPreserved: false,
+    }
+  }
 
   // 约束本身超出输入预算 → 拒绝；绝不发送缺失约束的请求
   // （totalInputTokens 直接按含约束的原始消息计算，保持与最终重算口径一致）
@@ -354,7 +383,7 @@ export function trimMessagesToFit(
   // 拼接不严格可加（四舍五入 + '\n\n' 分隔符），旧的 `total + constraintTokens`
   // 会在精确边界处少算 ~1 token，把实际超窗的请求误判为 fit 而发出。
   // 无约束时该值与原 `total` 恒等，既有行为不变。
-  const totalInputTokens = copy.reduce((sum, message) => sum + estimateTokens(message.content), 0)
+  const totalInputTokens = copy.reduce((sum, message) => sum + estimateTokens(message.content), 0) + reserved
   const protectedBlocks = messages.flatMap(message => extractContinuityBlocks(message.content))
   const protectedEnvelopePreserved = totalInputTokens <= inputBudget && protectedBlocks.every(block =>
     copy.some(message => message.content.includes(block))

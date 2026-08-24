@@ -34,6 +34,8 @@ export interface UseAIStreamReturn {
   reset: () => void
   /** 设置当前会话的操作类型。 */
   setOperation: (operation: string | null) => void
+  /** 从持久化候选恢复已完成输出；不会发起模型调用。 */
+  restore: (session: Pick<AIGenerationSession, 'output' | 'operation'>) => void
 }
 
 const sharedAbortControllers = new Map<string, AbortController>()
@@ -95,6 +97,25 @@ export function useAIStream(sessionKey?: string): UseAIStreamReturn {
       setLocalOperation(nextOperation)
     }
   }, [sessionKey, patchShared])
+
+  const restore = useCallback((session: Pick<AIGenerationSession, 'output' | 'operation'>) => {
+    stop()
+    if (sessionKey) {
+      patchShared({
+        output: session.output,
+        operation: session.operation,
+        error: null,
+        tokenUsage: null,
+        isStreaming: false,
+      })
+      return
+    }
+    setOutput(session.output)
+    setLocalOperation(session.operation)
+    setError(null)
+    setTokenUsage(null)
+    setIsStreaming(false)
+  }, [patchShared, sessionKey, stop])
 
   const start = useCallback(async (
     messages: ChatMessage[],
@@ -193,6 +214,7 @@ export function useAIStream(sessionKey?: string): UseAIStreamReturn {
       stop,
       reset,
       setOperation,
+      restore,
     }),
     [
       currentOutput,
@@ -204,6 +226,7 @@ export function useAIStream(sessionKey?: string): UseAIStreamReturn {
       stop,
       reset,
       setOperation,
+      restore,
     ],
   )
 }

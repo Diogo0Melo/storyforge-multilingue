@@ -1,9 +1,9 @@
 /**
  * 自适应文风学习 Store(FB-5)
  *
- * 每项目一份文风画像(userStyleProfiles,按 projectId 单例)。
- * 本 store 只管持久化(加载/保存/手改/开关);AI 学习(取样 + 调 style.learn)由
- * StyleLearningPanel 编排后调 saveProfile 落库,以便 store 可脱离 AI 单测。
+ * 每个 Work 一份文风画像（旧库继续保留 projectId 物理字段）。
+ * 本 store 只管作者显式的手改、开关、样本与反馈；AI 学习由
+ * prose.style-learn durable Run 确认后经 adopt() 写入。
  */
 import { create } from 'zustand'
 import { db } from '../lib/db/schema'
@@ -20,13 +20,15 @@ import type {
   StyleRevisionPair,
   UserStyleProfile,
 } from '../lib/types/user-style'
-
-interface SaveProfileInput {
-  profile: string
-  sourceChapterIds: number[]
-  sampleCount: number
-  sampleWords: number
-}
+import {
+  assertRecordInScope,
+  readOwnedRows,
+  resolveReadScopeLike,
+  resolveScopeLike,
+  stampNewRecord,
+  type WorkspaceScopeLike,
+} from '../lib/world-engine/scope'
+import type { WorkspaceScope } from '../lib/types/world-ownership'
 
 interface CaptureRevisionPairInput {
   sourceChapterId?: number | null
@@ -48,13 +50,13 @@ interface UserStyleState {
   loading: boolean
 
   /** 加载项目文风画像(无则置 null,不自动建空记录) */
-  loadProfile: (projectId: number) => Promise<void>
-  /** 保存/覆盖画像(AI 学习完成后调;upsert,默认开启注入) */
-  saveProfile: (projectId: number, input: SaveProfileInput) => Promise<void>
+  loadProfile: (scope: WorkspaceScopeLike) => Promise<void>
   /** 手动改写画像文本并保存 */
   updateProfileText: (text: string) => Promise<void>
   /** 开/关下游注入 */
   setEnabled: (enabled: boolean) => Promise<void>
+  /** 删除本 Work 的画像、改稿样本和校准反馈。 */
+  clearLearnedStyle: () => Promise<void>
   /** 保存一次有实际差异的改前/改后样本；相同样本会去重，最多保留 8 组 */
   captureRevisionPair: (
     projectId: number,
@@ -72,14 +74,14 @@ interface UserStyleState {
 }
 
 async function upsertProfileRow(
-  projectId: number,
+  scope: WorkspaceScope,
   patch: Partial<UserStyleProfile>,
 ): Promise<UserStyleProfile> {
   const now = Date.now()
-  const existing = await db.userStyleProfiles.where('projectId').equals(projectId).first()
-  const row: UserStyleProfile = {
+  const existing = (await readOwnedRows<UserStyleProfile>(scope, 'userStyleProfiles', { owner: 'work' }))[0]
+  const row = stampNewRecord(scope, 'userStyleProfiles', {
     ...(existing ?? {}),
-    projectId,
+    projectId: scope.projectId,
     profile: existing?.profile ?? '',
     enabled: existing?.enabled ?? false,
     sourceChapterIds: existing?.sourceChapterIds ?? '[]',
@@ -88,7 +90,7 @@ async function upsertProfileRow(
     createdAt: existing?.createdAt ?? now,
     updatedAt: now,
     ...patch,
-  }
+  } as UserStyleProfile, { owner: 'work' }) as UserStyleProfile
   if (existing?.id != null) {
     await db.userStyleProfiles.update(existing.id, row)
     return { ...row, id: existing.id }
@@ -101,44 +103,26 @@ export const useUserStyleStore = create<UserStyleState>((set, get) => ({
   profile: null,
   loading: false,
 
-  loadProfile: async (projectId: number) => {
+  loadProfile: async (scopeInput) => {
     set({ loading: true })
     try {
-      const profile = await db.userStyleProfiles.where('projectId').equals(projectId).first()
+      const profile = (await readOwnedRows<UserStyleProfile>(
+        await resolveReadScopeLike(scopeInput),
+        'userStyleProfiles',
+        { owner: 'work' },
+      ))[0]
       set({ profile: profile ?? null })
     } finally {
       set({ loading: false })
     }
   },
 
-  saveProfile: async (projectId, input) => {
-    const now = Date.now()
-    const existing = await db.userStyleProfiles.where('projectId').equals(projectId).first()
-    const row: UserStyleProfile = {
-      ...(existing ?? {}),
-      projectId,
-      profile: input.profile,
-      // 只有既有非空画像的开关才是作者显式选择；“先有样本、后学习”的空壳记录
-      // 默认保持关闭，但首次真正生成画像后应按既有产品语义自动开启。
-      enabled: existing?.profile.trim() ? existing.enabled : true,
-      sourceChapterIds: JSON.stringify(input.sourceChapterIds),
-      sampleCount: input.sampleCount,
-      sampleWords: input.sampleWords,
-      createdAt: existing?.createdAt ?? now,
-      updatedAt: now,
-    }
-    if (existing?.id != null) {
-      await db.userStyleProfiles.update(existing.id, row)
-      set({ profile: { ...row, id: existing.id } })
-    } else {
-      const id = await db.userStyleProfiles.add(row)
-      set({ profile: { ...row, id: id as number } })
-    }
-  },
-
   updateProfileText: async (text) => {
     const { profile } = get()
     if (!profile?.id) return
+    const scope = await resolveScopeLike(profile.projectId)
+    const current = await db.userStyleProfiles.get(profile.id)
+    if (!current || !await assertRecordInScope(scope, 'userStyleProfiles', current, { owner: 'work' })) return
     const updatedAt = Date.now()
     await db.userStyleProfiles.update(profile.id, { profile: text, updatedAt })
     set({ profile: { ...profile, profile: text, updatedAt } })
@@ -147,20 +131,36 @@ export const useUserStyleStore = create<UserStyleState>((set, get) => ({
   setEnabled: async (enabled) => {
     const { profile } = get()
     if (!profile?.id) return
+    const scope = await resolveScopeLike(profile.projectId)
+    const current = await db.userStyleProfiles.get(profile.id)
+    if (!current || !await assertRecordInScope(scope, 'userStyleProfiles', current, { owner: 'work' })) return
     const updatedAt = Date.now()
     await db.userStyleProfiles.update(profile.id, { enabled, updatedAt })
     set({ profile: { ...profile, enabled, updatedAt } })
   },
 
+  clearLearnedStyle: async () => {
+    const { profile } = get()
+    if (profile?.id == null) return
+    const scope = await resolveScopeLike(profile.workId != null && profile.worldId != null
+      ? { projectId: profile.projectId, worldId: profile.worldId, workId: profile.workId }
+      : profile.projectId)
+    const current = await db.userStyleProfiles.get(profile.id)
+    if (!current || !await assertRecordInScope(scope, 'userStyleProfiles', current, { owner: 'work' })) return
+    await db.userStyleProfiles.delete(profile.id)
+    set({ profile: null })
+  },
+
   captureRevisionPair: async (projectId, input) => {
     const pair = createStyleRevisionPair(input)
     if (!pair) return null
-    const existing = await db.userStyleProfiles.where('projectId').equals(projectId).first()
+    const scope = await resolveScopeLike(projectId)
+    const existing = (await readOwnedRows<UserStyleProfile>(scope, 'userStyleProfiles', { owner: 'work' }))[0]
     const revisionPairs = upsertStyleRevisionPair(
       parseStyleRevisionPairs(existing?.revisionPairs),
       pair,
     )
-    const row = await upsertProfileRow(projectId, {
+    const row = await upsertProfileRow(scope, {
       revisionPairs: JSON.stringify(revisionPairs),
     })
     set({ profile: row })
@@ -170,6 +170,9 @@ export const useUserStyleStore = create<UserStyleState>((set, get) => ({
   updateRevisionPairNote: async (pairId, note) => {
     const { profile } = get()
     if (profile?.id == null) return
+    const scope = await resolveScopeLike(profile.projectId)
+    const current = await db.userStyleProfiles.get(profile.id)
+    if (!current || !await assertRecordInScope(scope, 'userStyleProfiles', current, { owner: 'work' })) return
     const revisionPairs = parseStyleRevisionPairs(profile.revisionPairs)
       .map(pair => pair.id === pairId
         ? { ...pair, authorNote: note.trim().slice(0, 240) || undefined }
@@ -183,6 +186,9 @@ export const useUserStyleStore = create<UserStyleState>((set, get) => ({
   removeRevisionPair: async (pairId) => {
     const { profile } = get()
     if (profile?.id == null) return
+    const scope = await resolveScopeLike(profile.projectId)
+    const current = await db.userStyleProfiles.get(profile.id)
+    if (!current || !await assertRecordInScope(scope, 'userStyleProfiles', current, { owner: 'work' })) return
     const revisionPairs = parseStyleRevisionPairs(profile.revisionPairs)
       .filter(pair => pair.id !== pairId)
     const updatedAt = Date.now()
@@ -193,13 +199,14 @@ export const useUserStyleStore = create<UserStyleState>((set, get) => ({
 
   addCalibrationFeedback: async (projectId, input) => {
     const feedback = createStyleCalibrationFeedback(input)
-    const existing = await db.userStyleProfiles.where('projectId').equals(projectId).first()
+    const scope = await resolveScopeLike(projectId)
+    const existing = (await readOwnedRows<UserStyleProfile>(scope, 'userStyleProfiles', { owner: 'work' }))[0]
     const calibrationFeedback = [
       feedback,
       ...parseStyleCalibrationFeedback(existing?.calibrationFeedback)
         .filter(item => item.id !== feedback.id),
     ].slice(0, 12)
-    const row = await upsertProfileRow(projectId, {
+    const row = await upsertProfileRow(scope, {
       calibrationFeedback: JSON.stringify(calibrationFeedback),
     })
     set({ profile: row })

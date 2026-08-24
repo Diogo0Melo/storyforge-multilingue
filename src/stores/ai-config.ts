@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import type { AIConfig, AIProvider, AIConfigPreset, EmbeddingConfig } from '../lib/types'
-import { PROVIDER_PRESETS } from '../lib/types'
+import { normalizeProviderModel, PROVIDER_PRESETS } from '../lib/types'
 import { createLog, updateLog } from '../lib/ai/logger'
 import { getT } from '../i18n'
 import { nanoid } from '../lib/utils/id'
@@ -20,16 +20,24 @@ import {
   sanitizeAgentTeamBudgetProfile,
   type AgentTeamBudgetProfile,
 } from '../lib/agent/team-budget'
+import {
+  isCreativeReliabilityRuntimeEnabledV1,
+  sanitizeCreativeQualityModeV1,
+  setCreativeReliabilityRuntimeEnabledV1,
+  type CreativeQualityModeV1,
+} from '../lib/agent/creative-reliability'
 
 const STORAGE_KEY = 'storyforge-ai-config'
 const PRESETS_KEY = 'storyforge-ai-presets'
 const SESSION_API_KEY = 'storyforge-ai-api-key-session'
+const PRESET_SESSION_API_KEYS = 'storyforge-ai-preset-api-keys-session'
 const REMEMBER_API_KEY = 'storyforge-ai-api-key-remember'
 const EMBEDDING_KEY = 'storyforge-embedding-config'
 const EMBEDDING_SESSION_KEY = 'storyforge-embedding-key-session'
 export const TASK_ROUTES_KEY = 'storyforge-ai-task-routes'
 export const AGENT_CONTEXT_PROFILES_KEY = 'storyforge-agent-context-profiles'
 export const AGENT_TEAM_BUDGET_PROFILE_KEY = 'storyforge-agent-team-budget-profile'
+export const CREATIVE_QUALITY_MODE_KEY = 'storyforge-creative-quality-mode-v1'
 
 const DEFAULT_CONFIG: AIConfig = {
   provider: 'deepseek',
@@ -71,7 +79,16 @@ function loadPresets(): AIConfigPreset[] {
     const saved = localStorage.getItem(PRESETS_KEY)
     if (saved) {
       const arr = JSON.parse(saved)
-      if (Array.isArray(arr)) return arr
+      if (Array.isArray(arr)) {
+        const normalized = arr.map((preset: AIConfigPreset) => ({
+          ...preset,
+          config: normalizeConfigModel(preset.config),
+        }))
+        if (normalized.some((preset, index) => preset.config.model !== arr[index]?.config?.model)) {
+          savePresets(normalized)
+        }
+        return normalized
+      }
     }
   } catch { /* ignore */ }
   return []
@@ -79,6 +96,32 @@ function loadPresets(): AIConfigPreset[] {
 
 function savePresets(presets: AIConfigPreset[]) {
   localStorage.setItem(PRESETS_KEY, JSON.stringify(presets))
+}
+
+function loadPresetSessionApiKeys(): Record<string, string> {
+  try {
+    const raw = sessionStorage.getItem(PRESET_SESSION_API_KEYS)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {}
+    return Object.fromEntries(Object.entries(parsed).filter((entry): entry is [string, string] => (
+      typeof entry[0] === 'string' && typeof entry[1] === 'string' && entry[1].length > 0
+    )))
+  } catch {
+    return {}
+  }
+}
+
+function savePresetSessionApiKey(id: string, apiKey: string): void {
+  const keys = loadPresetSessionApiKeys()
+  if (apiKey) keys[id] = apiKey
+  else delete keys[id]
+  if (Object.keys(keys).length) sessionStorage.setItem(PRESET_SESSION_API_KEYS, JSON.stringify(keys))
+  else sessionStorage.removeItem(PRESET_SESSION_API_KEYS)
+}
+
+export function getAIConfigPresetSessionApiKey(id: string): string {
+  return loadPresetSessionApiKeys()[id] || ''
 }
 
 function loadTaskRoutes(): AITaskRoutes {
@@ -115,6 +158,14 @@ function saveAgentTeamBudgetProfile(profile: AgentTeamBudgetProfile): void {
   localStorage.setItem(AGENT_TEAM_BUDGET_PROFILE_KEY, profile)
 }
 
+function loadCreativeQualityMode(): CreativeQualityModeV1 {
+  return sanitizeCreativeQualityModeV1(localStorage.getItem(CREATIVE_QUALITY_MODE_KEY))
+}
+
+function saveCreativeQualityMode(mode: CreativeQualityModeV1): void {
+  localStorage.setItem(CREATIVE_QUALITY_MODE_KEY, mode)
+}
+
 /**
  * 根据 HTTP 状态码和英文错误信息，返回本地化解释。
  * 通过 errors:aiConfig.* 键在所有支持语言下提供文案。
@@ -142,9 +193,15 @@ function getLocalizedExplanation(status: number, msg: string): string {
   else if (status === 502) statusKey = 'errors:aiConfig.status502'
   else if (status === 503) statusKey = 'errors:aiConfig.status503'
 
-  if (statusKey) return t(statusKey)
-
   const lower = msg.toLowerCase()
+
+  if (
+    lower.includes('overdue balance')
+    || lower.includes('account overdue')
+    || lower.includes('accountoverdueerror')
+  ) return '账户存在逾期欠费，本次请求已在账户校验层被阻断；结清欠费后再重试'
+
+  if (statusKey) return t(statusKey)
 
   // 按错误信息关键词匹配（静态映射，避免计算键）
   if (lower.includes('insufficient balance') || lower.includes('insufficient_balance'))
@@ -194,14 +251,24 @@ function loadInitialConfig(): { config: AIConfig; rememberApiKey: boolean } {
   const rememberApiKey = rememberRaw == null ? legacyHasLocalKey : rememberRaw === 'true'
   const sessionKey = sessionStorage.getItem(SESSION_API_KEY) || ''
 
+  const config = normalizeConfigModel({
+    ...DEFAULT_CONFIG,
+    ...savedConfig,
+    apiKey: rememberApiKey ? (savedConfig.apiKey || '') : sessionKey,
+  })
+  if (savedConfig.model && config.model !== savedConfig.model) {
+    persistConfig(config, rememberApiKey)
+  }
+
   return {
-    config: {
-      ...DEFAULT_CONFIG,
-      ...savedConfig,
-      apiKey: rememberApiKey ? (savedConfig.apiKey || '') : sessionKey,
-    },
+    config,
     rememberApiKey,
   }
+}
+
+function normalizeConfigModel(config: AIConfig): AIConfig {
+  const model = normalizeProviderModel(config.provider, config.model)
+  return model === config.model ? config : { ...config, model }
 }
 
 function persistConfig(config: AIConfig, rememberApiKey: boolean): void {
@@ -235,6 +302,8 @@ interface AIConfigStore {
   taskRoutes: AITaskRoutes
   agentContextProfiles: AgentContextProfiles
   agentTeamBudgetProfile: AgentTeamBudgetProfile
+  creativeReliabilityEnabled: boolean
+  creativeQualityMode: CreativeQualityModeV1
   /** 当前生效的预设 id（null = 未对应任何预设/已改动） */
   activePresetId: string | null
   /** 最近一次应用/保存的预设 id；表单改动后仍保留,用于显式覆盖当前预设。 */
@@ -255,6 +324,8 @@ interface AIConfigStore {
   setTaskRoute: (taskKind: AITaskKind, presetId: string | null) => void
   setAgentContextProfile: (taskKind: AgentContextTaskKind, profile: AgentContextProfile) => void
   setAgentTeamBudgetProfile: (profile: AgentTeamBudgetProfile) => void
+  setCreativeReliabilityEnabled: (enabled: boolean) => void
+  setCreativeQualityMode: (mode: CreativeQualityModeV1) => void
 }
 
 const initial = loadInitialConfig()
@@ -266,6 +337,8 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
   taskRoutes: loadTaskRoutes(),
   agentContextProfiles: loadAgentContextProfiles(),
   agentTeamBudgetProfile: loadAgentTeamBudgetProfile(),
+  creativeReliabilityEnabled: isCreativeReliabilityRuntimeEnabledV1(),
+  creativeQualityMode: loadCreativeQualityMode(),
   activePresetId: null,
   editingPresetId: null,
   embedding: loadEmbeddingConfig(initial.rememberApiKey),
@@ -277,7 +350,7 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
   },
 
   setConfig: (partial: Partial<AIConfig>) => {
-    const newConfig = { ...get().config, ...partial }
+    const newConfig = normalizeConfigModel({ ...get().config, ...partial })
     persistConfig(newConfig, get().rememberApiKey)
     // 手动改动配置后，与已选预设脱钩（除非改动等于该预设）
     set({ config: newConfig, activePresetId: null })
@@ -298,6 +371,7 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
     }
     const presets = [...get().presets, preset]
     savePresets(presets)
+    savePresetSessionApiKey(id, get().rememberApiKey ? '' : get().config.apiKey)
     set({ presets, activePresetId: id, editingPresetId: id })
     return id
   },
@@ -305,7 +379,11 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
   applyPreset: (id: string) => {
     const preset = get().presets.find(p => p.id === id)
     if (!preset) return
-    const newConfig = { ...preset.config, apiKey: preset.config.apiKey || get().config.apiKey }
+    const current = get().config
+    const apiKey = preset.config.apiKey
+      || getAIConfigPresetSessionApiKey(id)
+      || (preset.config.provider === current.provider ? current.apiKey : '')
+    const newConfig = normalizeConfigModel({ ...preset.config, apiKey })
     persistConfig(newConfig, get().rememberApiKey)
     set({ config: newConfig, activePresetId: id, editingPresetId: id })
   },
@@ -316,6 +394,7 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
       config: presetConfig(get().config, get().rememberApiKey),
     } : p)
     savePresets(presets)
+    savePresetSessionApiKey(id, get().rememberApiKey ? '' : get().config.apiKey)
     set({ presets, activePresetId: id, editingPresetId: id })
   },
 
@@ -332,6 +411,7 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
     ) as AITaskRoutes
     savePresets(presets)
     saveTaskRoutes(taskRoutes)
+    savePresetSessionApiKey(id, '')
     set({
       presets,
       taskRoutes,
@@ -366,14 +446,25 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
     set({ agentTeamBudgetProfile })
   },
 
+  setCreativeReliabilityEnabled: enabled => {
+    setCreativeReliabilityRuntimeEnabledV1(enabled)
+    set({ creativeReliabilityEnabled: enabled })
+  },
+
+  setCreativeQualityMode: mode => {
+    const creativeQualityMode = sanitizeCreativeQualityModeV1(mode)
+    saveCreativeQualityMode(creativeQualityMode)
+    set({ creativeQualityMode })
+  },
+
   switchProvider: (provider: AIProvider) => {
     const preset = PROVIDER_PRESETS[provider] || {}
-    const newConfig: AIConfig = {
+    const newConfig = normalizeConfigModel({
       ...get().config,
       provider,
       ...preset,
       apiKey: provider === get().config.provider ? get().config.apiKey : (preset.apiKey || ''),
-    }
+    })
     persistConfig(newConfig, get().rememberApiKey)
     set({ config: newConfig, activePresetId: null, editingPresetId: null })
   },
@@ -441,19 +532,6 @@ export const useAIConfigStore = create<AIConfigStore>((set, get) => ({
 
       // 常见英文错误 → 本地化翻译映射（当前仅 zh-CN 有文案）
       const localizedExplanation = getLocalizedExplanation(response.status, rawErrorMsg)
-
-      // HTTP 402 = 余额不足，但说明连接和认证都成功了
-      if (response.status === 402) {
-        const note = localizedExplanation ? `${rawErrorMsg}（${localizedExplanation}）` : rawErrorMsg
-        updateLog(log.id, { status: 'success', statusCode: response.status, duration, responseBody: bodyText.slice(0, 200) })
-        const prefix = normalized.warnings.length ? `${normalized.warnings.join(' ')} ` : ''
-        return {
-          ok: true,
-          message: getT()('errors-lib:ai.connectionSuccessWithNote', { prefix, note }),
-          statusCode: response.status,
-          duration,
-        }
-      }
 
       const t = getT()
       const lang = t('common:language')

@@ -4,7 +4,7 @@
  * 契约（orchestrator 批准的字段级决策）：
  * - character.generate → mixed：结构化角色信封内含作者面向的角色散文，
  *   client gate 注入项目 resolved contentLanguage；JSON/schema 标识符保持规范形。
- * - rules.generate → creative：读者面向的创作规则散文。
+ * - world-origin.creative-rules → creative：读者面向的创作规则散文。
  * - scene.verify → functional-prose：UI 展示的审校/验证散文，注入当前 UI 语言。
  * - prompt.examples → language-neutral：显式记录的例外——示例是模板受控/源保留的
  *   提示词数据，不是 StoryForge 内容散文；gate 不注入文本语言约束，
@@ -61,21 +61,20 @@ function expectAllAiStartCallsDeclareOutputKind(source: string, file: string): v
 
 describe('I18N P2 fix-5a · 面板 outputKind 源码锚定', () => {
   it('character.generate 声明 mixed（结构化信封内含作者面向角色散文），保留 projectId', () => {
-    const source = readSource('src/components/character/CharacterPanel.tsx')
-    expectAllOccurrencesDeclare(source, 'category: \'character.generate\'', 'CharacterPanel.tsx', 'mixed')
-    expect(source).toContain(
-      '{ category: \'character.generate\', projectId: project.id!, outputKind: \'mixed\' }',
-    )
-    expectAllAiStartCallsDeclareOutputKind(source, 'CharacterPanel.tsx')
+    const source = readSource('src/lib/agent/character-copilot.ts')
+    expect(source).toContain("category: input.routingCategory ?? 'character.generate'")
+    expect(source).toContain("outputKind: 'mixed'")
+    expect(source).toContain('projectId: input.projectId')
   })
 
-  it('rules.generate 声明 creative（读者面向创作规则散文），保留 projectId', () => {
-    const source = readSource('src/components/rules/CreativeRulesPanel.tsx')
-    expectAllOccurrencesDeclare(source, 'category: \'rules.generate\'', 'CreativeRulesPanel.tsx', 'creative')
-    expect(source).toContain(
-      '{ category: \'rules.generate\', projectId: project.id!, outputKind: \'creative\' }',
-    )
-    expectAllAiStartCallsDeclareOutputKind(source, 'CreativeRulesPanel.tsx')
+  it('创作规则 durable Skill 声明 creative，面板只通过主 Agent Harness 进入', () => {
+    const panelSource = readSource('src/components/rules/CreativeRulesPanel.tsx')
+    const copilotSource = readSource('src/lib/agent/creative-rules-copilot.ts')
+    expect(panelSource).toContain("skillId: 'world-origin.creative-rules'")
+    expect(panelSource).not.toContain('useAIStream')
+    expect(panelSource).not.toContain("category: 'rules.generate'")
+    expect(copilotSource).toContain("outputKind: 'creative'")
+    expect(copilotSource).toContain('category: input.routingCategory')
   })
 
   it('scene.verify 声明 functional-prose（UI 展示的审校/验证散文），保留 projectId', () => {

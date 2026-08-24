@@ -1,7 +1,7 @@
 import { useAIConfigStore } from '../../stores/ai-config'
 import { getT } from '../../i18n'
 import { buildChapterContentPrompt, buildContinuePrompt } from '../ai/adapters/chapter-adapter'
-import { chat, resolveRequestConfig } from '../ai/client'
+import { chat, resolveRequestConfig, type ChatResult } from '../ai/client'
 import { buildBestChapterByOutlineMap } from '../chapters/selectors'
 import { db } from '../db/schema'
 import type {
@@ -14,47 +14,66 @@ import { walkOutlineChaptersInCanonicalOrder } from '../outline/canonical-outlin
 import { adopt } from '../registry/adopt'
 import { assembleContext } from '../registry/assemble-context'
 import { rebuildChapterChunks } from '../retrieval/retrieval'
-import type { AIConfig, Chapter, OutlineNode, Project } from '../types'
+import type { AIConfig, Chapter, ChatMessage, OutlineNode, Project, WorkspaceScope } from '../types'
 import { countWords, htmlToPlainText, plainTextToHtml } from '../utils/html'
 import {
+  assertRecordInScope,
+  readOwnedRows,
+  resolveScope,
+  scopeTransactionTables,
+} from '../world-engine/scope'
+import {
+  attachAgentContextInputStateV1,
   evidenceFromContextResult,
   resolveAgentContextPolicy,
   type AgentContextEvidence,
   type AgentContextProfile,
 } from './context-policy'
+import {
+  createAgentContextCompressionSessionV1,
+  type AgentContextCompressionRuntimeV1,
+} from './context-compression'
+import {
+  buildChapterInformationBoundaryV1,
+  buildInformationBoundaryInstructionV1,
+  validateProseInformationBoundaryV1,
+  type InformationBoundaryManifestV1,
+} from './information-boundary'
+import {
+  getDefaultAgentSkillV1,
+  buildAgentSkillInputGuidanceV1,
+  resolveAgentSkillInputStateV1,
+  resolveAgentSkillV1,
+  resolveAgentSkillContextSourceKeysV1,
+  type AgentSkillExecutionModeV1,
+  type AgentSkillId,
+} from './skill-registry'
+import {
+  buildNarrativeBriefV1,
+  formatNarrativeBriefForPromptV1,
+  type NarrativeBriefV1,
+} from './narrative-brief'
+import {
+  createCreativeIssueV1,
+  runCreativeExecutionV1,
+  type CreativeExecutionResultV1,
+  type CreativeParseOutcomeV1,
+  type CreativeRawModelResultV1,
+} from './creative-execution'
+import {
+  isCreativeReliabilityRuntimeEnabledV1,
+  parseCreativeArtifactV1,
+  type CreativeAssumptionV1,
+  type CreativeArtifactIssueV1,
+  type CreativeArtifactV1,
+  type CreativeQualityModeV1,
+} from './creative-reliability'
+import type { AgentTeamBudgetTracker } from './team-budget'
 
-export const PROSE_COPILOT_SOURCE_KEYS = [
-  'contextMemo',
-  'chapterOutline',
-  'detailedOutline',
-  'chapterContinuityHandoff',
-  'previousPlanReconciliation',
-  'previousChapterEnding',
-  'recentChapterSummaries',
-  'worldview',
-  'storyCore',
-  'characterDrivenPlan',
-  'powerSystem',
-  'cultivationProgress',
-  'codex',
-  'characters',
-  'creativeRules',
-  'worldRules',
-  'historical',
-  'locations',
-  'foreshadows',
-  'storyArcs',
-  'storylineProgress',
-  'emotionBeats',
-  'stateCards',
-  'currentFacts',
-  'canonAssertions',
-  'characterKnowledge',
-  'heldItems',
-  'retrievedPassages',
-  'references',
-  'userStyleProfile',
-] as const
+export const PROSE_COPILOT_SOURCE_KEYS = resolveAgentSkillContextSourceKeysV1(
+  getDefaultAgentSkillV1('prose'),
+  { includeOptional: true },
+)
 
 export type ProseCopilotOperation = 'generate' | 'continue'
 
@@ -66,20 +85,34 @@ export interface ProseCopilotSnapshot {
   chapterContentHash: string
   chapterHadContent: boolean
   chapterOrder: number
+  /** 叙事视角角色；缺省表示本轮不注入任何角色认知投影。 */
+  perspectiveCharacterId?: number | null
+  /** H9：生成时的信息边界；旧候选缺省时按兼容路径重建。 */
+  informationBoundaryHash?: string
+  /** 视角来自章节字段时，章节视角变化必须使候选过期；主 Agent 显式视角不绑定该字段。 */
+  perspectiveFromChapter?: boolean
 }
 
 export interface ProseCopilotInput {
   project: Project
+  scope: WorkspaceScope
   worldGroupId: number | null
   authorRequest: string
   supplementalContext: string
+  inputGuidance: string
   operation: ProseCopilotOperation
   outlineNode: OutlineNode
   chapter: Chapter | null
   snapshot: ProseCopilotSnapshot
   assembled: Awaited<ReturnType<typeof assembleContext>>
+  narrativeBrief: NarrativeBriefV1
+  creativeReliabilityEnabled?: boolean
   previousTail: string
   config: AIConfig
+  /** 显式叙事视角。不得让模型从正文或角色列表自行猜测。 */
+  perspectiveCharacterId?: number | null
+  perspectiveFromChapter?: boolean
+  informationBoundary: InformationBoundaryManifestV1
   parameterValues?: Record<string, unknown>
   generationOverrides?: { temperature?: number; maxTokens?: number }
   routingCategory?: string
@@ -95,6 +128,11 @@ export interface PreparedProseCopilot {
   outlineNodeId: number
   label: string
   contextEvidence: AgentContextEvidence
+  perspectiveCharacterId?: number | null
+  informationBoundary: InformationBoundaryManifestV1
+  input: ProseCopilotInput
+  modelIdentity: { provider: string; model: string }
+  runRaw: (messages: ChatMessage[]) => Promise<CreativeRawModelResultV1>
 }
 
 interface ProseCopilotDependencies {
@@ -145,7 +183,11 @@ function chineseOrdinal(value: string): number | null {
   return digits[value] ?? null
 }
 
-function operationFor(request: string): ProseCopilotOperation {
+function operationFor(
+  request: string,
+  executionMode: AgentSkillExecutionModeV1 = 'auto',
+): ProseCopilotOperation {
+  if (executionMode === 'generate' || executionMode === 'continue') return executionMode
   return /续写|接着写|继续写|承接.{0,6}正文/.test(request) ? 'continue' : 'generate'
 }
 
@@ -205,6 +247,9 @@ async function snapshotOf(
   outline: OutlineNode,
   chapter: Chapter | null,
   order: number,
+  perspectiveCharacterId?: number | null,
+  informationBoundaryHash?: string,
+  perspectiveFromChapter?: boolean,
 ): Promise<ProseCopilotSnapshot> {
   return {
     outlineNodeId: outline.id!,
@@ -214,22 +259,53 @@ async function snapshotOf(
     chapterContentHash: fingerprintContent(chapter?.content ?? ''),
     chapterHadContent: Boolean(htmlToPlainText(chapter?.content ?? '').trim()),
     chapterOrder: chapter?.order ?? Math.max(0, order - 1),
+    perspectiveCharacterId,
+    informationBoundaryHash,
+    perspectiveFromChapter,
   }
 }
 
-async function readSnapshot(projectId: number, base: ProseCopilotSnapshot): Promise<ProseCopilotSnapshot> {
+async function readSnapshot(
+  scope: WorkspaceScope,
+  base: ProseCopilotSnapshot,
+  worldGroupId: number | null,
+  knownInformationBoundaryHash?: string,
+): Promise<ProseCopilotSnapshot> {
   const outline = await db.outlineNodes.get(base.outlineNodeId)
-  if (!outline || outline.projectId !== projectId) throw new ProseCopilotStaleError()
+  if (!outline || !await assertRecordInScope(scope, 'outlineNodes', outline, { owner: 'work' })) {
+    throw new ProseCopilotStaleError()
+  }
   const chapter = base.chapterId == null ? null : await db.chapters.get(base.chapterId)
-  if (chapter && chapter.projectId !== projectId) throw new ProseCopilotStaleError()
+  if (chapter && !await assertRecordInScope(scope, 'chapters', chapter, { owner: 'work' })) {
+    throw new ProseCopilotStaleError()
+  }
   if (chapter && chapter.outlineNodeId !== base.outlineNodeId) throw new ProseCopilotStaleError()
+  if (
+    base.perspectiveFromChapter
+    && (chapter?.perspectiveCharacterId ?? null) !== (base.perspectiveCharacterId ?? null)
+  ) throw new ProseCopilotStaleError()
   if (base.chapterId == null) {
-    const created = await db.chapters.where('outlineNodeId').equals(base.outlineNodeId)
-      .and(row => row.projectId === projectId)
-      .first()
+    const created = (await readOwnedRows<Chapter>(scope, 'chapters', { owner: 'work' }))
+      .find(row => row.outlineNodeId === base.outlineNodeId)
     if (created) throw new ProseCopilotStaleError()
   }
-  return snapshotOf(outline, chapter ?? null, base.chapterOrder + 1)
+  const informationBoundaryHash = knownInformationBoundaryHash ?? (
+    await buildChapterInformationBoundaryV1({
+      scope,
+      chapterId: chapter?.id ?? null,
+      outlineNodeId: outline.id!,
+      worldGroupId,
+      perspectiveCharacterId: base.perspectiveCharacterId ?? null,
+    })
+  ).manifestHash
+  return snapshotOf(
+    outline,
+    chapter ?? null,
+    base.chapterOrder + 1,
+    base.perspectiveCharacterId,
+    informationBoundaryHash,
+    base.perspectiveFromChapter,
+  )
 }
 
 function sameSnapshot(left: ProseCopilotSnapshot, right: ProseCopilotSnapshot): boolean {
@@ -239,14 +315,21 @@ function sameSnapshot(left: ProseCopilotSnapshot, right: ProseCopilotSnapshot): 
     && left.chapterUpdatedAt === right.chapterUpdatedAt
     && left.chapterContentHash === right.chapterContentHash
     && left.chapterHadContent === right.chapterHadContent
+    && left.perspectiveCharacterId === right.perspectiveCharacterId
+    && (left.informationBoundaryHash == null
+      || left.informationBoundaryHash === right.informationBoundaryHash)
 }
 
-function candidateIssues(output: string): GenerationGateIssue[] {
+function candidateIssues(
+  output: string,
+  informationBoundary: InformationBoundaryManifestV1,
+): GenerationGateIssue[] {
+  const issues = validateProseInformationBoundaryV1(output, informationBoundary)
   try {
     parseProseCandidateDraft(output)
-    return []
+    return issues
   } catch (error) {
-    return [{
+    return [...issues, {
       code: 'prose-invalid',
       message: error instanceof Error ? error.message : getT()('agent:copilot.prose.invalidCandidate'),
     }]
@@ -254,6 +337,7 @@ function candidateIssues(output: string): GenerationGateIssue[] {
 }
 
 function buildProseMessages(input: ProseCopilotInput) {
+  const perspectiveBoundary = buildInformationBoundaryInstructionV1(input.informationBoundary)
   const charactersIndex = input.assembled.included.indexOf('characters')
   const characters = charactersIndex >= 0
     ? input.assembled.segments[charactersIndex]?.content ?? ''
@@ -270,13 +354,19 @@ function buildProseMessages(input: ProseCopilotInput) {
   const wordCountHint = Number.isFinite(targetWordCount) && targetWordCount > 0
     ? `\n\n【节点字数目标】正文候选尽量接近 ${Math.floor(targetWordCount)} 字。`
     : ''
-  const hint = `${input.authorRequest}${wordCountHint}${supplemental}`
+  const hint = [
+    input.inputGuidance,
+    input.authorRequest + wordCountHint + supplemental,
+    ...(input.creativeReliabilityEnabled !== false
+      ? [formatNarrativeBriefForPromptV1(input.narrativeBrief)]
+      : []),
+  ].join('\n\n')
   if (input.operation === 'continue') {
     const context = characters ? `${world}\n\n${characters}` : world
     return buildContinuePrompt(
       htmlToPlainText(input.chapter?.content ?? ''),
       input.outlineNode.summary,
-      context,
+      perspectiveBoundary + '\n' + context,
       hint,
     )
   }
@@ -288,7 +378,7 @@ function buildProseMessages(input: ProseCopilotInput) {
     characters,
     input.previousTail,
     worldRulesIndex >= 0 ? input.assembled.segments[worldRulesIndex]?.content ?? '' : '',
-    hint,
+    perspectiveBoundary + '\n' + hint,
   )
 }
 
@@ -299,16 +389,38 @@ async function adoptCandidate(input: {
   outline: OutlineNode
   snapshot: ProseCopilotSnapshot
   draft: string
+  scope?: WorkspaceScope
 }): Promise<{ chapterId: number }> {
   const candidate = parseProseCandidateDraft(input.draft)
+  const workspaceScope = await resolveScope({ projectId: input.projectId, scope: input.scope })
+  const informationBoundary = await buildChapterInformationBoundaryV1({
+    scope: workspaceScope,
+    chapterId: input.snapshot.chapterId,
+    outlineNodeId: input.outline.id!,
+    worldGroupId: input.worldGroupId,
+    perspectiveCharacterId: input.snapshot.perspectiveCharacterId ?? null,
+  })
+  if (
+    input.snapshot.informationBoundaryHash != null
+    && informationBoundary.manifestHash !== input.snapshot.informationBoundaryHash
+  ) throw new ProseCopilotStaleError()
+  const boundaryIssues = validateProseInformationBoundaryV1(candidate, informationBoundary)
+  if (boundaryIssues.length) throw new Error(boundaryIssues.map(issue => issue.message).join('；'))
   const chapterId = await db.transaction(
     'rw',
-    db.chapters,
-    db.outlineNodes,
-    db.retrievalChunks,
-    db.narrativeSummaryNodes,
+    scopeTransactionTables(
+      db.chapters,
+      db.outlineNodes,
+      db.retrievalChunks,
+      db.narrativeSummaryNodes,
+    ),
     async () => {
-      const current = await readSnapshot(input.projectId, input.snapshot)
+      const current = await readSnapshot(
+        workspaceScope,
+        input.snapshot,
+        input.worldGroupId,
+        informationBoundary.manifestHash,
+      )
       if (!sameSnapshot(current, input.snapshot)) throw new ProseCopilotStaleError()
       const chapter = current.chapterId == null ? null : await db.chapters.get(current.chapterId)
       const candidateHtml = plainTextToHtml(candidate)
@@ -325,8 +437,9 @@ async function adoptCandidate(input: {
         notes: chapter?.notes ?? '',
       }
       const result = chapter?.id == null
-        ? await adopt({
+          ? await adopt({
             projectId: input.projectId,
+            scope: workspaceScope,
             worldGroupId: input.worldGroupId,
             target: 'chapters',
             mode: 'add',
@@ -334,6 +447,7 @@ async function adoptCandidate(input: {
           })
         : await adopt({
             projectId: input.projectId,
+            scope: workspaceScope,
             worldGroupId: input.worldGroupId,
             target: 'chapters',
             recordId: chapter.id,
@@ -350,7 +464,7 @@ async function adoptCandidate(input: {
       }
       const oldChunkIds = await db.retrievalChunks.where('sourceChapterId').equals(writtenId).primaryKeys()
       if (oldChunkIds.length) await db.retrievalChunks.bulkDelete(oldChunkIds as number[])
-      const summaries = await db.narrativeSummaryNodes.where('projectId').equals(input.projectId).toArray()
+      const summaries = await readOwnedRows<any>(workspaceScope, 'narrativeSummaryNodes', { owner: 'work' })
       for (const summary of summaries) {
         if (summary.id != null && (
           summary.level === 'book'
@@ -365,7 +479,7 @@ async function adoptCandidate(input: {
   )
   const [chapter, characters] = await Promise.all([
     db.chapters.get(chapterId),
-    db.characters.where('projectId').equals(input.projectId).toArray(),
+    readOwnedRows<any>(workspaceScope, 'characters', { owner: 'world' }),
   ])
   if (chapter) {
     await rebuildChapterChunks({
@@ -380,30 +494,41 @@ async function adoptCandidate(input: {
 
 export async function adoptRestoredProseCandidate(input: {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   operation: ProseCopilotOperation
   outlineNodeId: number
   snapshot: ProseCopilotSnapshot
   draft: string
 }): Promise<{ chapterId: number }> {
+  const scope = await resolveScope({ projectId: input.projectId, scope: input.scope })
   const outline = await db.outlineNodes.get(input.outlineNodeId)
-  if (!outline || outline.projectId !== input.projectId) throw new ProseCopilotStaleError()
-  return adoptCandidate({ ...input, outline })
+  if (!await assertRecordInScope(scope, 'outlineNodes', outline, { owner: 'work' })) {
+    throw new ProseCopilotStaleError()
+  }
+  return adoptCandidate({ ...input, outline: outline!, scope })
 }
 
 export async function prepareProseCopilot(input: {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   authorRequest: string
+  skillId?: AgentSkillId
   supplementalContext?: string
   routingCategory?: string
   contextProfile?: AgentContextProfile
   parameterValues?: Record<string, unknown>
   /** 节点级 AI preset 的解析结果；未提供时沿用全局路由配置。 */
   configOverride?: AIConfig
+  /** 明确的叙事视角角色；未传时正文主路径不注入全体角色认知。 */
+  perspectiveCharacterId?: number | null
   generationOverrides?: { temperature?: number; maxTokens?: number }
+  contextCompressionRuntime?: AgentContextCompressionRuntimeV1
+  inheritedAssumptions?: readonly CreativeAssumptionV1[]
+  creativeReliabilityEnabled?: boolean
   signal?: AbortSignal
-}): Promise<PreparedProseCopilot> {
+}, dependencies: ProseCopilotDependencies = {}): Promise<PreparedProseCopilot> {
   const project = await db.projects.get(input.projectId)
   if (!project) throw new Error(getT()('agent:copilot.prose.projectNotFound'))
   if (project.enableMultiWorld && input.worldGroupId == null) {
@@ -415,13 +540,18 @@ export async function prepareProseCopilot(input: {
   if (/重写|改写|覆盖|替换.{0,6}正文/.test(request)) {
     throw new Error(getT()('agent:copilot.prose.overwriteNotAllowed'))
   }
+  const skill = resolveAgentSkillV1('prose', input.skillId)
+  const scope = await resolveScope({ projectId: input.projectId, scope: input.scope })
   const [nodes, chapters] = await Promise.all([
-    db.outlineNodes.where('projectId').equals(input.projectId).toArray(),
-    db.chapters.where('projectId').equals(input.projectId).toArray(),
+    readOwnedRows<OutlineNode>(scope, 'outlineNodes', { owner: 'work' }),
+    readOwnedRows<Chapter>(scope, 'chapters', { owner: 'work' }),
   ])
-  const operation = operationFor(request)
+  const operation = operationFor(request, skill.executionMode)
   const target = selectTarget(request, nodes, chapters, worldGroupId, operation)
-  const snapshot = await snapshotOf(target.outline, target.chapter, target.ordinal)
+  const perspectiveCharacterId = input.perspectiveCharacterId === undefined
+    ? target.chapter?.perspectiveCharacterId ?? null
+    : input.perspectiveCharacterId
+  const perspectiveFromChapter = input.perspectiveCharacterId === undefined
   const defaultCategory = operation === 'continue' ? 'chapter.continue' : 'chapter.content'
   const routingCategory = input.routingCategory ?? defaultCategory
   const config = input.configOverride ?? resolveRequestConfig(
@@ -429,7 +559,43 @@ export async function prepareProseCopilot(input: {
     { category: routingCategory },
   ).config
   const contextProfile = input.contextProfile ?? 'full'
-  const contextPolicy = resolveAgentContextPolicy('agent-prose', contextProfile)
+  const contextPolicy = resolveAgentContextPolicy(skill.contextTaskKind, contextProfile)
+  const compression = input.contextCompressionRuntime
+    ? createAgentContextCompressionSessionV1({
+        policy: skill.contextCompression,
+        config,
+        projectId: input.projectId,
+        authorRequest: request,
+        routingCategory,
+        signal: input.signal,
+        runtime: input.contextCompressionRuntime,
+      })
+    : undefined
+  if (perspectiveCharacterId != null) {
+    const character = await db.characters.get(perspectiveCharacterId)
+    const visible = character
+      && await assertRecordInScope(scope, 'characters', character, { owner: 'world' })
+      && (Boolean(character.isCrossWorld) || (character.homeWorldGroupId ?? null) === worldGroupId)
+    if (!visible) throw new Error('正文叙事视角角色不存在或不属于当前世界。')
+  }
+  const informationBoundary = await buildChapterInformationBoundaryV1({
+    scope,
+    chapterId: target.chapter?.id ?? null,
+    outlineNodeId: target.outline.id!,
+    worldGroupId,
+    perspectiveCharacterId,
+  })
+  const snapshot = await snapshotOf(
+    target.outline,
+    target.chapter,
+    target.ordinal,
+    perspectiveCharacterId,
+    informationBoundary.manifestHash,
+    perspectiveFromChapter,
+  )
+  const sourceKeys = resolveAgentSkillContextSourceKeysV1(skill, {
+    includeOptional: perspectiveCharacterId != null,
+  })
   const previous = scopedOutlineChapters(nodes, worldGroupId)
     .filter(item => item.ordinal < target.ordinal)
     .reverse()
@@ -438,6 +604,7 @@ export async function prepareProseCopilot(input: {
   const previousTail = htmlToPlainText(previous?.content ?? '').slice(-1800)
   const assembled = await assembleContext({
     projectId: input.projectId,
+    scope,
     worldGroupId,
     outlineNodeId: target.outline.id,
     chapterId: target.chapter?.id ?? null,
@@ -446,30 +613,77 @@ export async function prepareProseCopilot(input: {
     stateReferenceText: [target.outline.title, target.outline.summary].join(' '),
     provider: config.provider,
     model: config.model,
-    sourceKeys: [...PROSE_COPILOT_SOURCE_KEYS],
+    sourceKeys,
+    ...(perspectiveCharacterId != null ? { characterId: perspectiveCharacterId } : {}),
     inputBudgetMaxTokens: contextPolicy.maxInputTokens,
     sourceBudgetScale: contextPolicy.sourceBudgetScale,
+    sourceTransformer: compression?.sourceTransformer,
   })
-  const current = await readSnapshot(input.projectId, snapshot)
+  const current = await readSnapshot(scope, snapshot, worldGroupId)
   if (!sameSnapshot(current, snapshot)) throw new ProseCopilotStaleError()
+  const inputState = resolveAgentSkillInputStateV1(skill, [assembled])
+  const contextEvidence = attachAgentContextInputStateV1(
+    evidenceFromContextResult(contextProfile, assembled),
+    inputState,
+  )
+  const inputGuidance = buildAgentSkillInputGuidanceV1(skill, inputState)
+  const narrativeBrief = buildNarrativeBriefV1({
+    authorRequest: request,
+    assembled,
+    inheritedAssumptions: input.inheritedAssumptions,
+  })
+  const creativeReliabilityEnabled = input.creativeReliabilityEnabled
+    ?? isCreativeReliabilityRuntimeEnabledV1()
   const nodeInput: ProseCopilotInput = {
     project,
+    scope,
     worldGroupId,
     authorRequest: request,
     supplementalContext: input.supplementalContext ?? '',
+    inputGuidance,
     operation,
     outlineNode: target.outline,
     chapter: target.chapter,
     snapshot,
     assembled,
+    narrativeBrief,
+    creativeReliabilityEnabled,
     previousTail,
     config,
     parameterValues: input.parameterValues,
+    perspectiveCharacterId,
+    perspectiveFromChapter,
+    informationBoundary,
     generationOverrides: input.generationOverrides,
     routingCategory,
     signal: input.signal,
   }
-  const node = createProseCopilotNode(nodeInput)
+  const runRaw = async (messages: ChatMessage[]): Promise<CreativeRawModelResultV1> => {
+    const startedAt = Date.now()
+    const result: ChatResult = {}
+    const output = dependencies.runAI
+      ? await dependencies.runAI(messages)
+      : await chat(messages, config, {
+          category: routingCategory,
+          projectId: input.projectId,
+          configOverrides: {
+            maxTokens: input.generationOverrides?.maxTokens ?? 16_000,
+            ...(input.generationOverrides?.temperature != null
+              ? { temperature: input.generationOverrides.temperature }
+              : {}),
+          },
+          contextOverflowPolicy: 'reject',
+        }, input.signal, result)
+    return {
+      output,
+      ...(result.usage ? { usage: result.usage } : {}),
+      durationMs: Math.max(0, Date.now() - startedAt),
+    }
+  }
+  const node = createProseCopilotNode(nodeInput, {
+    ...dependencies,
+    runAI: async messages => (await runRaw(messages)).output,
+  })
   return {
     node,
     prepared: prepareGenerationNode(node, nodeInput),
@@ -477,11 +691,226 @@ export async function prepareProseCopilot(input: {
     snapshot,
     operation,
     outlineNodeId: target.outline.id!,
-    contextEvidence: evidenceFromContextResult(contextProfile, assembled),
+    contextEvidence,
+    perspectiveCharacterId,
+    informationBoundary,
+    input: nodeInput,
+    modelIdentity: { provider: config.provider, model: config.model },
+    runRaw,
     label: operation === 'continue'
       ? getT()('agent:copilot.prose.labelContinue', { title: target.outline.title })
       : getT()('agent:copilot.prose.labelGenerate', { title: target.outline.title }),
   }
+}
+
+const PROSE_MOTION_SIGNAL = /决定|选择|拒绝|答应|追|逃|进入|离开|推开|抓住|放下|寻找|阻止|发现|失去|得到|改变|打断|转身|冲向|退后|开口|回答/
+
+function parseProseCreativeOutcomeV1(
+  raw: string,
+  prepared: PreparedProseCopilot,
+): CreativeParseOutcomeV1<string> {
+  if (raw.length > MAX_PROSE_CHARS) {
+    const issue = createCreativeIssueV1({
+      code: 'prose-response-too-large',
+      path: '$',
+      message: `正文响应超过 ${MAX_PROSE_CHARS} 字符，不能安全持久化。`,
+      disposition: 'blocking',
+      action: 'replan',
+    })
+    return {
+      status: 'blocked',
+      output: raw.slice(0, MAX_PROSE_CHARS),
+      editableText: raw.slice(0, MAX_PROSE_CHARS),
+      validFragments: [],
+      rejectedFragments: [{
+        version: 1,
+        id: 'prose-response',
+        path: '$',
+        text: raw.slice(0, 40_000),
+        status: 'rejected',
+        issueCodes: [issue.code],
+      }],
+      issues: [issue],
+      assumptions: prepared.input.narrativeBrief.assumptions,
+    }
+  }
+  try {
+    const output = parseProseCandidateDraft(raw)
+    const gateIssues = candidateIssues(output, prepared.informationBoundary)
+    const issues = gateIssues.map(item => createCreativeIssueV1({
+      code: item.code,
+      path: '$',
+      message: item.message,
+      disposition: 'blocking',
+      action: 'repair-once',
+    }))
+    if (!PROSE_MOTION_SIGNAL.test(output)) {
+      issues.push(createCreativeIssueV1({
+        code: 'prose-narrative-motion-weak',
+        path: '$',
+        message: '没有识别到明确的行动、选择或状态变化信号；正文仍可用，但建议作者检查是否真正推进了故事。',
+        severity: 'warning',
+        disposition: 'advisory',
+        action: 'none',
+        deterministic: false,
+      }))
+    }
+    const hasBlocking = issues.some(issue => issue.disposition === 'blocking')
+    return {
+      status: hasBlocking ? 'blocked' : issues.length ? 'usable-with-warnings' : 'ready',
+      output,
+      editableText: output,
+      validFragments: [{
+        version: 1,
+        id: 'prose:body',
+        path: '$',
+        text: output.slice(0, 40_000),
+        status: 'valid',
+        issueCodes: [],
+      }],
+      rejectedFragments: [],
+      issues,
+      assumptions: prepared.input.narrativeBrief.assumptions,
+    }
+  } catch (error) {
+    const issue = createCreativeIssueV1({
+      code: 'prose-response-invalid',
+      path: '$',
+      message: error instanceof Error ? error.message : '正文响应无效。',
+    })
+    return {
+      status: 'manual-repair',
+      output: raw.trim(),
+      editableText: raw.trim(),
+      validFragments: [],
+      rejectedFragments: [{
+        version: 1,
+        id: 'prose-response',
+        path: '$',
+        text: raw.slice(0, 40_000),
+        status: 'rejected',
+        issueCodes: [issue.code],
+      }],
+      issues: [issue],
+      assumptions: prepared.input.narrativeBrief.assumptions,
+    }
+  }
+}
+
+function buildProseRepairMessagesV1(
+  raw: string,
+  issues: readonly CreativeArtifactIssueV1[],
+): ChatMessage[] {
+  return [{
+    role: 'system',
+    content: [
+      '你是正文局部问题修复器，只修列出的确定性问题。',
+      '保留原文中所有未被点名的情节、段落顺序、人物行为、语气和事实，不整体重写。',
+      '不得引入新人物、新设定、新因果或提前泄露角色未知信息。',
+      '返回修复后的完整正文，不要解释，不要 Markdown 围栏。',
+    ].join('\n'),
+  }, {
+    role: 'user',
+    content: [
+      '【只允许修复的问题】',
+      JSON.stringify(issues.map(issue => ({ code: issue.code, path: issue.path }))),
+      '【上一次原始正文】',
+      raw,
+    ].join('\n'),
+  }]
+}
+
+export async function runProseCreativeReliabilityV1(input: {
+  prepared: PreparedProseCopilot
+  budget: AgentTeamBudgetTracker
+  qualityMode: CreativeQualityModeV1
+  validate?: (output: string) => Promise<GenerationGateIssue[]> | GenerationGateIssue[]
+}): Promise<CreativeExecutionResultV1<string>> {
+  return runCreativeExecutionV1({
+    initialMessages: input.prepared.prepared.messages,
+    runRaw: input.prepared.runRaw,
+    parse: raw => parseProseCreativeOutcomeV1(raw, input.prepared),
+    buildRepairMessages: buildProseRepairMessagesV1,
+    validate: input.validate,
+    budget: input.budget,
+    callLabel: '正文领域 Agent',
+    maxOutputTokens: input.prepared.input.generationOverrides?.maxTokens ?? 16_000,
+    qualityMode: input.qualityMode,
+    modelIdentity: input.prepared.modelIdentity,
+    canonEvidenceRefs: input.prepared.contextEvidence.sourceEvidence
+      ?.filter(item => item.status === 'included' && item.sourceHash)
+      .map(item => `${item.key}:${item.sourceHash}`),
+  })
+}
+
+export function revalidateProseCreativeDraftV1(input: {
+  draft: string
+  informationBoundary: InformationBoundaryManifestV1
+  previousArtifact: CreativeArtifactV1
+}): CreativeArtifactV1 {
+  let status: CreativeArtifactV1['status'] = 'ready'
+  let validFragments: CreativeArtifactV1['validFragments'] = []
+  let rejectedFragments: CreativeArtifactV1['rejectedFragments'] = []
+  let issues: CreativeArtifactV1['issues'] = []
+  try {
+    const output = parseProseCandidateDraft(input.draft)
+    const gateIssues = candidateIssues(output, input.informationBoundary)
+    issues = gateIssues.map(item => createCreativeIssueV1({
+      code: item.code,
+      path: '$',
+      message: item.message,
+      disposition: 'blocking',
+      action: 'edit',
+    }))
+    if (!PROSE_MOTION_SIGNAL.test(output)) {
+      issues.push(createCreativeIssueV1({
+        code: 'prose-narrative-motion-weak',
+        path: '$',
+        message: '没有识别到明确的行动、选择或状态变化信号；正文仍可用，但建议作者检查是否真正推进了故事。',
+        severity: 'warning',
+        disposition: 'advisory',
+        action: 'none',
+        deterministic: false,
+      }))
+    }
+    status = issues.some(issue => issue.disposition === 'blocking')
+      ? 'blocked'
+      : issues.length
+        ? 'usable-with-warnings'
+        : 'ready'
+    validFragments = [{
+      version: 1,
+      id: 'prose:body',
+      path: '$',
+      text: output.slice(0, 40_000),
+      status: 'valid',
+      issueCodes: [],
+    }]
+  } catch (error) {
+    status = 'manual-repair'
+    issues = [createCreativeIssueV1({
+      code: 'prose-author-draft-invalid',
+      path: '$',
+      message: error instanceof Error ? error.message : '作者修订的正文无效。',
+      action: 'edit',
+    })]
+    rejectedFragments = [{
+      version: 1,
+      id: 'prose-author-draft',
+      path: '$',
+      text: input.draft.slice(0, 40_000),
+      status: 'rejected',
+      issueCodes: issues.map(issue => issue.code),
+    }]
+  }
+  return parseCreativeArtifactV1({
+    ...input.previousArtifact,
+    status,
+    editableText: input.draft.slice(0, MAX_PROSE_CHARS),
+    validFragments,
+    rejectedFragments,
+    issues,
+  })
 }
 
 export function createProseCopilotNode(
@@ -489,7 +918,7 @@ export function createProseCopilotNode(
   dependencies: ProseCopilotDependencies = {},
 ): PreparedProseCopilot['node'] {
   const readCurrent = dependencies.readCurrent
-    ?? (() => readSnapshot(input.project.id!, input.snapshot))
+    ?? (() => readSnapshot(input.scope, input.snapshot, input.worldGroupId))
   const save = dependencies.save ?? (draft => adoptCandidate({
     projectId: input.project.id!,
     worldGroupId: input.worldGroupId,
@@ -497,6 +926,7 @@ export function createProseCopilotNode(
     outline: input.outlineNode,
     snapshot: input.snapshot,
     draft,
+    scope: input.scope,
   }))
   const runAI = dependencies.runAI ?? (messages => chat(messages, input.config, {
     category: input.routingCategory ?? (input.operation === 'continue' ? 'chapter.continue' : 'chapter.content'),
@@ -518,7 +948,7 @@ export function createProseCopilotNode(
     assembleInput: buildProseMessages,
     run: async messages => parseProseCandidateDraft(await runAI(messages)),
     gate: output => {
-      const issues = candidateIssues(output)
+      const issues = candidateIssues(output, input.informationBoundary)
       return { status: issues.length ? 'blocked' : 'pass', issues }
     },
     adopt: async output => {

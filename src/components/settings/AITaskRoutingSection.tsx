@@ -13,6 +13,7 @@ import {
   type AgentContextTaskKind,
 } from '../../lib/agent/context-policy'
 import type { AgentTeamBudgetProfile } from '../../lib/agent/team-budget'
+import type { CreativeQualityModeV1 } from '../../lib/agent/creative-reliability'
 
 const TASK_LABEL_KEYS: Record<AITaskKind, 'taskRouting.tasks.creation.label' | 'taskRouting.tasks.extraction.label' | 'taskRouting.tasks.analysis.label' | 'taskRouting.tasks.review.label' | 'taskRouting.tasks.agentOrchestrator.label' | 'taskRouting.tasks.agentWorldOrigin.label' | 'taskRouting.tasks.agentCharacter.label' | 'taskRouting.tasks.agentInspiration.label' | 'taskRouting.tasks.agentOutline.label' | 'taskRouting.tasks.agentProse.label'> = {
   creation: 'taskRouting.tasks.creation.label',
@@ -45,9 +46,13 @@ interface Props {
   routes: AITaskRoutes
   contextProfiles: AgentContextProfiles
   teamBudgetProfile: AgentTeamBudgetProfile
+  creativeReliabilityEnabled: boolean
+  creativeQualityMode: CreativeQualityModeV1
   onSetRoute: (taskKind: AITaskKind, presetId: string | null) => void
   onSetContextProfile: (taskKind: AgentContextTaskKind, profile: AgentContextProfile) => void
   onSetTeamBudgetProfile: (profile: AgentTeamBudgetProfile) => void
+  onSetCreativeReliabilityEnabled: (enabled: boolean) => void
+  onSetCreativeQualityMode: (mode: CreativeQualityModeV1) => void
 }
 
 const CONTEXT_PROFILE_LABEL_KEYS: Record<AgentContextProfile, 'taskRouting.contextProfiles.lean.label' | 'taskRouting.contextProfiles.balanced.label' | 'taskRouting.contextProfiles.full.label'> = {
@@ -74,6 +79,26 @@ const TEAM_BUDGET_DESC_KEYS: Record<AgentTeamBudgetProfile, 'taskRouting.teamBud
   expanded: 'taskRouting.teamBudgets.expanded.description',
 }
 
+type QualityModeLabelKey =
+  | 'taskRouting.qualityModes.economy.label'
+  | 'taskRouting.qualityModes.balanced.label'
+  | 'taskRouting.qualityModes.refine.label'
+type QualityModeDescriptionKey =
+  | 'taskRouting.qualityModes.economy.description'
+  | 'taskRouting.qualityModes.balanced.description'
+  | 'taskRouting.qualityModes.refine.description'
+
+const QUALITY_MODE_LABEL_KEYS: Record<CreativeQualityModeV1, QualityModeLabelKey> = {
+  economy: 'taskRouting.qualityModes.economy.label',
+  balanced: 'taskRouting.qualityModes.balanced.label',
+  refine: 'taskRouting.qualityModes.refine.label',
+}
+const QUALITY_MODE_DESCRIPTION_KEYS: Record<CreativeQualityModeV1, QualityModeDescriptionKey> = {
+  economy: 'taskRouting.qualityModes.economy.description',
+  balanced: 'taskRouting.qualityModes.balanced.description',
+  refine: 'taskRouting.qualityModes.refine.description',
+}
+
 function isContextTaskKind(taskKind: AITaskKind): taskKind is AgentContextTaskKind {
   return AGENT_CONTEXT_TASK_KINDS.includes(taskKind as AgentContextTaskKind)
 }
@@ -83,9 +108,13 @@ export default function AITaskRoutingSection({
   routes,
   contextProfiles,
   teamBudgetProfile,
+  creativeReliabilityEnabled,
+  creativeQualityMode,
   onSetRoute,
   onSetContextProfile,
   onSetTeamBudgetProfile,
+  onSetCreativeReliabilityEnabled,
+  onSetCreativeQualityMode,
 }: Props) {
   const { t } = useDomainT('settings')
   const renderRoutes = (taskKinds: readonly AITaskKind[]) => (
@@ -145,6 +174,43 @@ export default function AITaskRoutingSection({
           {t('taskRouting.agentTeamDescription')}
         </p>
       </div>
+      <label className="mb-2 block rounded border border-border bg-bg-base p-2.5">
+        <span className="flex items-start gap-2">
+          <input
+            type="checkbox"
+            checked={creativeReliabilityEnabled}
+            onChange={event => onSetCreativeReliabilityEnabled(event.target.checked)}
+            aria-label={t('taskRouting.reliabilityAria')}
+            className="mt-0.5"
+          />
+          <span>
+            <span className="block text-xs font-medium text-text-primary">{t('taskRouting.reliabilityLabel')}</span>
+            <span className="mt-0.5 block text-[10px] text-text-muted">
+              {creativeReliabilityEnabled
+                ? t('taskRouting.reliabilityDescriptionEnabled')
+                : t('taskRouting.reliabilityDescriptionDisabled')}
+            </span>
+          </span>
+        </span>
+      </label>
+      <label className="mb-2 block rounded border border-border bg-bg-base p-2.5">
+        <span className="block text-xs font-medium text-text-primary">{t('taskRouting.qualityModeLabel')}</span>
+        <span className="mt-0.5 block text-[10px] text-text-muted">
+          {t('taskRouting.qualityModeDescription')}
+        </span>
+        <select
+          value={creativeQualityMode}
+          disabled={!creativeReliabilityEnabled}
+          onChange={event => onSetCreativeQualityMode(event.target.value as CreativeQualityModeV1)}
+          aria-label={t('taskRouting.qualityModeAria')}
+          className="mt-2 w-full rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary focus:border-accent focus:outline-none"
+        >
+          {(Object.keys(QUALITY_MODE_LABEL_KEYS) as CreativeQualityModeV1[])
+            .map(mode => (
+              <option key={mode} value={mode}>{t(QUALITY_MODE_LABEL_KEYS[mode])} · {t(QUALITY_MODE_DESCRIPTION_KEYS[mode])}</option>
+            ))}
+        </select>
+      </label>
       <label className="mb-2 block rounded border border-border bg-bg-base p-2.5">
         <span className="block text-xs font-medium text-text-primary">{t('taskRouting.teamBudgetLabel')}</span>
         <span className="mt-0.5 block text-[10px] text-text-muted">

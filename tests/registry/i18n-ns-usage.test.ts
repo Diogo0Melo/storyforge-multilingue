@@ -39,6 +39,11 @@ const PRELOADED_NS = new Set(['common', 'nav', 'shared', 'errors', 'errors-lib',
  * (Gate 5 · S1)。新增条目前必须经架构复审。
  */
 const CROSS_NS_ALLOWLIST: Record<string, ReadonlySet<string>> = {
+  // Settings exposes the shared agent reliability labels through an explicit
+  // cross-domain entry; it is not a namespace fallback.
+  'components/settings/AITaskRoutingSection.tsx': new Set(['agent']),
+  // Workspace-level candidate/task status messages are owned by the agent ns.
+  'pages/WorkspacePage.tsx': new Set(['agent']),
   'components/node-flow/NodeInspector.tsx': new Set(['outline']),
   'components/node-authoring/NodeAuthoringWorkspace.tsx': new Set(['outline']),
   'components/shared/PromptRunPanel.tsx': new Set(['settings']),

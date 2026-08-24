@@ -17,11 +17,14 @@
     "planning": "The Master Agent is understanding the goal and scheduling tasks.",
     "completed": "Completed",
     "failedFallback": "Failed",
+    "failedWithMessage": "Failed: {{message}}",
+    "domainFallback": "Domain task",
     "running": "Running"
   },
   "candidate": {
     "pendingPrefix": "Pending · {{label}}",
     "inputSources": "{{count}} input sources",
+    "inputTokenCount": "About {{count}} tokens",
     "contentAria": "{{label}} candidate content",
     "outputNote": "This is the real output from the domain Agent. It survives refreshes; only adoption writes it into official project data.",
     "evidenceSummary": "View actual input evidence for this run · {{count}} sources",
@@ -33,10 +36,22 @@
     "teamBudgetLine": "Team budget this round ≈ {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} calls · Semantic retries {{retries}}/{{maxRetries}}",
     "dependsOnWarning": "Adopt upstream tasks first: {{ids}}",
     "rejectButton": "Reject",
-    "adoptButton": "Adopt"
+    "adoptButton": "Confirm write",
+    "saving": "Saving candidate edits…",
+    "saveFailed": "Could not save candidate edits. Edit again to retry; adoption and rejection remain locked.",
+    "quarantinedTitle": "Candidate held for recovery",
+    "quarantinedReason": "Stored candidate data failed validation: {{reason}}",
+    "quarantinedRecovery": "Adoption and rejection are unavailable until this candidate is recovered."
   },
   "errors": {
-    "operationFailed": "Operation failed, please try again later."
+    "operationFailed": "Operation failed, please try again later.",
+    "storyArcSnapshotCorrupted": "The story arc candidate snapshot is corrupted and has been quarantined.",
+    "outlineSnapshotCorrupted": "The outline candidate snapshot is corrupted and has been quarantined.",
+    "candidateTextPersistencePending": "Candidate text has not finished saving and cannot be adopted.",
+    "candidateTextPersistenceFailed": "Candidate text could not be saved and cannot be adopted.",
+    "candidateMissingOrResolved": "Candidate does not exist or has already been resolved.",
+    "durableCandidateScopeMissing": "The durable candidate is missing the current workspace scope and has been quarantined.",
+    "alert": "Error: {{message}}"
   },
   "composer": {
     "inputAria": "Tell the Master Agent your goal",
@@ -53,7 +68,66 @@
     "completionCandidates": "Background domain Agents finished and generated {{count}} candidates. Review, edit, and decide whether to adopt them.",
     "completionBudget": "This round the team used about {{used}} / {{max}} tokens, {{calls}} calls, and {{retries}} semantic-controlled retries.",
     "roundFailed": "This round did not complete: {{message}}",
-    "candidateRejected": "Candidate rejected; nothing was written to the project."
+    "resumeSuccess": "The interrupted round resumed and generated {{count}} candidates. Review and confirm them.",
+    "resumeFailed": "This round could not be resumed: {{message}}",
+    "candidateRejected": "Candidate rejected; nothing was written to the project.",
+    "recoveryAvailable": "An interrupted background round is available.",
+    "resumeButton": "Resume unfinished generation"
+  },
+  "preview": {
+    "ariaLabel": "Creative run preview",
+    "candidateEstimate": "This run is expected to produce {{count}} editable candidates: {{labels}}.",
+    "callEstimate": "Usually {{usual}} model calls; hard cap {{max}} calls / {{tokens}} tokens. The run stops before a call when a limit is reached.",
+    "repairEnabled": "Only identifiable structural issues may add at most one targeted repair per artifact; subjective quality notes never trigger an automatic retry.",
+    "repairDisabled": "Economy mode makes one generation call; later checks and author edits do not call the model.",
+    "deferred": "{{labels}} will wait until you confirm the story plan, then generate in the next round.",
+    "recoveryNote": "You can stop during execution; saved plans and candidates can be recovered.",
+    "domain": {
+      "worldOrigin": "World setting",
+      "character": "Character",
+      "inspiration": "Reverse-engineered inspiration",
+      "outline": "Story planning",
+      "prose": "Prose"
+    }
+  },
+  "artifact": {
+    "status": {
+      "ready": "Ready to adopt",
+      "usableWithWarnings": "Usable with warnings",
+      "manualRepair": "Manual repair needed",
+      "blocked": "Blocking issue",
+      "unknown": "Artifact status unavailable"
+    },
+    "callCount": "{{count}} model calls",
+    "tokens": "{{count}} tokens",
+    "tokensIncomplete": "Token usage incomplete",
+    "estimatedCost": "Estimated cost ${{amount}}",
+    "costUnavailable": "Cost unavailable",
+    "modelTime": "Model time {{amount}} ms",
+    "latencyIncomplete": "Latency evidence incomplete",
+    "repair": {
+      "repaired": "Targeted repair succeeded",
+      "partial": "Targeted repair completed with warnings",
+      "failed": "Targeted repair failed; automatic calls stopped",
+      "unavailable": "Repair evidence unavailable"
+    },
+    "fragments": "Kept {{valid}} valid fragments; rejected {{rejected}} damaged fragments.",
+    "briefSummary": "View this round's story goal",
+    "brief": {
+      "creativeGoal": "Goal: {{value}}",
+      "entryState": "Starting state: {{value}}",
+      "protagonistDesire": "Character wants: {{value}}",
+      "obstacle": "Current obstacle: {{value}}",
+      "requiredChoice": "Required choice: {{value}}",
+      "stakes": "Failure cost: {{value}}",
+      "exitChange": "Change to create: {{value}}",
+      "nextPressure": "Next pressure: {{value}}",
+      "mustHonor": "Project evidence used this round (from registered official data):"
+    },
+    "assumptionsSummary": "View {{count}} provisional assumptions (not official until adopted)",
+    "issuesSummary": "View {{count}} issues",
+    "valueUnavailable": "Unavailable",
+    "ariaLabel": "Creative artifact status"
   },
   "copilot": {
     "character": {

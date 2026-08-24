@@ -1,7 +1,8 @@
 import type { Chapter, ItemLedgerEntry, OutlineNode } from '../types'
 import type { ConsistencyFinding } from '../ai/adapters/consistency-audit-adapter'
-import { db } from '../db/schema'
 import { getT } from '../../i18n'
+import { readOwnedRows, resolveScope } from '../world-engine/scope'
+import type { WorkspaceScope } from '../types/world-ownership'
 import { resolveProjectionBoundary } from './projection-boundary'
 
 export interface HeldItemProjection {
@@ -72,7 +73,10 @@ export function projectHeldItems(input: ProjectHeldItemsInput): HeldItemProjecti
     if (input.characterId != null && (entry.characterId ?? null) !== (input.characterId ?? null)) continue
     const itemKey = normalizeItemName(entry.itemName)
     if (!itemKey) continue
-    const ownerKey = entry.characterId != null ? `id:${entry.characterId}` : `name:${entry.heldByName.trim()}`
+    // v1-v3 backups predate heldByName. Registry import now fills it, while
+    // this fallback also keeps already-imported legacy rows readable.
+    const heldByName = (entry.heldByName ?? '').trim()
+    const ownerKey = entry.characterId != null ? `id:${entry.characterId}` : `name:${heldByName}`
     const key = JSON.stringify([ownerKey, itemKey])
     const entryChapterId = entry.chapterId ?? null
     if (entryChapterId != null) {
@@ -82,7 +86,7 @@ export function projectHeldItems(input: ProjectHeldItemsInput): HeldItemProjecti
     if (!includesInWorld(entry, chapterWorld, input.worldGroupId)) continue
     const bucket = grouped.get(key) ?? {
       displayName: entry.itemName.trim(),
-      heldByName: entry.heldByName.trim(),
+      heldByName,
       characterId: entry.characterId ?? null,
       quantity: 0,
       evidence: [],
@@ -110,11 +114,13 @@ export async function readProjectHeldItems(
   worldGroupId?: number | null,
   characterId?: number | null,
   outlineNodeId?: number | null,
+  scope?: WorkspaceScope,
 ): Promise<HeldItemProjection[]> {
+  const resolved = scope ?? await resolveScope({ projectId })
   const [entries, outlineNodes, chapters] = await Promise.all([
-    db.itemLedger.where('projectId').equals(projectId).toArray(),
-    db.outlineNodes.where('projectId').equals(projectId).toArray(),
-    db.chapters.where('projectId').equals(projectId).toArray(),
+    readOwnedRows<any>(resolved, 'itemLedger', { owner: 'work' }),
+    readOwnedRows<any>(resolved, 'outlineNodes', { owner: 'work' }),
+    readOwnedRows<any>(resolved, 'chapters', { owner: 'work' }),
   ])
   return projectHeldItems({
     entries,

@@ -30,6 +30,7 @@
     "structuredStreamingReview": "AI is generating structured content… (a reviewable plan will appear below when ready)",
     "structuredDoneWithAccept": "✓ Structured content generated. Click Accept to auto-fill the corresponding fields.",
     "structuredDoneReview": "✓ Structured content generated. The system parsed it into the reviewable plan below.",
+    "editableCandidateAria": "Editable AI candidate content",
     "showRaw": "View raw data",
     "hideRaw": "Hide raw data",
     "thinking": "AI is thinking...",
@@ -69,6 +70,7 @@
   },
   "extractionReview": {
     "analyzing": "AI is analyzing and organizing candidates…",
+    "writing": "Writing the confirmed selections…",
     "empty": "No new content found to write.",
     "confirmWrite": "Confirm write ({{count}})",
     "closeTitle": "Close"

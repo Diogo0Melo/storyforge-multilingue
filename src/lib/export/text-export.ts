@@ -3,6 +3,7 @@ import type { OutlineNode, Chapter } from '../types'
 import { isHtml, htmlToPlainText } from '../utils/html'
 import { buildBestChapterByOutlineMap } from '../chapters/selectors'
 import { getT } from '../../i18n'
+import { readOwnedRows, resolveReadScopeLike, type WorkspaceScopeLike } from '../world-engine/scope'
 
 /** HTML → Markdown（简化规则，覆盖 TipTap StarterKit 产出的常见结构） */
 function htmlToMarkdown(html: string): string {
@@ -50,13 +51,15 @@ function htmlToMarkdown(html: string): string {
 }
 
 /** 导出为 Markdown 格式 */
-export async function exportProjectMarkdown(projectId: number): Promise<string> {
+export async function exportProjectMarkdown(scopeInput: WorkspaceScopeLike): Promise<string> {
+  const scope = await resolveReadScopeLike(scopeInput)
+  const projectId = scope.projectId
   const project = await db.projects.get(projectId)
   if (!project) throw new Error(getT()('errors-lib:export.textExportProjectMissing'))
 
   const [outlineNodes, chapters] = await Promise.all([
-    db.outlineNodes.where('projectId').equals(projectId).toArray(),
-    db.chapters.where('projectId').equals(projectId).toArray(),
+    readOwnedRows<OutlineNode>(scope, 'outlineNodes', { owner: 'work' }),
+    readOwnedRows<Chapter>(scope, 'chapters', { owner: 'work' }),
   ])
 
   // 按大纲结构组织。历史项目可能存在同一大纲节点多条章节记录,这里必须择优取有正文的记录。
@@ -89,13 +92,15 @@ export async function exportProjectMarkdown(projectId: number): Promise<string> 
 }
 
 /** 导出为纯文本格式 */
-export async function exportProjectTXT(projectId: number): Promise<string> {
+export async function exportProjectTXT(scopeInput: WorkspaceScopeLike): Promise<string> {
+  const scope = await resolveReadScopeLike(scopeInput)
+  const projectId = scope.projectId
   const project = await db.projects.get(projectId)
   if (!project) throw new Error(getT()('errors-lib:export.textExportProjectMissing'))
 
   const [outlineNodes, chapters] = await Promise.all([
-    db.outlineNodes.where('projectId').equals(projectId).toArray(),
-    db.chapters.where('projectId').equals(projectId).toArray(),
+    readOwnedRows<OutlineNode>(scope, 'outlineNodes', { owner: 'work' }),
+    readOwnedRows<Chapter>(scope, 'chapters', { owner: 'work' }),
   ])
 
   const chapterMap = buildBestChapterByOutlineMap(chapters)

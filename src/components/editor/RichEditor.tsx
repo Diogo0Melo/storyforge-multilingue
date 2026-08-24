@@ -1,6 +1,7 @@
 import { forwardRef, useCallback, useImperativeHandle, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { useDomainT } from '../../i18n'
 import { useEditor, EditorContent, type Editor } from '@tiptap/react'
+import { getHTMLFromFragment } from '@tiptap/core'
 import type { EditorView } from '@tiptap/pm/view'
 import { Decoration, DecorationSet } from '@tiptap/pm/view'
 import { Plugin, PluginKey } from '@tiptap/pm/state'
@@ -35,6 +36,10 @@ export interface RichEditorHandle {
   appendContent: (html: string) => void
   /** 替换当前选区为 HTML 内容 */
   replaceSelection: (html: string) => void
+  /** 冻结当前选区、纯文本和完整 HTML，供 durable 局部编辑绑定。 */
+  getSelectionSnapshot: () => { from: number; to: number; text: string; sourceHtml: string } | null
+  /** 在不修改当前编辑器的前提下预演精确范围替换后的完整 HTML。 */
+  previewRangeReplacement: (from: number, to: number, text: string) => string | null
   /** 获取选中文字（纯文本） */
   getSelectedText: () => string
   /** 获取全部 HTML */
@@ -348,6 +353,25 @@ const RichEditor = forwardRef<RichEditorHandle, Props>(function RichEditor(
             .insertContent(toHtml(html))
             .run()
         }
+      },
+      getSelectionSnapshot: () => {
+        if (!editor || editor.isDestroyed) return null
+        const { from, to, empty } = editor.state.selection
+        if (empty) return null
+        return {
+          from,
+          to,
+          text: editor.state.doc.textBetween(from, to, '\n'),
+          sourceHtml: editor.getHTML(),
+        }
+      },
+      previewRangeReplacement: (from, to, text) => {
+        if (!editor || editor.isDestroyed || from < 1 || to <= from || to > editor.state.doc.content.size) return null
+        const transaction = editor.captureTransaction(() => {
+          editor.commands.insertContentAt({ from, to }, text, { updateSelection: false })
+        })
+        if (!transaction) return null
+        return getHTMLFromFragment(transaction.doc.content, editor.schema)
       },
       getSelectedText: () => {
         if (!editor || editor.isDestroyed) return ''

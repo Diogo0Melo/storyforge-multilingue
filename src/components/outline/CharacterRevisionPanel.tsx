@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import {
   Anchor,
   FileSearch,
@@ -6,26 +6,28 @@ import {
   ShieldCheck,
   Sparkles,
 } from 'lucide-react'
-import type { CharacterDrivenPlan, Project } from '../../lib/types'
+import type { CharacterDrivenPlan, Project, WorkspaceScope } from '../../lib/types'
 import { parseCharacterDrivenPlanArcs } from '../../lib/types'
 import { useCharacterStore } from '../../stores/character'
 import { useOutlineStore } from '../../stores/outline'
-import { useAIStream } from '../../hooks/useAIStream'
-import { createAISessionKey } from '../../stores/ai-generation-session'
-import { buildCharacterRevisionPrompt } from '../../lib/ai/character-revision'
 import {
-  applyCharacterRevisionPatches,
   buildCharacterRevisionSnapshot,
   effectiveProtectedThrough,
-  parseCharacterRevisionOutput,
   type CharacterRevisionChangeType,
   type CharacterRevisionPlan,
   type CharacterRevisionScopeInput,
   type CharacterRevisionSnapshot,
   type CharacterRevisionStrategy,
 } from '../../lib/story-planning/character-revision'
+import {
+  decideCharacterRevisionCandidateV1,
+  parseCharacterRevisionCandidateDraftV1,
+  serializeCharacterRevisionCandidateV1,
+  type CharacterRevisionCandidateV1,
+  type CharacterRevisionCopilotSnapshotV1,
+} from '../../lib/agent/character-revision-copilot'
+import type { MasterCopilotController } from '../agent/useMasterCopilot'
 import AutoResizeTextarea from '../shared/AutoResizeTextarea'
-import AIStreamOutput from '../shared/AIStreamOutput'
 import { useDialog } from '../shared/Dialog'
 import { useDomainT, type DomainTFunction } from '../../i18n'
 import CharacterRevisionResult from './CharacterRevisionResult'
@@ -33,6 +35,7 @@ import CharacterRevisionResult from './CharacterRevisionResult'
 interface Props {
   project: Project
   plan: CharacterDrivenPlan | null
+  copilot: MasterCopilotController
   onSwitchToPlanning: () => void
 }
 
@@ -56,19 +59,19 @@ function getStrategyLabels(t: DomainTFunction): Record<CharacterRevisionStrategy
 export default function CharacterRevisionPanel({
   project,
   plan,
+  copilot,
   onSwitchToPlanning,
 }: Props) {
   const { t } = useDomainT('outline')
   const characters = useCharacterStore(state => state.characters)
   const loadOutline = useOutlineStore(state => state.loadAll)
   const dialog = useDialog()
-  const ai = useAIStream(createAISessionKey(
-    project.id!,
-    'character-revision.analyze',
-    plan?.id ?? 'no-plan',
-  ))
-  const analysisSnapshot = useRef<CharacterRevisionSnapshot | null>(null)
-  const analysisScope = useRef<CharacterRevisionScopeInput | null>(null)
+  const workspaceScope = useMemo<WorkspaceScope | undefined>(() => (
+    project.id != null && project.activeWorldId != null && project.activeWorkId != null
+      ? { projectId: project.id, worldId: project.activeWorldId, workId: project.activeWorkId }
+      : undefined
+  ), [project.activeWorkId, project.activeWorldId, project.id])
+  const scopeInput = workspaceScope ?? project.id!
 
   const [snapshot, setSnapshot] = useState<CharacterRevisionSnapshot | null>(null)
   const [loadingSnapshot, setLoadingSnapshot] = useState(true)
@@ -83,16 +86,22 @@ export default function CharacterRevisionPanel({
   const [anchorNodeIds, setAnchorNodeIds] = useState<Set<number>>(new Set())
   const [extraRequirements, setExtraRequirements] = useState('')
   const [analysis, setAnalysis] = useState<CharacterRevisionPlan | null>(null)
+  const [parsedCandidate, setParsedCandidate] = useState<CharacterRevisionCandidateV1 | null>(null)
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null)
   const [selectedPatchIds, setSelectedPatchIds] = useState<Set<number>>(new Set())
   const [localError, setLocalError] = useState<string | null>(null)
-  const [applying, setApplying] = useState(false)
   const [resultMessage, setResultMessage] = useState<string | null>(null)
+  const pendingRevisionCandidates = copilot.pendingCandidates.filter(candidate => (
+    candidate.payload.skillId === 'outline.character-revision'
+    && candidate.payload.characterRevisionRequest?.planId === (plan?.id ?? null)
+  ))
+  const activeCandidate = pendingRevisionCandidates[0] ?? null
+  const hasOtherPendingCandidates = copilot.pendingCandidates.some(candidate => candidate !== activeCandidate)
 
   const refreshSnapshot = async () => {
     setLoadingSnapshot(true)
     try {
-      const next = await buildCharacterRevisionSnapshot(project.id!)
+      const next = await buildCharacterRevisionSnapshot(scopeInput)
       setSnapshot(next)
       setProtectedThrough(current => Math.max(current, next.lastWrittenOrdinal))
     } finally {
@@ -101,8 +110,12 @@ export default function CharacterRevisionPanel({
   }
 
   useEffect(() => {
+    setAnalysis(null)
+    setParsedCandidate(null)
+    setSelectedOptionId(null)
+    setSelectedPatchIds(new Set())
     void refreshSnapshot()
-  }, [project.id]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [scopeInput]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (characterId != null && characters.some(character => character.id === characterId)) return
@@ -124,19 +137,36 @@ export default function CharacterRevisionPanel({
   const selectedOption = analysis?.options.find(option => option.id === selectedOptionId) ?? null
 
   useEffect(() => {
-    if (ai.isStreaming || !ai.output || !analysisSnapshot.current || !analysisScope.current) return
-    const parsed = parseCharacterRevisionOutput(ai.output, analysisSnapshot.current, analysisScope.current)
-    if (!parsed) {
-      setLocalError(t('revision.invalidJsonError'))
+    if (!activeCandidate) {
+      setAnalysis(null)
+      setParsedCandidate(null)
+      setSelectedOptionId(null)
+      setSelectedPatchIds(new Set())
       return
     }
-    setAnalysis(parsed)
-    const preferred = parsed.options.find(
-      option => option.intensity === analysisScope.current?.strategy,
-    ) ?? parsed.options[0]
-    setSelectedOptionId(preferred?.id ?? null)
-    setSelectedPatchIds(new Set(preferred?.patches.map(patch => patch.outlineNodeId) ?? []))
-  }, [ai.isStreaming, ai.output, t])
+    try {
+      const parsed = parseCharacterRevisionCandidateDraftV1(
+        activeCandidate.event.content,
+        activeCandidate.payload.baseSnapshot as CharacterRevisionCopilotSnapshotV1,
+      )
+      setParsedCandidate(parsed)
+      setAnalysis(parsed.plan)
+      const preferred = parsed.decision
+        ? parsed.plan.options.find(option => option.id === parsed.decision!.optionId)
+        : parsed.plan.options.find(option => (
+            option.intensity === activeCandidate.payload.characterRevisionRequest?.strategy
+          )) ?? parsed.plan.options[0]
+      setSelectedOptionId(preferred?.id ?? null)
+      setSelectedPatchIds(new Set(
+        parsed.decision?.outlineNodeIds ?? preferred?.patches.map(patch => patch.outlineNodeId) ?? [],
+      ))
+      setLocalError(null)
+    } catch (error) {
+      setAnalysis(null)
+      setParsedCandidate(null)
+      setLocalError(error instanceof Error ? error.message : t('revision.invalidRecoveredCandidate'))
+    }
+  }, [activeCandidate, t])
 
   useEffect(() => {
     if (!selectedOption) return
@@ -162,30 +192,30 @@ export default function CharacterRevisionPanel({
     setLocalError(null)
     setResultMessage(null)
     setAnalysis(null)
+    setParsedCandidate(null)
     setSelectedOptionId(null)
     setSelectedPatchIds(new Set())
     try {
       const requestedScope = currentScope()
-      const prepared = await buildCharacterRevisionPrompt({
-        projectId: project.id!,
-        plan,
-        scope: requestedScope,
-      })
-      analysisSnapshot.current = prepared.snapshot
-      analysisScope.current = requestedScope
-      setSnapshot(prepared.snapshot)
-      await ai.start(prepared.messages, undefined, {
-        category: 'outline.character-revision',
-        projectId: project.id!,
-        outputKind: 'mixed',
-      })
+      await copilot.submitTargetedRequest(
+        '分析当前角色变更对已写事实、角色状态、故事线和未来大纲的影响，并生成三档可审查方案。',
+        {
+          agentId: 'outline',
+          skillId: 'outline.character-revision',
+          instruction: '分析当前角色变更对已写事实、角色状态、故事线和未来大纲的影响，并生成三档可审查方案。',
+          characterRevisionRequest: {
+            planId: plan?.id ?? null,
+            ...requestedScope,
+          },
+        },
+      )
     } catch (error) {
       setLocalError(error instanceof Error ? error.message : t('revision.prepareFailed'))
     }
   }
 
   const handleApply = async () => {
-    if (!selectedOption) return
+    if (!selectedOption || !parsedCandidate || !activeCandidate) return
     const patches = selectedOption.patches.filter(patch => selectedPatchIds.has(patch.outlineNodeId))
     if (!patches.length) return
     const confirmed = await dialog.confirm({
@@ -194,39 +224,27 @@ export default function CharacterRevisionPanel({
       confirmText: t('revision.applyConfirmButton'),
     })
     if (!confirmed) return
-    setApplying(true)
     setResultMessage(null)
     try {
-      const capturedScope = analysisScope.current
-      const protectedBoundary = Math.max(
-        effectiveBoundary,
-        capturedScope?.protectedThroughOrdinal ?? 0,
+      const decided = decideCharacterRevisionCandidateV1(
+        parsedCandidate,
+        selectedOption.id,
+        patches.map(patch => patch.outlineNodeId),
       )
-      const protectedAnchors = new Set([
-        ...anchorNodeIds,
-        ...(capturedScope?.anchorNodeIds ?? []),
-      ])
-      const result = await applyCharacterRevisionPatches({
-        projectId: project.id!,
-        protectedThroughOrdinal: protectedBoundary,
-        anchorNodeIds: [...protectedAnchors],
-        patches,
+      const draft = serializeCharacterRevisionCandidateV1(decided)
+      await copilot.updateCandidate(activeCandidate.event.id!, draft)
+      const adopted = await copilot.adoptCandidate({
+        ...activeCandidate,
+        event: { ...activeCandidate.event, content: draft },
+        payload: { ...activeCandidate.payload },
       })
-      await loadOutline(project.id!)
+      if (!adopted) return
+      await loadOutline(scopeInput)
       await refreshSnapshot()
-      setResultMessage(
-        t('revision.applyResult', { count: result.appliedOutlineNodeIds.length, applied: result.appliedOutlineNodeIds.length })
-        + (result.skipped.length ? t('revision.applySkippedSuffix', { count: result.skipped.length }) : ''),
-      )
-      if (result.appliedOutlineNodeIds.length) {
-        setSelectedPatchIds(current => {
-          const next = new Set(current)
-          result.appliedOutlineNodeIds.forEach(id => next.delete(id))
-          return next
-        })
-      }
-    } finally {
-      setApplying(false)
+      setResultMessage(t('revision.applyResult', { count: patches.length, applied: patches.length }))
+      setSelectedPatchIds(new Set())
+    } catch (error) {
+      setLocalError(error instanceof Error ? error.message : t('revision.applyFailed'))
     }
   }
 
@@ -238,6 +256,13 @@ export default function CharacterRevisionPanel({
     } catch {
       setResultMessage(t('revision.copyPermissionError'))
     }
+  }
+
+  const handleReject = async () => {
+    if (!activeCandidate) return
+    const rejected = await copilot.rejectCandidate(activeCandidate)
+    if (!rejected) return
+    setResultMessage(t('revision.rejectResult'))
   }
 
   const toggleAnchor = (nodeId: number) => {
@@ -432,36 +457,51 @@ export default function CharacterRevisionPanel({
         <div className="flex flex-wrap items-center gap-3">
           <button
             onClick={handleAnalyze}
-            disabled={!snapshot || !changeDescription.trim() || ai.isStreaming}
+            disabled={
+              !snapshot
+              || !changeDescription.trim()
+              || copilot.loading
+              || copilot.busy
+              || copilot.pendingCandidates.length > 0
+            }
             className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-sm font-medium text-white disabled:opacity-40"
           >
-            {ai.isStreaming
+            {copilot.busy
               ? <Loader2 className="w-4 h-4 animate-spin" />
               : <Sparkles className="w-4 h-4" />}
-            {ai.isStreaming ? t('revision.analyzing') : t('revision.analyzeButton')}
+            {copilot.busy ? t('revision.analyzing') : t('revision.analyzeButton')}
           </button>
+          {copilot.busy && (
+            <button
+              onClick={copilot.stop}
+              className="rounded border border-border px-3 py-2 text-xs text-text-muted"
+            >
+              {t('revision.stop')}
+            </button>
+          )}
+          {copilot.recoveryAvailable && !copilot.busy && (
+            <button
+              onClick={() => { void copilot.resume() }}
+              className="rounded border border-border px-3 py-2 text-xs text-text-muted"
+            >
+              {t('revision.resume')}
+            </button>
+          )}
           <div className="inline-flex items-center gap-1.5 text-xs text-text-muted">
             <ShieldCheck className="w-4 h-4 text-green-600" />
             {t('revision.analysisSafeNote')}
           </div>
         </div>
 
-        {(ai.output || ai.isStreaming || ai.error) && (
-          <AIStreamOutput
-            output={ai.output}
-            isStreaming={ai.isStreaming}
-            error={ai.error}
-            tokenUsage={ai.tokenUsage}
-            onStop={ai.stop}
-            onRetry={handleAnalyze}
-            placeholder={t('revision.awaitingAnalysis')}
-            moduleKey="plot.character-revision"
-          />
+        {(localError || copilot.error) && (
+          <div className="rounded border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600">
+            {localError || copilot.error}
+          </div>
         )}
 
-        {localError && (
-          <div className="rounded border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-600">
-            {localError}
+        {hasOtherPendingCandidates && (
+          <div className="rounded border border-amber-500/30 bg-amber-500/10 p-3 text-sm text-amber-700">
+            {t('revision.otherPending')}
           </div>
         )}
 
@@ -470,11 +510,12 @@ export default function CharacterRevisionPanel({
             analysis={analysis}
             selectedOptionId={selectedOptionId}
             selectedPatchIds={selectedPatchIds}
-            applying={applying}
+            applying={copilot.busy}
             onSelectOption={setSelectedOptionId}
             onTogglePatch={togglePatch}
             onCopy={handleCopy}
             onApply={handleApply}
+            onReject={() => { void handleReject() }}
           />
         )}
 

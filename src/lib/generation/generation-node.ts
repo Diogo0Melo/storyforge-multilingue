@@ -43,6 +43,21 @@ export interface GenerationNodeRunResult<TOutput, TAdoption> {
   adoption: TAdoption | null
 }
 
+export interface GenerationNodeShadowTrace {
+  beforeModel: (input: {
+    prepared: PreparedGenerationNode
+    messages: ChatMessage[]
+  }) => Promise<void>
+  modelResponded: (output: unknown) => Promise<void>
+  candidateReady?: (output: unknown) => Promise<void>
+  stepSucceeded: (output: unknown) => Promise<void>
+  stepFailed: (input: {
+    phase: 'model' | 'gate' | 'adoption'
+    error: unknown
+  }) => Promise<void>
+  onTraceError?: (error: unknown) => void
+}
+
 export type GenerationNodeAdoptionResult<TOutput, TAdoption> =
   GenerationNodeRunResult<TOutput, TAdoption>
 
@@ -54,6 +69,22 @@ function assertMessages(messages: ChatMessage[]): void {
   if (messages.length === 0) throw new Error('生成节点没有可发送的消息。')
   if (messages.some(message => !message.content.trim())) {
     throw new Error('生成节点包含空消息，已阻止调用模型。')
+  }
+}
+
+async function notifyShadowTrace(
+  trace: GenerationNodeShadowTrace | undefined,
+  notify: (trace: GenerationNodeShadowTrace) => Promise<void>,
+): Promise<void> {
+  if (!trace) return
+  try {
+    await notify(trace)
+  } catch (error) {
+    try {
+      trace.onTraceError?.(error)
+    } catch {
+      // H0 shadow tracing must never change the production generation result.
+    }
   }
 }
 
@@ -82,6 +113,13 @@ export async function runGenerationNode<TInput, TOutput, TAdoption>(
   options: {
     messages?: ChatMessage[]
     adopt?: boolean
+    /**
+     * Some durable nodes stop at an author-confirmed candidate. In that mode
+     * the durable runner owns step.succeeded and records it only after
+     * adoption; the model/gate lifecycle remains unchanged.
+     */
+    deferStepSucceeded?: boolean
+    shadowTrace?: GenerationNodeShadowTrace
   } = {},
 ): Promise<GenerationNodeRunResult<TOutput, TAdoption>> {
   if (prepared.nodeId !== node.id || prepared.kind !== node.kind) {
@@ -89,14 +127,47 @@ export async function runGenerationNode<TInput, TOutput, TAdoption>(
   }
   const messages = cloneMessages(options.messages ?? prepared.messages)
   assertMessages(messages)
-  const output = await node.run(messages)
-  const gate = node.gate ? await node.gate(output) : null
+  await notifyShadowTrace(options.shadowTrace, trace => trace.beforeModel({ prepared, messages }))
+  let output: TOutput
+  try {
+    output = await node.run(messages)
+  } catch (error) {
+    await notifyShadowTrace(options.shadowTrace, trace => trace.stepFailed({ phase: 'model', error }))
+    throw error
+  }
+  await notifyShadowTrace(options.shadowTrace, trace => trace.modelResponded(output))
+  let gate: GenerationGateResult | null
+  try {
+    gate = node.gate ? await node.gate(output) : null
+  } catch (error) {
+    await notifyShadowTrace(options.shadowTrace, trace => trace.stepFailed({ phase: 'gate', error }))
+    throw error
+  }
   if (gate?.status === 'blocked') {
+    await notifyShadowTrace(options.shadowTrace, trace => trace.stepFailed({
+      phase: 'gate',
+      error: new Error(gate.issues.map(issue => issue.code).join(',') || 'generation_gate_blocked'),
+    }))
     return { output, gate, adopted: false, adoption: null }
   }
+  await notifyShadowTrace(options.shadowTrace, trace => (
+    trace.candidateReady?.(output) ?? Promise.resolve()
+  ))
   if (options.adopt === true && node.adopt) {
-    const adoption = await node.adopt(output)
+    let adoption: TAdoption
+    try {
+      adoption = await node.adopt(output)
+    } catch (error) {
+      await notifyShadowTrace(options.shadowTrace, trace => trace.stepFailed({ phase: 'adoption', error }))
+      throw error
+    }
+    if (!options.deferStepSucceeded) {
+      await notifyShadowTrace(options.shadowTrace, trace => trace.stepSucceeded(output))
+    }
     return { output, gate, adopted: true, adoption }
+  }
+  if (!options.deferStepSucceeded) {
+    await notifyShadowTrace(options.shadowTrace, trace => trace.stepSucceeded(output))
   }
   return { output, gate, adopted: false, adoption: null }
 }

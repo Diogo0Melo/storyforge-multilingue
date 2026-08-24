@@ -58,6 +58,22 @@ describe('Phase 1.2a · 统一写回层', () => {
       'cultivation-codex-reference-lifecycle',
       'cultivation-progress-lifecycle',
       'codex-category-scope-lifecycle',
+      'workspace-root-lifecycle',
+      'world-root-lifecycle',
+      'work-root-lifecycle',
+      'chapter-delete-lifecycle',
+      'chapter-emotion-delete-lifecycle',
+      'world-game-narrative-modules',
+      'world-game-narrative-nodes',
+      'world-game-narrative-beats',
+      'world-game-narrative-choices',
+      'world-game-definitions',
+      'world-game-adventure-modules',
+      'world-game-interaction-profiles',
+      'world-game-interaction-scenes',
+      'world-game-avg-presentations',
+      'world-game-avg-media-assets',
+      'world-game-avg-media-blobs',
     ])
     for (const extension of ADOPTION_EXTENSIONS) {
       expect(REGISTRY_BY_NAME.has(extension.target), `ADOPTION_EXTENSION target 缺表:${extension.target}`).toBe(true)

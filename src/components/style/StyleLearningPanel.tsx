@@ -1,22 +1,21 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
-import { Sparkles, Brain, Loader2, Check, AlertCircle, Power } from 'lucide-react'
+import { Sparkles, Brain, Loader2, Check, AlertCircle, Power, RotateCcw, X } from 'lucide-react'
 import { useChapterStore } from '../../stores/chapter'
 import { useUserStyleStore } from '../../stores/user-style'
 import { useAIConfigStore } from '../../stores/ai-config'
-import { buildStyleLearnPrompt } from '../../lib/ai/adapters/style-adapter'
-import { chat, resolveRequestConfig } from '../../lib/ai/client'
-import { getAIConfigRequiredMessage, isAIConfigReady } from '../../lib/ai/config-readiness'
 import {
-  formatStyleCalibrationFeedback,
-  formatStyleFewShotPairs,
-  parseStyleCalibrationFeedback,
   parseStyleRevisionPairs,
 } from '../../lib/style/style-learning'
 import { countWords, htmlToPlainText } from '../../lib/utils/html'
-import type { Project, Chapter, ChapterStatus } from '../../lib/types'
+import type { Project, ChapterStatus } from '../../lib/types'
+import {
+  STYLE_LEARNING_CHAPTER_CHARS_V1,
+  STYLE_LEARNING_MAX_CHAPTERS_V1,
+} from '../../lib/style/learning-agent'
 import { useDomainT } from '../../i18n'
 import StyleCalibrationPanel from './StyleCalibrationPanel'
 import StyleRevisionPairsPanel from './StyleRevisionPairsPanel'
+import { useStyleLearningAI } from './useStyleLearningAI'
 
 interface Props {
   project: Project
@@ -31,16 +30,64 @@ const STATUS_LABEL_KEY: Record<StatusKey, 'status.revised' | 'status.polished' |
   final: 'status.final',
 }
 /** 每章取样上限(控 token);整体也按选中章数自然封顶 */
-const PER_CHAPTER_CHARS = 2500
-const MAX_CORPUS_CHAPTERS = 6
+const PER_CHAPTER_CHARS = STYLE_LEARNING_CHAPTER_CHARS_V1
+const MAX_CORPUS_CHAPTERS = STYLE_LEARNING_MAX_CHAPTERS_V1
+
+const DURABLE_COPY = {
+  en: {
+    candidateTitle: 'Style profile candidate',
+    candidateHint: (count: number, words: number) => `Based on ${count} chapters and about ${words.toLocaleString()} words. The candidate is saved; confirming it is required before the formal profile or downstream injection changes.`,
+    candidateReady: 'A style candidate is ready for your review.',
+    recovered: 'A pending style candidate was restored; the model was not called again.',
+    adoptionPending: 'The adoption intent is saved and will finish safely when you confirm again.',
+    recoveryBusy: 'Checking for a recoverable style-learning run…',
+    adopted: 'The style profile was adopted after confirmation.',
+    finished: 'The style-learning run finished without changing your formal profile.',
+    abandon: 'Abandon the unresolved previous run',
+    accept: 'Adopt profile',
+    reject: 'Reject',
+    retry: 'Learn again',
+    candidateAria: 'Style profile candidate awaiting confirmation',
+  },
+  'pt-BR': {
+    candidateTitle: 'Candidato de perfil de estilo',
+    candidateHint: (count: number, words: number) => `Baseado em ${count} capítulos e cerca de ${words.toLocaleString()} palavras. O candidato foi salvo; é preciso confirmá-lo antes de alterar o perfil oficial ou a injeção nas próximas gerações.`,
+    candidateReady: 'Há um candidato de estilo pronto para sua revisão.',
+    recovered: 'Um candidato de estilo pendente foi recuperado; a IA não foi chamada novamente.',
+    adoptionPending: 'A intenção de adoção foi salva e será concluída com segurança quando você confirmar novamente.',
+    recoveryBusy: 'Verificando uma execução de aprendizado de estilo recuperável…',
+    adopted: 'O perfil de estilo foi adotado após sua confirmação.',
+    finished: 'O aprendizado de estilo terminou sem alterar seu perfil oficial.',
+    abandon: 'Abandonar a execução anterior não resolvida',
+    accept: 'Adotar perfil',
+    reject: 'Recusar',
+    retry: 'Aprender novamente',
+    candidateAria: 'Candidato de perfil de estilo aguardando confirmação',
+  },
+  'zh-CN': {
+    candidateTitle: '待确认文风画像',
+    candidateHint: (count: number, words: number) => `基于 ${count} 章、约 ${words.toLocaleString()} 字。候选已持久化；确认前不会改写正式画像，也不会开启下游注入。`,
+    candidateReady: '已有待你确认的文风候选。',
+    recovered: '已恢复待确认文风候选；没有重复调用模型。',
+    adoptionPending: '采纳意图已保存；再次确认即可沿原运行安全收敛。',
+    recoveryBusy: '正在检查可恢复的文风学习运行…',
+    adopted: '文风画像已确认写入。',
+    finished: '文风学习运行已结束，正式画像没有变化。',
+    abandon: '放弃结果不可判定的旧运行',
+    accept: '确认采用画像',
+    reject: '拒绝',
+    retry: '重新学习',
+    candidateAria: '待确认文风画像',
+  },
+} as const
 
 export default function StyleLearningPanel({ project }: Props) {
-  const { t } = useDomainT('style')
+  const { t, lang } = useDomainT('style')
+  const durableCopy = DURABLE_COPY[lang as keyof typeof DURABLE_COPY] ?? DURABLE_COPY.en
   const { chapters, loadAll } = useChapterStore()
   const {
     profile,
     loadProfile,
-    saveProfile,
     updateProfileText,
     setEnabled,
     updateRevisionPairNote,
@@ -49,7 +96,6 @@ export default function StyleLearningPanel({ project }: Props) {
   const aiConfig = useAIConfigStore(s => s.config)
 
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set())
-  const [running, setRunning] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [draft, setDraft] = useState('')
   const taRef = useRef<HTMLTextAreaElement>(null)
@@ -79,18 +125,14 @@ export default function StyleLearningPanel({ project }: Props) {
     () => parseStyleRevisionPairs(profile?.revisionPairs),
     [profile?.revisionPairs],
   )
-  const formattedRevisionPairs = useMemo(
-    () => formatStyleFewShotPairs(revisionPairs),
-    [revisionPairs],
-  )
-  const formattedCalibrationFeedback = useMemo(
-    () => formatStyleCalibrationFeedback(
-      parseStyleCalibrationFeedback(profile?.calibrationFeedback),
-    ),
-    [profile?.calibrationFeedback],
-  )
   const hasLearnableSources = selected.length > 0 || revisionPairs.length > 0
   const hasProfile = !!profile?.profile.trim()
+  const styleAI = useStyleLearningAI({
+    projectId: project.id!,
+    aiConfig,
+    onCommitted: () => loadProfile(project.id!),
+    onError: () => setError(t('learning.errorLearnFailed')),
+  })
 
   const toggle = (id: number) => {
     if (!selectedIds.has(id) && selectedIds.size >= MAX_CORPUS_CHAPTERS) {
@@ -106,47 +148,23 @@ export default function StyleLearningPanel({ project }: Props) {
     })
   }
 
-  const buildSamples = (chs: Chapter[]): string =>
-    chs.map((c, i) => {
-      const plain = htmlToPlainText(c.content).trim()
-      const body = plain.slice(0, PER_CHAPTER_CHARS)
-      const more = plain.length > PER_CHAPTER_CHARS ? '\n（……本章节选，后略）' : ''
-      return `【样本 ${i + 1}·${c.title}】\n${body}${more}`
-    }).join('\n\n────────\n\n')
-
-  const handleLearn = async () => {
+  const handleLearn = () => {
     if (!hasLearnableSources) return
-    const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'style.learn' }).config
-    if (!isAIConfigReady(effectiveConfig)) {
-      setError(getAIConfigRequiredMessage(effectiveConfig))
-      return
-    }
-    setRunning(true)
     setError(null)
-    try {
-      const samples = buildSamples(selected)
-      const messages = buildStyleLearnPrompt(samples, selected.length, sampleWords, {
-        revisionPairs: formattedRevisionPairs,
-        calibrationFeedback: formattedCalibrationFeedback,
-      })
-      // WS-3B Phase 2（fix-5b）：文风画像是面向作者的 UI 分析散文（跟随 UI 语言），
-      // 章节样本/改稿对照作为输入源文本原样保留 → 显式声明 functional-prose。
-      const out = await chat(messages, aiConfig, { category: 'style.learn', projectId: project.id!, outputKind: 'functional-prose' })
-      const text = out.trim()
-      if (!text) { setError(t('learning.errorEmptyResponse')); return }
-      await saveProfile(project.id!, {
-        profile: text,
-        sourceChapterIds: selected.map(c => c.id!),
-        sampleCount: selected.length,
-        sampleWords,
-      })
-    } catch (e) {
-      console.error('[StyleLearning] 学习失败:', e)
-      setError(e instanceof Error ? e.message : t('learning.errorLearnFailed'))
-    } finally {
-      setRunning(false)
-    }
+    void styleAI.run(selected.map(chapter => chapter.id!))
   }
+
+  const laneStatus = styleAI.lane.busy
+    ? durableCopy.recoveryBusy
+    : styleAI.lane.unsafeRunId != null
+      ? durableCopy.abandon
+      : styleAI.lane.candidate
+        ? styleAI.lane.adoptionPending
+          ? durableCopy.adoptionPending
+          : styleAI.lane.message?.includes('恢复') ? durableCopy.recovered : durableCopy.candidateReady
+        : styleAI.lane.message
+          ? styleAI.lane.message.includes('确认写入') ? durableCopy.adopted : durableCopy.finished
+          : null
 
   return (
     <div className="h-full overflow-y-auto">
@@ -205,10 +223,10 @@ export default function StyleLearningPanel({ project }: Props) {
 
           <button
             onClick={handleLearn}
-            disabled={running || !hasLearnableSources}
+            disabled={styleAI.lane.busy || !!styleAI.lane.candidate || styleAI.lane.unsafeRunId != null || !hasLearnableSources}
             className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent text-white rounded-md text-sm font-medium hover:bg-accent-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {running
+            {styleAI.lane.busy
               ? <><Loader2 className="w-4 h-4 animate-spin" /> {t('learning.learnButtonRunning')}</>
               : <><Sparkles className="w-4 h-4" /> {hasProfile ? t('learning.learnButtonRelearn') : t('learning.learnButtonFirst')}</>}
           </button>
@@ -222,7 +240,70 @@ export default function StyleLearningPanel({ project }: Props) {
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /> <span>{error}</span>
             </div>
           )}
+
+          {laneStatus && (
+            <p className="rounded bg-bg-base p-2 text-xs leading-5 text-text-muted">{laneStatus}</p>
+          )}
+
+          {styleAI.lane.unsafeRunId != null && (
+            <button
+              type="button"
+              onClick={() => { void styleAI.abandonUnsafe() }}
+              disabled={styleAI.lane.busy}
+              className="w-full rounded border border-warning/40 px-3 py-2 text-xs font-medium text-warning hover:bg-warning/10 disabled:opacity-50"
+            >
+              {durableCopy.abandon}
+            </button>
+          )}
         </div>
+
+        {styleAI.lane.candidate && (
+          <div className="space-y-3 rounded-lg border border-accent/40 bg-accent/5 p-4" data-testid="style-learning-candidate">
+            <div>
+              <h3 className="text-sm font-medium text-text-primary">{durableCopy.candidateTitle}</h3>
+              <p className="mt-1 text-[11px] leading-5 text-text-muted">
+                {durableCopy.candidateHint(
+                  styleAI.lane.candidate.baseline.sampleCount,
+                  styleAI.lane.candidate.baseline.sampleWords,
+                )}
+              </p>
+            </div>
+            <textarea
+              value={styleAI.lane.candidate.result}
+              readOnly
+              rows={16}
+              aria-label={durableCopy.candidateAria}
+              className="w-full resize-y rounded border border-accent/30 bg-bg-base px-3 py-2 font-mono text-sm leading-relaxed text-text-secondary focus:outline-none"
+            />
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => { void styleAI.accept() }}
+                disabled={styleAI.lane.busy}
+                className="inline-flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-hover disabled:opacity-50"
+              >
+                {styleAI.lane.busy && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                {durableCopy.accept}
+              </button>
+              <button
+                type="button"
+                onClick={() => { void styleAI.reject() }}
+                disabled={styleAI.lane.busy || styleAI.lane.adoptionPending}
+                className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-error hover:text-error disabled:opacity-50"
+              >
+                <X className="h-3.5 w-3.5" /> {durableCopy.reject}
+              </button>
+              <button
+                type="button"
+                onClick={() => { void styleAI.retry() }}
+                disabled={styleAI.lane.busy || styleAI.lane.adoptionPending}
+                className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-xs font-medium text-text-secondary hover:border-accent hover:text-accent disabled:opacity-50"
+              >
+                <RotateCcw className="h-3.5 w-3.5" /> {durableCopy.retry}
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="space-y-3 rounded-lg border border-border bg-bg-surface p-4">
           <div className="flex items-center justify-between gap-3">

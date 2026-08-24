@@ -12,6 +12,11 @@ import type { FactStatus } from '../../lib/types/temporal-fact'
 import { exportFactMemoryMarkdown } from '../../lib/fact-ledger/human-readable-io'
 import KnowledgeLedgerPanel from './KnowledgeLedgerPanel'
 import WorldConstitutionPanel from './WorldConstitutionPanel'
+import {
+  INITIAL_RECORD_TARGET_CLASS,
+  initialRecordTargetAttributes,
+  useInitialRecordTarget,
+} from '../shared/initial-record-target'
 
 type FactTab = FactStatus | 'exceptions'
 
@@ -41,7 +46,13 @@ const STATUS_HINT_KEYS = {
   'invalid-range': 'statusHint.invalidRange' as const,
 } satisfies Partial<Record<FactStatus, string>>
 
-export default function FactLibraryPanel({ project }: { project: Project }) {
+export default function FactLibraryPanel({
+  project,
+  initialFactId,
+}: {
+  project: Project
+  initialFactId?: number | null
+}) {
   const { t } = useDomainT('facts')
   const { facts, loading, load, confirmFact, rejectFact, importCandidateDiff } = useFactLedgerStore()
   const [tab, setTab] = useState<FactTab>('exceptions')
@@ -61,6 +72,20 @@ export default function FactLibraryPanel({ project }: { project: Project }) {
   const rows = useMemo(() => tab === 'exceptions'
     ? facts.filter(f => EXCEPTION_STATUSES.includes(f.status))
     : facts.filter(f => f.status === tab), [facts, tab])
+  const targetFact = useMemo(
+    () => facts.find(fact => fact.id === initialFactId) ?? null,
+    [facts, initialFactId],
+  )
+
+  useEffect(() => {
+    if (!targetFact) return
+    setLibraryMode('facts')
+    setTab(EXCEPTION_STATUSES.includes(targetFact.status) ? 'exceptions' : targetFact.status)
+  }, [targetFact])
+  useInitialRecordTarget(
+    initialFactId,
+    libraryMode === 'facts' && rows.some(fact => fact.id === initialFactId),
+  )
 
   const handleExport = async () => {
     if (project.id == null) return
@@ -164,7 +189,13 @@ export default function FactLibraryPanel({ project }: { project: Project }) {
           const spec = getFactPredicate(f.predicate)
           const predicateLabelKey = getFactPredicateLabelKey(f.predicate)
           return (
-            <div key={f.id} className="flex items-start gap-3 p-3 bg-bg-elevated rounded-lg border border-border">
+            <div
+              key={f.id}
+              {...initialRecordTargetAttributes(f.id === initialFactId, f.id)}
+              className={`flex items-start gap-3 p-3 bg-bg-elevated rounded-lg border border-border ${
+                f.id === initialFactId ? INITIAL_RECORD_TARGET_CLASS : ''
+              }`}
+            >
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-text-primary">
                   <span className="font-medium">{f.subjectName}</span>

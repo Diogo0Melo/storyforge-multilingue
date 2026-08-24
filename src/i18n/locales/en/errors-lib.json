@@ -566,5 +566,10 @@
     "transitionAdvance": "Breakthrough",
     "transitionRegress": "Regression",
     "transitionSwitch": "Path change"
+  },
+  "cultivationScope": {
+    "chapterNotInWork": "The source chapter does not belong to the current work",
+    "characterNotInWorld": "The character does not belong to the current world",
+    "systemNotInWorld": "The cultivation system does not belong to the current world"
   }
 }

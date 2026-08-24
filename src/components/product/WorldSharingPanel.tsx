@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   AlertTriangle, CheckCircle2, Download, FileJson, Loader2, ShieldCheck, Share2, Upload,
 } from 'lucide-react'
-import type { CommunityWorldLicense, Project } from '../../lib/types'
+import type { CommunityWorldLicense, Project, WorldRelease } from '../../lib/types'
 import {
   createWorldPackage,
+  createWorldPackageV2,
   downloadWorldPackage,
   importWorldPackage,
   inspectWorldPackage,
@@ -12,6 +13,8 @@ import {
   type WorldPackageUse,
 } from '../../lib/product/world-package'
 import { useDomainT } from '../../i18n'
+import { resolveWorkspaceScope } from '../../lib/world-engine/ownership'
+import { listWorldReleases } from '../../lib/world-engine/releases'
 
 const LICENSE_KEY_BY_VALUE = {
   'CC-BY-4.0': 'license.ccBy4',
@@ -46,6 +49,20 @@ export default function WorldSharingPanel({ project, onImported }: Props) {
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [preview, setPreview] = useState<Preview | null>(null)
+  const [latestRelease, setLatestRelease] = useState<WorldRelease | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    if (!project?.id) {
+      setLatestRelease(null)
+      return
+    }
+    void resolveWorkspaceScope(project.id)
+      .then(scope => listWorldReleases(scope))
+      .then(releases => { if (!cancelled) setLatestRelease(releases[0] ?? null) })
+      .catch(() => { if (!cancelled) setLatestRelease(null) })
+    return () => { cancelled = true }
+  }, [project?.id, project?.worldVersion, project?.activeWorldId, project?.activeWorkId])
 
   const licenseOptions = [
     { value: 'CC-BY-4.0' as const, label: t(LICENSE_KEY_BY_VALUE['CC-BY-4.0']) },
@@ -65,12 +82,15 @@ export default function WorldSharingPanel({ project, onImported }: Props) {
     if (!project?.id) return
     setBusy(true); setMessage(null)
     try {
-      const pkg = await createWorldPackage(project.id, {
+      const options = {
         authorName,
         license,
         allowedUses,
         contentWarnings: warnings.split(/[，,\n]/),
-      })
+      }
+      const pkg = latestRelease?.id
+        ? await createWorldPackageV2(latestRelease.id, options)
+        : await createWorldPackage(project.id, options)
       downloadWorldPackage(pkg, `storyforge-world-${pkg.manifest.sourceWorldCode}-v${pkg.manifest.sourceWorldVersion}.json`)
       setMessage(t('publish.successMessage'))
     } catch (error) {
@@ -142,7 +162,6 @@ export default function WorldSharingPanel({ project, onImported }: Props) {
 
 function WorldPackagePreview({ preview, busy, onImport, useOptions }: { preview: Preview; busy: boolean; onImport: () => void; useOptions: Array<{ id: WorldPackageUse; label: string }> }) {
   const { t, lang } = useDomainT('product')
-  // 语言感知的列表连接（用途与内容警告）
   const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const { report } = preview
   const manifest = report.manifest

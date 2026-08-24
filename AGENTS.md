@@ -23,6 +23,10 @@ StoryForge 是纯前端 React + TypeScript + IndexedDB 生产项目。用户手�
 禁止在组件或 service 中手拼上下文、直接散写受治理表、手写表清单、复制一套平行
 AI/DB/导入导出入口。领域扩展只能使用架构守卫认可、带理由与复审边界的显式入口。
 
+正式模型调用还必须进入 Agent Skill / Run Contract / durable Harness 或 AI 入口注册表明确登记的
+只读、内存草稿、评测、模拟边界；候选使用统一 CreativeArtifact/运行证据，作者确认后才可
+`adopt()`。不得在 UI 新增未登记直连、隐藏重试或组件内恢复状态。
+
 ## 任务开始方式
 
 1. 先查看 `git status --short --branch`、相关提交和任务描述，保护用户已有改动。
@@ -32,10 +36,17 @@ AI/DB/导入导出入口。领域扩展只能使用架构守卫认可、带理�
    或纯测试任务不得因此加载整份 Blueprint、路线图、历史日志。
 4. 新体系、完整功能或小功能先核对路线图对应体系的范围、依赖和能力基线；已存在的
    能力必须复用，不按历史标题重复开发。
-5. 在独立分支工作。开发分支使用 `feat/`、`fix/` 或 `refactor/`；fork 同步分支明确使用
+5. 从世界引擎派生新产品或扩展产品生产链时，先读
+   [`docs/WORLD-ENGINE-TO-PRODUCT-DEVELOPMENT-CHARTER.md`](docs/WORLD-ENGINE-TO-PRODUCT-DEVELOPMENT-CHARTER.md)，
+   先冻结该产品的世界数据需求与来源选择，再进入产品专属生产和媒资流程。
+6. 在独立分支工作。开发分支使用 `feat/`、`fix/` 或 `refactor/`；fork 同步分支明确使用
    `sync/upstream/<id>`；不得直接 push `main`。
-6. Fork、upstream、同步或合并任务遵循
-   [`docs/FORK-MAINTENANCE.md`](docs/FORK-MAINTENANCE.md)。
+7. Fork、upstream、同步或合并任务遵循
+   [`docs/FORK-MAINTENANCE.md`](docs/FORK-MAINTENANCE.md)。与远端集成或发布只使用
+   `origin`；`upstream` 仅用于读取和同步。
+
+用户界面文案必须经过 i18n；AI 生成的故事内容必须遵循项目 `contentLanguage`，不得以
+   UI locale 或未登记的旁路覆盖内容语言。
 
 ## 数据与发布红线
 

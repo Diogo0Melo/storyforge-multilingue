@@ -17,11 +17,14 @@
     "planning": "O Agent principal está entendendo o objetivo e agendando tarefas.",
     "completed": "Concluído",
     "failedFallback": "Falha",
+    "failedWithMessage": "Falha: {{message}}",
+    "domainFallback": "Tarefa de domínio",
     "running": "Executando"
   },
   "candidate": {
     "pendingPrefix": "Pendente · {{label}}",
     "inputSources": "{{count}} fontes de entrada",
+    "inputTokenCount": "Cerca de {{count}} tokens",
     "contentAria": "Conteúdo candidato de {{label}}",
     "outputNote": "Esta é a saída real do Agent de domínio. Ela sobrevive a recarregamentos; apenas a adoção a grava nos dados oficiais do projeto.",
     "evidenceSummary": "Ver evidência real de entrada desta execução · {{count}} fontes",
@@ -33,10 +36,22 @@
     "teamBudgetLine": "Orçamento da equipe nesta rodada ≈ {{used}} / {{max}} tokens · {{calls}}/{{maxCalls}} chamadas · Retentativas semânticas {{retries}}/{{maxRetries}}",
     "dependsOnWarning": "Adote primeiro as tarefas anteriores: {{ids}}",
     "rejectButton": "Rejeitar",
-    "adoptButton": "Adotar"
+    "adoptButton": "Confirmar gravação",
+    "saving": "Salvando edições do candidato…",
+    "saveFailed": "Não foi possível salvar as edições. Edite novamente para tentar; adoção e rejeição continuam bloqueadas.",
+    "quarantinedTitle": "Candidato retido para recuperação",
+    "quarantinedReason": "Os dados salvos do candidato não passaram na validação: {{reason}}",
+    "quarantinedRecovery": "A adoção e a rejeição ficam indisponíveis até a recuperação deste candidato."
   },
   "errors": {
-    "operationFailed": "A operação falhou. Tente novamente mais tarde."
+    "operationFailed": "A operação falhou. Tente novamente mais tarde.",
+    "storyArcSnapshotCorrupted": "O snapshot do candidato de arco de história está corrompido e foi colocado em quarentena.",
+    "outlineSnapshotCorrupted": "O snapshot do candidato de esboço está corrompido e foi colocado em quarentena.",
+    "candidateTextPersistencePending": "O texto do candidato ainda não terminou de ser salvo e não pode ser adotado.",
+    "candidateTextPersistenceFailed": "Não foi possível salvar o texto do candidato, portanto ele não pode ser adotado.",
+    "candidateMissingOrResolved": "O candidato não existe ou já foi resolvido.",
+    "durableCandidateScopeMissing": "O candidato durável não tem o escopo atual do workspace e foi colocado em quarentena.",
+    "alert": "Erro: {{message}}"
   },
   "composer": {
     "inputAria": "Informe seu objetivo ao Agent principal",
@@ -53,7 +68,66 @@
     "completionCandidates": "Os Agents de domínio em segundo plano concluíram e geraram {{count}} candidatos. Revise, edite e decida se deseja adotá-los.",
     "completionBudget": "Nesta rodada a equipe usou cerca de {{used}} / {{max}} tokens, {{calls}} chamadas e {{retries}} retentativas semânticas controladas.",
     "roundFailed": "Esta rodada não foi concluída: {{message}}",
-    "candidateRejected": "Candidato rejeitado; nada foi gravado no projeto."
+    "resumeSuccess": "A rodada interrompida foi retomada e gerou {{count}} candidatos. Revise e confirme-os.",
+    "resumeFailed": "Não foi possível retomar esta rodada: {{message}}",
+    "candidateRejected": "Candidato rejeitado; nada foi gravado no projeto.",
+    "recoveryAvailable": "Há uma rodada interrompida em segundo plano disponível.",
+    "resumeButton": "Retomar geração inacabada"
+  },
+  "preview": {
+    "ariaLabel": "Prévia da execução criativa",
+    "candidateEstimate": "Esta rodada deve gerar {{count}} candidatos editáveis: {{labels}}.",
+    "callEstimate": "Normalmente {{usual}} chamadas de modelo; limite rígido de {{max}} chamadas / {{tokens}} tokens. A execução para antes de chamar o modelo ao atingir o limite.",
+    "repairEnabled": "Apenas problemas estruturais identificáveis podem acrescentar no máximo um reparo direcionado por candidato; avisos subjetivos de qualidade nunca geram nova tentativa automática.",
+    "repairDisabled": "O modo econômico faz uma chamada de geração; verificações posteriores e edições do autor não chamam o modelo.",
+    "deferred": "{{labels}} aguardará sua confirmação do planejamento da história e será gerado na próxima rodada.",
+    "recoveryNote": "Você pode parar durante a execução; planos e candidatos salvos podem ser recuperados.",
+    "domain": {
+      "worldOrigin": "Construção de mundo",
+      "character": "Personagem",
+      "inspiration": "Inspiração retroengenheirada",
+      "outline": "Planejamento da história",
+      "prose": "Prosa"
+    }
+  },
+  "artifact": {
+    "status": {
+      "ready": "Pronto para adotar",
+      "usableWithWarnings": "Utilizável, com avisos",
+      "manualRepair": "Precisa de reparo manual",
+      "blocked": "Há um bloqueio",
+      "unknown": "Status do resultado indisponível"
+    },
+    "callCount": "{{count}} chamadas de modelo",
+    "tokens": "{{count}} tokens",
+    "tokensIncomplete": "Uso de tokens incompleto",
+    "estimatedCost": "Custo estimado US$ {{amount}}",
+    "costUnavailable": "Custo indisponível",
+    "modelTime": "Tempo do modelo {{amount}} ms",
+    "latencyIncomplete": "Evidência de duração incompleta",
+    "repair": {
+      "repaired": "Reparo direcionado concluído",
+      "partial": "Reparo direcionado concluído com avisos",
+      "failed": "Reparo direcionado falhou; chamadas automáticas interrompidas",
+      "unavailable": "Evidência de reparo indisponível"
+    },
+    "fragments": "Mantidos {{valid}} fragmentos válidos; {{rejected}} fragmentos danificados rejeitados.",
+    "briefSummary": "Ver o objetivo narrativo desta rodada",
+    "brief": {
+      "creativeGoal": "Objetivo: {{value}}",
+      "entryState": "Estado inicial: {{value}}",
+      "protagonistDesire": "O personagem quer: {{value}}",
+      "obstacle": "Obstáculo atual: {{value}}",
+      "requiredChoice": "Escolha necessária: {{value}}",
+      "stakes": "Custo do fracasso: {{value}}",
+      "exitChange": "Mudança a criar: {{value}}",
+      "nextPressure": "Próxima pressão: {{value}}",
+      "mustHonor": "Evidências do projeto usadas nesta rodada (dados oficiais registrados):"
+    },
+    "assumptionsSummary": "Ver {{count}} suposições provisórias (não oficiais até a adoção)",
+    "issuesSummary": "Ver {{count}} problemas",
+    "valueUnavailable": "Indisponível",
+    "ariaLabel": "Status do resultado criativo"
   },
   "copilot": {
     "character": {

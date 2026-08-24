@@ -41,6 +41,51 @@ export function checkRegistry(): RegistryValidationResult {
 
   // ref / remap target 表名存在性
   for (const spec of PROJECT_TABLES) {
+    if (spec.communityShare === 'world' && !spec.releaseSection) {
+      errors.push(`${spec.name}.communityShare=world 必须登记 releaseSection`)
+    }
+    if (spec.releaseSection && spec.communityShare !== 'world') {
+      errors.push(`${spec.name}.releaseSection 只能用于 world 可发布表`)
+    }
+    if (spec.owner !== 'global' && !spec.domainOwner) {
+      errors.push(`${spec.name}.domainOwner 未登记逻辑归属`)
+    }
+    if (spec.domainOwner) {
+      const { allowed, legacyDefault, locator } = spec.domainOwner
+      if (allowed.length === 0) errors.push(`${spec.name}.domainOwner.allowed 不能为空`)
+      if (new Set(allowed).size !== allowed.length) {
+        errors.push(`${spec.name}.domainOwner.allowed 存在重复 owner`)
+      }
+      if (!allowed.includes(legacyDefault)) {
+        errors.push(`${spec.name}.domainOwner.legacyDefault 不在 allowed 中`)
+      }
+      if (spec.worldDomains?.length && legacyDefault === 'workspace') {
+        errors.push(`${spec.name}.worldDomains 不能默认归属 workspace`)
+      }
+      if (locator.kind === 'workspace' && !allowed.includes('workspace')) {
+        errors.push(`${spec.name}.domainOwner workspace locator 未允许 workspace`)
+      } else if (locator.kind === 'field' && !allowed.includes(locator.owner)) {
+        errors.push(`${spec.name}.domainOwner field owner 未在 allowed 中: ${locator.owner}`)
+      } else if (locator.kind === 'exclusive-fields'
+        && (!allowed.includes('world') || !allowed.includes('work'))) {
+        errors.push(`${spec.name}.domainOwner exclusive-fields 必须同时允许 world/work`)
+      } else if (locator.kind === 'exclusive-work-instance'
+        && (!allowed.includes('work') || !allowed.includes('instance'))) {
+        errors.push(`${spec.name}.domainOwner exclusive-work-instance 必须同时允许 work/instance`)
+      } else if (locator.kind === 'parent') {
+        if (!REGISTRY_BY_NAME.has(locator.table)) {
+          errors.push(`${spec.name}.domainOwner parent 指向不存在的表: ${locator.table}`)
+        }
+        if (locator.owner !== 'inherit' && !allowed.includes(locator.owner)) {
+          errors.push(`${spec.name}.domainOwner parent owner 未在 allowed 中: ${locator.owner}`)
+        }
+      }
+      if ((spec.name === 'worlds' || spec.name === 'works' || spec.name === 'workCharacterBindings')
+        && locator.kind === 'compat-project') {
+        errors.push(`${spec.name}.domainOwner 新根/绑定不得使用 compat-project`)
+      }
+    }
+
     for (const ref of spec.refs ?? []) {
       if (ref.kind === 'simple' || ref.kind === 'json') {
         const t = parseTargetTable(ref.target)
@@ -148,6 +193,9 @@ export function checkRegistry(): RegistryValidationResult {
     }
     if (source.scope === 'chapter' && !source.requiresChapterId && source.key !== 'foreshadows') {
       errors.push(`CONTEXT_SOURCES chapter source 必须显式要求 chapterId: ${source.key}`)
+    }
+    if (source.scope !== 'manual' && !source.ownerFrom) {
+      errors.push(`CONTEXT_SOURCES 必须登记 ownerFrom: ${source.key}`)
     }
     if (source.budgetTokens <= 0) {
       errors.push(`CONTEXT_SOURCES budgetTokens 必须为正数: ${source.key}`)

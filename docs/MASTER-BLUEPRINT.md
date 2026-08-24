@@ -5,6 +5,12 @@
 > 目标读者：任何接手该项目的开发者或 AI 模型。
 > 创建：2026-06-04 ｜ v2 修订基线：仓库 `main` 分支 HEAD（commit `1d28158` 后）。
 
+> **当前状态补记（2026-08-17）**：本文 Phase 0～3 和三注册表仍是数据与治理施工权威，但 §1 的原始漏洞表、
+> 早期排期和“远期 Agent”描述属于历史审计基线，不能当成当前未完成清单。Agent + Harness + CREL 已合入
+> `main@5021094`；当前运行架构见 [ARCHITECTURE.md](./ARCHITECTURE.md)，本次更新与发布边界见
+> [AI-HARNESS-REBUILD-RELEASE-20260817.md](./AI-HARNESS-REBUILD-RELEASE-20260817.md)，当前待办只以
+> [roadmap/README.md](./roadmap/README.md) 为准。
+
 ---
 
 ## 〇、文档元信息（先读这一节）
@@ -38,17 +44,19 @@
 |---|---|---|
 | **`MASTER-BLUEPRINT.md`（本文档）** | 🔴 施工权威 | 唯一可执行的重构蓝图 |
 | `DATA-FLOW-MAP.md` | 🟡 历史审计记录 | 看本轮审计批次记录、漏洞清单（部分已过期，见 §0.4） |
-| `DATA-FLOW-DIAGRAM.md` | 🟢 可视化辅助 | Mermaid 流程图，看关系全貌（注意：图中"已修"标记部分实为无效修复） |
+| `DATA-FLOW-DIAGRAM.md` | 🟢 可视化辅助 | Mermaid 流程图；顶部为当前 Agent + Harness 主路径，后续保留领域数据关系 |
+| `ARCHITECTURE.md` | 🟢 当前架构总览 | 看当前七层架构、Agent/Harness、三注册表、作用域与失败流 |
+| `AI-HARNESS-REBUILD-RELEASE-20260817.md` | 🟢 当前更新说明 | 看本次大架构更新、用户价值、验证证据与诚实边界 |
 | `AI-FUNCTIONS-MANUAL.md` | ⚠️ 已废弃手写版 | **不可信** — 21 处 prompt key 错、多处读写关系错。重生成机制见 §6 |
 | `ARCHITECTURE-REFACTOR.md` | 🔴 v1 已废弃 | 被本文档取代（§0.4） |
 | `roadmap/README.md` | 🟢 当前任务清单 | 按功能体系组织的待开发组合；Phase 0/1/2/3 仍以本文档为施工权威 |
 | `roadmap/CAPABILITY-BASELINE.md` | 🟢 当前能力基线 | 开工前核对已有代码、注册表、测试与禁止重复建设边界 |
 | `roadmap/COMPLETED.md` | 🟡 完成索引 | 已完成开发单位及历史证据入口 |
-| `CHANGELOG.md` | ⚠️ 不完整 | 仅记录前几批修复；本轮后期修复未补，且有数条"修了实际无效"的（见 §1.3） |
+| `CHANGELOG.md` | 🟢 更新日志 | 当前版本与大架构更新记录；历史早期条目的真实性仍需结合代码和测试判断 |
 | `WORLD-RULES-MULTIWORLD-DESIGN.md` | 🟢 待实施 | Phase 40 多世界化（本蓝图 Phase 2.1 实施） |
 | `CODEX-REDESIGN.md` | 🟢 待实施 | Phase 35 词条化（本蓝图后续） |
 | `CONSISTENCY-CHECK-DESIGN.md` | 🟢 待实施 | Phase 38/39（本蓝图后续） |
-| `AI-COPILOT-DESIGN.md` | 🟢 远期 | Phase 27 Agent 化（不在本蓝图覆盖） |
+| `AI-COPILOT-DESIGN.md` | 🟡 历史设计 | Phase 27 起点；当前 Agent/Harness 事实以架构总览、Skill Registry 和 durable Run 代码为准 |
 
 ### 0.4 v1 → v2 重大变更
 
@@ -90,12 +98,12 @@
 | 当前事实 | 数值 | 单一事实源 |
 |---|---:|---|
 | 应用语义版本 | `3.9.1` | `package.json` |
-| TypeScript 生产源码 | 547 个文件 / 122533 行 | `tsconfig.json` |
-| IndexedDB schema | v48 / 58 张 required tables | `schema.ts` / `REQUIRED_TABLES` |
-| PROJECT_TABLES | 59 张表 | `project-tables.ts` |
-| Prompt 主线 | 67 个 moduleKey / 206 条内置模板 | `PromptModuleKey` / `prompt-seeds*.ts` |
-| CONTEXT_SOURCES | 47 个上下文源 | `context-sources.ts` |
-| 写回治理 | 23 个通用 adopt target / 14 个领域扩展 | `adoption-schema.ts` |
+| TypeScript 生产源码 | 748 个文件 / 234581 行 | `tsconfig.json` |
+| IndexedDB schema | v62 / 82 张 required tables | `schema.ts` / `REQUIRED_TABLES` |
+| PROJECT_TABLES | 82 张表 | `project-tables.ts` |
+| Prompt 主线 | 70 个 moduleKey / 209 条内置模板 | `PromptModuleKey` / `prompt-seeds*.ts` |
+| CONTEXT_SOURCES | 69 个上下文源 | `context-sources.ts` |
+| 写回治理 | 32 个通用 adopt target / 20 个领域扩展 | `adoption-schema.ts` |
 <!-- project-metrics:end -->
 
 技术栈：React 19 / TypeScript 5 / Zustand 5 / Dexie.js / Vite / TipTap。项目为纯前端应用，无自建后端；用户数据保存在浏览器 IndexedDB，AI 通过 OpenAI 兼容协议直连用户配置的 provider。
@@ -124,7 +132,7 @@
 | P1-3 | `AIFieldCard` 有 `value` 但 AI 生成时不传 → 说明书"读取当前字段值"是假的，影响 BUG-INPUT-WITH-GEN | `src/components/shared/AIFieldCard.tsx:72` |
 | P1-4 | `WorkflowRunner` 步骤无 UI 输入框，运行时只传 `userHint` + `previousOutput` → BUG-INPUT-WITH-GEN | `src/components/settings/prompt/WorkflowRunner.tsx:172` |
 | P1-5 | `worldRulesProfiles` 项目级单例 `&projectId`，`buildWorldRulesContext` 不接 `worldGroupId` → 多世界串台（Phase 40 未实施） | `src/lib/db/schema.ts:249` 等 |
-| P1-6 | `batch-detail-runner` 章节正文版本只有单一 `worldContext`，无逐章 resolver → 多世界串台 | `src/lib/ai/batch-detail-runner.ts:173` |
+| P1-6 | 已收口：无产品调用方的旧批量正文 runner 已在 HARNESS-12 删除；正文统一走现有章节正文 Harness，不再保留平行 `chat → onSave` 入口 | `src/lib/ai/batch-detail-runner.ts` / `src/lib/agent/run/prose-generation-durable.ts` |
 | P1-7 | 角色合并/删除不 remap `detailedOutlines.appearingCharacterIds` / `scenes.characterIds` 等 JSON 数组引用 | `src/stores/character.ts:53` 等 |
 | P1-8 | `chunk-writer` 导入只收 `projectId` 不接 `worldGroupId` → 多世界导入串台 | `src/lib/import/chunk-writer.ts:32` |
 | P1-9 | `autoTrimToFit` 旧问题已修：请求侧 `chat()` / `streamChat()` 发送前真裁剪，并尊重 `contextWindow`；后续仅剩更细粒度 segment 裁剪优化 | `src/lib/ai/context-budget.ts` / `src/lib/ai/client.ts` |
@@ -618,13 +626,12 @@
 
 ---
 
-#### 2.5 批量正文 worldContextResolver
+#### 2.5 批量正文旧入口收口
 
-**位置**：`src/lib/ai/batch-detail-runner.ts:173/234`
-**前置**：1.3 完成
-**改法**：照 `batch-outline-runner.ts` 已有的 resolver 模式，给批量细纲/批量正文都加 `worldContextResolver?(chapterId)`
-**验证**：多世界批量生成，断言每章用其所属世界上下文
-**完成判据**：多世界批量场景无串台。
+**位置**：`src/lib/ai/batch-detail-runner.ts` / `src/lib/agent/run/prose-generation-durable.ts`
+**完成状态（HARNESS-12）**：旧 `batchGenerateChapters()` 没有产品调用方，且以 `chat → onSave` 绕过正文候选、信息边界、正式采纳和终态验证，已删除而不是继续扩建第二套 runner。批量细纲保留现有逐章 Context Manifest 和 durable 父子运行；正文生成统一复用章节正文 Harness。
+**验证**：回归守卫证明批量细纲继续导出、旧批量正文不再导出；正文 Harness 的多世界、信息边界、采纳和 receipt 测试继续通过。
+**完成判据**：产品中不存在平行批量正文入口。
 
 ---
 
@@ -1605,7 +1612,7 @@ CI 跑：
 | R-10 | 灵感反推采纳后 worldview 字段正确填写（aliases 生效） |
 | R-11 | 章节正文 prompt 实际发送内容包含 worldRulesContext |
 | R-12 | AIFieldCard 生成带 currentValue |
-| R-13 | 多世界批量正文按章节所属世界（不串台） |
+| R-13 | 多世界正文按章节所属世界装配 Context Manifest；禁止恢复已删除的平行批量正文入口 |
 | R-14 | autoTrimToFit 超预算时 L3 先被丢 |
 | R-15 | chat AbortSignal 真取消（不消耗 token） |
 | R-16 | HTML 导出包含 `<script>` 的章节内容时脚本被清洗 |

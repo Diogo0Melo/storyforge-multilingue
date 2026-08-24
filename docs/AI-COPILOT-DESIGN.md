@@ -171,7 +171,7 @@ Agent 编排不是从零开始做一个新的一致性系统。它站在“收�
 | 工具 | 复用 adapter / prompt key |
 |------|--------------------------|
 | `generate_worldview_field` | `worldview-adapter` / `worldview.dimension` |
-| `generate_story_core` | `story-adapter` / `story.generate` |
+| `generate_story_core` | 主 Agent `world-origin.story-core` / `story-core-copilot-v1`；`story.generate` 仅保留作者 Prompt 配置入口 |
 | `generate_character` | `character-adapter` / `character.generate` |
 | `generate_volume_outline` | `outline-adapter` / `outline.volume` |
 | `generate_chapter_outline` | `outline-adapter` / `outline.chapter` |
@@ -417,6 +417,9 @@ loop（受步数/Token 上限约束）:
 - 角色生成的第二个独立闭环已接入：正式 `read_worldview/read_characters` 装配当前世界
   关联闭包，复用 `character.generate` 生成闭集 JSON；作者编辑确认后只经
   `GenerationNode → adopt(characters)` 新增角色，同名与并发过期阻断
+- HARNESS-33 已将分步骤角色面板的普通 AI 按钮也收口到同一 `character.create` Skill，并把正式读取扩展为
+  世界、故事核心、角色、世界规则和历史。旧自由文本解析旁路已删除；人工 CRUD、角色轴、维度选择和 Prompt
+  配置保留，不自动创建关系、物品、状态卡或大纲。
 - 详细边界与验收见
   [`CHAT-COPILOT-CHARACTER-DESIGN.md`](./CHAT-COPILOT-CHARACTER-DESIGN.md)
 - 大纲生成的第三个独立闭环已接入：复用手工大纲入口的 17 个正式上下文源、

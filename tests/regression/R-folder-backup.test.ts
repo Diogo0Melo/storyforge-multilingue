@@ -10,12 +10,15 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { db } from '../../src/lib/db/schema'
 import {
+  LAST_FOLDER_KEY,
   saveFolderHandle, loadFolderHandle, clearFolderHandle, projFolderKey,
+  loadProjectFolderHandle,
 } from '../../src/lib/storage/folder-handle-store'
 import {
-  writeProjectJSONToFolder, readStoryforgeBackups, backupFilename,
+  writeProjectSnapshotToFolder, readStoryforgeBackups, backupFilename,
 } from '../../src/lib/storage/folder-backup'
 import { importProjectJSON } from '../../src/lib/export/json-export'
+import { bindCreatedProjectStorageWorkspace } from '../../src/lib/storage/project-storage-workspace'
 
 // ── 假的 FileSystemDirectoryHandle（内存版）──
 function makeFakeDir(name = 'BackupDir') {
@@ -66,6 +69,23 @@ describe('R-FOLDER · 本地文件夹持久层', () => {
     expect(await loadFolderHandle(key)).toBeNull()
   })
 
+  it('新建项目选择的位置同时成为稳定项目工作区和最近使用目录，但不会写文件', async () => {
+    const projectId = await db.projects.add({
+      name: 'D盘项目',
+      workspaceUid: 'ws_01JPROJECTSTORAGE0000000001',
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    } as never) as number
+    const handle = { name: 'D盘小说目录', kind: 'directory' as const }
+
+    await bindCreatedProjectStorageWorkspace(projectId, handle as FileSystemDirectoryHandle)
+
+    const project = await db.projects.get(projectId)
+    expect((await loadProjectFolderHandle(project!))?.name).toBe('D盘小说目录')
+    expect((await loadFolderHandle(LAST_FOLDER_KEY))?.name).toBe('D盘小说目录')
+    expect(Object.keys(handle)).toEqual(['name', 'kind'])
+  })
+
   it('写盘 → 回读 → 导入往返,数据一致', async () => {
     const now = Date.now()
     const pid = await db.projects.add({
@@ -76,7 +96,7 @@ describe('R-FOLDER · 本地文件夹持久层', () => {
 
     const dir = makeFakeDir()
     // 写盘:文件名按书名生成
-    const wrote = await writeProjectJSONToFolder(dir as any, pid)
+    const wrote = await writeProjectSnapshotToFolder(dir as any, pid)
     expect(wrote).toBe(true)
     expect(dir._files.has(backupFilename('盘里的书'))).toBe(true)
 

@@ -1,16 +1,19 @@
 import { lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router'
 import {
+  Activity,
   ArrowRight,
   BookOpenText,
   Check,
   ChevronRight,
-  CircleDot,
   Gamepad2,
+  GitBranch,
   Globe2,
   Hash,
   LayoutDashboard,
   Menu,
+  Map,
+  MonitorPlay,
   MessageCircle,
   Plus,
   Search,
@@ -20,17 +23,34 @@ import {
   Workflow,
   X,
 } from 'lucide-react'
-import type { Project, SimulationSessionKind } from '../lib/types'
+import type { Project, SimulationSessionKind, WorkspaceScope } from '../lib/types'
 import { useProjectStore } from '../stores/project'
 import { useWorldGroupStore } from '../stores/world-group'
+import type { WorldProjection } from '../lib/world-engine/domain'
+import { loadWorldProjections } from '../lib/world-engine/domain'
+import WorldEngineWorkspace from '../components/world-engine/WorldEngineWorkspace'
+import type { SidebarModule } from '../components/layout/sidebar-tree'
 import WorldSharingPanel from '../components/product/WorldSharingPanel'
 import { useDomainT, type DomainTFunction } from '../i18n'
+import ProjectStorageFolderField from '../components/shared/ProjectStorageFolderField'
+import { bindCreatedProjectStorageWorkspace } from '../lib/storage/project-storage-workspace'
 import './product-hub.css'
 
 const WorldGroupOverview = lazy(() => import('../components/world-group/WorldGroupOverview'))
 const NodeAuthoringWorkspace = lazy(() => import('../components/node-authoring/NodeAuthoringWorkspace'))
 const SimulationRuntimePanel = lazy(() => import('../components/simulation/SimulationRuntimePanel'))
 const ChatGamePanel = lazy(() => import('../components/simulation/ChatGamePanel'))
+const InteractionGameWorkbench = lazy(() => import('../components/character-interaction/InteractionGameWorkbench'))
+const StoryGamePlayer = lazy(() => import('../components/text-game/StoryGamePlayer'))
+const StoryGameWorkbench = lazy(() => import('../components/text-game/StoryGameWorkbench'))
+const AdventureGamePlayer = lazy(() => import('../components/text-game/AdventureGamePlayer'))
+const AdventureGameWorkbench = lazy(() => import('../components/text-game/AdventureGameWorkbench'))
+const AvgGamePlayer = lazy(() => import('../components/text-game/AvgGamePlayer'))
+const AvgGameWorkbench = lazy(() => import('../components/text-game/AvgGameWorkbench'))
+const NarrativeSimulationPlayer = lazy(() => import('../components/text-game/NarrativeSimulationPlayer'))
+const NarrativeSimulationWorkbench = lazy(() => import('../components/text-game/NarrativeSimulationWorkbench'))
+const TextOpenWorldPlayer = lazy(() => import('../components/text-game/TextOpenWorldPlayer'))
+const TextOpenWorldWorkbench = lazy(() => import('../components/text-game/TextOpenWorldWorkbench'))
 const OutlinePanel = lazy(() => import('../components/outline/OutlinePanel'))
 const ChaptersListPanel = lazy(() => import('../components/editor/ChaptersListPanel'))
 
@@ -48,6 +68,13 @@ type ProductWorld = {
   accent: Accent
   completeness: number
   project: Project
+  projection?: WorldProjection
+}
+
+function scopeForProject(project: Project): WorkspaceScope | undefined {
+  return project.id != null && project.activeWorldId != null && project.activeWorkId != null
+    ? { projectId: project.id, worldId: project.activeWorldId, workId: project.activeWorkId }
+    : undefined
 }
 
 function Button({
@@ -88,10 +115,7 @@ function StatusDot({ tone = 'success' }: { tone?: 'success' | 'warning' | 'neutr
   return <span className={`sf-status-dot sf-status-dot-${tone}`} aria-hidden="true" />
 }
 
-function projectToWorld(project: Project, index: number, t: DomainTFunction): ProductWorld {
-  const progress = project.targetWordCount > 0
-    ? Math.round(Math.min(1, (project.currentWordCount ?? 0) / project.targetWordCount) * 100)
-    : 0
+function projectToWorld(project: Project, index: number, t: DomainTFunction, projection?: WorldProjection): ProductWorld {
   const tags = (project.genres?.length ? project.genres : [project.genre]).filter(Boolean).slice(0, 2)
   const source = project.communityOrigin
     ? t('productHub.worldSourceCommunity', { code: project.communityOrigin.sourceWorldCode })
@@ -107,8 +131,9 @@ function projectToWorld(project: Project, index: number, t: DomainTFunction): Pr
     source,
     tags,
     accent: (['ochre', 'teal', 'blue', 'violet'] as Accent[])[index % 4],
-    completeness: Math.max(18, Math.min(100, progress || (project.description ? 42 : 18))),
+    completeness: projection?.completeness ?? 0,
     project,
+    projection,
   }
 }
 
@@ -225,7 +250,7 @@ function WorldCard({ world, onOpen, t }: { world: ProductWorld; onOpen: () => vo
   return <button className="sf-world-card" onClick={onOpen}><WorldGlyph accent={world.accent} /><div className="sf-world-card-body"><div className="sf-card-topline"><span className="sf-overline"><Hash className="h-3 w-3" /> {world.code}</span><span className="sf-version">v{world.version}</span></div><h3>{world.name}</h3><p>{world.description}</p><div className="sf-tag-row">{world.tags.map(tag => <span className="sf-tag" key={tag}>{tag}</span>)}</div><div className="sf-world-card-footer"><span className="sf-source"><StatusDot tone={world.source === t('productHub.worldSourceMine') ? 'success' : 'neutral'} />{world.source}</span><span className="sf-completeness">{world.completeness}%</span></div></div></button>
 }
 
-function WorldEnginePage({ worlds, activeWorld, onSelectWorld, onOpenCreate, onOpenWorldPicker, onImported, t }: { worlds: ProductWorld[]; activeWorld?: ProductWorld; onSelectWorld: (world: ProductWorld) => void; onOpenCreate: () => void; onOpenWorldPicker: () => void; onImported: (projectId: number) => void; t: DomainTFunction }) {
+function WorldEnginePage({ worlds, activeWorld, onSelectWorld, onOpenCreate, onOpenWorldPicker, onImported, onOpenModule, onOpenGame, t }: { worlds: ProductWorld[]; activeWorld?: ProductWorld; onSelectWorld: (world: ProductWorld) => void; onOpenCreate: () => void; onOpenWorldPicker: () => void; onImported: (projectId: number) => void; onOpenModule: (module: SidebarModule) => void; onOpenGame: (product: 'storygame' | 'text-adventure' | 'avg') => void; t: DomainTFunction }) {
   const { updateProject } = useProjectStore()
   const { migrateToMultiWorld, ensurePrimaryGroup } = useWorldGroupStore()
   const [syncing, setSyncing] = useState(false)
@@ -253,6 +278,7 @@ function WorldEnginePage({ worlds, activeWorld, onSelectWorld, onOpenCreate, onO
     <div className="sf-subnav">{worlds.map(world => <button key={world.code} className={world.code === activeWorld.code ? 'active' : ''} onClick={() => onSelectWorld(world)}><WorldGlyph accent={world.accent} small /><span>{world.name}</span><span>{world.code}</span></button>)}<span className="sf-subnav-spacer" /></div>
     <section className="sf-worlds-featured"><div className="sf-worlds-featured-visual"><WorldGlyph accent={activeWorld.accent} /></div><div className="sf-worlds-featured-copy"><span className="sf-overline">WORLD ENGINE · {activeWorld.source}</span><h2>{activeWorld.name}</h2><p>{activeWorld.description}</p><span className="sf-world-code-large"><Hash className="h-4 w-4" /> {activeWorld.code} · v{activeWorld.version}</span><div className="sf-worlds-featured-actions"><Button variant="primary" icon={ArrowRight} onClick={() => document.getElementById('world-engine-editor')?.scrollIntoView({ behavior: 'smooth' })}>{t('productHub.engineManageSettings')}</Button>{!activeWorld.project.enableMultiWorld && <Button icon={Check} onClick={() => void sync()} disabled={syncing}>{syncing ? t('productHub.engineSyncing') : t('productHub.engineSyncButton')}</Button>}</div>{message && <p className="sf-product-message">{message}</p>}</div><div className="sf-worlds-featured-stats"><div><strong>{activeWorld.completeness}%</strong><span>{t('productHub.engineStatsCompleteness')}</span></div><div><strong>v{activeWorld.version}</strong><span>{t('productHub.engineStatsVersion')}</span></div><div><strong>{activeWorld.project.enableMultiWorld ? t('productHub.engineStatsBaseActive') : t('productHub.engineStatsBasePending')}</strong><span>{t('productHub.engineStatsBaseLabel')}</span></div></div></section>
     <section id="world-engine-editor" className="sf-product-panel"><div className="sf-section-header"><div><div className="sf-eyebrow">WORLD CONTENT</div><h2>{activeWorld.project.enableMultiWorld ? t('productHub.engineEditorMultiTitle') : t('productHub.engineEditorStepTitle')}</h2></div><span className="sf-project-status"><StatusDot tone={activeWorld.project.enableMultiWorld ? 'success' : 'warning'} />{activeWorld.project.enableMultiWorld ? t('productHub.engineStatusActive') : t('productHub.engineStatusPending')}</span></div>{activeWorld.project.enableMultiWorld ? <Suspense fallback={<FeaturePanelFallback t={t} />}><WorldGroupOverview project={activeWorld.project} /></Suspense> : <div className="sf-product-inline-empty"><p>{t('productHub.engineInlineEmpty')}</p><Button variant="primary" icon={Check} onClick={() => void sync()} disabled={syncing}>{syncing ? t('productHub.engineSyncing') : t('productHub.engineInlineSync')}</Button></div>}</section>
+    <WorldEngineWorkspace project={activeWorld.project} projection={activeWorld.projection} activeWorkId={activeWorld.project.activeWorkId} onWorkChanged={() => onImported(activeWorld.projectId)} onOpenModule={onOpenModule} onOpenGame={onOpenGame} />
     <WorldSharingPanel project={activeWorld.project} onImported={onImported} />
   </>
 }
@@ -276,29 +302,38 @@ function TtrpgPage({ project, world, onOpenWorldPicker, onCreate, t }: { project
   return <><PageHeading eyebrow={t('productHub.ttrpgPageEyebrow')} title={t('productHub.ttrpgPageTitle')} description={t('productHub.ttrpgPageDescFull')} /><BindingBanner world={world} onChange={onOpenWorldPicker} t={t} /><section className="sf-product-runtime-surface"><Suspense fallback={<FeaturePanelFallback t={t} />}><SimulationRuntimePanel project={project} worldGroupId={worldGroupId} sessionKind={'ttrpg' satisfies SimulationSessionKind} /></Suspense></section></>
 }
 
-function PlaceholderPage({ kind, world, onOpenWorldPicker, t }: { kind: 'chat' | 'game'; world?: ProductWorld; onOpenWorldPicker: () => void; t: DomainTFunction }) {
-  const FEATURE_META: Record<'chat' | 'game', { eyebrow: string; description: string; icon: typeof Globe2; accent: Accent }> = {
-    chat: { eyebrow: 'CHARACTERS', description: t('productHub.featureChatDesc'), icon: MessageCircle, accent: 'violet' },
-    game: { eyebrow: 'STORY GAME', description: t('productHub.featureGameDesc'), icon: Gamepad2, accent: 'blue' },
-  }
-  const NAV_TABS: Array<{ id: TabId; label: string; icon: typeof LayoutDashboard }> = [
-    { id: 'home', label: t('productHub.navHome'), icon: LayoutDashboard },
-    { id: 'worlds', label: t('productHub.navWorlds'), icon: Globe2 },
-    { id: 'novel', label: t('productHub.navNovel'), icon: BookOpenText },
-    { id: 'nodes', label: t('productHub.navNodes'), icon: Workflow },
-    { id: 'ttrpg', label: t('productHub.navTtrpg'), icon: Swords },
-    { id: 'chat', label: t('productHub.navChat'), icon: MessageCircle },
-    { id: 'game', label: t('productHub.navGame'), icon: Gamepad2 },
-  ]
-  const meta = FEATURE_META[kind]
-  const Icon = meta.icon
-  return <><PageHeading eyebrow={`${meta.eyebrow} / LABS`} title={NAV_TABS.find(tab => tab.id === kind)?.label ?? ''} description={meta.description} action={world ? <Button icon={Hash} onClick={onOpenWorldPicker}>{t('productHub.chooseWorld')}</Button> : undefined} />{world && <BindingBanner world={world} onChange={onOpenWorldPicker} t={t} />}<section className="sf-product-empty sf-product-empty-muted"><span className={`sf-feature-icon sf-feature-${meta.accent}`}><Icon className="h-6 w-6" /></span><h2>{kind === 'chat' ? t('productHub.placeholderLabsTitleChat') : t('productHub.placeholderLabsTitleGame')}</h2><p>{kind === 'chat' ? t('productHub.placeholderReadOnlyNoteChat') : t('productHub.placeholderReadOnlyNoteGame')}</p><span className="sf-product-status-chip"><CircleDot className="h-3.5 w-3.5" />{t('productHub.placeholderReadOnlyChip')}</span></section></>
-}
-
 function ChatGamePage({ project, world, onOpenWorldPicker, onCreate, t }: { project?: Project; world?: ProductWorld; onOpenWorldPicker: () => void; onCreate: () => void; t: DomainTFunction }) {
+  const [mode, setMode] = useState<'play' | 'author'>('play')
   const worldGroupId = useSelectedWorldGroupId(project)
   if (!project || !world) return <><PageHeading eyebrow={t('productHub.chatPageEyebrow')} title={t('productHub.chatPageTitle')} description={t('productHub.chatPageDescShort')} /><EmptyProjectState onCreate={onCreate} t={t} /></>
-  return <><PageHeading eyebrow={t('productHub.chatPageEyebrow')} title={t('productHub.chatPageTitle')} description={t('productHub.chatPageDescFull')} action={<Button icon={Hash} onClick={onOpenWorldPicker}>{t('productHub.chooseWorld')}</Button>} /><BindingBanner world={world} onChange={onOpenWorldPicker} t={t} /><section className="sf-product-runtime-surface"><Suspense fallback={<FeaturePanelFallback t={t} />}><ChatGamePanel project={project} worldGroupId={worldGroupId} /></Suspense></section></>
+  const scope = scopeForProject(project)
+  if (!scope) return <><PageHeading eyebrow={t('productHub.chatPageEyebrow')} title={t('productHub.chatPageTitle')} description={t('productHub.chatPageDescShort')} /><BindingBanner world={world} onChange={onOpenWorldPicker} t={t} /><section className="sf-product-empty"><ShieldCheck className="h-8 w-8" /><h2>{t('productHub.engineStatusPending')}</h2><p>{t('productHub.engineInlineEmpty')}</p></section></>
+  return <><PageHeading eyebrow={mode === 'play' ? t('productHub.chatPageEyebrow') : 'AUTHOR / CHATGAME-2'} title={t('productHub.chatPageTitle')} description={t('productHub.chatPageDescFull')} action={<div className="storygame-mode-actions"><Button variant={mode === 'play' ? 'primary' : 'secondary'} icon={Gamepad2} onClick={() => setMode('play')}>{t('productHub.navChat')}</Button><Button variant={mode === 'author' ? 'primary' : 'secondary'} icon={BookOpenText} onClick={() => setMode('author')}>{t('productHub.createPanelWorldsTitle')}</Button><Button icon={Hash} onClick={onOpenWorldPicker}>{t('productHub.chooseWorld')}</Button></div>} /><BindingBanner world={world} onChange={onOpenWorldPicker} t={t} /><section className="sf-product-runtime-surface"><Suspense fallback={<FeaturePanelFallback t={t} />}>{mode === 'play' ? <ChatGamePanel project={project} worldGroupId={worldGroupId} workspaceScope={scope} /> : <InteractionGameWorkbench scope={scope} />}</Suspense></section></>
+}
+
+function TextGamePage({ project, world, onOpenWorldPicker, onCreate, initialProduct = 'storygame', t }: { project?: Project; world?: ProductWorld; onOpenWorldPicker: () => void; onCreate: () => void; initialProduct?: 'storygame' | 'text-adventure' | 'avg'; t: DomainTFunction }) {
+  const [mode, setMode] = useState<'play' | 'author'>('play')
+  const [product, setProduct] = useState<'storygame' | 'text-adventure' | 'avg' | 'narrative-simulation' | 'text-open-world'>(initialProduct)
+  const worldGroupId = useSelectedWorldGroupId(project)
+  if (!project || !world) return <><PageHeading eyebrow={t('productHub.navGame')} title={t('productHub.navGame')} description={t('productHub.featureGameDesc')} /><EmptyProjectState onCreate={onCreate} t={t} /></>
+  const scope = scopeForProject(project)
+  if (!scope) return <><PageHeading eyebrow={t('productHub.navGame')} title={t('productHub.navGame')} description={t('productHub.featureGameDesc')} /><BindingBanner world={world} onChange={onOpenWorldPicker} t={t} /><section className="sf-product-empty"><ShieldCheck className="h-8 w-8" /><h2>{t('productHub.engineStatusPending')}</h2><p>{t('productHub.engineInlineEmpty')}</p></section></>
+  const isAdventure = product === 'text-adventure'
+  const isAvg = product === 'avg'
+  const isSimulation = product === 'narrative-simulation'
+  const isOpenWorld = product === 'text-open-world'
+  const productCode = isAdventure ? 'TEXTADV-1' : isAvg ? 'AVG-1' : isSimulation ? 'TEXTSIM-1' : isOpenWorld ? 'TEXTWORLD-1' : 'STORYGAME'
+  const productTitle = isAdventure ? 'TEXT ADVENTURE' : isAvg ? 'AVG' : isSimulation ? 'NARRATIVE SIMULATION' : isOpenWorld ? 'TEXT OPEN WORLD' : 'STORYGAME'
+  const content = isAdventure
+    ? (mode === 'play' ? <AdventureGamePlayer project={project} scope={scope} worldGroupId={worldGroupId} /> : <AdventureGameWorkbench scope={scope} />)
+    : isAvg
+      ? (mode === 'play' ? <AvgGamePlayer project={project} scope={scope} worldGroupId={worldGroupId} /> : <AvgGameWorkbench scope={scope} />)
+      : isSimulation
+        ? (mode === 'play' ? <NarrativeSimulationPlayer project={project} scope={scope} worldGroupId={worldGroupId} /> : <NarrativeSimulationWorkbench scope={scope} />)
+        : isOpenWorld
+          ? (mode === 'play' ? <TextOpenWorldPlayer project={project} scope={scope} worldGroupId={worldGroupId} /> : <TextOpenWorldWorkbench scope={scope} />)
+          : (mode === 'play' ? <StoryGamePlayer project={project} scope={scope} worldGroupId={worldGroupId} /> : <StoryGameWorkbench scope={scope} />)
+  return <><PageHeading eyebrow={`${mode === 'play' ? 'PLAY' : 'AUTHOR'} / ${productCode}`} title={productTitle} description={t('productHub.featureGameDesc')} action={<div className="storygame-mode-actions"><Button variant={product === 'storygame' ? 'primary' : 'secondary'} icon={GitBranch} onClick={() => setProduct('storygame')}>STORYGAME</Button><Button variant={isAdventure ? 'primary' : 'secondary'} icon={Map} onClick={() => setProduct('text-adventure')}>TEXTADV-1</Button><Button variant={isAvg ? 'primary' : 'secondary'} icon={MonitorPlay} onClick={() => setProduct('avg')}>AVG-1</Button><Button variant={isSimulation ? 'primary' : 'secondary'} icon={Activity} onClick={() => setProduct('narrative-simulation')}>TEXTSIM-1</Button><Button variant={isOpenWorld ? 'primary' : 'secondary'} icon={Globe2} onClick={() => setProduct('text-open-world')}>TEXTWORLD-1</Button><Button variant={mode === 'play' ? 'primary' : 'secondary'} icon={Gamepad2} onClick={() => setMode('play')}>PLAY</Button><Button variant={mode === 'author' ? 'primary' : 'secondary'} icon={BookOpenText} onClick={() => setMode('author')}>AUTHOR</Button><Button icon={Hash} onClick={onOpenWorldPicker}>{t('productHub.chooseWorld')}</Button></div>} /><BindingBanner world={world} onChange={onOpenWorldPicker} t={t} /><section className="sf-product-runtime-surface"><Suspense fallback={<FeaturePanelFallback t={t} />}>{content}</Suspense></section></>
 }
 
 function CreatePanel({ onClose, onCreated, t }: { onClose: () => void; onCreated: (kind: 'worlds' | 'novel', id: number) => void; t: DomainTFunction }) {
@@ -306,17 +341,19 @@ function CreatePanel({ onClose, onCreated, t }: { onClose: () => void; onCreated
   const [kind, setKind] = useState<'choose' | 'worlds' | 'novel'>('choose')
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
+  const [projectFolder, setProjectFolder] = useState<FileSystemDirectoryHandle | null>(null)
   const [busy, setBusy] = useState(false)
   const create = async () => {
     if (!name.trim()) return
     setBusy(true)
     try {
       const id = await createProject({ name: name.trim(), genre: 'other', genres: ['other'], status: 'drafting', description: description.trim(), targetWordCount: 500000, enableMultiWorld: kind === 'worlds' })
+      if (projectFolder) await bindCreatedProjectStorageWorkspace(id, projectFolder)
       onCreated(kind === 'worlds' ? 'worlds' : 'novel', id)
     } finally { setBusy(false) }
   }
   const label = kind === 'worlds' ? t('productHub.createPanelWorldsTitle') : t('productHub.createPanelNovelTitle')
-  return <div className="sf-modal-backdrop" onMouseDown={onClose}><aside className="sf-create-panel" onMouseDown={event => event.stopPropagation()}><div className="sf-modal-header"><div><div className="sf-eyebrow">{t('productHub.createPanelEyebrow')}</div><h2>{kind === 'choose' ? t('productHub.createPanelChooseTitle') : label}</h2><p>{kind === 'choose' ? t('productHub.createPanelChooseDesc') : t('productHub.createPanelWorldsDesc')}</p></div><button className="sf-icon-button" onClick={onClose} title={t('common:close')} aria-label={t('common:close')}><X className="h-4 w-4" /></button></div>{kind === 'choose' ? <div className="sf-create-options"><button onClick={() => setKind('worlds')}><span className="sf-create-option-icon"><Globe2 className="h-5 w-5" /></span><span><strong>{t('productHub.createOptionWorldsTitle')}</strong><small>{t('productHub.createOptionWorldsDesc')}</small></span><ArrowRight className="h-4 w-4" /></button><button onClick={() => setKind('novel')}><span className="sf-create-option-icon"><BookOpenText className="h-5 w-5" /></span><span><strong>{t('productHub.createOptionNovelTitle')}</strong><small>{t('productHub.createOptionNovelDesc')}</small></span><ArrowRight className="h-4 w-4" /></button></div> : <div className="sf-create-form"><label>{t('productHub.createNameLabel')}<input value={name} onChange={event => setName(event.target.value)} placeholder={kind === 'worlds' ? t('productHub.createNamePlaceholderWorlds') : t('productHub.createNamePlaceholderNovel')} autoFocus /></label><label>{t('productHub.createDescLabel')}<textarea value={description} onChange={event => setDescription(event.target.value)} rows={4} placeholder={t('productHub.createDescPlaceholder')} /></label><div className="sf-create-form-actions"><Button onClick={() => setKind('choose')}>{t('productHub.createBack')}</Button><Button variant="primary" icon={Check} onClick={() => void create()} disabled={busy || !name.trim()}>{busy ? t('productHub.createBusy') : label}</Button></div></div>}</aside></div>
+  return <div className="sf-modal-backdrop" onMouseDown={onClose}><aside className="sf-create-panel" onMouseDown={event => event.stopPropagation()}><div className="sf-modal-header"><div><div className="sf-eyebrow">{t('productHub.createPanelEyebrow')}</div><h2>{kind === 'choose' ? t('productHub.createPanelChooseTitle') : label}</h2><p>{kind === 'choose' ? t('productHub.createPanelChooseDesc') : t('productHub.createPanelWorldsDesc')}</p></div><button className="sf-icon-button" onClick={onClose} title={t('common:close')} aria-label={t('common:close')}><X className="h-4 w-4" /></button></div>{kind === 'choose' ? <div className="sf-create-options"><button onClick={() => setKind('worlds')}><span className="sf-create-option-icon"><Globe2 className="h-5 w-5" /></span><span><strong>{t('productHub.createOptionWorldsTitle')}</strong><small>{t('productHub.createOptionWorldsDesc')}</small></span><ArrowRight className="h-4 w-4" /></button><button onClick={() => setKind('novel')}><span className="sf-create-option-icon"><BookOpenText className="h-5 w-5" /></span><span><strong>{t('productHub.createOptionNovelTitle')}</strong><small>{t('productHub.createOptionNovelDesc')}</small></span><ArrowRight className="h-4 w-4" /></button></div> : <div className="sf-create-form"><label>{t('productHub.createNameLabel')}<input value={name} onChange={event => setName(event.target.value)} placeholder={kind === 'worlds' ? t('productHub.createNamePlaceholderWorlds') : t('productHub.createNamePlaceholderNovel')} autoFocus /></label><label>{t('productHub.createDescLabel')}<textarea value={description} onChange={event => setDescription(event.target.value)} rows={4} placeholder={t('productHub.createDescPlaceholder')} /></label><ProjectStorageFolderField value={projectFolder} onChange={setProjectFolder} disabled={busy} /><div className="sf-create-form-actions"><Button onClick={() => setKind('choose')}>{t('productHub.createBack')}</Button><Button variant="primary" icon={Check} onClick={() => void create()} disabled={busy || !name.trim()}>{busy ? t('productHub.createBusy') : label}</Button></div></div>}</aside></div>
 }
 
 function WorldPicker({ worlds, onClose, onChoose, t }: { worlds: ProductWorld[]; onClose: () => void; onChoose: (world: ProductWorld) => void; t: DomainTFunction }) {
@@ -347,6 +384,8 @@ export default function ProductHubPage() {
   const [showCreate, setShowCreate] = useState(false)
   const [showWorldPicker, setShowWorldPicker] = useState(false)
   const [showMobileNav, setShowMobileNav] = useState(false)
+  const [gameProduct, setGameProduct] = useState<'storygame' | 'text-adventure' | 'avg'>('storygame')
+  const [projections, setProjections] = useState<Record<number, WorldProjection>>({})
 
   useEffect(() => { void loadProjects() }, [loadProjects])
   useEffect(() => {
@@ -354,7 +393,22 @@ export default function ProductHubPage() {
     setActiveProjectId(projects[0]?.id ?? null)
   }, [activeProjectId, projects])
 
-  const worlds = useMemo(() => projects.filter(project => project.id != null).map((p, i) => projectToWorld(p, i, t)), [projects, t])
+  useEffect(() => {
+    let cancelled = false
+    const load = async () => {
+      try {
+        const loaded = await loadWorldProjections(projects.filter(project => project.id != null))
+        if (!cancelled) setProjections(Object.fromEntries(loaded.map(projection => [projection.projectId, projection])))
+      } catch (error) {
+        console.error('[WORLD-2] failed to read world projections', error)
+        if (!cancelled) setProjections({})
+      }
+    }
+    void load()
+    return () => { cancelled = true }
+  }, [projects])
+
+  const worlds = useMemo(() => projects.filter(project => project.id != null).map((project, index) => projectToWorld(project, index, t, projections[project.id!])), [projects, projections, t])
   const activeWorld = worlds.find(world => world.projectId === activeProjectId) ?? worlds[0]
   const activeProject = activeWorld?.project
   const selectWorld = (world: ProductWorld) => setActiveProjectId(world.projectId)
@@ -362,12 +416,12 @@ export default function ProductHubPage() {
 
   const renderPage = () => {
     switch (activeTab) {
-      case 'worlds': return <WorldEnginePage worlds={worlds} activeWorld={activeWorld} onSelectWorld={selectWorld} onOpenCreate={() => setShowCreate(true)} onOpenWorldPicker={() => setShowWorldPicker(true)} onImported={async projectId => { await loadProjects(); setActiveProjectId(projectId); setActiveTab('worlds') }} t={t} />
+      case 'worlds': return <WorldEnginePage worlds={worlds} activeWorld={activeWorld} onSelectWorld={selectWorld} onOpenCreate={() => setShowCreate(true)} onOpenWorldPicker={() => setShowWorldPicker(true)} onImported={async projectId => { await loadProjects(); setActiveProjectId(projectId); setActiveTab('worlds') }} onOpenModule={module => { if (activeProject?.id) navigate(`/workspace/${activeProject.id}?module=${module}`) }} onOpenGame={product => { setGameProduct(product); setActiveTab('game') }} t={t} />
       case 'novel': return <NovelPage project={activeProject} world={activeWorld} onOpenWorldPicker={() => setShowWorldPicker(true)} onCreate={() => setShowCreate(true)} t={t} />
       case 'nodes': return <NodesPage project={activeProject} world={activeWorld} onOpenWorldPicker={() => setShowWorldPicker(true)} onCreate={() => setShowCreate(true)} t={t} />
       case 'ttrpg': return <TtrpgPage project={activeProject} world={activeWorld} onOpenWorldPicker={() => setShowWorldPicker(true)} onCreate={() => setShowCreate(true)} t={t} />
       case 'chat': return <ChatGamePage project={activeProject} world={activeWorld} onOpenWorldPicker={() => setShowWorldPicker(true)} onCreate={() => setShowCreate(true)} t={t} />
-      case 'game': return <PlaceholderPage kind="game" world={activeWorld} onOpenWorldPicker={() => setShowWorldPicker(true)} t={t} />
+      case 'game': return <TextGamePage project={activeProject} world={activeWorld} onOpenWorldPicker={() => setShowWorldPicker(true)} onCreate={() => setShowCreate(true)} initialProduct={gameProduct} t={t} />
       default: return <HomePage worlds={worlds} activeProject={activeWorld} onSelect={selectTab} onSelectWorld={selectWorld} onOpenCreate={() => setShowCreate(true)} onOpenWorldPicker={() => setShowWorldPicker(true)} t={t} />
     }
   }

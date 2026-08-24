@@ -5,32 +5,42 @@
  * 聚合为「当前持有数量 + 获得/消耗历程」，支持按角色切换查看。
  */
 import { useState, useEffect, useMemo } from 'react'
-import { Package, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, Plus, ArrowUpCircle, ArrowDownCircle } from 'lucide-react'
+import { Package, Sparkles, Loader2, Trash2, ChevronDown, ChevronRight, Plus, ArrowUpCircle, ArrowDownCircle, RotateCcw, AlertTriangle } from 'lucide-react'
 import { useDomainT } from '../../i18n'
 import { useItemLedgerStore } from '../../stores/item-ledger'
 import { useChapterStore } from '../../stores/chapter'
 import { useCharacterStore } from '../../stores/character'
 import { useOutlineStore } from '../../stores/outline'
 import { useAIConfigStore } from '../../stores/ai-config'
-import { chat, resolveRequestConfig } from '../../lib/ai/client'
+import { resolveRequestConfig } from '../../lib/ai/client'
 import { getAIConfigRequiredMessage, isAIConfigReady } from '../../lib/ai/config-readiness'
-import {
-  buildInventoryExtractPrompt, parseInventoryEvents, type ExtractedItemEvent,
-} from '../../lib/ai/adapters/inventory-extract-adapter'
 import { aggregateInventory } from '../../lib/types/item-ledger'
 import type { CharacterRoleWeight } from '../../lib/types/character'
 import type { Project, ItemLedgerAction } from '../../lib/types'
-import { splitExtractionText, uniqueBy } from '../../lib/ai/structured-extraction'
-import { adopt } from '../../lib/registry/adopt'
-import { assembleContext } from '../../lib/registry/assemble-context'
 import {
   listInventoryExtractionChapters,
-  selectInventoryExtractionChapters,
   type InventoryExtractionMode,
 } from '../../lib/inventory/extraction-range'
+import { resolveScopeLike } from '../../lib/world-engine/scope'
+import ExtractionReviewPanel from '../shared/ExtractionReviewPanel'
+import {
+  abandonInventoryExtractionV1,
+  adoptInventoryExtractionCandidateV1,
+  generateInventoryExtractionCandidateV1,
+  readPendingInventoryExtractionCandidateV1,
+  readRecoverableInventoryExtractionV1,
+  resumeInventoryExtractionCandidateV1,
+  type InventoryExtractionCandidateItemV1,
+} from '../../lib/agent/run/inventory-extraction-durable'
+import {
+  INITIAL_RECORD_TARGET_CLASS,
+  initialRecordTargetAttributes,
+  useInitialRecordTarget,
+} from '../shared/initial-record-target'
 
 interface Props {
   project: Project
+  initialEntryId?: number | null
 }
 
 const ROLE_WEIGHT_GROUP_KEYS: { weight: CharacterRoleWeight; labelKey: 'roleWeight.main' | 'roleWeight.secondary' | 'roleWeight.npc' | 'roleWeight.extra' }[] = [
@@ -40,9 +50,9 @@ const ROLE_WEIGHT_GROUP_KEYS: { weight: CharacterRoleWeight; labelKey: 'roleWeig
   { weight: 'extra', labelKey: 'roleWeight.extra' },
 ]
 
-export default function InventoryPanel({ project }: Props) {
+export default function InventoryPanel({ project, initialEntryId }: Props) {
   const { t } = useDomainT('items')
-  const { entries, loading, loadAll, addEntry, updateEntry, deleteEntry, deleteByChapter } = useItemLedgerStore()
+  const { entries, loading, loadAll, addEntry, updateEntry, deleteEntry } = useItemLedgerStore()
   const { chapters, loadAll: loadChapters } = useChapterStore()
   const { characters, loadAll: loadCharacters } = useCharacterStore()
   const { nodes: outlineNodes, loadAll: loadOutline } = useOutlineStore()
@@ -51,6 +61,18 @@ export default function InventoryPanel({ project }: Props) {
   const [extracting, setExtracting] = useState(false)
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
   const [extractError, setExtractError] = useState<string | null>(null)
+  const [extractRunId, setExtractRunId] = useState<number | null>(null)
+  const [candidateAction, setCandidateAction] = useState<'adopt' | 'abandon' | null>(null)
+  const [recoverable, setRecoverable] = useState<{
+    runId: number
+    nextCallIndex: number
+    totalCalls: number
+    safeToResume: boolean
+  } | null>(null)
+  const [candidates, setCandidates] = useState<InventoryExtractionCandidateItemV1[]>([])
+  const [selectedCandidates, setSelectedCandidates] = useState<Set<number>>(new Set())
+  const [selectionFrozen, setSelectionFrozen] = useState(false)
+  const [adoptionStarted, setAdoptionStarted] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
   const [selectedCharacterId, setSelectedCharacterId] = useState<number | null>(null)
   const [extractMode, setExtractMode] = useState<InventoryExtractionMode>('all')
@@ -58,11 +80,50 @@ export default function InventoryPanel({ project }: Props) {
   const [extractEnd, setExtractEnd] = useState<number>(1)
 
   useEffect(() => {
-    loadAll(project.id!)
-    loadChapters(project.id!)
-    loadCharacters(project.id!)
-    loadOutline(project.id!)
+    void resolveScopeLike(project.id!).then(scope => Promise.all([
+      loadAll(scope),
+      loadChapters(scope),
+      loadCharacters(scope),
+      loadOutline(scope),
+    ]))
   }, [project.id, loadAll, loadChapters, loadCharacters, loadOutline])
+
+  // HARNESS-63: candidate, range and per-chunk progress survive refresh.
+  useEffect(() => {
+    let active = true
+    setExtractRunId(null)
+    setRecoverable(null)
+    setCandidates([])
+    setSelectedCandidates(new Set())
+    setSelectionFrozen(false)
+    setAdoptionStarted(false)
+    void resolveScopeLike(project.id!).then(async scope => {
+      const pending = await readPendingInventoryExtractionCandidateV1({ scope })
+      if (pending) return { pending, recoverable: null }
+      return { pending: null, recoverable: await readRecoverableInventoryExtractionV1({ scope }) }
+    }).then(result => {
+      if (!active) return
+      if (result.pending) {
+        setExtractRunId(result.pending.snapshot.run.id)
+        setCandidates(result.pending.candidate.events)
+        setSelectedCandidates(new Set(
+          result.pending.selectedIndexes ?? result.pending.candidate.events.map((_, index) => index),
+        ))
+        setSelectionFrozen(result.pending.selectedIndexes != null)
+        setAdoptionStarted(result.pending.adoptionStarted)
+      } else if (result.recoverable) {
+        setRecoverable({
+          runId: result.recoverable.snapshot.run.id,
+          nextCallIndex: result.recoverable.nextCallIndex,
+          totalCalls: result.recoverable.totalCalls,
+          safeToResume: result.recoverable.safeToResume,
+        })
+      }
+    }).catch(error => {
+      if (active) setExtractError(error instanceof Error ? error.message : '物品提取运行恢复失败')
+    })
+    return () => { active = false }
+  }, [project.id])
 
   const visibleEntries = useMemo(
     () => selectedCharacterId != null
@@ -107,6 +168,22 @@ export default function InventoryPanel({ project }: Props) {
     () => entries.filter(e => (e.characterId ?? null) === null && e.heldByName === '未知(历史数据)'),
     [entries],
   )
+  const targetEntry = entries.find(entry => entry.id === initialEntryId) ?? null
+  const targetInventoryKey = targetEntry
+    ? JSON.stringify([targetEntry.characterId ?? targetEntry.heldByName, targetEntry.itemName.trim()])
+    : null
+
+  useEffect(() => {
+    if (!targetEntry || !targetInventoryKey) return
+    setSelectedCharacterId(targetEntry.characterId ?? null)
+    setExpanded(targetInventoryKey)
+  }, [targetEntry, targetInventoryKey])
+  useInitialRecordTarget(
+    initialEntryId,
+    targetEntry != null && (
+      targetEntry.heldByName === '未知(历史数据)' || expanded === targetInventoryKey
+    ),
+  )
 
   const handleExtract = async () => {
     const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'inventory.extract' }).config
@@ -114,79 +191,139 @@ export default function InventoryPanel({ project }: Props) {
       setExtractError(getAIConfigRequiredMessage(effectiveConfig))
       return
     }
-    const selection = selectInventoryExtractionChapters({
-      chapters,
-      outlineNodes,
-      mode: extractMode,
-      startOrdinal: extractStart,
-      endOrdinal: extractEnd,
-    })
-    if (selection.error) {
-      setExtractError(selection.error)
-      return
-    }
-    const targetChapters = selection.chapters
-    const characterNames = characters.map(c => c.name).filter(Boolean)
-    const nameToId = new Map(characters.filter(c => c.name).map(c => [c.name.trim(), c.id!]))
     setExtracting(true)
     setExtractError(null)
-    setProgress({ done: 0, total: targetChapters.length })
+    setProgress({ done: 0, total: 1 })
+    setExtractRunId(null)
+    setCandidates([])
+    setSelectedCandidates(new Set())
+    setSelectionFrozen(false)
     try {
-      for (let i = 0; i < targetChapters.length; i++) {
-        const ch = targetChapters[i]
-        try {
-          const found: ExtractedItemEvent[] = []
-          const knownNames = [...new Set(entries.map(entry => entry.itemName.trim()).filter(Boolean))]
-          const chapterSource = await assembleContext({
-            projectId: project.id!,
-            chapterId: ch.id,
-            sourceKeys: ['chapterContent'],
-          })
-          for (const chunk of splitExtractionText(chapterSource.text)) {
-            const messages = buildInventoryExtractPrompt(
-              ch.title,
-              chunk,
-              [...knownNames, ...found.map(event => event.itemName)],
-              characterNames,
-            )
-            const raw = await chat(messages, aiConfig, { category: 'inventory.extract', projectId: project.id!, outputKind: 'functional-structured' })
-            found.push(...parseInventoryEvents(raw))
-          }
-          const key = (ev: ExtractedItemEvent) => JSON.stringify([
-            ev.itemName.trim().toLocaleLowerCase(),
-            ev.heldByName.trim(),
-            ev.action,
-            ev.quantity,
-            ev.note.trim(),
-          ])
-          const events = uniqueBy(found, key)
-          if (ch.id != null) await deleteByChapter(project.id!, ch.id)
-          if (events.length > 0) {
-            await adopt({
-              projectId: project.id!,
-              target: 'itemLedger',
-              mode: 'add-many',
-              data: events.map(ev => ({
-                itemName: ev.itemName,
-                heldByName: ev.heldByName,
-                characterId: nameToId.get(ev.heldByName.trim()) ?? null,
-                action: ev.action,
-                quantity: ev.quantity,
-                chapterId: ch.id ?? null,
-                chapterTitle: ch.title,
-                note: ev.note || '',
-              })),
-            })
-            await loadAll(project.id!)
-          }
-        } catch (err) {
-          console.error('[Inventory] 章节提取失败:', ch.title, err)
-        }
-        setProgress({ done: i + 1, total: targetChapters.length })
-      }
+      const generated = await generateInventoryExtractionCandidateV1({
+        scope: await resolveScopeLike(project.id!),
+        request: {
+          mode: extractMode,
+          startOrdinal: extractMode === 'range' ? extractStart : undefined,
+          endOrdinal: extractMode === 'range' ? extractEnd : undefined,
+        },
+        aiConfig,
+        onDurableBoundary: (_boundary, snapshot, callIndex) => {
+          const total = Math.max(1, snapshot.contract.budget.maxModelCalls)
+          setProgress({ done: callIndex < 0 ? 0 : Math.min(callIndex + 1, total), total })
+        },
+      })
+      setExtractRunId(generated.snapshot.run.id)
+      setRecoverable(null)
+      setCandidates(generated.candidate.events)
+      setSelectedCandidates(new Set(generated.candidate.events.map((_, index) => index)))
+      setSelectionFrozen(false)
+      setAdoptionStarted(false)
+    } catch (error) {
+      setExtractError(error instanceof Error ? error.message : '物品提取失败')
+      try {
+        const recovery = await readRecoverableInventoryExtractionV1({ scope: await resolveScopeLike(project.id!) })
+        setRecoverable(recovery ? {
+          runId: recovery.snapshot.run.id,
+          nextCallIndex: recovery.nextCallIndex,
+          totalCalls: recovery.totalCalls,
+          safeToResume: recovery.safeToResume,
+        } : null)
+      } catch { /* Preserve the original extraction failure. */ }
     } finally {
       setExtracting(false)
       setProgress(null)
+    }
+  }
+
+  const handleResumeExtraction = async () => {
+    if (!recoverable?.safeToResume) return
+    const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'inventory.extract' }).config
+    if (!isAIConfigReady(effectiveConfig)) {
+      setExtractError(getAIConfigRequiredMessage(effectiveConfig))
+      return
+    }
+    setExtracting(true)
+    setExtractError(null)
+    try {
+      const generated = await resumeInventoryExtractionCandidateV1({
+        scope: await resolveScopeLike(project.id!), runId: recoverable.runId, aiConfig,
+        onDurableBoundary: (_boundary, snapshot, callIndex) => {
+          const total = Math.max(1, snapshot.contract.budget.maxModelCalls)
+          setProgress({ done: callIndex < 0 ? 0 : Math.min(callIndex + 1, total), total })
+        },
+      })
+      setExtractRunId(generated.snapshot.run.id)
+      setRecoverable(null)
+      setCandidates(generated.candidate.events)
+      setSelectedCandidates(new Set(generated.candidate.events.map((_, index) => index)))
+      setSelectionFrozen(false)
+      setAdoptionStarted(false)
+    } catch (error) {
+      setExtractError(error instanceof Error ? error.message : '继续物品提取失败')
+      try {
+        const recovery = await readRecoverableInventoryExtractionV1({ scope: await resolveScopeLike(project.id!) })
+        setRecoverable(recovery ? {
+          runId: recovery.snapshot.run.id,
+          nextCallIndex: recovery.nextCallIndex,
+          totalCalls: recovery.totalCalls,
+          safeToResume: recovery.safeToResume,
+        } : null)
+      } catch { /* Preserve the original resume failure. */ }
+    } finally {
+      setExtracting(false)
+      setProgress(null)
+    }
+  }
+
+  const handleAdoptCandidates = async () => {
+    if (extractRunId == null || candidateAction) return
+    setCandidateAction('adopt')
+    setExtractError(null)
+    try {
+      const scope = await resolveScopeLike(project.id!)
+      await adoptInventoryExtractionCandidateV1({
+        scope, runId: extractRunId, selectedIndexes: [...selectedCandidates],
+        onDurableBoundary: boundary => {
+          if (boundary === 'intent.checkpoint') setSelectionFrozen(true)
+          if (boundary === 'confirmation.recorded') setAdoptionStarted(true)
+        },
+      })
+      await loadAll(scope)
+      setCandidates([])
+      setSelectedCandidates(new Set())
+      setSelectionFrozen(false)
+      setExtractRunId(null)
+      setAdoptionStarted(false)
+    } catch (error) {
+      setExtractError(error instanceof Error ? error.message : '物品采纳与终验失败')
+    } finally {
+      setCandidateAction(null)
+    }
+  }
+
+  const handleAbandonExtraction = async () => {
+    const runId = extractRunId ?? recoverable?.runId
+    if (candidateAction || adoptionStarted) return
+    if (runId == null) {
+      setCandidates([])
+      setSelectedCandidates(new Set())
+      setSelectionFrozen(false)
+      setExtractError(null)
+      return
+    }
+    setCandidateAction('abandon')
+    setExtractError(null)
+    try {
+      await abandonInventoryExtractionV1({ scope: await resolveScopeLike(project.id!), runId })
+      setCandidates([])
+      setSelectedCandidates(new Set())
+      setSelectionFrozen(false)
+      setExtractRunId(null)
+      setRecoverable(null)
+    } catch (error) {
+      setExtractError(error instanceof Error ? error.message : '放弃物品提取运行失败')
+    } finally {
+      setCandidateAction(null)
     }
   }
 
@@ -254,7 +391,7 @@ export default function InventoryPanel({ project }: Props) {
             </button>
             <button
               onClick={handleExtract}
-              disabled={extracting}
+              disabled={extracting || candidateAction != null || extractRunId != null || recoverable != null}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-lg bg-accent text-white hover:bg-accent-hover disabled:opacity-50 transition-colors"
             >
               {extracting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
@@ -334,6 +471,83 @@ export default function InventoryPanel({ project }: Props) {
         <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-lg text-sm text-red-400">{extractError}</div>
       )}
 
+      {recoverable && (
+        <div className="rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 space-y-2">
+          <div className="flex items-start gap-2 text-sm text-text-primary">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
+            <div>
+              <div className="font-medium">
+                {recoverable.safeToResume ? '发现未完成的物品提取' : '上次调用的模型结果无法判定'}
+              </div>
+              <p className="mt-0.5 text-xs text-text-muted">
+                {recoverable.safeToResume
+                  ? `已完成 ${recoverable.nextCallIndex}/${recoverable.totalCalls} 个分块；继续时不会重复调用已完成分块。`
+                  : '为防止重复计费或重复候选，不会自动重试；请放弃这次运行后重新提取。'}
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <button
+              onClick={handleAbandonExtraction}
+              disabled={extracting || candidateAction != null}
+              className="px-3 py-1.5 text-xs text-text-muted hover:text-text-primary disabled:opacity-40"
+            >
+              {candidateAction === 'abandon' ? '正在放弃…' : '放弃这次运行'}
+            </button>
+            {recoverable.safeToResume && (
+              <button
+                onClick={handleResumeExtraction}
+                disabled={extracting || candidateAction != null}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-40"
+              >
+                {extracting
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  : <RotateCcw className="h-3.5 w-3.5" />}
+                继续提取
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {(extracting || extractRunId != null || candidates.length > 0) && (
+        <ExtractionReviewPanel
+          title="物品流水候选"
+          items={candidates}
+          selected={selectedCandidates}
+          loading={extracting}
+          busy={candidateAction != null}
+          selectionLocked={selectionFrozen}
+          closeDisabled={adoptionStarted}
+          allowEmptyConfirm={extractRunId != null}
+          confirmLabel={adoptionStarted ? '继续完成冻结采纳' : `确认替换所选章节（${selectedCandidates.size} 条）`}
+          error={extractError}
+          onToggle={index => {
+            if (selectionFrozen) return
+            setSelectedCandidates(previous => {
+              const next = new Set(previous)
+              if (next.has(index)) next.delete(index)
+              else next.add(index)
+              return next
+            })
+          }}
+          onConfirm={handleAdoptCandidates}
+          onClose={handleAbandonExtraction}
+          renderItem={item => (
+            <div>
+              <div className="flex items-center gap-2 text-sm text-text-primary">
+                <span className="font-medium">{item.itemName}</span>
+                <span className="text-[10px] text-text-muted">{item.heldByName}</span>
+                <span className={item.action === 'gain' ? 'text-green-400' : 'text-red-400'}>
+                  {item.action === 'gain' ? t('list.actionGain') : t('list.actionConsume')} ×{item.quantity}
+                </span>
+              </div>
+              <p className="mt-0.5 text-xs text-text-muted">{item.chapterTitle}{item.note ? ` · ${item.note}` : ''}</p>
+            </div>
+          )}
+        />
+      )}
+
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-xl border border-border bg-bg-surface p-3">
           <p className="text-[10px] uppercase tracking-wide text-text-muted">{t('stats.activeKinds')}</p>
@@ -375,12 +589,13 @@ export default function InventoryPanel({ project }: Props) {
           {inventory.map(item => {
             const inventoryKey = JSON.stringify([item.characterId ?? item.heldByName, item.itemName])
             const isOpen = expanded === inventoryKey
+            const containsTarget = item.entries.some(entry => entry.id === initialEntryId)
             const gained = item.entries.filter(entry => entry.action === 'gain').reduce((sum, entry) => sum + entry.quantity, 0)
             const consumed = item.entries.filter(entry => entry.action === 'consume').reduce((sum, entry) => sum + entry.quantity, 0)
             return (
               <div key={inventoryKey} className={`bg-bg-surface border rounded-xl overflow-hidden ${
                 item.quantity > 0 ? 'border-border' : 'border-border/60 opacity-80'
-              }`}>
+              } ${containsTarget ? 'border-amber-400/60' : ''}`}>
                 {/* 物品头部 */}
                 <button
                   onClick={() => setExpanded(isOpen ? null : inventoryKey)}
@@ -414,7 +629,13 @@ export default function InventoryPanel({ project }: Props) {
                     <p className="text-[10px] uppercase tracking-wide text-text-muted mb-2">{t('list.timelineTitle')}</p>
                     <div className="relative ml-1 border-l border-border/70">
                     {item.entries.map(e => (
-                      <div key={e.id} className="relative flex flex-wrap items-center gap-2 pl-4 py-2 text-xs group">
+                      <div
+                        key={e.id}
+                        {...initialRecordTargetAttributes(e.id === initialEntryId, e.id)}
+                        className={`relative flex flex-wrap items-center gap-2 pl-4 py-2 text-xs group rounded ${
+                          e.id === initialEntryId ? INITIAL_RECORD_TARGET_CLASS : ''
+                        }`}
+                      >
                         <span className={`absolute -left-1.5 w-3 h-3 rounded-full border-2 bg-bg-surface ${
                           e.action === 'gain' ? 'border-green-400' : 'border-red-400'
                         }`} />
@@ -509,7 +730,11 @@ export default function InventoryPanel({ project }: Props) {
           </p>
           <div className="text-[10px] text-text-muted space-y-1">
             {unclaimedEntries.map(e => (
-              <div key={e.id} className="flex items-center gap-2">
+              <div
+                key={e.id}
+                {...initialRecordTargetAttributes(e.id === initialEntryId, e.id)}
+                className={`flex items-center gap-2 rounded ${e.id === initialEntryId ? INITIAL_RECORD_TARGET_CLASS : ''}`}
+              >
                 <span>{e.itemName}</span>
                 <span className="text-text-muted/60">{e.action === 'gain' ? t('list.actionGain') : t('list.actionConsume')} ×{e.quantity}</span>
                 {e.chapterTitle && <span className="text-text-muted/60">· {e.chapterTitle}</span>}

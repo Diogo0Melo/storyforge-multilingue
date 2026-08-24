@@ -93,22 +93,22 @@ function canonicalDigest(manifest: ManifestEntry[]): string {
 
 describe('R-PHASE8 · prompt seed lifecycle seguro', () => {
   it('confirma o inventário real e a ordem de preload principal + novel', () => {
-    expect(CORE_PROMPT_SEEDS).toHaveLength(17)
+    expect(CORE_PROMPT_SEEDS).toHaveLength(20)
     expect(TOOL_PROMPT_SEEDS).toHaveLength(22)
     expect(genreBaseSeeds).toHaveLength(31)
     expect(EXTENDED_GENRE_PACK_SEEDS).toHaveLength(18)
-    expect(SYSTEM_PROMPT_SEEDS).toHaveLength(88)
+    expect(SYSTEM_PROMPT_SEEDS).toHaveLength(91)
     expect(NOVEL_CONTENT_PROMPT_SEEDS).toHaveLength(118)
 
     const allSeeds = [...SYSTEM_PROMPT_SEEDS, ...NOVEL_CONTENT_PROMPT_SEEDS]
-    expect(allSeeds).toHaveLength(206)
+    expect(allSeeds).toHaveLength(209)
     expect(SYSTEM_PROMPT_SEEDS).toEqual([
       ...CORE_PROMPT_SEEDS,
       ...TOOL_PROMPT_SEEDS,
       ...GENRE_PACK_SEEDS,
     ])
-    expect(allSeeds.slice(0, 88)).toEqual(SYSTEM_PROMPT_SEEDS)
-    expect(allSeeds.slice(88)).toEqual(NOVEL_CONTENT_PROMPT_SEEDS)
+    expect(allSeeds.slice(0, 91)).toEqual(SYSTEM_PROMPT_SEEDS)
+    expect(allSeeds.slice(91)).toEqual(NOVEL_CONTENT_PROMPT_SEEDS)
   })
 
   it('mantém os seeds como templates system inativos e sem campos dinâmicos', () => {
@@ -134,7 +134,7 @@ describe('R-PHASE8 · prompt seed lifecycle seguro', () => {
 
   it('deriva identidades únicas e preserva somente a colisão de nome conhecida', () => {
     const manifest = projectManifest(preloadGroups)
-    expect(new Set(manifest.map(entry => entry.identity)).size).toBe(206)
+    expect(new Set(manifest.map(entry => entry.identity)).size).toBe(209)
 
     const allSeeds = [...SYSTEM_PROMPT_SEEDS, ...NOVEL_CONTENT_PROMPT_SEEDS]
     const duplicateNames = allSeeds.filter((seed, index) => allSeeds
@@ -148,21 +148,21 @@ describe('R-PHASE8 · prompt seed lifecycle seguro', () => {
     expect(new Set(collisionEntries.map(entry => entry.identity)).size).toBe(2)
   })
 
-  it('fixa o digest legado dos 88 e o digest canônico combinado dos 206', () => {
+  it('fixa o digest legado dos 91 e o digest canônico combinado dos 209', () => {
     const legacyDigest = createHash('sha256')
       .update(JSON.stringify(SYSTEM_PROMPT_SEEDS), 'utf8')
       .digest('hex')
-    expect(legacyDigest).toBe('ecadb0be270b13bc871e54ca81032c2f8a06a71bc9d67c8330447a1f82768251')
+    expect(legacyDigest).toBe('83b54c90b33e19c05104bc53359ddb172ff18a363b1cf6b583399f256828fa43')
 
     const manifest = projectManifest(preloadGroups)
-    expect(canonicalDigest(manifest)).toBe('bc35903cd454c44338279df807b13abcc042c0526eb3873a74f6d878790f2499')
+    expect(canonicalDigest(manifest)).toBe('c49d2d619cf0eb184c7d2d39980b75e1a35ca70c66ddee1c39a86018895d4a01')
   })
 
   it('projeta um manifesto puro, sem DB/store e sem alterar os arrays reais', () => {
     const before = JSON.stringify(preloadGroups)
     const manifest = projectManifest(preloadGroups)
 
-    expect(manifest).toHaveLength(206)
+    expect(manifest).toHaveLength(209)
     expect(JSON.stringify(preloadGroups)).toBe(before)
     expect(projectManifest.toString()).not.toMatch(/\b(?:db|store|usePromptStore)\b/i)
   })

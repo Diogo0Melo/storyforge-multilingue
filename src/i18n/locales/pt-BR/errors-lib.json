@@ -566,5 +566,10 @@
     "transitionAdvance": "Avanço",
     "transitionRegress": "Regressão",
     "transitionSwitch": "Mudança de caminho"
+  },
+  "cultivationScope": {
+    "chapterNotInWork": "O capítulo de origem não pertence à obra atual",
+    "characterNotInWorld": "O personagem não pertence ao mundo atual",
+    "systemNotInWorld": "O sistema de cultivo não pertence ao mundo atual"
   }
 }

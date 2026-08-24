@@ -10,229 +10,414 @@ import {
   RefreshCw,
   Save,
   Send,
-  Settings2,
-  Snowflake,
+  ShieldCheck,
   Square,
+  Trash2,
   UserRound,
 } from 'lucide-react'
-import type { Project, SimulationCanonCandidate, SimulationChatState } from '../../lib/types'
-import { assembleContext } from '../../lib/registry/assemble-context'
-import { buildChatGamePrompt, parseChatReply } from '../../lib/simulation/chatgame'
-import { loadSimulationCanonCandidates, repairCanonSourceName } from '../../lib/simulation/canon-snapshot'
-import { createAISessionKey } from '../../stores/ai-generation-session'
-import { useAIConfigStore } from '../../stores/ai-config'
-import { useAIStream } from '../../hooks/useAIStream'
+import { useDomainT } from '../../i18n'
 import { isAIConfigReady } from '../../lib/ai/config-readiness'
 import { resolveRequestConfig } from '../../lib/ai/client'
-import { useSimulationRuntimeStore } from '../../stores/simulation-runtime'
-import { getT, useDomainT } from '../../i18n'
+import type { Project, WorkspaceScope } from '../../lib/types'
+import { useAIConfigStore } from '../../stores/ai-config'
+import { useInteractionGamePlayerStore } from '../../stores/interaction-game-player'
 
-export default function ChatGamePanel({ project, worldGroupId }: { project: Project; worldGroupId: number | null }) {
-  const store = useSimulationRuntimeStore()
+export default function ChatGamePanel(props: {
+  project: Project
+  worldGroupId: number | null
+  workspaceScope?: WorkspaceScope
+}) {
+  const store = useInteractionGamePlayerStore()
   const { config } = useAIConfigStore()
   const { t } = useDomainT('simulation')
-  const [candidates, setCandidates] = useState<SimulationCanonCandidate[]>([])
-  const [canonWorldLabel, setCanonWorldLabel] = useState('')
-  const [canonLoading, setCanonLoading] = useState(false)
-  const [newTitle, setNewTitle] = useState('')
-  const [characterKey, setCharacterKey] = useState('')
-  const [identityName, setIdentityName] = useState(() => getT()('common:defaults.chatIdentityName'))
-  const [identityDescription, setIdentityDescription] = useState('')
-  const [sceneTitle, setSceneTitle] = useState(() => getT()('common:defaults.chatSceneTitle'))
-  const [sceneDescription, setSceneDescription] = useState('')
-  const [selectedSourceKeys, setSelectedSourceKeys] = useState<Set<string>>(new Set())
   const [message, setMessage] = useState('')
-  const [error, setError] = useState('')
-  const [busy, setBusy] = useState(false)
   const [checkpointName, setCheckpointName] = useState('')
   const [branchTitle, setBranchTitle] = useState('')
-  const [editing, setEditing] = useState(false)
+  const [localError, setLocalError] = useState('')
 
   useEffect(() => {
-    void store.load(project.id!, worldGroupId)
-  // Zustand action identity is stable; project/world is the reload boundary.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [project.id, worldGroupId])
+    if (props.workspaceScope) void store.load(props.workspaceScope, props.worldGroupId)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.workspaceScope?.projectId, props.workspaceScope?.worldId, props.workspaceScope?.workId, props.worldGroupId])
 
-  useEffect(() => {
-    let cancelled = false
-    setCanonLoading(true)
-    void loadSimulationCanonCandidates({ projectId: project.id!, worldGroupId })
-      .then(result => { if (!cancelled) { setCandidates(result.candidates); setCanonWorldLabel(result.worldLabel) } })
-      .catch(reason => { if (!cancelled) setError(reason instanceof Error ? reason.message : String(reason)) })
-      .finally(() => { if (!cancelled) setCanonLoading(false) })
-    return () => { cancelled = true }
-  }, [project.id, worldGroupId])
-
-  const sessions = useMemo(
-    () => store.sessions.filter(session => session.kind === 'chatgame' && session.projectId === project.id && (session.worldGroupId ?? null) === worldGroupId),
-    [project.id, store.sessions, worldGroupId],
-  )
-  const selected = sessions.find(session => session.id === store.selectedSessionId) ?? null
-  const chat = (selected?.kind === 'chatgame' ? store.runtimeState.chat : null) ?? null
-  const characterCandidates = useMemo(() => candidates.filter(candidate => candidate.kind === 'character'), [candidates])
-  const selectedCharacter = characterCandidates.find(candidate => candidate.sourceKey === characterKey) ?? characterCandidates[0]
+  const selected = store.sessions.find(item => item.id === store.selectedSessionId) ?? null
+  const interaction = store.runtimeState.interaction
+  const legacyChat = !interaction ? store.runtimeState.chat : null
+  const scene = interaction?.activeScene ?? null
   const visibleMessages = useMemo(
-    () => chat?.messages.filter(item => item.supersededBySequence == null) ?? [],
-    [chat],
+    () => interaction?.messages.filter(item => item.supersededBySequence == null) ?? [],
+    [interaction?.messages],
   )
-  const ai = useAIStream(createAISessionKey(project.id!, 'simulation.chatgame', selected?.id ?? 'none'))
-  const {
-    loading: sessionsLoading,
-    projectId: loadedProjectId,
-    worldGroupId: loadedWorldGroupId,
-    selectedSessionId,
-    select: selectSession,
-  } = store
-
-  useEffect(() => {
-    if (sessionsLoading || loadedProjectId !== project.id || loadedWorldGroupId !== worldGroupId) return
-    if (selectedSessionId == null && sessions.length === 0) return
-    if (selectedSessionId != null && sessions.some(session => session.id === selectedSessionId)) return
-    void selectSession(sessions[0]?.id ?? null)
-  }, [loadedProjectId, loadedWorldGroupId, project.id, selectSession, selectedSessionId, sessions, sessionsLoading, worldGroupId])
-
-  useEffect(() => {
-    if (!characterKey && characterCandidates[0]) setCharacterKey(characterCandidates[0].sourceKey)
-  }, [characterCandidates, characterKey])
-
-  useEffect(() => {
-    const current = store.runtimeState.chat
-    if (!current) {
-      setEditing(true)
-      return
-    }
-    setCharacterKey(current.characterKey)
-    setIdentityName(current.identity.name)
-    setIdentityDescription(current.identity.description)
-    setSceneTitle(current.scene.title)
-    setSceneDescription(current.scene.description)
-    setEditing(!current)
-  }, [selected?.id, store.runtimeState.chat])
-
-  useEffect(() => {
-    if (!selectedSourceKeys.size && candidates.length) {
-      const world = candidates.find(candidate => candidate.kind === 'world')
-      const character = candidates.find(candidate => candidate.kind === 'character')
-      setSelectedSourceKeys(new Set([world?.sourceKey, character?.sourceKey].filter(Boolean) as string[]))
-    }
-  }, [candidates, selectedSourceKeys.size])
+  const resolved = resolveRequestConfig(config, { category: 'runtime.character.interaction-reply' })
+  const aiReady = isAIConfigReady(resolved.config)
+  const generationActive = store.generatingRunId != null
+  const error = localError || store.error
 
   const run = async (action: () => Promise<void>) => {
-    setBusy(true)
-    setError('')
-    try { await action() } catch (reason) { setError(reason instanceof Error ? reason.message : String(reason)) } finally { setBusy(false) }
-  }
-
-  const toggleSource = (key: string) => {
-    setSelectedSourceKeys(current => {
-      const next = new Set(current)
-      if (next.has(key)) next.delete(key)
-      else next.add(key)
-      return next
-    })
-  }
-
-  const create = async () => {
-    if (!newTitle.trim() || !selectedCharacter || !identityName.trim() || !sceneTitle.trim()) return
-    if (!selectedSourceKeys.has(selectedCharacter.sourceKey)) {
-      throw new Error(t('chatGame.freezeCharacterRequiredError'))
+    setLocalError('')
+    try {
+      await action()
+    } catch (reason) {
+      setLocalError(reason instanceof Error ? reason.message : String(reason))
     }
-    await store.createSession({
-      projectId: project.id!,
-      worldGroupId,
-      kind: 'chatgame',
-      title: newTitle.trim(),
-      sourceKeys: [...selectedSourceKeys],
-      chatConfig: {
-        characterKey: selectedCharacter.sourceKey,
-        identity: { name: identityName.trim(), description: identityDescription.trim() },
-        scene: { title: sceneTitle.trim(), description: sceneDescription.trim() },
-      },
-    })
-    setNewTitle('')
-  }
-
-  const saveConfig = async () => {
-    if (!selected || !selectedCharacter) return
-    await store.configureChat({
-      characterKey: selectedCharacter.sourceKey,
-      identity: { name: identityName.trim(), description: identityDescription.trim() },
-      scene: { title: sceneTitle.trim(), description: sceneDescription.trim() },
-    })
-    setEditing(false)
   }
 
   const send = async () => {
-    if (!selected || !chat || !message.trim() || ai.isStreaming || !isAIConfigReady(resolveRequestConfig(config, { category: 'simulation.chatgame' }).config)) return
     const text = message.trim()
-    const character = store.runtimeState.entities[chat.characterKey]
-    if (!character) throw new Error(t('chatGame.characterMissingError'))
-    const userSequence = await store.recordChatMessage(text)
+    if (!text || !scene) return
+    const sequence = await store.sendPlayerMessage(text)
     setMessage('')
-    const runtimeContext = await assembleContext({
-      projectId: project.id!,
-      worldGroupId,
-      simulationSessionId: selected.id,
-      sourceKeys: ['simulationRuntime'],
-      provider: config.provider,
-      model: config.model,
-    })
-    const draft = await ai.start(buildChatGamePrompt({
-      runtimeContext: runtimeContext.text,
-      characterName: character.name,
-      userMessage: text,
-    }), undefined, { category: 'simulation.chatgame', outputKind: 'creative', projectId: project.id!, contextOverflowPolicy: 'reject' })
-    if (!draft.trim()) return
-    await store.recordChatReply({ replyToSequence: userSequence, text: parseChatReply(draft), baseSequence: userSequence })
+    if (!aiReady) return
+    await store.generateReplies({ aiConfig: resolved.config, replyToSequence: sequence })
   }
 
-  const regenerate = async (reply: SimulationChatState['messages'][number]) => {
-    if (!selected || !chat || reply.role !== 'character' || reply.replyToSequence == null || ai.isStreaming) return
-    const target = chat.messages.find(item => item.eventSequence === reply.replyToSequence)
-    const character = store.runtimeState.entities[chat.characterKey]
-    if (!target || target.role !== 'user' || !character) throw new Error(t('chatGame.originalMessageMissingError'))
-    const baseSequence = store.runtimeState.lastSequence
-    const runtimeContext = await assembleContext({ projectId: project.id!, worldGroupId, simulationSessionId: selected.id, sourceKeys: ['simulationRuntime'], provider: config.provider, model: config.model })
-    const draft = await ai.start(buildChatGamePrompt({ runtimeContext: runtimeContext.text, characterName: character.name, userMessage: target.text }), undefined, { category: 'simulation.chatgame', outputKind: 'creative', projectId: project.id!, contextOverflowPolicy: 'reject' })
-    if (!draft.trim()) return
-    await store.recordChatReply({ replyToSequence: target.eventSequence, text: parseChatReply(draft), baseSequence, supersedesSequence: reply.eventSequence })
+  if (!props.workspaceScope) {
+    return (
+      <div className="storygame-empty">
+        <ShieldCheck className="h-8 w-8" />
+        <h2>工作区归属未就绪</h2>
+        <p>先在世界引擎建立 World/Work，再从正式 GameRelease 启动角色互动。</p>
+      </div>
+    )
   }
 
-  if (!selected) {
-    return <div className="flex min-h-[38rem] flex-col gap-5 bg-bg-base p-5 lg:flex-row">
-      <aside className="w-full shrink-0 rounded-lg border border-border bg-bg-surface p-4 lg:w-80">
-        <div className="mb-4 flex items-center gap-2"><MessageCircle className="h-4 w-4 text-accent" /><h2 className="font-semibold text-text-primary">{t('chatGame.createHeading')}</h2></div>
-        <p className="mb-4 text-xs leading-relaxed text-text-muted">{t('chatGame.createDescription')}</p>
-        <div className="space-y-3">
-          <input value={newTitle} onChange={event => setNewTitle(event.target.value)} placeholder={t('chatGame.sessionNamePlaceholder')} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm" />
-          <label className="block text-xs text-text-muted">{t('chatGame.characterLabel')}<select value={selectedCharacter?.sourceKey ?? ''} onChange={event => { setCharacterKey(event.target.value); setSelectedSourceKeys(current => new Set(current).add(event.target.value)) }} className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary"><option value="">{t('chatGame.noCharacterOption')}</option>{characterCandidates.map(candidate => <option key={candidate.sourceKey} value={candidate.sourceKey}>{candidate.name}</option>)}</select></label>
-          <label className="block text-xs text-text-muted">{t('chatGame.identityLabel')}<input value={identityName} onChange={event => setIdentityName(event.target.value)} className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary" /></label>
-          <textarea value={identityDescription} onChange={event => setIdentityDescription(event.target.value)} placeholder={t('chatGame.identityDescriptionPlaceholder')} rows={2} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary" />
-          <label className="block text-xs text-text-muted">{t('chatGame.initialSceneLabel')}<input value={sceneTitle} onChange={event => setSceneTitle(event.target.value)} className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary" /></label>
-          <textarea value={sceneDescription} onChange={event => setSceneDescription(event.target.value)} placeholder={t('chatGame.sceneDescriptionPlaceholderOptional')} rows={3} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary" />
-          <fieldset className="space-y-1 border-t border-border pt-3"><legend className="flex items-center gap-1 text-xs text-text-muted"><Snowflake className="h-3.5 w-3.5" />{t('chatGame.freezeSourcesLegend')}</legend>{candidates.slice(0, 24).map(candidate => <label key={candidate.sourceKey} className="flex items-start gap-2 rounded px-1 py-1 text-xs hover:bg-bg-hover"><input type="checkbox" checked={selectedSourceKeys.has(candidate.sourceKey)} onChange={() => toggleSource(candidate.sourceKey)} className="mt-0.5" /><span className="min-w-0 flex-1 truncate text-text-secondary">{repairCanonSourceName(candidate.name, canonWorldLabel)}</span></label>)}{canonLoading && <span className="text-[11px] text-text-muted">{t('sidebar.loading')}</span>}</fieldset>
-          <button disabled={busy || canonLoading || !newTitle.trim() || !selectedCharacter || !selectedSourceKeys.has(selectedCharacter.sourceKey)} onClick={() => void run(create)} className="flex w-full items-center justify-center gap-1.5 rounded bg-accent px-3 py-2 text-sm text-white disabled:opacity-40"><Plus className="h-4 w-4" />{t('chatGame.createChatArchive')}</button>
+  return (
+    <div className="flex min-h-[42rem] flex-col bg-bg-base lg:flex-row">
+      <aside className="w-full shrink-0 border-b border-border bg-bg-surface p-4 lg:w-72 lg:border-b-0 lg:border-r">
+        <div className="mb-3 flex items-center gap-2">
+          <MessageCircle className="h-4 w-4 text-accent" />
+          <strong className="text-sm">角色互动发布</strong>
+        </div>
+        <p className="mb-4 text-xs leading-relaxed text-text-muted">
+          新会话只从不可变 GameRelease 启动。CHATGAME-1 旧存档会在下方只读显示，但不再追加旧式 AI 消息。
+        </p>
+
+        <div className="space-y-2">
+          {store.releases.map(item => (
+            <article key={item.release.id} className="rounded border border-border bg-bg-base p-3">
+              <strong className="block text-sm">{item.manifest?.definition.title ?? item.release.label}</strong>
+              <span className="mt-1 block text-[10px] text-text-muted">
+                v{item.release.version} · {item.manifest?.interaction.profiles.length ?? 0} 角色 · {item.manifest?.interaction.sceneTemplates.length ?? 0} 场景
+              </span>
+              {item.error && <p className="mt-2 text-[10px] text-danger">{item.error}</p>}
+              <button
+                disabled={!item.manifest || !!item.error || store.busy}
+                onClick={() => void run(async () => { await store.start(item.release.id!) })}
+                className="mt-3 flex w-full items-center justify-center gap-1 rounded bg-accent px-2 py-1.5 text-xs text-white disabled:opacity-40"
+              >
+                <Plus className="h-3 w-3" />{t('chatGame.newSession')}
+              </button>
+            </article>
+          ))}
+        </div>
+        {!store.releases.length && !store.loading && (
+          <div className="rounded border border-dashed border-border p-4 text-center text-xs text-text-muted">
+            尚无角色互动发布。切换到作者工作台创建并发布。
+          </div>
+        )}
+
+        <div className="mb-2 mt-6 text-xs font-semibold">互动存档</div>
+        <div className="space-y-1">
+          {store.sessions.map(session => {
+            const legacy = session.gameReleaseId == null
+            return (
+              <div key={session.id} className={`flex rounded ${session.id === selected?.id ? 'bg-accent/10' : ''}`}>
+                <button
+                  className="min-w-0 flex-1 px-2 py-2 text-left text-xs"
+                  onClick={() => void store.select(session.id!)}
+                >
+                  <strong className="block truncate">{session.title}</strong>
+                  <span className="text-[9px] text-text-muted">
+                    {legacy ? 'CHATGAME-1 · 只读' : session.id === selected?.id ? `事件 ${store.runtimeState.lastSequence}` : '可继续'}
+                  </span>
+                </button>
+                <button
+                  aria-label="删除存档"
+                  className="px-2 text-text-muted hover:text-danger"
+                  onClick={() => void run(async () => { await store.remove(session.id!) })}
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+              </div>
+            )
+          })}
         </div>
       </aside>
-      <div className="flex flex-1 items-center justify-center rounded-lg border border-dashed border-border p-8 text-center text-sm text-text-muted">{t('chatGame.workspacePlaceholder')}</div>
-    </div>
-  }
 
-  return <div className="flex min-h-[38rem] flex-col bg-bg-base lg:flex-row">
-    <aside className="max-h-[26rem] w-full shrink-0 overflow-y-auto border-b border-border bg-bg-surface p-4 lg:max-h-none lg:w-72 lg:border-b-0 lg:border-r">
-      <div className="mb-4 flex items-center gap-2"><MessageCircle className="h-4 w-4 text-accent" /><h2 className="font-semibold text-text-primary">{t('chatGame.sidebarHeading')}</h2></div>
-      <p className="mb-4 text-xs leading-relaxed text-text-muted">{t('chatGame.sidebarDescription')}</p>
-      <button onClick={() => store.select(null)} className="mb-3 flex w-full items-center justify-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover"><Plus className="h-3.5 w-3.5" />{t('chatGame.newSession')}</button>
-      <div className="space-y-1">{sessions.map(session => <button key={session.id} onClick={() => void store.select(session.id!)} className={`w-full rounded px-3 py-2 text-left ${session.id === selected.id ? 'bg-accent/10 text-accent' : 'text-text-secondary hover:bg-bg-hover'}`}><div className="truncate text-sm font-medium">{session.title}</div><div className="mt-0.5 text-[11px] text-text-muted">{t('chatGame.eventsLabel')} {session.id === selected.id ? store.runtimeState.lastSequence : '—'}</div></button>)}</div>
-    </aside>
-    <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6"><div className="mx-auto max-w-4xl space-y-4">
-      {error && <div className="rounded border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</div>}
-      <header className="flex flex-wrap items-start justify-between gap-3"><div><div className="mb-1 text-xs text-text-muted">{t('chatGame.experienceCenterChat')}</div><h1 className="text-xl font-semibold text-text-primary">{selected.title}</h1><p className="mt-1 text-xs text-text-muted">{chat ? `${chat.identity.name} ${t('chatGame.identityCharacterConnector')} ${store.runtimeState.entities[chat.characterKey]?.name ?? chat.characterKey} · ${t('chatGame.eventsLabel')} ${store.runtimeState.lastSequence}` : t('chatGame.unconfiguredScene')}</p></div><button onClick={() => setEditing(value => !value)} className="flex items-center gap-1.5 rounded border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover"><Settings2 className="h-3.5 w-3.5" />{t('chatGame.sceneSettings')}</button></header>
-      {(editing || !chat) && <section className="rounded-lg border border-border bg-bg-surface p-4"><div className="grid gap-3 md:grid-cols-2"><label className="text-xs text-text-muted">{t('chatGame.characterLabel')}<select value={characterKey} onChange={event => setCharacterKey(event.target.value)} disabled={!!chat?.messages.length} className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary">{characterCandidates.map(candidate => <option key={candidate.sourceKey} value={candidate.sourceKey}>{candidate.name}</option>)}</select></label><label className="text-xs text-text-muted">{t('chatGame.identityLabel')}<input value={identityName} onChange={event => setIdentityName(event.target.value)} className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary" /></label><textarea value={identityDescription} onChange={event => setIdentityDescription(event.target.value)} placeholder={t('chatGame.identityDescriptionPlaceholderShort')} rows={2} className="rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary" /><div className="space-y-2"><input value={sceneTitle} onChange={event => setSceneTitle(event.target.value)} placeholder={t('chatGame.sceneTitlePlaceholder')} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary" /><textarea value={sceneDescription} onChange={event => setSceneDescription(event.target.value)} placeholder={t('chatGame.sceneDescriptionPlaceholder')} rows={2} className="w-full rounded border border-border bg-bg-base px-2 py-1.5 text-sm text-text-primary" /></div></div><button disabled={busy || !characterKey || !identityName.trim() || !sceneTitle.trim()} onClick={() => void run(saveConfig)} className="mt-3 flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-40"><Check className="h-3.5 w-3.5" />{t('chatGame.saveSettings')}</button></section>}
-      {chat && <section className="rounded-lg border border-border bg-bg-surface"><div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3"><div className="flex items-center gap-2 text-sm font-semibold text-text-primary"><MapPin className="h-4 w-4 text-accent" />{chat.scene.title}<span className="text-xs font-normal text-text-muted">· {store.runtimeState.entities[chat.characterKey]?.name ?? chat.characterKey}</span></div><span className="flex items-center gap-1 text-[10px] text-text-muted"><Snowflake className="h-3 w-3" />{t('chatGame.freezeSourcesLegend')} · {selected.canonSnapshotJson ? t('chatGame.snapshotSaved') : t('chatGame.snapshotLegacy')}</span></div><div className="max-h-[32rem] space-y-3 overflow-y-auto p-4">{visibleMessages.map(item => <div key={item.messageId} className={`flex gap-2 ${item.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${item.role === 'user' ? 'bg-accent/15 text-text-primary' : 'bg-bg-base text-text-secondary'}`}><div className="mb-1 flex items-center gap-1 text-[10px] text-text-muted">{item.role === 'user' ? <UserRound className="h-3 w-3" /> : <Bot className="h-3 w-3" />}{item.role === 'user' ? chat.identity.name : (store.runtimeState.entities[item.speakerKey ?? '']?.name ?? t('chatGame.speakerFallback'))}<span className="font-mono">#{item.eventSequence}</span></div><p className="whitespace-pre-wrap break-words">{item.text}</p>{item.role === 'character' && <button disabled={busy || ai.isStreaming} onClick={() => void run(() => regenerate(item))} className="mt-2 flex items-center gap-1 text-[11px] text-text-muted hover:text-accent disabled:opacity-40"><RefreshCw className="h-3 w-3" />{t('chatGame.regenerate')}</button>}</div></div>)}{ai.isStreaming && <div className="flex items-center gap-2 text-xs text-text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin" />{t('chatGame.streamingIndicator')}</div>}{!visibleMessages.length && <p className="py-10 text-center text-sm text-text-muted">{t('chatGame.emptyMessages')}</p>}</div><div className="border-t border-border p-3"><textarea value={message} onChange={event => setMessage(event.target.value)} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); void run(send) } }} placeholder={t('chatGame.messagePlaceholder', { character: store.runtimeState.entities[chat.characterKey]?.name ?? t('chatGame.speakerFallback') })} rows={3} disabled={ai.isStreaming} className="w-full resize-y rounded border border-border bg-bg-base px-3 py-2 text-sm text-text-primary disabled:opacity-60" /><div className="mt-2 flex items-center justify-between gap-2"><span className="text-[10px] text-text-muted">{t('chatGame.inputHint')}{ai.tokenUsage ? ` · ${ai.tokenUsage.inputTokens + ai.tokenUsage.outputTokens} tokens` : ''}</span><div className="flex gap-2">{ai.isStreaming && <button onClick={ai.stop} className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-sm text-text-secondary hover:bg-bg-hover"><Square className="h-3 w-3" />{t('chatGame.stopStreaming')}</button>}<button disabled={busy || ai.isStreaming || !message.trim() || !isAIConfigReady(resolveRequestConfig(config, { category: 'simulation.chatgame' }).config)} onClick={() => void run(send)} className="flex items-center gap-1.5 rounded bg-accent px-3 py-1.5 text-sm text-white disabled:opacity-40"><Send className="h-3.5 w-3.5" />{t('chatGame.send')}</button></div></div>{ai.error && <p className="mt-2 text-xs text-danger">{ai.error}</p>}</div></section>}
-      <section className="grid gap-3 md:grid-cols-2"><div className="rounded-lg border border-border bg-bg-surface p-4"><div className="mb-3 flex items-center gap-2 text-sm font-semibold text-text-primary"><Save className="h-4 w-4 text-accent" />{t('chatGame.checkpointHeading')}</div><div className="flex gap-2"><input value={checkpointName} onChange={event => setCheckpointName(event.target.value)} placeholder={t('chatGame.checkpointPlaceholder')} className="min-w-0 flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-sm" /><button disabled={busy || !checkpointName.trim()} onClick={() => void run(async () => { await store.checkpoint(checkpointName.trim()); setCheckpointName('') })} className="rounded border border-border px-3 py-1.5 text-sm hover:bg-bg-hover disabled:opacity-40">{t('chatGame.saveCheckpoint')}</button></div></div><div className="rounded-lg border border-border bg-bg-surface p-4"><div className="mb-3 flex items-center gap-2 text-sm font-semibold text-text-primary"><GitBranch className="h-4 w-4 text-accent" />{t('chatGame.branchHeading')}</div><div className="flex gap-2"><input value={branchTitle} onChange={event => setBranchTitle(event.target.value)} placeholder={t('chatGame.branchPlaceholder')} className="min-w-0 flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-sm" /><button disabled={busy || !branchTitle.trim()} onClick={() => void run(async () => { await store.branch(branchTitle.trim()); setBranchTitle('') })} className="rounded border border-border px-3 py-1.5 text-sm hover:bg-bg-hover disabled:opacity-40">{t('chatGame.branchAction')}</button></div></div></section>
-      <section className="rounded-lg border border-border bg-bg-surface"><div className="border-b border-border px-4 py-3 text-sm font-semibold text-text-primary">{t('chatGame.protectionHeading')}</div><div className="grid gap-2 p-4 text-xs text-text-muted sm:grid-cols-3"><span>{t('chatGame.freezeSourcesLegend')} {selected.canonSnapshotJson ? t('chatGame.protectionVerified') : t('chatGame.protectionLegacy')}</span><span>{t('chatGame.protectionCharacterSafe')}</span><span>{t('chatGame.protectionReplyScope')}</span></div></section>
-    </div></main>
-  </div>
+      <main className="min-w-0 flex-1 p-4 sm:p-6">
+        <div className="mx-auto max-w-5xl space-y-4">
+          {error && <div className="rounded border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">{error}</div>}
+
+          {!selected && (
+            <div className="storygame-empty">
+              <MessageCircle className="h-8 w-8" />
+              <h2>选择正式发布开始</h2>
+              <p>消息、知识、记忆、关系变化与 Harness 回执都属于同一 SIM 实例，可刷新、检查点、分支和重放。</p>
+            </div>
+          )}
+
+          {selected && legacyChat && (
+            <>
+              <header>
+                <span className="text-[10px] text-text-muted">CHATGAME-1 · LEGACY READ ONLY</span>
+                <h1 className="mt-1 text-xl font-semibold">{selected.title}</h1>
+                <p className="mt-1 text-xs text-text-muted">{legacyChat.scene.title} · 事件 {store.runtimeState.lastSequence}</p>
+              </header>
+              <section className="rounded-lg border border-border bg-bg-surface">
+                <div className="border-b border-border px-4 py-3">
+                  <strong className="text-sm">与 {legacyChat.identity.name} 的历史对话</strong>
+                  <p className="mt-1 text-xs text-text-muted">{legacyChat.scene.description}</p>
+                </div>
+                <div className="max-h-[34rem] space-y-3 overflow-y-auto p-4">
+                  {legacyChat.messages.filter(item => item.supersededBySequence == null).map(item => (
+                    <div key={item.eventSequence} className={`flex ${item.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                      <article className={`max-w-[84%] rounded-lg px-3 py-2 text-sm ${item.role === 'user' ? 'bg-accent/15' : 'bg-bg-base'}`}>
+                        <div className="mb-1 text-[10px] text-text-muted">
+                          {item.role === 'user' ? '玩家' : legacyChat.identity.name} · #{item.eventSequence}
+                        </div>
+                        <p className="whitespace-pre-wrap">{item.text}</p>
+                      </article>
+                    </div>
+                  ))}
+                </div>
+              </section>
+              <div className="rounded border border-warning/30 bg-warning/5 px-4 py-3 text-xs text-text-muted">
+                该存档按原事件流回放。为防止继续产生两套聊天权威，新消息、重试、检查点和分支均已关闭；项目导出、导入和删除生命周期仍然保留。
+              </div>
+            </>
+          )}
+
+          {selected && interaction && (
+            <>
+              <header className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <span className="text-[10px] text-accent">CHATGAME-2 · GAME RELEASE</span>
+                  <h1 className="mt-1 text-xl font-semibold">{selected.title}</h1>
+                  <p className="mt-1 text-xs text-text-muted">
+                    {scene ? `${scene.title} · ${scene.location} · ${scene.timeLabel}` : '当前场景已结束'} · 事件 {store.runtimeState.lastSequence}
+                  </p>
+                </div>
+                {scene && (
+                  <button
+                    disabled={store.busy}
+                    onClick={() => void run(async () => { await store.finishScene(undefined, aiReady ? resolved.config : undefined) })}
+                    className="rounded border border-border px-3 py-1.5 text-xs hover:bg-bg-hover"
+                  >
+                    结束场景
+                  </button>
+                )}
+              </header>
+
+              {!scene && (
+                <section className="rounded border border-border bg-bg-surface p-4">
+                  <h2 className="mb-3 text-sm font-semibold">选择下一场景</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {interaction.sceneTemplates.map(template => (
+                      <button
+                        key={template.sceneKey}
+                        onClick={() => void run(async () => { await store.startScene(template.sceneKey) })}
+                        className="rounded border border-border px-3 py-2 text-xs hover:border-accent"
+                      >
+                        {template.title}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {scene && (
+                <section className="rounded-lg border border-border bg-bg-surface">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <MapPin className="h-4 w-4 text-accent" />
+                      {scene.title}
+                      <span className="text-xs font-normal text-text-muted">
+                        · {scene.activeParticipantKeys.map(key => interaction.profiles.find(item => item.participantKey === key)?.name ?? key).join('、')}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-text-muted">
+                      导演预算 {interaction.remainingDirectorBudget} · 玩家回合 {scene.playerTurns}/{scene.maxTurns}
+                    </span>
+                  </div>
+
+                  <div className="max-h-[31rem] space-y-3 overflow-y-auto p-4">
+                    {visibleMessages.map(item => (
+                      <div key={item.eventSequence} className={`flex ${item.role === 'player' ? 'justify-end' : 'justify-start'}`}>
+                        <article className={`max-w-[84%] rounded-lg px-3 py-2 text-sm ${item.role === 'player' ? 'bg-accent/15' : 'bg-bg-base'}`}>
+                          <div className="mb-1 flex items-center gap-1 text-[10px] text-text-muted">
+                            {item.role === 'player' ? <UserRound className="h-3 w-3" /> : <Bot className="h-3 w-3" />}
+                            {item.role === 'player' ? '玩家' : interaction.profiles.find(profile => profile.participantKey === item.speakerKey)?.name ?? item.speakerKey}
+                            <code>#{item.eventSequence}</code>
+                          </div>
+                          <p className="whitespace-pre-wrap">{item.text}</p>
+                          {item.role === 'character' && (
+                            <button
+                              disabled={!aiReady || store.busy || generationActive}
+                              onClick={() => void run(async () => { await store.retryReply({ aiConfig: resolved.config, replySequence: item.eventSequence }) })}
+                              className="mt-2 flex items-center gap-1 text-[10px] text-text-muted hover:text-accent disabled:opacity-40"
+                            >
+                              <RefreshCw className="h-3 w-3" />{t('chatGame.regenerate')}
+                            </button>
+                          )}
+                        </article>
+                      </div>
+                    ))}
+                    {generationActive && <div className="flex items-center gap-2 text-xs text-text-muted"><Loader2 className="h-3.5 w-3.5 animate-spin" />Harness 正在生成可采用候选…</div>}
+                    {!visibleMessages.length && <p className="py-8 text-center text-xs text-text-muted">使用固定行动可离线推进；自由输入的角色回复经统一 Harness。</p>}
+                  </div>
+
+                  {!!scene.relationshipRules.length && (
+                    <div className="flex flex-wrap gap-2 border-t border-border px-4 py-3">
+                      {scene.relationshipRules.map(rule => (
+                        <button
+                          key={rule.ruleKey}
+                          disabled={store.busy}
+                          title={rule.reason}
+                          onClick={() => void run(async () => { await store.applyFixedAction(rule.ruleKey) })}
+                          className="rounded border border-accent/30 bg-accent/5 px-3 py-1.5 text-xs text-accent disabled:opacity-40"
+                        >
+                          {rule.playerText}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="border-t border-border p-3">
+                    <textarea
+                      value={message}
+                      onChange={event => setMessage(event.target.value)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                          event.preventDefault()
+                          void run(send)
+                        }
+                      }}
+                      disabled={store.busy || generationActive}
+                      placeholder={t('chatGame.messagePlaceholder', {
+                        character: scene.activeParticipantKeys.map(key => interaction.profiles.find(profile => profile.participantKey === key)?.name ?? key).join('、'),
+                      })}
+                      rows={3}
+                      className="w-full resize-y rounded border border-border bg-bg-base px-3 py-2 text-sm disabled:opacity-50"
+                    />
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-[10px] text-text-muted">
+                        {aiReady ? '自由输入会调用统一 Instance Harness' : '未配置 AI：玩家消息可保存，固定行动可继续，自由回复明确暂停'}
+                      </span>
+                      <div className="flex gap-2">
+                        {generationActive && (
+                          <button onClick={() => void store.cancelGeneration()} className="flex items-center gap-1 rounded border border-border px-3 py-1.5 text-xs">
+                            <Square className="h-3 w-3" />{t('chatGame.stopStreaming')}
+                          </button>
+                        )}
+                        <button
+                          disabled={!message.trim() || store.busy || generationActive}
+                          onClick={() => void run(send)}
+                          className="flex items-center gap-1 rounded bg-accent px-3 py-1.5 text-xs text-white disabled:opacity-40"
+                        >
+                          <Send className="h-3 w-3" />{aiReady ? t('chatGame.send') : '仅保存消息'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              <section className="grid gap-3 lg:grid-cols-2">
+                <div className="rounded border border-border bg-bg-surface p-4">
+                  <h2 className="mb-3 text-sm font-semibold">关系摘要与原因</h2>
+                  <div className="space-y-2">
+                    {interaction.relationships.map(item => {
+                      const last = [...interaction.relationshipHistory].reverse().find(change => (
+                        change.fromParticipantKey === item.fromParticipantKey
+                        && change.toParticipantKey === item.toParticipantKey
+                        && change.dimensionKey === item.dimensionKey
+                      ))
+                      return (
+                        <article key={`${item.fromParticipantKey}:${item.dimensionKey}`} className="rounded bg-bg-base p-2 text-xs">
+                          <div className="flex justify-between">
+                            <strong>{interaction.profiles.find(profile => profile.participantKey === item.fromParticipantKey)?.name} · {item.label}</strong>
+                            <span>{item.value}</span>
+                          </div>
+                          {last && <p className="mt-1 text-[10px] text-text-muted">{last.before} → {last.after}：{last.reason} · 证据 #{last.sourceEventSequence}</p>}
+                        </article>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="rounded border border-border bg-bg-surface p-4">
+                  <h2 className="mb-3 text-sm font-semibold">角色关键记忆</h2>
+                  <div className="space-y-2">
+                    {interaction.memories.filter(item => item.status === 'accepted' || item.status === 'proposed').map(item => (
+                      <article key={item.memoryId} className="rounded bg-bg-base p-2 text-xs">
+                        <strong>{interaction.profiles.find(profile => profile.participantKey === item.participantKey)?.name} · {item.kind}</strong>
+                        <p className="mt-1 text-text-secondary">{item.content}</p>
+                        <span className="text-[9px] text-text-muted">来源 {item.sourceEventSequences.map(value => `#${value}`).join('、')}</span>
+                        {item.status === 'proposed' && (
+                          <div className="mt-2 flex gap-2">
+                            <button onClick={() => void run(async () => { await store.resolveMemory(item.memoryId, 'accepted') })} className="flex items-center gap-1 text-accent"><Check className="h-3 w-3" />采用</button>
+                            <button onClick={() => void run(async () => { await store.resolveMemory(item.memoryId, 'rejected') })} className="text-text-muted">拒绝</button>
+                          </div>
+                        )}
+                      </article>
+                    ))}
+                    {!interaction.memories.length && <p className="text-xs text-text-muted">记忆候选只能在真实消息证据上提议，采用后才持久化。</p>}
+                  </div>
+                </div>
+              </section>
+
+              {store.runtimeState.narrative?.version === 2 && !store.runtimeState.narrative.completed && (
+                <section className="rounded border border-border bg-bg-surface p-4">
+                  <h2 className="mb-3 text-sm font-semibold">Narrative Choice 连接</h2>
+                  <div className="flex flex-wrap gap-2">
+                    {(store.runtimeState.narrative.choices ?? [])
+                      .filter(choice => store.runtimeState.narrative?.visibleChoiceKeys?.includes(choice.choiceKey))
+                      .map(choice => (
+                        <button
+                          key={choice.choiceKey}
+                          disabled={!store.runtimeState.narrative?.availableChoiceKeys?.includes(choice.choiceKey) || store.busy}
+                          onClick={() => void run(async () => { await store.chooseNarrative(choice.choiceKey) })}
+                          className="rounded border border-border px-3 py-2 text-xs disabled:opacity-40"
+                        >
+                          {choice.text}
+                        </button>
+                      ))}
+                  </div>
+                </section>
+              )}
+
+              <section className="grid gap-3 md:grid-cols-2">
+                <div className="rounded border border-border bg-bg-surface p-4">
+                  <div className="mb-3 flex items-center gap-2 text-sm font-semibold"><Save className="h-4 w-4 text-accent" />{t('chatGame.checkpointHeading')}</div>
+                  <div className="flex gap-2">
+                    <input value={checkpointName} onChange={event => setCheckpointName(event.target.value)} placeholder={t('chatGame.checkpointPlaceholder')} className="min-w-0 flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-xs" />
+                    <button disabled={!checkpointName.trim()} onClick={() => void run(async () => { await store.saveCheckpoint(checkpointName); setCheckpointName('') })} className="rounded border border-border px-3 text-xs">{t('chatGame.saveCheckpoint')}</button>
+                  </div>
+                  <div className="mt-2 space-y-1">
+                    {store.checkpoints.map(item => <button key={item.id} onClick={() => void run(async () => { await store.forkCheckpoint(item.id!) })} className="block w-full rounded bg-bg-base px-2 py-1 text-left text-[10px] text-text-muted">{item.name} · #{item.throughSequence} → 分支</button>)}
+                  </div>
+                </div>
+                <div className="rounded border border-border bg-bg-surface p-4">
+                  <div className="mb-3 flex items-center gap-2 text-sm font-semibold"><GitBranch className="h-4 w-4 text-accent" />{t('chatGame.branchHeading')}</div>
+                  <div className="flex gap-2">
+                    <input value={branchTitle} onChange={event => setBranchTitle(event.target.value)} placeholder={t('chatGame.branchPlaceholder')} className="min-w-0 flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-xs" />
+                    <button disabled={!branchTitle.trim()} onClick={() => void run(async () => { await store.forkCurrent(branchTitle); setBranchTitle('') })} className="rounded border border-border px-3 text-xs">{t('chatGame.branchAction')}</button>
+                  </div>
+                </div>
+              </section>
+
+              {!!store.recoverableRunIds.length && (
+                <section className="rounded border border-warning/30 bg-warning/5 p-4">
+                  <h2 className="text-sm font-semibold">Harness 可恢复候选</h2>
+                  <p className="my-2 text-xs text-text-muted">上次运行已持久化候选但未完成采用，可从同一检查点继续，不重复调用模型。</p>
+                  <div className="flex flex-wrap gap-2">
+                    {store.recoverableRunIds.map(runId => <button key={runId} disabled={store.busy} onClick={() => void run(async () => { await store.resumeRun(runId) })} className="rounded border border-border px-3 py-1.5 text-xs">恢复 Run #{runId}</button>)}
+                  </div>
+                </section>
+              )}
+            </>
+          )}
+        </div>
+      </main>
+    </div>
+  )
 }

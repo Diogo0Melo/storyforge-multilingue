@@ -6,6 +6,10 @@
  */
 import { db } from '../../src/lib/db/schema'
 import { PROJECT_TABLES } from '../../src/lib/registry/project-tables'
+import { canonicalStringify, hashCanonicalValue } from '../../src/lib/agent/run/hash'
+import { replayAgentRunEventsV1, toAgentRunProjectionBodyV1 } from '../../src/lib/agent/run/projection'
+import { createNarrativeSimulationAcceptanceContent } from '../../src/lib/narrative-simulation/authoring'
+import type { AnyAgentRunEventV1 } from '../../src/lib/types'
 
 const now = 1_700_000_000_000 // 固定时间戳,保证派生/手写两版导出可逐字段比对
 
@@ -15,6 +19,28 @@ export async function seedFullProject() {
     name: '全量作品', genre: 'fantasy', genres: ['fantasy'], description: '全表往返',
     targetWordCount: 100000, enableMultiWorld: true, createdAt: now, updatedAt: now,
   } as any) as number
+
+  // ── WORLD-2C C1 显式世界/作品根 ──
+  const worldId = await db.worlds.add({
+    projectId,
+    code: 'world-full-fixture',
+    name: '全量世界',
+    description: '全表往返世界根',
+    currentVersion: 1,
+    createdAt: now,
+    updatedAt: now,
+  }) as number
+  const workId = await db.works.add({
+    projectId,
+    worldId,
+    title: '全量作品',
+    description: '全表往返作品根',
+    genres: ['fantasy'],
+    status: 'drafting',
+    targetWordCount: 100000,
+    createdAt: now,
+    updatedAt: now,
+  }) as number
 
   // ── 双世界组(order 决定导出序) ──
   const wgA = await db.worldGroups.add({ projectId, name: '主世界群', order: 0, createdAt: now, updatedAt: now } as any) as number
@@ -57,6 +83,15 @@ export async function seedFullProject() {
   } as any) as number
   const char2 = await db.characters.add({ projectId, isCrossWorld: true, name: '苏长歌', role: 'supporting', createdAt: now, updatedAt: now } as any) as number
   await db.characterRelations.add({ projectId, fromCharacterId: char1, toCharacterId: char2, type: 'ally', description: '同门', createdAt: now, updatedAt: now } as any)
+  await db.workCharacterBindings.add({
+    projectId,
+    workId,
+    characterId: char1,
+    role: 'protagonist',
+    arc: '从复仇者到守护者',
+    createdAt: now,
+    updatedAt: now,
+  })
   const characterDrivenPlan = await db.characterDrivenPlans.add({
     projectId,
     name: '林惊羽角色驱动方案',
@@ -75,13 +110,193 @@ export async function seedFullProject() {
     createdAt: now,
     updatedAt: now,
   }) as number
-  await db.projects.update(projectId, { activeCharacterDrivenPlanId: characterDrivenPlan })
+  await db.works.update(workId, { activeCharacterDrivenPlanId: characterDrivenPlan })
+  await db.projects.update(projectId, {
+    activeCharacterDrivenPlanId: characterDrivenPlan,
+    activeWorldId: worldId,
+    activeWorkId: workId,
+    ownershipSchemaVersion: 1,
+    worldCode: 'world-full-fixture',
+    worldVersion: 1,
+  })
 
   // ── 大纲(树,wgA)+ 章节 + 细纲 + 情感卡 ──
   const vol = await db.outlineNodes.add({ projectId, worldGroupId: wgA, parentId: null, type: 'volume', title: '第一卷', summary: '开篇', order: 0, createdAt: now, updatedAt: now } as any) as number
   const chapNode = await db.outlineNodes.add({ projectId, worldGroupId: wgA, parentId: vol, type: 'chapter', title: '第1章', summary: '觉醒', order: 0, createdAt: now, updatedAt: now } as any) as number
   const chapter = await db.chapters.add({ projectId, outlineNodeId: chapNode, title: '第1章', content: '<p>废墟中睁眼</p>', wordCount: 6, status: 'draft', order: 0, createdAt: now, updatedAt: now } as any) as number
   await db.detailedOutlines.add({ projectId, outlineNodeId: chapNode, openingHook: '承接', endingCliffhanger: '黑影', appearingCharacterIds: [char1], scenes: [{ sceneId: 's1', title: '苏醒', summary: '醒来', characterIds: [char1], location: '废墟', conflict: '失忆' }], createdAt: now, updatedAt: now } as any)
+
+  // ── WORLD-2D/2E 可执行叙事与不可变发布 ──
+  const narrativeModule = await db.narrativeModules.add({
+    projectId,
+    kind: 'main',
+    title: '青云主线',
+    description: '从山门启程',
+    status: 'ready',
+    sourceProjection: 'outline',
+    sourceRefId: chapNode,
+    entryNodeKey: 'entry',
+    createdAt: now,
+    updatedAt: now,
+  }) as number
+  await db.narrativeNodes.add({
+    projectId,
+    moduleId: narrativeModule,
+    key: 'entry',
+    kind: 'entry',
+    title: '踏入山门',
+    summary: '从主线入口开始',
+    conditionJson: '{}',
+    effectsJson: '[]',
+    successorKeysJson: '[]',
+    sourceOutlineNodeId: chapNode,
+    order: 0,
+    createdAt: now,
+    updatedAt: now,
+  })
+  await db.narrativeNodes.add({
+    projectId, moduleId: narrativeModule, key: 'ending', kind: 'ending',
+    title: '抵达青云峰', summary: '全表往返结局', conditionJson: '{}', effectsJson: '[]',
+    successorKeysJson: '[]', sourceOutlineNodeId: chapNode, order: 1, createdAt: now, updatedAt: now,
+  })
+  await db.narrativeBeats.add({
+    projectId, moduleId: narrativeModule, nodeKey: 'entry', beatKey: 'arrival', kind: 'narration',
+    speakerCharacterId: null, text: '林惊羽踏入青云山门。', order: 0, createdAt: now, updatedAt: now,
+  })
+  await db.narrativeChoices.add({
+    projectId, moduleId: narrativeModule, sourceNodeKey: 'entry', choiceKey: 'climb',
+    text: '登上青云峰', description: '', unavailableReason: '', targetNodeKey: 'ending',
+    displayConditionJson: '{}', availableConditionJson: '{}', effectsJson: '[]', tagsJson: '[]',
+    order: 0, createdAt: now, updatedAt: now,
+  })
+  await db.works.update(workId, { activeNarrativeModuleId: narrativeModule })
+  const releaseManifest = JSON.stringify({
+    schema: 'storyforge.world-package',
+    version: 2,
+    worldCode: 'world-full-fixture',
+    worldName: '全量世界',
+    workTitle: '全量作品',
+    selectedTables: ['narrativeModules', 'narrativeNodes'],
+    selectedNarrativeModules: [{ exportId: 0, kind: 'main', title: '青云主线' }],
+    dependencies: [],
+    records: {},
+    portableProject: {},
+  })
+  const worldRevision = await db.worldRevisions.add({
+    projectId,
+    worldId,
+    parentRevisionId: null,
+    revision: 1,
+    label: '初始修订',
+    manifestJson: releaseManifest,
+    contentHash: 'fixture-release-hash',
+    createdAt: now,
+    updatedAt: now,
+  } as any) as number
+  const worldRelease = await db.worldReleases.add({
+    projectId,
+    worldId,
+    revisionId: worldRevision,
+    version: 1,
+    label: '世界 v1',
+    manifestJson: releaseManifest,
+    contentHash: 'fixture-release-hash',
+    sourceWorldCode: 'world-full-fixture',
+    createdAt: now,
+  } as any) as number
+  const gameDefinition = await db.gameDefinitions.add({
+    projectId, worldId, workId, gameKey: 'full-fixture-story', productType: 'storygame',
+    title: '青云山门', description: '全表往返游戏定义', status: 'draft',
+    narrativeModuleId: narrativeModule, enabledCapabilitiesJson: '["narrative"]',
+    initialVariablesJson: '{}', rulesetVersion: 1, createdAt: now, updatedAt: now,
+  }) as number
+  const interactionCharacterProfile = await db.interactionCharacterProfiles.add({
+    projectId, worldId, workId, gameDefinitionId: gameDefinition, characterId: char1,
+    participantKey: 'lin-jingyu', roleLabel: '同行守门人', voiceRules: '克制、直接，不泄露未获知的秘密。',
+    initialKnowledgeJson: JSON.stringify([
+      { key: 'mountain.gate', content: '青云山门将在日落时关闭。', visibility: 'public', importance: 2 },
+      { key: 'hidden.oath', content: '林惊羽曾在镜界立下秘密誓言。', visibility: 'private', importance: 5 },
+    ]),
+    relationshipDimensionsJson: JSON.stringify([
+      { key: 'trust', label: '信任', minimum: -10, maximum: 10, initial: 1, largeChangeThreshold: 3 },
+    ]),
+    maxMemoryEntries: 24, createdAt: now, updatedAt: now,
+  }) as number
+  const interactionSceneTemplate = await db.interactionSceneTemplates.add({
+    projectId, worldId, workId, gameDefinitionId: gameDefinition,
+    sceneKey: 'mountain-gate-reunion', title: '山门重逢', purpose: '确认双方是否仍愿意同行。',
+    location: '青云山门', timeLabel: '日落前', participantKeysJson: '["lin-jingyu"]',
+    publicKnowledgeKeysJson: '["mountain.gate"]', goalsJson: '["完成重逢"]',
+    endingConditionsJson: '["承诺同行或明确拒绝"]', safetyBoundariesJson: '["不替玩家决定情感"]',
+    openingNodeKey: 'entry', endingNodeKey: 'ending', maxTurns: 20, directorBudget: 1,
+    order: 0, createdAt: now, updatedAt: now,
+  }) as number
+  const gameRelease = await db.gameReleases.add({
+    projectId, worldId, workId, gameDefinitionId: gameDefinition, worldReleaseId: worldRelease,
+    version: 1, label: '青云山门 v1',
+    manifestJson: JSON.stringify({ schema: 'storyforge.game-release', version: 1 }),
+    contentHash: 'fixture-game-release-hash', createdAt: now,
+  }) as number
+  const adventureGameDefinition = await db.gameDefinitions.add({
+    projectId, worldId, workId, gameKey: 'full-fixture-adventure', productType: 'adventure',
+    title: '青云山门 · 冒险版', description: '全表往返文字冒险定义', status: 'draft',
+    narrativeModuleId: narrativeModule, enabledCapabilitiesJson: '["narrative","adventure"]',
+    initialVariablesJson: '{}', rulesetVersion: 1, createdAt: now, updatedAt: now,
+  }) as number
+  await db.adventureModules.add({
+    projectId, worldId, workId, gameDefinitionId: adventureGameDefinition,
+    contentJson: JSON.stringify({
+      version: 1, initialLocationKey: 'gate', playerKey: 'player',
+      locations: [{ key: 'gate', title: '青云山门', description: '山门前云雾缭绕。', tags: [] }],
+      objects: [], items: [], abilities: [], conditions: [], resources: [], quests: [], actions: [], initialInventory: [],
+    }),
+    createdAt: now, updatedAt: now,
+  })
+  const avgGameDefinition = await db.gameDefinitions.add({
+    projectId, worldId, workId, gameKey: 'full-fixture-avg', productType: 'avg',
+    title: '青云山门 · 演出版', description: '全表往返 AVG 定义', status: 'draft',
+    narrativeModuleId: narrativeModule, enabledCapabilitiesJson: '["narrative","presentation"]',
+    initialVariablesJson: '{}', rulesetVersion: 1, createdAt: now, updatedAt: now,
+  }) as number
+  await db.avgPresentationModules.add({
+    projectId, worldId, workId, gameDefinitionId: avgGameDefinition,
+    contentJson: JSON.stringify({ version: 1, cues: [] }), createdAt: now, updatedAt: now,
+  })
+  const narrativeSimulationDefinition = await db.gameDefinitions.add({
+    projectId, worldId, workId, gameKey: 'full-fixture-narrative-simulation',
+    productType: 'narrative-simulation', title: '青云山门 · 治理模拟',
+    description: '全表往返叙事模拟定义', status: 'draft', narrativeModuleId: narrativeModule,
+    enabledCapabilitiesJson: '["narrative","simulation"]', initialVariablesJson: '{}',
+    rulesetVersion: 1, createdAt: now, updatedAt: now,
+  }) as number
+  await db.narrativeSimulationModules.add({
+    projectId, worldId, workId, gameDefinitionId: narrativeSimulationDefinition,
+    contentJson: JSON.stringify(createNarrativeSimulationAcceptanceContent()), createdAt: now, updatedAt: now,
+  })
+  const openWorldGameDefinition = await db.gameDefinitions.add({
+    projectId, worldId, workId, gameKey: 'full-fixture-open-world', productType: 'text-open-world',
+    title: '青云山门 · 开放世界', description: '全表往返开放世界定义', status: 'draft',
+    narrativeModuleId: narrativeModule,
+    enabledCapabilitiesJson: '["narrative","interaction","adventure","simulation","open-world"]',
+    initialVariablesJson: '{}', rulesetVersion: 1, createdAt: now, updatedAt: now,
+  }) as number
+  await db.openWorldModules.add({
+    projectId, worldId, workId, gameDefinitionId: openWorldGameDefinition,
+    contentJson: JSON.stringify({ version: 1, regions: [] }), createdAt: now, updatedAt: now,
+  })
+  const avgMediaData = new TextEncoder().encode('full-fixture-avg-media').buffer
+  const avgMediaDigest = await crypto.subtle.digest('SHA-256', avgMediaData)
+  const avgMediaHash = Array.from(new Uint8Array(avgMediaDigest), byte => byte.toString(16).padStart(2, '0')).join('')
+  const avgMediaAsset = await db.avgMediaAssets.add({
+    projectId, worldId, workId, assetKey: 'fixture.background', version: 1, kind: 'background',
+    name: '全表往返背景', mimeType: 'image/svg+xml', byteSize: avgMediaData.byteLength,
+    width: 320, height: 180, durationMs: null, contentHash: avgMediaHash,
+    source: 'StoryForge test fixture', license: 'CC0 test fixture', altText: '青云山门测试背景',
+    characterTag: '', sceneTag: 'gate', createdAt: now, updatedAt: now,
+  }) as number
+  await db.avgMediaBlobs.add({
+    projectId, worldId, workId, mediaAssetId: avgMediaAsset, data: avgMediaData, createdAt: now,
+  })
   await db.emotionBeatCards.add({ projectId, chapterId: chapter, overallArc: '低落→振奋', beats: '[]', createdAt: now, updatedAt: now } as any)
   await db.cultivationProgress.add({
     projectId,
@@ -210,6 +425,131 @@ export async function seedFullProject() {
     payload: '{}',
     createdAt: now,
   })
+  const harnessContract = {
+    version: 1,
+    objective: '生成第一卷卷纲候选',
+    workflowKind: 'direct-generation',
+    scope: { projectId, worldGroupId: wgA, outlineNodeIds: [vol] },
+    permissions: {
+      contextSourceKeys: ['worldview', 'storyCore'],
+      writeTargets: [{ table: 'outlineNodes', fields: ['summary'], mode: 'candidate-only' }],
+    },
+    budget: {
+      maxModelCalls: 1,
+      maxToolCalls: 0,
+      maxInputTokens: 8_000,
+      maxOutputTokens: 2_000,
+      maxAttemptsPerStep: 1,
+    },
+    acceptance: [{ id: 'outline.output', kind: 'output-present', required: true }],
+    verificationPlan: [{
+      id: 'outline.terminal',
+      kind: 'terminal',
+      verifier: 'terminal-v1',
+      criterionIds: ['outline.output'],
+    }],
+    failurePolicy: {
+      onProtocolError: 'fail',
+      onVerificationFailure: 'fail',
+      onStaleInput: 'pause-for-author',
+    },
+  }
+  const harnessContractHash = await hashCanonicalValue(harnessContract)
+  const agentRun = await db.agentRuns.add({
+    projectId,
+    workId,
+    simulationSessionId: null,
+    worldGroupId: wgA,
+    conversationId: agentConversation,
+    status: 'planned',
+    contractVersion: 1,
+    contractJson: canonicalStringify(harnessContract),
+    contractHash: harnessContractHash,
+    generation: 1,
+    lastSequence: 0,
+    projectionJson: '{}',
+    projectionHash: '0'.repeat(64),
+    terminalReceiptHash: null,
+    createdAt: now,
+    updatedAt: now,
+  }) as number
+  const harnessEvents: AnyAgentRunEventV1[] = [{
+    version: 1 as const,
+    runId: agentRun,
+    sequence: 1,
+    generation: 1,
+    projectId,
+    worldGroupId: wgA,
+    contractHash: harnessContractHash,
+    type: 'run.created' as const,
+    payload: { objectiveHash: await hashCanonicalValue(harnessContract.objective) },
+    createdAt: now,
+  }, {
+    version: 1 as const,
+    runId: agentRun,
+    sequence: 2,
+    generation: 1,
+    projectId,
+    worldGroupId: wgA,
+    contractHash: harnessContractHash,
+    type: 'contract.accepted' as const,
+    payload: { contractJson: canonicalStringify(harnessContract) },
+    createdAt: now,
+  }]
+  const beforeCheckpoint = replayAgentRunEventsV1(harnessEvents)
+  const checkpointProjectionBody = toAgentRunProjectionBodyV1(beforeCheckpoint)
+  const checkpointProjectionHash = await hashCanonicalValue(checkpointProjectionBody)
+  const checkpointHash = await hashCanonicalValue({
+    version: 1,
+    generation: 1,
+    throughSequence: 2,
+    projectionHash: checkpointProjectionHash,
+    resumePayloadHash: null,
+  })
+  const agentRunCheckpoint = await db.agentRunCheckpoints.add({
+    projectId,
+    worldGroupId: wgA,
+    runId: agentRun,
+    throughSequence: 2,
+    generation: 1,
+    contractHash: harnessContractHash,
+    checkpointHash,
+    projectionJson: canonicalStringify(checkpointProjectionBody),
+    projectionHash: checkpointProjectionHash,
+    resumePayloadJson: null,
+    resumePayloadHash: null,
+    createdAt: now,
+  }) as number
+  harnessEvents.push({
+    version: 1,
+    runId: agentRun,
+    sequence: 3,
+    generation: 1,
+    projectId,
+    worldGroupId: wgA,
+    contractHash: harnessContractHash,
+    type: 'checkpoint.created',
+    payload: { throughSequence: 2, checkpointHash },
+    createdAt: now,
+  })
+  await db.agentRunEvents.bulkAdd(harnessEvents.map(event => ({
+    projectId: event.projectId,
+    worldGroupId: event.worldGroupId,
+    runId: event.runId,
+    sequence: event.sequence,
+    generation: event.generation,
+    contractHash: event.contractHash,
+    type: event.type,
+    payloadJson: canonicalStringify(event.payload),
+    createdAt: event.createdAt,
+  })))
+  const harnessProjection = replayAgentRunEventsV1(harnessEvents)
+  const harnessProjectionBody = toAgentRunProjectionBodyV1(harnessProjection)
+  await db.agentRuns.update(agentRun, {
+    lastSequence: harnessProjection.lastSequence,
+    projectionJson: canonicalStringify(harnessProjectionBody),
+    projectionHash: await hashCanonicalValue(harnessProjectionBody),
+  })
 
   // ── FLOW-2 独立节点文档与可见运行记录 ──
   const nodeFlow = await db.nodeFlows.add({
@@ -241,6 +581,11 @@ export async function seedFullProject() {
   const simulationParent = await db.simulationSessions.add({
     projectId,
     worldGroupId: wgA,
+    worldId,
+    workId,
+    worldReleaseId: worldRelease,
+    narrativeModuleId: narrativeModule,
+    draftSnapshotHash: null,
     kind: 'ttrpg',
     title: '青云山战役',
     status: 'active',
@@ -263,6 +608,11 @@ export async function seedFullProject() {
   const simulationChild = await db.simulationSessions.add({
     projectId,
     worldGroupId: wgA,
+    worldId,
+    workId,
+    worldReleaseId: worldRelease,
+    narrativeModuleId: narrativeModule,
+    draftSnapshotHash: null,
     kind: 'ttrpg',
     title: '青云山战役 · 分支',
     status: 'active',
@@ -322,10 +672,42 @@ export async function seedFullProject() {
     sourceQuote: '废墟中睁眼', status: 'confirmed', createdAt: now, updatedAt: now,
   })
 
+  // 旧共享种子最初只带 projectId；在全量备份边界前按 PROJECT_TABLES
+  // 为每个受治理记录补齐 v4 World/Work owner，避免物理 ID 或隐式活动作品泄漏。
+  for (const spec of PROJECT_TABLES) {
+    const locator = spec.domainOwner?.locator
+    if (['projects', 'worlds', 'works'].includes(spec.name)) continue
+    let rows: any[] = []
+    if (spec.owner === 'project') rows = await spec.table.where('projectId').equals(projectId).toArray()
+    else if (spec.projectResolver) {
+      const parentIds = await spec.projectResolver(projectId)
+      const link = (spec.exportRemap ?? []).find(remap => (
+        PROJECT_TABLES.find(candidate => candidate.name === remap.remapVia)?.owner === 'project'
+      ))
+      if (parentIds.length && link) rows = await spec.table.where(link.field).anyOf(parentIds).toArray()
+    }
+    if (locator?.kind === 'field' && (locator.owner === 'world' || locator.owner === 'work')) {
+      for (const row of rows) {
+        if (row.id != null && (row as any)[locator.field] == null) {
+          await spec.table.update(row.id, { [locator.field]: locator.owner === 'world' ? worldId : workId })
+        }
+      }
+    } else if (locator?.kind === 'exclusive-fields') {
+      for (const row of rows) {
+        if (row.id != null && (row as any)[locator.worldField] == null && (row as any)[locator.workField] == null) {
+          await spec.table.update(row.id, { [locator.workField]: workId, [locator.worldField]: null })
+        }
+      }
+    }
+  }
+
   return {
     projectId, wgA, wgB, char1, char2, vol, chapNode, chapter, temporalFact, ref1,
     cat, subCat, rootWorld, mirrorWorld, locParent, cultivationSystem, codexEntry,
-    characterDrivenPlan, simulationParent, simulationChild,
+    characterDrivenPlan, simulationParent, simulationChild, worldId, workId,
+    narrativeModule, worldRevision, worldRelease, gameDefinition, gameRelease,
+    adventureGameDefinition, avgGameDefinition, narrativeSimulationDefinition, openWorldGameDefinition, avgMediaAsset,
+    interactionCharacterProfile, interactionSceneTemplate, agentRun, agentRunCheckpoint,
   }
 }
 

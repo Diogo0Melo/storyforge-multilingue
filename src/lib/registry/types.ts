@@ -10,6 +10,11 @@ import type { ContextLayer, ContextSegment } from '../ai/context-budget'
 import type { PreparedContinuityContext } from '../ai/chapter-memory/continuity-context'
 import type { InspirationResultMode } from '../types/inspiration-workspace'
 import type { RagSelectionTraceCollector } from '../types/rag-library'
+import type { WorkspaceScope } from '../types/world-ownership'
+import type {
+  WorkspaceDocumentCodecV1,
+  WorkspaceDocumentEditPolicyV1,
+} from '../types/memory-engineering'
 
 /**
  * 表的归属方式 —— 决定删项目时如何定位该表的记录。
@@ -21,6 +26,90 @@ export type TableOwner =
   | 'transient'    // 临时态(与项目同生命周期,但不导出)
   | 'blob'         // Blob 存储,特殊 owner(如 importFiles 复用为 master blob)
   | 'global'       // 全局(不绑项目,不参与 deleteProject 级联)
+
+/**
+ * 世界引擎产品域的内容归属。
+ *
+ * 这不是第二套数据库生命周期注册表，而是 PROJECT_TABLES 上的产品投影元数据：
+ * 世界工作台、完整度和发布预检都从同一份表登记派生，避免组件再次手写表清单。
+ */
+export type WorldDomainArea = 'foundation' | 'assets' | 'narrative' | 'structure' | 'runtime'
+export type WorldReleaseSection = 'foundation' | 'characters' | 'narrative' | 'outline'
+
+/** WORLD-2C product ownership, separate from the physical project lifecycle owner. */
+export type DomainOwnerKind = 'workspace' | 'world' | 'work' | 'instance'
+
+export type DomainOwnerLocator =
+  | { kind: 'workspace' }
+  | { kind: 'compat-project' }
+  | { kind: 'field'; owner: DomainOwnerKind; field: string }
+  | {
+      kind: 'exclusive-fields'
+      worldField: string
+      workField: string
+    }
+  | {
+      /** A durable record is owned by exactly one Work or one runtime instance. */
+      kind: 'exclusive-work-instance'
+      workField: string
+      instanceField: string
+    }
+  | {
+      kind: 'parent'
+      /** `inherit` means the child follows whichever owner the parent resolves to. */
+      owner: DomainOwnerKind | 'inherit'
+      table: string
+      field: string
+    }
+
+/**
+ * Logical product owner for a table. `compat-project` means the table has been
+ * classified but its legacy rows have not yet received explicit owner fields.
+ */
+export interface DomainOwnershipSpec {
+  allowed: readonly DomainOwnerKind[]
+  legacyDefault: DomainOwnerKind
+  locator: DomainOwnerLocator
+}
+
+export type WorkspaceProjectionClassificationV1 =
+  | 'editable'
+  | 'evidence'
+  | 'derived-none'
+  | 'not-applicable'
+
+export interface WorkspaceMemoryClassificationV1 {
+  version: 1
+  classification: WorkspaceProjectionClassificationV1
+  mirrorPolicy: 'editable-document' | 'recovery-evidence' | 'rebuild-or-local-only' | 'excluded-global'
+  reason: string
+}
+
+/**
+ * MEMORY-2 disk projection metadata. It extends PROJECT_TABLES instead of
+ * introducing a fourth domain registry. Mapper ids resolve to pure codecs.
+ */
+export interface WorkspaceProjectionSpecV1 {
+  version: 1
+  classification: WorkspaceProjectionClassificationV1
+  documentKind: string
+  mapper:
+    | 'workspace-root-v1'
+    | 'world-root-v1'
+    | 'work-root-v1'
+    | 'chapter-markdown-v1'
+    | 'work-semantic-v1'
+  codec: WorkspaceDocumentCodecV1
+  editPolicy: WorkspaceDocumentEditPolicyV1
+  scopeOwner: 'workspace' | 'world' | 'work'
+  dependencyEmitter:
+    | 'workspace-root-impact-v1'
+    | 'world-root-impact-v1'
+    | 'work-root-impact-v1'
+    | 'chapter-impact-v1'
+    | 'work-semantic-impact-v1'
+  schemaVersion: 1
+}
 
 /** 简单外键引用(table[field] 形式) */
 export interface SimpleRef {
@@ -125,6 +214,33 @@ export type ExportRefRemap = {
 }
 
 /**
+ * Structured payloads whose embedded IDs or integrity hashes must participate
+ * in the registry-derived backup lifecycle. These declarations prevent domain
+ * JSON from silently bypassing normal exportRemap handling.
+ */
+export type PortableDataSpec = {
+  kind: 'agent-run-root'
+  contractField: string
+  contractHashField: string
+  dependencies: readonly string[]
+} | {
+  kind: 'agent-run-child'
+  parentField: string
+  contractHashField: string
+} | {
+  /** Binary field encoded as a data URL after the IndexedDB snapshot transaction. */
+  kind: 'binary-blob'
+  field: string
+  /** Optional metadata contract checked before an imported binary row is committed. */
+  integrity?: {
+    metadataTable: string
+    referenceField: string
+    hashField: string
+    sizeField: string
+  }
+}
+
+/**
  * 单张表的元信息。
  */
 export interface TableSpec<T = any> {
@@ -147,6 +263,14 @@ export interface TableSpec<T = any> {
   worldGroupField?: string
   /** 是否带 homeWorldGroupId(仅 characters) */
   homeWorldScoped?: boolean
+  /** 世界引擎产品投影域；同一表可同时属于多个域。 */
+  worldDomains?: readonly WorldDomainArea[]
+  /** WORLD-2C 逻辑归属；物理删除/导出根仍由 owner 表达。 */
+  domainOwner?: DomainOwnershipSpec
+  /** MEMORY-2 人工可编辑工作区投影；未登记即禁止落盘。 */
+  workspaceProjection?: WorkspaceProjectionSpecV1
+  /** MEMORY-10: every table receives one registry-derived disk-memory policy. */
+  memoryClassification: WorkspaceMemoryClassificationV1
   /** 树形(parentId 字段名) */
   tree?: { parentField: string }
   /** 外键/引用关系(删除级联用) */
@@ -155,6 +279,8 @@ export interface TableSpec<T = any> {
   exportable: boolean
   /** PLATFORM-1：允许进入本地世界分享包；未显式登记的表默认禁止发布。 */
   communityShare?: 'world'
+  /** WORLD-2E：发布选择 UI 的注册表派生分区；不得在组件手写表清单。 */
+  releaseSection?: WorldReleaseSection
   /** 导出时需要的 ID 重映射 */
   exportRemap?: ExportRemapField[]
   /**
@@ -168,6 +294,8 @@ export interface TableSpec<T = any> {
   exportOrderBy?: string
   /** JSON 字段内引用的导出/导入重映射(仅 worldNodes.portalsJSON) */
   exportRefRemap?: ExportRefRemap[]
+  /** Embedded structured data / integrity rebind behavior during export/import. */
+  portableData?: PortableDataSpec
   /**
    * 导入兜底默认值：声明该表"非可选字段"在缺失时的默认值。
    * 导入引擎写入前做 `{ ...defaults, ...row }`,保证老数据/跨版本导入的 JSON
@@ -221,7 +349,9 @@ export interface CollectionAdoptionSpec {
   /** 必填字段;缺失则跳过该条 */
   required: string[]
   /** 自动盖章字段 */
-  autoStamps: ('projectId' | 'worldGroupId' | 'homeWorldGroupId' | 'createdAt' | 'updatedAt')[]
+  autoStamps: ('projectId' | 'worldId' | 'workId' | 'worldGroupId' | 'homeWorldGroupId' | 'createdAt' | 'updatedAt')[]
+  /** Owner selected from the trusted WorkspaceScope, never from AI output. */
+  ownerFrom?: Exclude<DomainOwnerKind, 'instance'>
   /** FK 校验:写入前检查字段引用是否存在 */
   fkChecks?: { field: string; target: string }[]
   /** 数组成员校验:过滤不存在的成员,并记录 fkErrors */
@@ -247,6 +377,8 @@ export interface AdoptionExtensionSpec {
 
 export interface AdoptInput {
   projectId: number
+  /** WORLD-2C C3: explicit logical read/write boundary. projectId remains a legacy adapter. */
+  scope?: WorkspaceScope
   worldGroupId?: number | null
   /** 集合表中定点更新既有记录；AI 补全空卷/空章等场景使用。 */
   recordId?: number
@@ -258,6 +390,18 @@ export interface AdoptInput {
     kind: 'chapter-source-text-hash'
     expectedHash: string
     textNormalizationVersion: string
+    /** Optional exact HTML guard for range edits where formatting changes matter. */
+    expectedContentHash?: string
+  } | {
+    /** HARNESS-66: exact CAS for one FIELD_REGISTRY-governed record field. */
+    kind: 'record-field-value-hash'
+    field: string
+    expectedHash: string
+  } | {
+    /** MEMORY-5: atomic CAS for an author-edited workspace document. */
+    kind: 'record-fields-value-hash'
+    fields: readonly string[]
+    expectedHash: string
   }
   target: string
   data: Record<string, unknown> | Record<string, unknown>[]
@@ -275,10 +419,66 @@ export interface AdoptResult {
 
 export type ContextSourceScope = 'project' | 'world' | 'node' | 'chapter' | 'manual' | 'runtime'
 
+export type ContextCompressionFallbackV1 = 'none' | 'full-source' | 'deterministic-truncation'
+
+/**
+ * Durable-safe proof for one semantic compression decision. It intentionally
+ * stores hashes/counts only; Canon source text remains in its registered table.
+ */
+export interface ContextCompressionEvidenceV1 {
+  version: 1
+  promptVersion: 'agent-context-compression-v1'
+  outcome: 'verified' | 'fallback'
+  fallback: ContextCompressionFallbackV1
+  sourceHash: string
+  artifactHash?: string
+  attempts: number
+  targetTokens: number
+  requiredAnchorCount: number
+  coveredAnchorCount: number
+  failureCode?: string
+}
+
+export interface ContextSourceTransformInput {
+  source: Pick<ContextSource, 'key' | 'label' | 'layer' | 'budgetTokens' | 'protectedFromTrim'>
+  content: string
+  originalTokens: number
+  sourceBudgetTokens: number
+  inputBudgetTokens: number
+}
+
+export interface ContextSourceTransformResult {
+  /** Omit to retain assembleContext's deterministic truncation fallback. */
+  content?: string
+  delivery?: 'full' | 'compressed'
+  /** Only the verified full-source fallback may exceed the registered soft cap. */
+  allowSourceBudgetOverflow?: boolean
+  compression: ContextCompressionEvidenceV1
+}
+
+export type ContextSourceTransformer = (
+  input: ContextSourceTransformInput,
+) => Promise<ContextSourceTransformResult | undefined>
+
 export interface AssembleContextInput {
   projectId: number
+  /** WORLD-2C C3: explicit logical read boundary. projectId remains a legacy adapter. */
+  scope?: WorkspaceScope
   /** Explicit world target. null is a valid explicit single-world/global target. */
   worldGroupId?: number | null
+  /** HARNESS-70: trusted target category for the registered Codex extraction baseline. */
+  codexCategoryId?: number
+  /** HARNESS-73: trusted target for the registered history consultation baseline. */
+  historyAgentMode?: 'consult' | 'storm'
+  historyAgentTargetKind?: 'event' | 'keyword'
+  historyAgentTargetId?: number
+  /** HARNESS-74: trusted version target for reference summary/character derivation. */
+  referenceDerivedMode?: 'summary' | 'characters'
+  referenceAnalysisRunId?: number
+  /** HARNESS-76: trusted chapter selection for the registered style-learning baseline. */
+  styleLearningChapterIds?: number[]
+  /** HARNESS-79: trusted existing story-timeline event for single-record impact remediation. */
+  storyTimelineEventId?: number
   outlineNodeId?: number | null
   chapterId?: number | null
   currentChapterOrder?: number
@@ -291,22 +491,30 @@ export interface AssembleContextInput {
   inputBudgetMaxTokens?: number
   /** 调用方只能按比例收窄每个登记源的软上限，不能放大或绕过注册表。 */
   sourceBudgetScale?: number
+  /** HARNESS-16: registered-reader output may be transformed before source capping. */
+  sourceTransformer?: ContextSourceTransformer
   citedReferenceIds?: number[]
   previousChapterEnding?: string
   stateReferenceText?: string
   extraStateIds?: number[]
   /** 手动输入/当前字段内容，供“内容反推结构化设定”类动作走注册表。 */
   manualSourceText?: string
+  /** HARNESS-11: 同一批量章纲任务中，上一卷尚未采纳的结构化候选。 */
+  priorOutlineCandidateText?: string
   /** C2 反向哺喂：以某角色为主体，召回剧情里关于 TA 的事实/正文证据（characterFacts/characterPassages 源用）。 */
   subjectCharacterName?: string
   /** INV-1: 按角色过滤物品流水/持有投影。 */
   characterId?: number | null
   /** SIM-1C: 冻结运行时会话，供 NPC 演进候选只读上下文使用。 */
   simulationSessionId?: number
+  /** CHATGAME-2: exactly one character viewpoint for the registered interaction reader. */
+  interactionParticipantKey?: string
   /** CM-1: 本次明确参与增量融合的碎片；由 inspirationWorkspace source 读取。 */
   inspirationFragmentIds?: string[]
   /** CM-1: 单世界与多世界各自维护最近确认版本。 */
   inspirationMode?: InspirationResultMode
+  /** STORY-1: 角色驱动规划 Skill 明确冻结的方案；缺省时仍读取作者激活的下游参考方案。 */
+  characterDrivenPlanId?: number
   /** AGENT-1: 本地确定性项目搜索；只由 searchResults 上下文源消费。 */
   searchQuery?: string
   /** AGENT-1: 搜索最多返回 10 条短摘。 */
@@ -333,10 +541,14 @@ export interface ContextSource {
   labelKey: string
   scope: ContextSourceScope
   layer: ContextLayer
+  /** Logical owner resolved before the registered reader runs. */
+  ownerFrom?: DomainOwnerKind
   /** Approximate per-source soft cap. Adapters can still return less. */
   budgetTokens: number
   /** NS-1: assembleContext 总预算裁剪时不得整段删除。 */
   protectedFromTrim?: boolean
+  /** Source can use a caller-provided continuity snapshot without reading a Chapter row. */
+  acceptsDetachedContinuitySnapshot?: boolean
   requiresWorldGroupId?: boolean
   requiresSimulationSessionId?: boolean
   requiresOutlineNodeId?: boolean
@@ -347,12 +559,35 @@ export interface ContextSource {
   read: (input: AssembleContextInput) => Promise<string>
 }
 
+export type AssembleContextSourceStatus = 'included' | 'omitted' | 'trimmed'
+export type AssembleContextSourceDelivery = 'full' | 'compressed' | 'truncated' | 'none'
+
+/**
+ * Per-source delivery evidence derived by assembleContext(). It records only
+ * token counts and delivery state; source text remains in segments/business tables.
+ */
+export interface AssembleContextSourceEvidence {
+  key: string
+  status: AssembleContextSourceStatus
+  delivery: AssembleContextSourceDelivery
+  /** SHA-256 of the registered reader's complete raw output before compression or truncation. */
+  sourceHash?: string
+  /** Tokens returned by the registered reader before its source budget was applied. */
+  originalTokens: number
+  /** Tokens actually delivered to the model. Zero for omitted/trimmed sources. */
+  inputTokens: number
+  /** Optional for sources processed by the HARNESS-16 semantic compression policy. */
+  compression?: ContextCompressionEvidenceV1
+}
+
 export interface AssembleContextResult {
   text: string
   segments: ContextSegment[]
   included: string[]
   omitted: string[]
   trimmed: string[]
+  /** Optional for historical/test fixtures; production assembleContext always supplies it. */
+  sourceEvidence?: AssembleContextSourceEvidence[]
   totalInputTokens: number
   inputBudget: number
   overBudgetBeforeTrim: boolean

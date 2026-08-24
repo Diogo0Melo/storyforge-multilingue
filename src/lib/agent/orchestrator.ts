@@ -1,12 +1,14 @@
 import JSON5 from 'json5'
-import { getSupportedUiLang, getT } from '../../i18n'
+import { getSupportedUiLang } from '../../i18n'
 import { useAIConfigStore } from '../../stores/ai-config'
 import { AGENT_ROLE_CATEGORIES } from '../ai/task-routing'
 import { useChapterStore } from '../../stores/chapter'
 import { useCharacterStore } from '../../stores/character'
 import { useInspirationWorkspaceStore } from '../../stores/inspiration-workspace'
 import { useOutlineStore } from '../../stores/outline'
+import { useStoryArcStore } from '../../stores/story-arc'
 import { useWorldviewStore } from '../../stores/worldview'
+import { useCharacterDrivenPlanStore } from '../../stores/character-driven-plan'
 import { chat, resolveRequestConfig } from '../ai/client'
 import { db } from '../db/schema'
 import {
@@ -15,6 +17,8 @@ import {
 } from '../generation/generation-node'
 import {
   parseInspirationFragments,
+  parseInspirationVersions,
+  latestInspirationVersion,
   MAX_INSPIRATION_FRAGMENTS,
 } from '../inspiration/workspace'
 import { adopt } from '../registry/adopt'
@@ -30,12 +34,12 @@ import {
   adaptLanguageShadowReportToIssues,
   DEFAULT_LANGUAGE_SHADOW_POLICY,
   resolveLanguageShadowPolicy,
-  type LanguageShadowPolicy,
 } from '../ai/language-shadow-enforcement'
 import {
   parseAgentEventPayload,
   type AgentEvent,
   type InspirationResultMode,
+  type WorkspaceScope,
 } from '../types'
 import {
   parseCharacterCandidateDraft,
@@ -53,6 +57,7 @@ import {
   adoptRestoredOutlineCandidate,
   parseOutlineCandidateDraft,
   prepareOutlineCopilot,
+  runOutlineCreativeReliabilityV1,
   type OutlineCopilotMode,
   type OutlineCopilotSnapshot,
 } from './outline-copilot'
@@ -60,6 +65,7 @@ import {
   adoptRestoredProseCandidate,
   parseProseCandidateDraft,
   prepareProseCopilot,
+  runProseCreativeReliabilityV1,
   type ProseCopilotOperation,
   type ProseCopilotSnapshot,
 } from './prose-copilot'
@@ -67,38 +73,126 @@ import {
   prepareWorldOriginCopilot,
   type WorldOriginSnapshot,
 } from './world-origin-copilot'
+import {
+  adoptRestoredStoryCoreCandidate,
+  parseStoryCoreCandidateDraft,
+  prepareStoryCoreCopilot,
+  type StoryCoreCopilotSnapshot,
+  type StoryCoreField,
+} from './story-core-copilot'
+import {
+  adoptRestoredCreativeRulesCandidateV1,
+  parseCreativeRulesCandidateDraftV1,
+  prepareCreativeRulesCopilotV1,
+  type CreativeRulesCopilotSnapshotV1,
+  type CreativeRulesField,
+} from './creative-rules-copilot'
+import {
+  adoptRestoredWorldviewFieldCandidate,
+  parseWorldviewFieldCandidateDraft,
+  prepareWorldviewFieldCopilot,
+  type WorldviewAgentField,
+  type WorldviewFieldCopilotSnapshot,
+} from './worldview-field-copilot'
+import {
+  adoptRestoredStoryArcCandidate,
+  parseStoryArcCandidateDraft,
+  prepareStoryArcCopilot,
+  runStoryArcCreativeReliabilityV1,
+  type StoryArcCopilotSnapshot,
+  type StoryArcRequestKind,
+} from './story-arc-copilot'
+import {
+  adoptRestoredCharacterDrivenCandidateV1,
+  parseCharacterDrivenCandidateDraftV1,
+  prepareCharacterDrivenCopilotV1,
+  type CharacterDrivenCopilotSnapshotV1,
+} from './character-driven-copilot'
+import {
+  adoptRestoredCharacterRevisionCandidateV1,
+  parseCharacterRevisionCandidateDraftV1,
+  parseCharacterRevisionTaskInputV1,
+  prepareCharacterRevisionCopilotV1,
+  serializeCharacterRevisionCandidateV1,
+  type CharacterRevisionCopilotSnapshotV1,
+  type CharacterRevisionTaskInputV1,
+} from './character-revision-copilot'
+import {
+  adoptRestoredCharacterSupplementCandidateV1,
+  parseCharacterSupplementCandidateDraftV1,
+  parseCharacterSupplementTaskInputV1,
+  prepareCharacterSupplementCopilotV1,
+  serializeCharacterSupplementCandidateV1,
+  type CharacterSupplementCopilotSnapshotV1,
+  type CharacterSupplementTaskInputV1,
+} from './character-supplement-copilot'
+import {
+  adoptRestoredStorylineProgressCandidateV1,
+  parseStorylineProgressCandidateDraftV1,
+  prepareStorylineProgressCopilotV1,
+  type StorylineProgressCopilotSnapshotV1,
+} from './storyline-progress-copilot'
+import {
+  adoptRestoredWorldGameCandidateV1,
+  prepareWorldGameCopilotV1,
+  type WorldGameCopilotSnapshotV1,
+} from './world-game-copilot'
+import { parseWorldGameNarrativeCandidateV1 } from '../text-game/agent-contract'
 import type {
   AgentContextEvidence,
-  AgentContextTaskKind,
 } from './context-policy'
+import type { AgentSkillExecutionBindingV1 } from '../types/agent-run'
 import { executeAgentTool } from './tool-registry'
 import { validateDomainCandidateCanon } from './canon-validator'
 import { runBudgetedGenerationNode } from './team-execution'
-import type { LanguageShadowValidation } from './team-execution'
 import {
   AgentTeamBudgetExceededError,
   AgentTeamBudgetTracker,
   type AgentTeamBudgetEvidence,
 } from './team-budget'
+import {
+  assertRecordInScope,
+  readOwnedRows,
+  resolveScope,
+} from '../world-engine/scope'
+import {
+  DOMAIN_AGENT_IDS,
+  resolveAgentSkillV1,
+  type AgentSkillId,
+  type DomainAgentId,
+} from './skill-registry'
+import {
+  classifyRequestedDomainIdsV1,
+  getMasterWorkflowV1,
+  hasMasterFanOutPairV1,
+  isMasterFanOutEnabledV1,
+  selectMasterFanOutBatchV1,
+  selectAgentSkillIdV1,
+  selectMasterWorkflowV1,
+  type MasterWorkflowSelectionV1,
+} from './workflow-catalog'
+import { createAgentSkillExecutionBindingV1 } from './execution-binding'
+import { hashCanonicalValue } from './run/hash'
+import { readAgentRunV1 } from './run/event-store'
+import type {
+  MasterCandidateModelIdentityV1,
+  MasterCandidateSemanticReviewArtifactV1,
+} from './master-candidate-semantic-review'
+import {
+  creativeArtifactCanAdoptV1,
+  isCreativeReliabilityRuntimeEnabledV1,
+  parseCreativeArtifactV1,
+  type CreativeAssumptionV1,
+  type CreativeArtifactV1,
+} from './creative-reliability'
+import {
+  mergeProvisionalAssumptionsV1,
+  type NarrativeBriefV1,
+} from './narrative-brief'
+import type { InformationBoundaryManifestV1 } from './information-boundary'
 
-export const DOMAIN_AGENT_IDS = ['world-origin', 'character', 'inspiration', 'outline', 'prose'] as const
-export type DomainAgentId = typeof DOMAIN_AGENT_IDS[number]
-
-const CONTEXT_TASK_BY_AGENT: Record<DomainAgentId, AgentContextTaskKind> = {
-  'world-origin': 'agent-world-origin',
-  character: 'agent-character',
-  inspiration: 'agent-inspiration',
-  outline: 'agent-outline',
-  prose: 'agent-prose',
-}
-
-const MAX_OUTPUT_TOKENS_BY_AGENT: Record<DomainAgentId, number> = {
-  'world-origin': 3_000,
-  character: 6_000,
-  inspiration: 8_000,
-  outline: 12_000,
-  prose: 16_000,
-}
+export { DOMAIN_AGENT_IDS }
+export type { DomainAgentId }
 
 function prepareAgentLanguageShadowFields(
   agentId: DomainAgentId,
@@ -130,55 +224,55 @@ function prepareAgentLanguageShadowFields(
       return projectAgentShadowFields([unregisteredAgentShadowField(draft)])
     }
   }
-  // Outline and prose do not expose audited field boundaries here. They are
-  // intentionally reported as unregistered instead of being inferred from
-  // candidate property names or types.
   return projectAgentShadowFields([unregisteredAgentShadowField(draft)])
-}
-
-function stringifyAgentOutput(output: unknown): string {
-  if (typeof output === 'string') return output
-  try {
-    return JSON.stringify(output)
-  } catch {
-    return String(output)
-  }
-}
-
-function buildAgentLanguageShadowValidation(
-  agentId: DomainAgentId,
-  targetLanguage: ReturnType<typeof resolveProjectContentLanguage>,
-  policy: LanguageShadowPolicy,
-  mode: InspirationResultMode = 'single',
-): LanguageShadowValidation<unknown> {
-  return {
-    family: 'agents',
-    targetLanguage,
-    policy,
-    project: output => prepareAgentLanguageShadowFields(
-      agentId,
-      stringifyAgentOutput(output),
-      mode,
-    ),
-  }
 }
 
 export interface MasterAgentTask {
   id: string
   agentId: DomainAgentId
+  /** 新计划冻结具体 Skill；旧 durable 计划缺省时回退到该 Agent 的默认 Skill。 */
+  skillId?: AgentSkillId
   instruction: string
   dependsOn: string[]
+  /** 正文领域的显式叙事视角；缺省时正文不注入角色认知。 */
+  perspectiveCharacterId?: number | null
+  /** 灵感领域的显式碎片选择；缺省时由主 Agent 使用受限默认选择。 */
+  inspirationFragmentIds?: string[]
+  /** 角色驱动规划面板明确选择的方案；只允许 outline.character-driven。 */
+  characterDrivenPlanId?: number
+  /** 中途重规划面板冻结的角色变更、保护区、锚点与方案选择。 */
+  characterRevisionRequest?: CharacterRevisionTaskInputV1
+  /** 已有角色补全面板冻结的目标角色、字段闭集与剧情证据开关。 */
+  characterSupplementRequest?: CharacterSupplementTaskInputV1
+  /** 故事线进度映射固定的已写章节。 */
+  storylineProgressChapterId?: number
 }
 
 export interface MasterAgentPlan {
   summary: string
   tasks: MasterAgentTask[]
+  /** 旧 durable 计划没有该字段，恢复时保持原始 plan hash 与顺序工作流语义。 */
+  workflow?: MasterWorkflowSelectionV1
+}
+
+export interface MasterCandidateDependencyBindingV1 {
+  taskId: string
+  outputHash: string
+  /** Present on durable candidates; binds the exact upstream author-editable candidate. */
+  candidateHash?: string
+  /** Present on durable candidates; prevents a revised contract generation from joining old output. */
+  generation?: number
+  /** Present when the RunContract requires a fresh deterministic upstream receipt. */
+  verificationReceiptHash?: string
 }
 
 export interface MasterCandidatePayload {
   version: 1
   taskId: string
   agentId: DomainAgentId
+  skillId?: AgentSkillId
+  /** Absent on candidates created before HARNESS-18. */
+  executionBinding?: AgentSkillExecutionBindingV1
   label: string
   contextSources: string[]
   contextEvidence?: AgentContextEvidence
@@ -186,11 +280,37 @@ export interface MasterCandidatePayload {
   baseSnapshot: unknown
   mode?: InspirationResultMode
   selectedFragmentIds?: string[]
+  characterDrivenPlanId?: number
+  characterRevisionRequest?: CharacterRevisionTaskInputV1
+  characterSupplementRequest?: CharacterSupplementTaskInputV1
   outlineMode?: OutlineCopilotMode
   outlineParentId?: number | null
+  storyArcKind?: StoryArcRequestKind
+  storyCoreField?: StoryCoreField
+  creativeRulesField?: CreativeRulesField
+  worldviewField?: WorldviewAgentField
+  storylineProgressChapterId?: number
   proseOperation?: ProseCopilotOperation
   proseOutlineNodeId?: number
   dependsOnTaskIds?: string[]
+  /** Absent on candidates created before HARNESS-22. */
+  dependencyBindings?: MasterCandidateDependencyBindingV1[]
+  workspaceScope?: WorkspaceScope
+  runId?: number
+  /** Absent on candidates created before HARNESS-22. */
+  runGeneration?: number
+  runStepId?: string
+  candidateHash?: string
+  perspectiveCharacterId?: number | null
+  /** Present on candidates covered by independent semantic review. */
+  generator?: MasterCandidateModelIdentityV1
+  semanticReview?: MasterCandidateSemanticReviewArtifactV1
+  /** Present on candidates governed by the bounded creative-reliability policy. */
+  creativeArtifact?: CreativeArtifactV1
+  /** Per-run narrative drive derived only from already assembled registered sources. */
+  narrativeBrief?: NarrativeBriefV1
+  /** Prose-only immutable knowledge boundary used for local author revalidation. */
+  informationBoundary?: InformationBoundaryManifestV1
 }
 
 export interface ExecutedMasterCandidate {
@@ -200,58 +320,54 @@ export interface ExecutedMasterCandidate {
   runtimeOutput: unknown
 }
 
+export interface MasterAgentExecutionTrace {
+  taskStarted?: (task: MasterAgentTask) => Promise<void>
+  candidateReady?: (task: MasterAgentTask, candidate: ExecutedMasterCandidate) => Promise<void>
+}
+
 interface PlannerDependencies {
   complete?: (messages: Array<{ role: 'system' | 'user' | 'assistant'; content: string }>) => Promise<string>
+}
+
+export interface PinnedMasterAgentTaskV1 {
+  agentId: DomainAgentId
+  skillId?: AgentSkillId
+  instruction: string
+  dependsOn?: string[]
+  perspectiveCharacterId?: number | null
+  inspirationFragmentIds?: string[]
+  characterDrivenPlanId?: number
+  characterRevisionRequest?: CharacterRevisionTaskInputV1
+  characterSupplementRequest?: CharacterSupplementTaskInputV1
+  storylineProgressChapterId?: number
+  id?: string
+}
+
+export interface MasterAgentReplanFailureV1 {
+  taskId: string
+  code: string
+  category: string
+  fingerprint: string
 }
 
 function extractJsonObject(text: string): Record<string, unknown> {
   const fenced = /```(?:json)?\s*([\s\S]*?)```/i.exec(text)?.[1] ?? text
   const start = fenced.indexOf('{')
   const end = fenced.lastIndexOf('}')
-  if (start < 0 || end < start) throw new Error(getT()('agent:orchestrator.planNoJson'))
+  if (start < 0 || end < start) throw new Error('主 Agent 没有返回任务计划 JSON。')
   const parsed = JSON5.parse(fenced.slice(start, end + 1)) as unknown
   if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-    throw new Error(getT()('agent:orchestrator.planMustBeObject'))
+    throw new Error('主 Agent 任务计划必须是对象。')
   }
   return parsed as Record<string, unknown>
 }
 
-function explicitlyRequestedDomains(request: string): Set<DomainAgentId> {
-  const hasInspiration = /灵感|反推|碎片|脑洞/.test(request)
-  const hasProse = /正文|续写|接着写|继续写|写(?:作|出|完)?第\s*[零〇一二两三四五六七八九十\d]+\s*章/.test(request)
-  const outlineMention = /大纲|卷纲|章纲|章节规划|剧情结构|情节结构/.test(request)
-  const outlineAction = (
-    /(?:生成|创建|新增|规划|设计|展开|补充|完善|修改|重做).{0,12}(?:大纲|卷纲|章纲|章节规划|剧情结构|情节结构)/.test(request)
-    || /(?:大纲|卷纲|章纲|章节规划|剧情结构|情节结构).{0,12}(?:生成|创建|新增|规划|设计|展开|补充|完善|修改|重做)/.test(request)
-  )
-  const hasOutline = hasProse ? outlineAction : outlineMention
-  const worldMention = /世界|设定|起源|文明|力量|体系|时代|地理/.test(request)
-  const worldObject = '(?:世界观|世界|背景设定|世界起源|文明设定|力量体系|时代背景|地理设定)'
-  const worldAction = (
-    new RegExp(`(?:创建|生成|设计|新增|建立|补充|完善|修改|重做).{0,12}${worldObject}`).test(request)
-    || new RegExp(`${worldObject}.{0,12}(?:创建|生成|设计|新增|建立|补充|完善|修改|重做)`).test(request)
-  )
-  const characterMention = /角色|人物|主角|配角|反派|npc/i.test(request)
-  const characterAction = (
-    /(?:创建|生成|设计|新增|塑造|补充|完善|修改|重做).{0,12}(?:角色|人物|主角|配角|反派|npc)/i.test(request)
-    || /(?:角色|人物|主角|配角|反派|npc).{0,12}(?:创建|生成|设计|新增|塑造|补充|完善|修改|重做)/i.test(request)
-  )
-  const downstreamWriting = hasOutline || hasProse
-  const hasWorld = downstreamWriting ? worldAction : worldMention
-  // 大纲里的“角色变化/角色弧光”是输出约束，不是创建或修改角色主档的授权。
-  const hasCharacter = downstreamWriting ? characterAction : characterMention
-  return new Set<DomainAgentId>([
-    ...(hasWorld ? ['world-origin' as const] : []),
-    ...(hasCharacter ? ['character' as const] : []),
-    ...(hasInspiration ? ['inspiration' as const] : []),
-    ...(hasOutline ? ['outline' as const] : []),
-    ...(hasProse ? ['prose' as const] : []),
-  ])
-}
-
-function fallbackPlan(request: string): MasterAgentPlan {
+function fallbackPlan(
+  request: string,
+  workflow = selectMasterWorkflowV1(request),
+): MasterAgentPlan {
   const tasks: MasterAgentTask[] = []
-  const requested = explicitlyRequestedDomains(request)
+  const requested = classifyRequestedDomainIdsV1(request)
   const hasWorld = requested.has('world-origin')
   const hasCharacter = requested.has('character')
   const hasInspiration = requested.has('inspiration')
@@ -260,24 +376,28 @@ function fallbackPlan(request: string): MasterAgentPlan {
   if (hasWorld) tasks.push({
     id: 'world-1',
     agentId: 'world-origin',
+    skillId: selectAgentSkillIdV1('world-origin', request),
     instruction: request,
     dependsOn: [],
   })
   if (hasInspiration) tasks.push({
     id: 'inspiration-1',
     agentId: 'inspiration',
+    skillId: selectAgentSkillIdV1('inspiration', request),
     instruction: request,
     dependsOn: [],
   })
   if (hasCharacter) tasks.push({
     id: 'character-1',
     agentId: 'character',
+    skillId: selectAgentSkillIdV1('character', request),
     instruction: request,
     dependsOn: hasWorld ? ['world-1'] : [],
   })
   if (hasOutline) tasks.push({
     id: 'outline-1',
     agentId: 'outline',
+    skillId: selectAgentSkillIdV1('outline', request),
     instruction: request,
     dependsOn: [
       ...(hasWorld ? ['world-1'] : []),
@@ -287,6 +407,7 @@ function fallbackPlan(request: string): MasterAgentPlan {
   if (hasProse && !hasOutline) tasks.push({
     id: 'prose-1',
     agentId: 'prose',
+    skillId: selectAgentSkillIdV1('prose', request),
     instruction: request,
     dependsOn: [
       ...(hasWorld ? ['world-1'] : []),
@@ -297,23 +418,29 @@ function fallbackPlan(request: string): MasterAgentPlan {
   if (!tasks.length) tasks.push({
     id: 'character-1',
     agentId: 'character',
+    skillId: selectAgentSkillIdV1('character', request),
     instruction: request,
     dependsOn: [],
   })
   return {
     summary: hasProse && hasOutline
-      ? getT()('agent:orchestrator.summaryStagedProse')
-      : getT()('agent:orchestrator.summaryFallback'),
+      ? '先生成并确认章节大纲；确认进入正式数据后，再继续生成正文。'
+      : '根据用户要求调度相关创作领域。',
     tasks,
+    workflow,
   }
 }
 
-function sanitizePlan(raw: Record<string, unknown>, request: string): MasterAgentPlan {
+function sanitizePlan(
+  raw: Record<string, unknown>,
+  request: string,
+  workflow: MasterWorkflowSelectionV1,
+): MasterAgentPlan {
   const rawTasks = Array.isArray(raw.tasks) ? raw.tasks : []
   const tasks: MasterAgentTask[] = []
   const ids = new Set<string>()
   const agentIds = new Set<DomainAgentId>()
-  const explicitlyRequested = explicitlyRequestedDomains(request)
+  const explicitlyRequested = classifyRequestedDomainIdsV1(request)
   for (const item of rawTasks.slice(0, 6)) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) continue
     const source = item as Record<string, unknown>
@@ -344,20 +471,36 @@ function sanitizePlan(raw: Record<string, unknown>, request: string): MasterAgen
     const instruction = typeof source.instruction === 'string' && source.instruction.trim()
       ? source.instruction.trim().slice(0, 1000)
       : request
+    const perspectiveCharacterId = source.perspectiveCharacterId === null
+      ? null
+      : Number.isInteger(source.perspectiveCharacterId) && Number(source.perspectiveCharacterId) > 0
+        ? Number(source.perspectiveCharacterId)
+        : undefined
     tasks.push({
       id,
       agentId,
+      skillId: selectAgentSkillIdV1(agentId, request),
       instruction,
       dependsOn: Array.isArray(source.dependsOn)
         ? source.dependsOn.filter((value): value is string => typeof value === 'string').slice(0, 5)
         : [],
+      ...(agentId === 'prose' && perspectiveCharacterId !== undefined ? { perspectiveCharacterId } : {}),
     })
   }
-  if (!tasks.length) return fallbackPlan(request)
+  if (!tasks.length) return fallbackPlan(request, workflow)
   const knownIds = new Set(tasks.map(task => task.id))
   tasks.forEach(task => {
     task.dependsOn = task.dependsOn.filter(id => id !== task.id && knownIds.has(id))
   })
+  if (getMasterWorkflowV1(workflow).strategy === 'fan-out') {
+    // Inspiration reverse only reads the author's saved fragments. A planner may
+    // invent a semantic dependency on another generated candidate, but that
+    // would destroy the independently verifiable leaf boundary.
+    tasks.filter(task => task.agentId === 'inspiration').forEach(task => {
+      task.dependsOn = []
+    })
+    if (!hasMasterFanOutPairV1(tasks)) return fallbackPlan(request, workflow)
+  }
   const outlineTaskIds = new Set(tasks
     .filter(task => task.agentId === 'outline')
     .map(task => task.id))
@@ -372,29 +515,116 @@ function sanitizePlan(raw: Record<string, unknown>, request: string): MasterAgen
   }
   return {
     summary: stagedProse
-      ? getT()('agent:orchestrator.summaryStagedProse')
+      ? '先生成并确认章节大纲；确认进入正式数据后，再继续生成正文。'
       : typeof raw.summary === 'string' && raw.summary.trim()
       ? raw.summary.trim().slice(0, 500)
-      : getT()('agent:orchestrator.summarySplit'),
+      : '主 Agent 已拆分本轮创作任务。',
     tasks,
+    workflow,
   }
 }
 
 export async function createMasterAgentPlan(input: {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   request: string
   budget?: AgentTeamBudgetTracker
   signal?: AbortSignal
+  pinnedTask?: PinnedMasterAgentTaskV1
 }, dependencies: PlannerDependencies = {}): Promise<MasterAgentPlan> {
   const request = input.request.trim()
-  if (request.length < 2) throw new Error(getT()('agent:orchestrator.requestTooShort'))
+  if (request.length < 2) throw new Error('请至少输入 2 个字符的创作要求。')
+  const workflow = selectMasterWorkflowV1(request)
+  if (input.pinnedTask) {
+    const pinned = input.pinnedTask
+    if (pinned.agentId !== 'inspiration' && pinned.inspirationFragmentIds !== undefined) {
+      throw new Error('只有灵感领域任务可以固定灵感碎片。')
+    }
+    if (
+      pinned.characterDrivenPlanId !== undefined
+      && (
+        pinned.agentId !== 'outline'
+        || pinned.skillId !== 'outline.character-driven'
+        || !Number.isInteger(pinned.characterDrivenPlanId)
+        || pinned.characterDrivenPlanId < 1
+      )
+    ) throw new Error('只有角色驱动大纲 Skill 可以固定角色驱动方案。')
+    if (pinned.skillId === 'outline.character-driven' && pinned.characterDrivenPlanId === undefined) {
+      throw new Error('角色驱动大纲 Skill 必须固定角色驱动方案。')
+    }
+    if (
+      pinned.characterRevisionRequest !== undefined
+      && (pinned.agentId !== 'outline' || pinned.skillId !== 'outline.character-revision')
+    ) throw new Error('只有角色中途重规划 Skill 可以固定角色变更请求。')
+    if (pinned.skillId === 'outline.character-revision' && pinned.characterRevisionRequest === undefined) {
+      throw new Error('角色中途重规划 Skill 必须固定角色变更请求。')
+    }
+    if (
+      pinned.characterSupplementRequest !== undefined
+      && (pinned.agentId !== 'character' || pinned.skillId !== 'character.supplement')
+    ) throw new Error('只有角色补全 Skill 可以固定角色补全请求。')
+    if (pinned.skillId === 'character.supplement' && pinned.characterSupplementRequest === undefined) {
+      throw new Error('角色补全 Skill 必须固定角色补全请求。')
+    }
+    if (
+      pinned.storylineProgressChapterId !== undefined
+      && (pinned.agentId !== 'outline' || pinned.skillId !== 'outline.storyline-progress')
+    ) throw new Error('只有故事线进度 Skill 可以固定映射章节。')
+    if (pinned.skillId === 'outline.storyline-progress') {
+      const chapterId = pinned.storylineProgressChapterId
+      if (typeof chapterId !== 'number' || !Number.isInteger(chapterId) || chapterId < 1) {
+        throw new Error('故事线进度 Skill 必须固定已写章节 ID。')
+      }
+    }
+    const characterRevisionRequest = pinned.characterRevisionRequest === undefined
+      ? undefined
+      : parseCharacterRevisionTaskInputV1(pinned.characterRevisionRequest)
+    const characterSupplementRequest = pinned.characterSupplementRequest === undefined
+      ? undefined
+      : parseCharacterSupplementTaskInputV1(pinned.characterSupplementRequest)
+    return {
+      summary: pinned.agentId === 'inspiration'
+        ? '按作者选择的灵感碎片生成结构化反推候选。'
+        : '按固定领域任务执行一次受治理候选生成。',
+      tasks: [{
+        id: pinned.id ?? `${pinned.agentId}-targeted`,
+        agentId: pinned.agentId,
+        ...(pinned.skillId ? { skillId: pinned.skillId } : {}),
+        instruction: pinned.instruction.trim().slice(0, 8_000),
+        dependsOn: [...new Set(pinned.dependsOn ?? [])].slice(0, 5),
+        ...(pinned.perspectiveCharacterId !== undefined
+          ? { perspectiveCharacterId: pinned.perspectiveCharacterId }
+          : {}),
+        ...(pinned.inspirationFragmentIds !== undefined
+          ? { inspirationFragmentIds: [...new Set(pinned.inspirationFragmentIds)].slice(0, 24) }
+          : {}),
+        ...(pinned.characterDrivenPlanId !== undefined
+          ? { characterDrivenPlanId: pinned.characterDrivenPlanId }
+          : {}),
+        ...(characterRevisionRequest !== undefined
+          ? { characterRevisionRequest }
+          : {}),
+        ...(characterSupplementRequest !== undefined
+          ? { characterSupplementRequest }
+          : {}),
+        ...(pinned.storylineProgressChapterId !== undefined
+          ? { storylineProgressChapterId: pinned.storylineProgressChapterId }
+          : {}),
+      }],
+      workflow,
+    }
+  }
+  if (getMasterWorkflowV1(workflow).planner === 'skip') {
+    return fallbackPlan(request, workflow)
+  }
   const config = resolveRequestConfig(
     useAIConfigStore.getState().config,
     { category: AGENT_ROLE_CATEGORIES.orchestrator },
   ).config
   const status = await executeAgentTool('read_project_status', {
     projectId: input.projectId,
+    scope: input.scope,
     worldGroupId: input.worldGroupId,
     provider: config.provider,
     model: config.model,
@@ -411,8 +641,11 @@ export async function createMasterAgentPlan(input: {
 只调度用户明确要求生成或修改的领域。用户在大纲要求中提到世界元素或角色姓名，只是大纲
 约束，不代表授权新建世界观或角色；不得擅自扩大写入范围。
 依赖任务必须写 dependsOn。世界设定与角色同时出现时，角色应依赖世界任务。
+灵感反推只读取作者已保存的灵感碎片，不得把它伪装成依赖本轮世界候选；若角色明确需要同时使用
+本轮世界与灵感结果，角色应依赖这两个任务。
 大纲依赖本轮新生成的世界或角色任务；正文依赖本轮新生成的大纲、世界或角色任务。只输出 JSON：
 {"summary":"给用户的简短计划","tasks":[{"id":"稳定ID","agentId":"world-origin|character|inspiration|outline|prose","instruction":"给分 Agent 的完整要求","dependsOn":[]}]}。
+只有用户明确指定正文叙事视角且项目状态能确认角色 ID 时，正文任务才可额外填写 perspectiveCharacterId；不要猜测，缺省则不注入角色认知。
 每个领域最多一个任务；同一领域的批量目标必须合并到这个任务中一次产出。最多 5 个任务；
 不要输出 Markdown。`,
   }, {
@@ -423,7 +656,7 @@ export async function createMasterAgentPlan(input: {
   let settled = false
   try {
     reservation = input.budget?.reserveCall({
-      label: getT()('agent:orchestrator.callLabelMaster'),
+      label: '主 Agent 编排',
       messages,
       maxOutputTokens: 1_800,
     }) ?? null
@@ -432,8 +665,6 @@ export async function createMasterAgentPlan(input: {
       : await chat(messages, config, {
           category: 'agent.orchestrator',
           projectId: input.projectId,
-          // WS-3B：规划输出是严格 JSON 协议，固定 functional-structured；
-          // client gate 不得注入自然语言输出约束。
           outputKind: 'functional-structured',
           configOverrides: { maxTokens: 1800, temperature: 0.2 },
           contextOverflowPolicy: 'reject',
@@ -442,13 +673,130 @@ export async function createMasterAgentPlan(input: {
       input.budget!.settleCall(reservation, output)
       settled = true
     }
-    return sanitizePlan(extractJsonObject(output), request)
+    return sanitizePlan(extractJsonObject(output), request, workflow)
   } catch (error) {
     if (reservation && !settled) input.budget!.settleFailedCall(reservation)
     if (error instanceof AgentTeamBudgetExceededError) throw error
     if (input.signal?.aborted) throw error
     console.warn('[master-agent] 计划模型失败，使用确定性路由降级：', error)
-    return fallbackPlan(request)
+    return fallbackPlan(request, workflow)
+  }
+}
+
+export function collectMasterAgentAffectedTaskIdsV1(
+  plan: MasterAgentPlan,
+  rootTaskIds: readonly string[],
+): Set<string> {
+  const affected = new Set(rootTaskIds)
+  let changed = true
+  while (changed) {
+    changed = false
+    for (const task of plan.tasks) {
+      if (!affected.has(task.id) && task.dependsOn.some(dependency => affected.has(dependency))) {
+        affected.add(task.id)
+        changed = true
+      }
+    }
+  }
+  return affected
+}
+
+/**
+ * Produces a bounded plan patch. Task identity, Skill, perspective and workflow
+ * stay code-owned; the model may only adjust instructions/dependencies inside
+ * the failed branch selected by the durable runner.
+ */
+export async function createMasterAgentReplanV1(input: {
+  projectId: number
+  plan: MasterAgentPlan
+  failures: readonly MasterAgentReplanFailureV1[]
+  budget: AgentTeamBudgetTracker
+  signal?: AbortSignal
+}, dependencies: PlannerDependencies = {}): Promise<MasterAgentPlan> {
+  if (!input.failures.length) throw new Error('主 Agent 重规划缺少失败证据。')
+  const knownTaskIds = new Set(input.plan.tasks.map(task => task.id))
+  if (input.failures.some(failure => !knownTaskIds.has(failure.taskId))) {
+    throw new Error('主 Agent 重规划失败证据引用了未知任务。')
+  }
+  const affected = collectMasterAgentAffectedTaskIdsV1(
+    input.plan,
+    input.failures.map(failure => failure.taskId),
+  )
+  const config = resolveRequestConfig(
+    useAIConfigStore.getState().config,
+    { category: AGENT_ROLE_CATEGORIES.orchestrator },
+  ).config
+  const messages = [{
+    role: 'system' as const,
+    content: `你是 StoryForge 主 Agent 的受限重规划器。你只能修订失败任务及其下游的 instruction 和
+dependsOn，不能新增、删除或改名任务，不能改变 agentId、skillId、叙事视角或工作流。不要重复原失败
+策略；依赖只能引用原计划任务 ID，且不得形成循环。只输出 JSON：
+{"summary":"修订原因","tasks":[{"id":"允许修订的任务ID","instruction":"新指令","dependsOn":[]}]}。
+不要输出 Markdown。`,
+  }, {
+    role: 'user' as const,
+    content: [
+      `【冻结原计划】\n${JSON.stringify(input.plan)}`,
+      `【允许修订任务】\n${JSON.stringify([...affected])}`,
+      `【失败证据】\n${JSON.stringify(input.failures)}`,
+    ].join('\n\n'),
+  }]
+  const reservation = input.budget.reserveCall({
+    label: '主 Agent 有限重规划',
+    messages,
+    maxOutputTokens: 1_200,
+  })
+  let settled = false
+  try {
+    const output = dependencies.complete
+      ? await dependencies.complete(messages)
+      : await chat(messages, config, {
+          category: 'agent.orchestrator.replan',
+          projectId: input.projectId,
+          // Replanning is a strict JSON protocol; keep it language-neutral at
+          // the network gate just like the initial master plan request.
+          outputKind: 'functional-structured',
+          configOverrides: { maxTokens: 1200, temperature: 0.1 },
+          contextOverflowPolicy: 'reject',
+        }, input.signal)
+    input.budget.settleCall(reservation, output)
+    settled = true
+    const raw = extractJsonObject(output)
+    const patches = Array.isArray(raw.tasks) ? raw.tasks : []
+    const byId = new Map(input.plan.tasks.map(task => [task.id, task]))
+    let changed = false
+    for (const value of patches) {
+      if (!value || typeof value !== 'object' || Array.isArray(value)) continue
+      const patch = value as Record<string, unknown>
+      if (typeof patch.id !== 'string' || !affected.has(patch.id)) continue
+      const task = byId.get(patch.id)!
+      const instruction = typeof patch.instruction === 'string'
+        ? patch.instruction.trim().slice(0, 1_000)
+        : ''
+      const dependsOn = Array.isArray(patch.dependsOn)
+        ? [...new Set(patch.dependsOn.filter((item): item is string => (
+            typeof item === 'string' && item !== task.id && knownTaskIds.has(item)
+          )))].slice(0, 5)
+        : task.dependsOn
+      if (!instruction) continue
+      if (instruction !== task.instruction || JSON.stringify(dependsOn) !== JSON.stringify(task.dependsOn)) {
+        byId.set(task.id, { ...task, instruction, dependsOn })
+        changed = true
+      }
+    }
+    if (!changed) throw new Error('主 Agent 重规划没有产生受限范围内的有效变化。')
+    const plan: MasterAgentPlan = {
+      ...input.plan,
+      summary: typeof raw.summary === 'string' && raw.summary.trim()
+        ? raw.summary.trim().slice(0, 500)
+        : `${input.plan.summary}（已根据失败证据有限重规划）`,
+      tasks: input.plan.tasks.map(task => byId.get(task.id)!),
+    }
+    topologicalTasks(plan)
+    return plan
+  } catch (error) {
+    if (!settled) input.budget.settleFailedCall(reservation)
+    throw error
   }
 }
 
@@ -460,7 +808,7 @@ function topologicalTasks(plan: MasterAgentPlan): MasterAgentTask[] {
     const available = plan.tasks.filter(task => (
       !done.has(task.id) && task.dependsOn.every(id => done.has(id) || !byId.has(id))
     ))
-    if (!available.length) throw new Error(getT()('agent:orchestrator.planCyclicDependency'))
+    if (!available.length) throw new Error('主 Agent 任务计划包含循环依赖。')
     available.forEach(task => {
       result.push(task)
       done.add(task.id)
@@ -469,143 +817,431 @@ function topologicalTasks(plan: MasterAgentPlan): MasterAgentTask[] {
   return result
 }
 
-export async function executeMasterAgentPlan(input: {
+export interface ExecuteMasterAgentPlanInput {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   plan: MasterAgentPlan
   budget?: AgentTeamBudgetTracker
   signal?: AbortSignal
-  languageShadowPolicy?: Partial<Record<'agents', 'shadow' | 'enforce'>>
-  onTask?: (task: MasterAgentTask, status: 'running' | 'completed' | 'failed', error?: string) => void
-}): Promise<ExecutedMasterCandidate[]> {
+  completedTaskOutputs?: Readonly<Record<string, string>>
+  completedTaskAssumptions?: Readonly<Record<string, readonly CreativeAssumptionV1[]>>
+  executionTrace?: MasterAgentExecutionTrace
+  onTask?: (
+    task: MasterAgentTask,
+    status: 'running' | 'completed' | 'failed',
+    error?: string,
+  ) => void | Promise<void>
+}
+
+function scopeRuntimeAssumptionsV1(
+  taskId: string,
+  assumptions: readonly CreativeAssumptionV1[],
+): CreativeAssumptionV1[] {
+  return mergeProvisionalAssumptionsV1(assumptions).map(assumption => ({
+    ...assumption,
+    id: assumption.id.startsWith(`${taskId}:`) ? assumption.id : `${taskId}:${assumption.id}`,
+    derivedFrom: [...new Set([`candidate:${taskId}`, ...assumption.derivedFrom])],
+  }))
+}
+
+async function executeSequentialMasterAgentPlan(
+  input: ExecuteMasterAgentPlanInput,
+  runtime: { requiredFutureModelCalls?: number } = {},
+): Promise<ExecutedMasterCandidate[]> {
+  const scope = await resolveScope({ projectId: input.projectId, scope: input.scope })
   const candidates: ExecutedMasterCandidate[] = []
   const outputs = new Map<string, string>()
+  const runtimeAssumptions = new Map<string, CreativeAssumptionV1[]>()
+  const creativeReliabilityEnabled = isCreativeReliabilityRuntimeEnabledV1()
   const contextProfiles = useAIConfigStore.getState().agentContextProfiles
   const budget = input.budget ?? new AgentTeamBudgetTracker(
     useAIConfigStore.getState().agentTeamBudgetProfile,
   )
-  const languageShadowPolicy = resolveLanguageShadowPolicy({
-    ...DEFAULT_LANGUAGE_SHADOW_POLICY,
-    ...input.languageShadowPolicy,
-  })
-  let project: Awaited<ReturnType<typeof db.projects.get>> | undefined
-  try {
-    project = await db.projects.get(input.projectId)
-  } catch {
-    // The shadow is advisory and must remain fail-open when the project read is unavailable.
+  for (const [taskId, output] of Object.entries(input.completedTaskOutputs ?? {})) {
+    if (output.trim()) outputs.set(taskId, output)
   }
-  const targetLanguage = resolveProjectContentLanguage(project ?? {}, getSupportedUiLang())
-  for (const task of topologicalTasks(input.plan)) {
+  for (const [taskId, assumptions] of Object.entries(input.completedTaskAssumptions ?? {})) {
+    runtimeAssumptions.set(taskId, scopeRuntimeAssumptionsV1(taskId, assumptions))
+  }
+  const orderedTasks = topologicalTasks(input.plan)
+  for (let taskIndex = 0; taskIndex < orderedTasks.length; taskIndex += 1) {
+    const task = orderedTasks[taskIndex]
+    if (outputs.has(task.id)) continue
     if (input.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
-    input.onTask?.(task, 'running')
+    await input.executionTrace?.taskStarted?.(task)
+    await input.onTask?.(task, 'running')
     try {
+      const dependencyBindings = await Promise.all(task.dependsOn.map(async taskId => {
+        const output = outputs.get(taskId)
+        if (!output?.trim()) throw new Error(`主 Agent 任务 ${task.id} 缺少依赖输出 ${taskId}。`)
+        return {
+          taskId,
+          outputHash: await hashCanonicalValue(output),
+        }
+      }))
       const upstream = task.dependsOn
         .map(id => outputs.get(id))
         .filter((value): value is string => Boolean(value?.trim()))
         .join('\n\n')
+      const inheritedAssumptions = mergeProvisionalAssumptionsV1(
+        ...task.dependsOn.map(id => runtimeAssumptions.get(id) ?? []),
+      )
+      const skill = resolveAgentSkillV1(task.agentId, task.skillId)
+      const executionBinding = createAgentSkillExecutionBindingV1(skill)
+      const contextProfile = contextProfiles[skill.contextTaskKind]
+      const budgetSnapshot = budget.snapshot()
+      const pendingGenerationCalls = runtime.requiredFutureModelCalls
+        ?? orderedTasks.slice(taskIndex).filter(item => !outputs.has(item.id)).length
+      const contextCompressionRuntime = {
+        budget,
+        requiredFutureModelCalls: pendingGenerationCalls
+          + Math.max(0, budgetSnapshot.maxCanonRetries - budgetSnapshot.canonRetries),
+      }
       if (task.agentId === 'world-origin') {
-        const prepared = await prepareWorldOriginCopilot({
-          projectId: input.projectId,
-          worldGroupId: input.worldGroupId,
-          authorRequest: task.instruction,
-          routingCategory: AGENT_ROLE_CATEGORIES['world-origin'],
-          contextProfile: contextProfiles[CONTEXT_TASK_BY_AGENT[task.agentId]],
-          signal: input.signal,
-        })
-        const result = await runBudgetedGenerationNode({
-          node: prepared.node,
-          prepared: prepared.prepared,
-          budget,
-          callLabel: getT()('agent:orchestrator.callLabelWorldOrigin'),
-          maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
-          languageShadow: buildAgentLanguageShadowValidation(
-            task.agentId,
-            targetLanguage,
-            languageShadowPolicy,
-          ),
-        })
-        const draft = result.output
-        candidates.push({
-          payload: {
-            version: 1,
-            taskId: task.id,
-            agentId: task.agentId,
-            label: getT()('agent:copilot.worldOrigin.labelWorldOrigin'),
-            contextSources: prepared.contextSources,
-            contextEvidence: prepared.contextEvidence,
-            baseSnapshot: prepared.snapshot,
-            dependsOnTaskIds: task.dependsOn,
-          },
-          draft,
-          runtimeNode: prepared.node,
-          runtimeOutput: result.output,
-        })
-        outputs.set(task.id, draft)
+        if (skill.executionMode === 'worldview-field') {
+          const prepared = await prepareWorldviewFieldCopilot({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            supplementalContext: upstream,
+            routingCategory: `${AGENT_ROLE_CATEGORIES['world-origin']}.worldview-field`,
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '世界基座字段 Skill',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = JSON.stringify(result.output, null, 2)
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              worldviewField: prepared.targetField,
+              workspaceScope: scope,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+              generator: prepared.modelIdentity,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else if (skill.executionMode === 'story-core') {
+          const prepared = await prepareStoryCoreCopilot({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            supplementalContext: upstream,
+            routingCategory: `${AGENT_ROLE_CATEGORIES['world-origin']}.story-core`,
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '故事核心 Skill',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = JSON.stringify(result.output, null, 2)
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              storyCoreField: prepared.targetField,
+              workspaceScope: scope,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+              generator: prepared.modelIdentity,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else if (skill.executionMode === 'creative-rules') {
+          const prepared = await prepareCreativeRulesCopilotV1({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            supplementalContext: upstream,
+            routingCategory: `${AGENT_ROLE_CATEGORIES['world-origin']}.creative-rules`,
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '创作规则 Skill',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = JSON.stringify(result.output, null, 2)
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              creativeRulesField: prepared.targetField,
+              workspaceScope: scope,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+              generator: prepared.modelIdentity,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else if (skill.executionMode === 'storyline-progress') {
+          if (task.storylineProgressChapterId == null) {
+            throw new Error('故事线进度任务缺少固定章节 ID。')
+          }
+          const prepared = await prepareStorylineProgressCopilotV1({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            chapterId: task.storylineProgressChapterId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            supplementalContext: upstream,
+            routingCategory: `${AGENT_ROLE_CATEGORIES.outline}.storyline-progress`,
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '故事线进度映射 Skill',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = JSON.stringify(result.output, null, 2)
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              storylineProgressChapterId: prepared.chapterId,
+              workspaceScope: scope,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+              generator: prepared.modelIdentity,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else {
+          const prepared = await prepareWorldOriginCopilot({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            routingCategory: AGENT_ROLE_CATEGORIES['world-origin'],
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '世界领域 Agent',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = result.output
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: '世界来源',
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              workspaceScope: scope,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+              generator: prepared.modelIdentity,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        }
       } else if (task.agentId === 'character') {
-        const prepared = await prepareCharacterCopilot({
-          projectId: input.projectId,
-          worldGroupId: input.worldGroupId,
-          authorRequest: task.instruction,
-          supplementalContext: upstream,
-          routingCategory: AGENT_ROLE_CATEGORIES.character,
-          contextProfile: contextProfiles[CONTEXT_TASK_BY_AGENT[task.agentId]],
-          signal: input.signal,
-        })
-        const result = await runBudgetedGenerationNode({
-          node: prepared.node,
-          prepared: prepared.prepared,
-          budget,
-          callLabel: getT()('agent:orchestrator.callLabelCharacter'),
-          maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
-          languageShadow: buildAgentLanguageShadowValidation(
-            task.agentId,
-            targetLanguage,
-            languageShadowPolicy,
-          ),
-        })
-        const draft = JSON.stringify(result.output, null, 2)
-        candidates.push({
-          payload: {
-            version: 1,
-            taskId: task.id,
-            agentId: task.agentId,
-            label: getT()('agent:copilot.character.labelNewCharacter'),
-            contextSources: prepared.contextSources,
-            contextEvidence: prepared.contextEvidence,
-            baseSnapshot: prepared.snapshot,
-            dependsOnTaskIds: task.dependsOn,
-          },
-          draft,
-          runtimeNode: prepared.node,
-          runtimeOutput: result.output,
-        })
-        outputs.set(task.id, draft)
+        if (skill.executionMode === 'supplement') {
+          if (!task.characterSupplementRequest) throw new Error('角色补全任务缺少固定目标与字段。')
+          const prepared = await prepareCharacterSupplementCopilotV1({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            request: task.characterSupplementRequest,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            routingCategory: `${AGENT_ROLE_CATEGORIES.character}.supplement`,
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '已有角色定向补全 Skill',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = serializeCharacterSupplementCandidateV1(
+            result.output,
+            task.characterSupplementRequest,
+          )
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              workspaceScope: scope,
+              characterSupplementRequest: task.characterSupplementRequest,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else {
+          const prepared = await prepareCharacterCopilot({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            supplementalContext: upstream,
+            routingCategory: AGENT_ROLE_CATEGORIES.character,
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '角色领域 Agent',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = JSON.stringify(result.output, null, 2)
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: '新角色',
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              workspaceScope: scope,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        }
       } else if (task.agentId === 'inspiration') {
-        const workspace = await db.inspirationWorkspaces.where('projectId').equals(input.projectId).first()
-        const selectedFragmentIds = parseInspirationFragments(workspace?.fragments)
-          .slice(0, MAX_INSPIRATION_FRAGMENTS)
-          .map(fragment => fragment.id)
-        if (!selectedFragmentIds.length) throw new Error(getT()('agent:copilot.inspiration.noSavedFragments'))
+        const workspace = (await readOwnedRows<any>(
+          scope,
+          'inspirationWorkspaces',
+          { owner: 'work' },
+        ))[0]
+        const availableFragmentIds = new Set(
+          parseInspirationFragments(workspace?.fragments).map(fragment => fragment.id),
+        )
+        const requestedFragmentIds = task.inspirationFragmentIds
+        const selectedFragmentIds = (requestedFragmentIds?.length
+          ? [...new Set(requestedFragmentIds)].filter(id => availableFragmentIds.has(id))
+          : parseInspirationFragments(workspace?.fragments)
+              .slice(0, MAX_INSPIRATION_FRAGMENTS)
+              .map(fragment => fragment.id))
+        if (!selectedFragmentIds.length) throw new Error('项目尚无已保存的灵感碎片。')
+        if (requestedFragmentIds?.length && selectedFragmentIds.length !== requestedFragmentIds.length) {
+          throw new Error('固定的灵感碎片已变化，请重新选择后生成。')
+        }
         const prepared = await prepareInspirationCopilot({
           projectId: input.projectId,
+          scope,
           selectedFragmentIds,
           authorRequest: task.instruction,
+          skillId: skill.id as AgentSkillId,
           routingCategory: AGENT_ROLE_CATEGORIES.inspiration,
-          contextProfile: contextProfiles[CONTEXT_TASK_BY_AGENT[task.agentId]],
+          contextProfile,
+          contextCompressionRuntime,
           signal: input.signal,
         })
         const result = await runBudgetedGenerationNode({
           node: prepared.node,
           prepared: prepared.prepared,
           budget,
-          callLabel: getT()('agent:orchestrator.callLabelInspiration'),
-          maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
-          languageShadow: buildAgentLanguageShadowValidation(
-            task.agentId,
-            targetLanguage,
-            languageShadowPolicy,
-            prepared.mode,
-          ),
+          callLabel: '灵感领域 Agent',
+          maxOutputTokens: skill.maxOutputTokens,
         })
         const draft = JSON.stringify(result.output, null, 2)
         candidates.push({
@@ -613,13 +1249,18 @@ export async function executeMasterAgentPlan(input: {
             version: 1,
             taskId: task.id,
             agentId: task.agentId,
-            label: getT()('agent:copilot.inspiration.labelVersion'),
+            skillId: skill.id as AgentSkillId,
+            executionBinding,
+            label: '灵感反推版本',
             contextSources: prepared.contextSources,
             contextEvidence: prepared.contextEvidence,
             baseSnapshot: prepared.snapshot,
+            workspaceScope: scope,
             mode: prepared.mode,
             selectedFragmentIds,
             dependsOnTaskIds: task.dependsOn,
+            dependencyBindings,
+            generator: prepared.modelIdentity,
           },
           draft,
           runtimeNode: prepared.node,
@@ -627,114 +1268,541 @@ export async function executeMasterAgentPlan(input: {
         })
         outputs.set(task.id, draft)
       } else if (task.agentId === 'outline') {
-        const prepared = await prepareOutlineCopilot({
-          projectId: input.projectId,
-          worldGroupId: input.worldGroupId,
-          authorRequest: task.instruction,
-          supplementalContext: upstream,
-          routingCategory: AGENT_ROLE_CATEGORIES.outline,
-          contextProfile: contextProfiles[CONTEXT_TASK_BY_AGENT[task.agentId]],
-          signal: input.signal,
-        })
-        const result = await runBudgetedGenerationNode({
-          node: prepared.node,
-          prepared: prepared.prepared,
-          budget,
-          callLabel: getT()('agent:orchestrator.callLabelOutline'),
-          maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
-          validate: output => validateDomainCandidateCanon({
-            agentId: task.agentId,
+        if (skill.executionMode === 'world-game') {
+          const prepared = await prepareWorldGameCopilotV1({
             projectId: input.projectId,
+            scope,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            routingCategory: `${AGENT_ROLE_CATEGORIES.outline}.world-game`,
+            contextProfile,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '冻结世界游戏创作 Skill',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = JSON.stringify(result.output, null, 2)
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              workspaceScope: scope,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+              generator: prepared.modelIdentity,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else if (skill.executionMode === 'character-revision') {
+          if (!task.characterRevisionRequest) {
+            throw new Error('角色中途重规划任务缺少固定变更请求。')
+          }
+          const prepared = await prepareCharacterRevisionCopilotV1({
+            projectId: input.projectId,
+            scope,
             worldGroupId: input.worldGroupId,
-            outlineNodeId: prepared.parentVolumeId,
-            outputText: JSON.stringify(output),
-          }),
-          languageShadow: buildAgentLanguageShadowValidation(
-            task.agentId,
-            targetLanguage,
-            languageShadowPolicy,
-          ),
-        })
-        const draft = JSON.stringify(result.output, null, 2)
-        candidates.push({
-          payload: {
-            version: 1,
-            taskId: task.id,
-            agentId: task.agentId,
-            label: prepared.label,
-            contextSources: prepared.contextSources,
-            contextEvidence: prepared.contextEvidence,
-            baseSnapshot: prepared.snapshot,
-            outlineMode: prepared.mode,
-            outlineParentId: prepared.parentVolumeId,
-            dependsOnTaskIds: task.dependsOn,
-          },
-          draft,
-          runtimeNode: prepared.node,
-          runtimeOutput: result.output,
-        })
-        outputs.set(task.id, draft)
+            request: task.characterRevisionRequest,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            routingCategory: `${AGENT_ROLE_CATEGORIES.outline}.character-revision`,
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '角色变更影响与中途重规划 Skill',
+            maxOutputTokens: skill.maxOutputTokens,
+          })
+          const draft = serializeCharacterRevisionCandidateV1(result.output)
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              workspaceScope: scope,
+              characterRevisionRequest: task.characterRevisionRequest,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else if (skill.executionMode === 'character-driven') {
+          if (task.characterDrivenPlanId == null) {
+            throw new Error('角色驱动规划任务缺少固定方案 ID。')
+          }
+          const prepared = await prepareCharacterDrivenCopilotV1({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            planId: task.characterDrivenPlanId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            routingCategory: `${AGENT_ROLE_CATEGORIES.outline}.character-driven`,
+            contextProfile,
+            contextCompressionRuntime,
+            signal: input.signal,
+          })
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '角色驱动卷章编排 Skill',
+            maxOutputTokens: skill.maxOutputTokens,
+            validate: output => validateDomainCandidateCanon({
+              agentId: task.agentId,
+              projectId: input.projectId,
+              worldGroupId: input.worldGroupId,
+              outputText: JSON.stringify(output),
+            }),
+          })
+          const draft = JSON.stringify(result.output, null, 2)
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              workspaceScope: scope,
+              characterDrivenPlanId: prepared.snapshot.planId,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else if (skill.executionMode === 'story-arcs') {
+          const prepared = await prepareStoryArcCopilot({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            supplementalContext: upstream,
+            routingCategory: `${AGENT_ROLE_CATEGORIES.outline}.story-arcs`,
+            contextProfile,
+            contextCompressionRuntime,
+            inheritedAssumptions,
+            creativeReliabilityEnabled,
+            signal: input.signal,
+          })
+          if (creativeReliabilityEnabled) {
+            const result = await runStoryArcCreativeReliabilityV1({
+              prepared,
+              budget,
+              qualityMode: useAIConfigStore.getState().creativeQualityMode,
+              validate: output => validateDomainCandidateCanon({
+                agentId: task.agentId,
+                projectId: input.projectId,
+                worldGroupId: input.worldGroupId,
+                outputText: JSON.stringify(output),
+              }),
+            })
+            const draft = result.draft
+            candidates.push({
+              payload: {
+                version: 1,
+                taskId: task.id,
+                agentId: task.agentId,
+                skillId: skill.id as AgentSkillId,
+                executionBinding,
+                label: prepared.label,
+                contextSources: prepared.contextSources,
+                contextEvidence: prepared.contextEvidence,
+                baseSnapshot: prepared.snapshot,
+                workspaceScope: scope,
+                storyArcKind: prepared.kind,
+                dependsOnTaskIds: task.dependsOn,
+                dependencyBindings,
+                creativeArtifact: result.artifact,
+                narrativeBrief: prepared.input.narrativeBrief,
+              },
+              draft,
+              runtimeNode: prepared.node,
+              runtimeOutput: result.output,
+            })
+            outputs.set(task.id, draft)
+          } else {
+            const result = await runBudgetedGenerationNode({
+              node: prepared.node,
+              prepared: prepared.prepared,
+              budget,
+              callLabel: '故事线编排 Skill',
+              maxOutputTokens: skill.maxOutputTokens,
+              validate: output => validateDomainCandidateCanon({
+                agentId: task.agentId,
+                projectId: input.projectId,
+                worldGroupId: input.worldGroupId,
+                outputText: JSON.stringify(output),
+              }),
+            })
+            const draft = JSON.stringify(result.output, null, 2)
+            candidates.push({
+              payload: {
+                version: 1,
+                taskId: task.id,
+                agentId: task.agentId,
+                skillId: skill.id as AgentSkillId,
+                executionBinding,
+                label: prepared.label,
+                contextSources: prepared.contextSources,
+                contextEvidence: prepared.contextEvidence,
+                baseSnapshot: prepared.snapshot,
+                workspaceScope: scope,
+                storyArcKind: prepared.kind,
+                dependsOnTaskIds: task.dependsOn,
+                dependencyBindings,
+              },
+              draft,
+              runtimeNode: prepared.node,
+              runtimeOutput: result.output,
+            })
+            outputs.set(task.id, draft)
+          }
+        } else {
+          const prepared = await prepareOutlineCopilot({
+            projectId: input.projectId,
+            scope,
+            worldGroupId: input.worldGroupId,
+            authorRequest: task.instruction,
+            skillId: skill.id as AgentSkillId,
+            supplementalContext: upstream,
+            routingCategory: AGENT_ROLE_CATEGORIES.outline,
+            contextProfile,
+            contextCompressionRuntime,
+            inheritedAssumptions,
+            creativeReliabilityEnabled,
+            signal: input.signal,
+          })
+          if (creativeReliabilityEnabled) {
+            const result = await runOutlineCreativeReliabilityV1({
+              prepared,
+              budget,
+              qualityMode: useAIConfigStore.getState().creativeQualityMode,
+              validate: output => validateDomainCandidateCanon({
+                agentId: task.agentId,
+                projectId: input.projectId,
+                worldGroupId: input.worldGroupId,
+                outlineNodeId: prepared.parentVolumeId,
+                outputText: JSON.stringify(output),
+              }),
+            })
+            const draft = result.draft
+            candidates.push({
+              payload: {
+                version: 1,
+                taskId: task.id,
+                agentId: task.agentId,
+                skillId: skill.id as AgentSkillId,
+                executionBinding,
+                label: prepared.label,
+                contextSources: prepared.contextSources,
+                contextEvidence: prepared.contextEvidence,
+                baseSnapshot: prepared.snapshot,
+                workspaceScope: scope,
+                outlineMode: prepared.mode,
+                outlineParentId: prepared.parentVolumeId,
+                dependsOnTaskIds: task.dependsOn,
+                dependencyBindings,
+                creativeArtifact: result.artifact,
+                narrativeBrief: prepared.input.narrativeBrief,
+              },
+              draft,
+              runtimeNode: prepared.node,
+              runtimeOutput: result.output,
+            })
+            outputs.set(task.id, draft)
+          } else {
+            const result = await runBudgetedGenerationNode({
+              node: prepared.node,
+              prepared: prepared.prepared,
+              budget,
+              callLabel: '大纲领域 Agent',
+              maxOutputTokens: skill.maxOutputTokens,
+              validate: output => validateDomainCandidateCanon({
+                agentId: task.agentId,
+                projectId: input.projectId,
+                worldGroupId: input.worldGroupId,
+                outlineNodeId: prepared.parentVolumeId,
+                outputText: JSON.stringify(output),
+              }),
+            })
+            const draft = JSON.stringify(result.output, null, 2)
+            candidates.push({
+              payload: {
+                version: 1,
+                taskId: task.id,
+                agentId: task.agentId,
+                skillId: skill.id as AgentSkillId,
+                executionBinding,
+                label: prepared.label,
+                contextSources: prepared.contextSources,
+                contextEvidence: prepared.contextEvidence,
+                baseSnapshot: prepared.snapshot,
+                workspaceScope: scope,
+                outlineMode: prepared.mode,
+                outlineParentId: prepared.parentVolumeId,
+                dependsOnTaskIds: task.dependsOn,
+                dependencyBindings,
+              },
+              draft,
+              runtimeNode: prepared.node,
+              runtimeOutput: result.output,
+            })
+            outputs.set(task.id, draft)
+          }
+        }
       } else {
         const prepared = await prepareProseCopilot({
           projectId: input.projectId,
+          scope,
           worldGroupId: input.worldGroupId,
           authorRequest: task.instruction,
+          skillId: skill.id as AgentSkillId,
           supplementalContext: upstream,
           routingCategory: AGENT_ROLE_CATEGORIES.prose,
-          contextProfile: contextProfiles[CONTEXT_TASK_BY_AGENT[task.agentId]],
+          contextProfile,
+          contextCompressionRuntime,
+          inheritedAssumptions,
+          creativeReliabilityEnabled,
+          perspectiveCharacterId: task.perspectiveCharacterId ?? null,
           signal: input.signal,
         })
-        const result = await runBudgetedGenerationNode({
-          node: prepared.node,
-          prepared: prepared.prepared,
-          budget,
-          callLabel: getT()('agent:orchestrator.callLabelProse'),
-          maxOutputTokens: MAX_OUTPUT_TOKENS_BY_AGENT[task.agentId],
-          validate: output => validateDomainCandidateCanon({
-            agentId: task.agentId,
-            projectId: input.projectId,
-            worldGroupId: input.worldGroupId,
-            outlineNodeId: prepared.outlineNodeId,
-            outputText: output,
-          }),
-          languageShadow: buildAgentLanguageShadowValidation(
-            task.agentId,
-            targetLanguage,
-            languageShadowPolicy,
-          ),
-        })
-        const draft = result.output
-        candidates.push({
-          payload: {
-            version: 1,
-            taskId: task.id,
-            agentId: task.agentId,
-            label: prepared.label,
-            contextSources: prepared.contextSources,
-            contextEvidence: prepared.contextEvidence,
-            baseSnapshot: prepared.snapshot,
-            proseOperation: prepared.operation,
-            proseOutlineNodeId: prepared.outlineNodeId,
-            dependsOnTaskIds: task.dependsOn,
-          },
-          draft,
-          runtimeNode: prepared.node,
-          runtimeOutput: result.output,
-        })
-        outputs.set(task.id, draft)
+        if (creativeReliabilityEnabled) {
+          const result = await runProseCreativeReliabilityV1({
+            prepared,
+            budget,
+            qualityMode: useAIConfigStore.getState().creativeQualityMode,
+            validate: output => validateDomainCandidateCanon({
+              agentId: task.agentId,
+              projectId: input.projectId,
+              worldGroupId: input.worldGroupId,
+              outlineNodeId: prepared.outlineNodeId,
+              outputText: output,
+            }),
+          })
+          const draft = result.draft
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              workspaceScope: scope,
+              proseOperation: prepared.operation,
+              proseOutlineNodeId: prepared.outlineNodeId,
+              perspectiveCharacterId: prepared.perspectiveCharacterId,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+              creativeArtifact: result.artifact,
+              narrativeBrief: prepared.input.narrativeBrief,
+              informationBoundary: prepared.informationBoundary,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        } else {
+          const result = await runBudgetedGenerationNode({
+            node: prepared.node,
+            prepared: prepared.prepared,
+            budget,
+            callLabel: '正文领域 Agent',
+            maxOutputTokens: skill.maxOutputTokens,
+            validate: output => validateDomainCandidateCanon({
+              agentId: task.agentId,
+              projectId: input.projectId,
+              worldGroupId: input.worldGroupId,
+              outlineNodeId: prepared.outlineNodeId,
+              outputText: output,
+            }),
+          })
+          const draft = result.output
+          candidates.push({
+            payload: {
+              version: 1,
+              taskId: task.id,
+              agentId: task.agentId,
+              skillId: skill.id as AgentSkillId,
+              executionBinding,
+              label: prepared.label,
+              contextSources: prepared.contextSources,
+              contextEvidence: prepared.contextEvidence,
+              baseSnapshot: prepared.snapshot,
+              workspaceScope: scope,
+              proseOperation: prepared.operation,
+              proseOutlineNodeId: prepared.outlineNodeId,
+              perspectiveCharacterId: prepared.perspectiveCharacterId,
+              dependsOnTaskIds: task.dependsOn,
+              dependencyBindings,
+              informationBoundary: prepared.informationBoundary,
+            },
+            draft,
+            runtimeNode: prepared.node,
+            runtimeOutput: result.output,
+          })
+          outputs.set(task.id, draft)
+        }
       }
-      input.onTask?.(task, 'completed')
+      const candidate = candidates[candidates.length - 1]
+      const candidateAssumptions = candidate.payload.creativeArtifact?.assumptions
+        ?? candidate.payload.narrativeBrief?.assumptions
+        ?? []
+      runtimeAssumptions.set(
+        task.id,
+        scopeRuntimeAssumptionsV1(task.id, candidateAssumptions),
+      )
+      candidate.payload.teamBudgetEvidence = budget.snapshot()
+      await input.executionTrace?.candidateReady?.(task, candidate)
+      await input.onTask?.(task, 'completed')
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
-      input.onTask?.(task, 'failed', message)
+      await input.onTask?.(task, 'failed', message)
       throw error
     }
   }
-  const teamBudgetEvidence = budget.snapshot()
-  candidates.forEach(candidate => {
-    candidate.payload.teamBudgetEvidence = teamBudgetEvidence
-  })
   return candidates
+}
+
+function compareCandidateBudgetEvidence(
+  left: ExecutedMasterCandidate,
+  right: ExecutedMasterCandidate,
+): number {
+  const leftEvidence = left.payload.teamBudgetEvidence
+  const rightEvidence = right.payload.teamBudgetEvidence
+  if (!leftEvidence || !rightEvidence) return 0
+  return leftEvidence.calls - rightEvidence.calls
+    || leftEvidence.usedTokens - rightEvidence.usedTokens
+    || leftEvidence.canonRetries - rightEvidence.canonRetries
+}
+
+async function executeFanOutMasterAgentPlan(
+  input: ExecuteMasterAgentPlanInput,
+): Promise<ExecutedMasterCandidate[]> {
+  const budget = input.budget ?? new AgentTeamBudgetTracker(
+    useAIConfigStore.getState().agentTeamBudgetProfile,
+  )
+  const outputs = new Map<string, string>()
+  const runtimeAssumptions = new Map<string, CreativeAssumptionV1[]>()
+  for (const [taskId, output] of Object.entries(input.completedTaskOutputs ?? {})) {
+    if (output.trim()) outputs.set(taskId, output)
+  }
+  for (const [taskId, assumptions] of Object.entries(input.completedTaskAssumptions ?? {})) {
+    runtimeAssumptions.set(taskId, scopeRuntimeAssumptionsV1(taskId, assumptions))
+  }
+  const completed = new Set(
+    input.plan.tasks.filter(task => outputs.has(task.id)).map(task => task.id),
+  )
+  const candidates: ExecutedMasterCandidate[] = []
+
+  while (completed.size < input.plan.tasks.length) {
+    if (input.signal?.aborted) throw new DOMException('Aborted', 'AbortError')
+    const batch = selectMasterFanOutBatchV1(input.plan.tasks, completed, 2)
+    if (!batch.length) throw new Error('主 Agent fan-out 计划没有可执行任务，依赖可能已损坏。')
+    for (const task of batch) {
+      await input.executionTrace?.taskStarted?.(task)
+      await input.onTask?.(task, 'running')
+    }
+
+    const completedTaskOutputs = Object.fromEntries(outputs)
+    const completedTaskAssumptions = Object.fromEntries(runtimeAssumptions)
+    const requiredFutureModelCalls = input.plan.tasks.length - completed.size
+    const settled = await Promise.all(batch.map(async task => {
+      try {
+        const generated = await executeSequentialMasterAgentPlan({
+          ...input,
+          plan: { summary: input.plan.summary, tasks: [task] },
+          budget,
+          completedTaskOutputs,
+          completedTaskAssumptions,
+          executionTrace: undefined,
+          onTask: undefined,
+        }, { requiredFutureModelCalls })
+        const candidate = generated[0]
+        if (!candidate) throw new Error(`主 Agent fan-out 任务 ${task.id} 没有生成候选。`)
+        return { status: 'fulfilled' as const, task, candidate }
+      } catch (error) {
+        return { status: 'rejected' as const, task, error }
+      }
+    }))
+
+    const fulfilled = settled
+      .filter((item): item is Extract<typeof item, { status: 'fulfilled' }> => (
+        item.status === 'fulfilled'
+      ))
+      .sort((left, right) => compareCandidateBudgetEvidence(left.candidate, right.candidate))
+    for (const item of fulfilled) {
+      outputs.set(item.task.id, item.candidate.draft)
+      runtimeAssumptions.set(
+        item.task.id,
+        scopeRuntimeAssumptionsV1(
+          item.task.id,
+          item.candidate.payload.creativeArtifact?.assumptions
+            ?? item.candidate.payload.narrativeBrief?.assumptions
+            ?? [],
+        ),
+      )
+      completed.add(item.task.id)
+      candidates.push(item.candidate)
+      await input.executionTrace?.candidateReady?.(item.task, item.candidate)
+      await input.onTask?.(item.task, 'completed')
+    }
+
+    const failed = settled.filter(item => item.status === 'rejected')
+    for (const item of failed) {
+      const message = item.error instanceof Error ? item.error.message : String(item.error)
+      await input.onTask?.(item.task, 'failed', message)
+    }
+    if (failed.length) throw failed[0].error
+  }
+  return candidates
+}
+
+export async function executeMasterAgentPlan(
+  input: ExecuteMasterAgentPlanInput,
+): Promise<ExecutedMasterCandidate[]> {
+  const workflow = input.plan.workflow ? getMasterWorkflowV1(input.plan.workflow) : null
+  return workflow?.strategy === 'fan-out' && isMasterFanOutEnabledV1()
+    ? executeFanOutMasterAgentPlan(input)
+    : executeSequentialMasterAgentPlan(input)
 }
 
 function sameWorldSnapshot(
@@ -746,16 +1814,103 @@ function sameWorldSnapshot(
     && left.worldOrigin === right.worldOrigin
 }
 
-async function currentWorldSnapshot(projectId: number, worldGroupId: number | null): Promise<WorldOriginSnapshot> {
-  const rows = await db.worldviews.where('projectId').equals(projectId).toArray()
+function sameWorkspaceScope(left: WorkspaceScope, right: WorkspaceScope): boolean {
+  return left.projectId === right.projectId
+    && left.worldId === right.worldId
+    && left.workId === right.workId
+}
+
+async function resolveCandidateScope(input: {
+  projectId: number
+  scope?: WorkspaceScope
+  event: AgentEvent
+  payload: MasterCandidatePayload
+}): Promise<WorkspaceScope> {
+  if (input.event.projectId !== input.projectId) throw new Error('Agent 候选不属于当前项目。')
+  let declared = input.scope ?? input.payload.workspaceScope
+  if (!declared && input.event.workId != null) {
+    const work = await db.works.get(input.event.workId)
+    if (!work || work.projectId !== input.projectId) throw new Error('Agent 候选所属作品不存在。')
+    declared = { projectId: input.projectId, worldId: work.worldId, workId: work.id! }
+  }
+  const scope = await resolveScope({ projectId: input.projectId, scope: declared })
+  const importedDurableCandidate = input.event.durableRunId != null
+    && input.event.durableRunId !== input.payload.runId
+  if (
+    input.payload.workspaceScope
+    && !sameWorkspaceScope(scope, input.payload.workspaceScope)
+    && !importedDurableCandidate
+  ) {
+    throw new Error('Agent 候选的冻结作品作用域不一致。')
+  }
+  if (!await assertRecordInScope(scope, 'agentEvents', input.event, { owner: 'work' })) {
+    throw new Error('Agent 候选不属于当前作品。')
+  }
+  return scope
+}
+
+/**
+ * Runtime candidates already carry a validated generation node.  Keep this
+ * adoption seam independent from workspace reads so an unavailable shadow DB
+ * cannot turn a non-persistent runtime confirmation into a false rejection.
+ */
+async function adoptRuntimeCandidate(input: {
+  payload: MasterCandidatePayload
+  draft: string
+  runtime: ExecutedMasterCandidate
+}): Promise<void> {
+  const output = input.payload.skillId === 'world-origin.worldview-field'
+    ? parseWorldviewFieldCandidateDraft(input.draft)
+    : input.payload.skillId === 'world-origin.story-core'
+    ? parseStoryCoreCandidateDraft(input.draft)
+    : input.payload.skillId === 'world-origin.creative-rules'
+    ? parseCreativeRulesCandidateDraftV1(input.draft)
+    : input.payload.skillId === 'outline.storyline-progress'
+    ? parseStorylineProgressCandidateDraftV1(input.draft)
+    : input.payload.skillId === 'outline.story-arcs'
+    ? parseStoryArcCandidateDraft(input.draft)
+    : input.payload.skillId === 'outline.character-driven'
+    ? parseCharacterDrivenCandidateDraftV1(input.draft)
+    : input.payload.skillId === 'outline.character-revision'
+    ? parseCharacterRevisionCandidateDraftV1(
+        input.draft,
+        input.payload.baseSnapshot as CharacterRevisionCopilotSnapshotV1,
+      )
+    : input.payload.skillId === 'outline.world-game'
+    ? parseWorldGameNarrativeCandidateV1(
+        input.draft,
+        (input.payload.baseSnapshot as WorldGameCopilotSnapshotV1).request,
+      )
+    : input.payload.agentId === 'world-origin'
+    ? input.draft
+    : input.payload.agentId === 'character'
+    ? input.payload.skillId === 'character.supplement'
+      ? parseCharacterSupplementCandidateDraftV1(
+          input.draft,
+          input.payload.characterSupplementRequest!,
+        )
+      : parseCharacterCandidateDraft(input.draft)
+    : input.payload.agentId === 'inspiration'
+    ? parseInspirationCandidateDraft(input.draft, input.payload.mode ?? 'single')
+    : input.payload.agentId === 'outline'
+    ? parseOutlineCandidateDraft(input.draft)
+    : parseProseCandidateDraft(input.draft)
+  const result = await adoptGenerationNodeOutput(input.runtime.runtimeNode, output)
+  if (!result.adopted) {
+    throw new Error(result.gate?.issues.map(issue => issue.message).join('；') || '候选没有通过确认闸门。')
+  }
+}
+
+async function currentWorldSnapshot(scope: WorkspaceScope, worldGroupId: number | null): Promise<WorldOriginSnapshot> {
+  const rows = await readOwnedRows<any>(scope, 'worldviews', { owner: 'world' })
   const row = worldGroupId == null
     ? (rows.find(item => (item.worldGroupId ?? null) === null) ?? rows[0] ?? null)
     : (rows.find(item => item.worldGroupId === worldGroupId) ?? null)
   return { id: row?.id ?? null, updatedAt: row?.updatedAt ?? null, worldOrigin: row?.worldOrigin ?? '' }
 }
 
-async function currentRosterSnapshot(projectId: number, worldGroupId: number | null): Promise<CharacterRosterSnapshot> {
-  const rows = await db.characters.where('projectId').equals(projectId).toArray()
+async function currentRosterSnapshot(scope: WorkspaceScope, worldGroupId: number | null): Promise<CharacterRosterSnapshot> {
+  const rows = await readOwnedRows<any>(scope, 'characters', { owner: 'world' })
   return {
     serialized: JSON.stringify(rows.map(character => ({
       id: character.id ?? null,
@@ -770,8 +1925,8 @@ async function currentRosterSnapshot(projectId: number, worldGroupId: number | n
   }
 }
 
-async function currentInspirationSnapshot(projectId: number): Promise<InspirationWorkspaceSnapshot> {
-  const row = await db.inspirationWorkspaces.where('projectId').equals(projectId).first()
+async function currentInspirationSnapshot(scope: WorkspaceScope): Promise<InspirationWorkspaceSnapshot> {
+  const row = (await readOwnedRows<any>(scope, 'inspirationWorkspaces', { owner: 'work' }))[0]
   return {
     id: row?.id ?? null,
     updatedAt: row?.updatedAt ?? null,
@@ -780,22 +1935,26 @@ async function currentInspirationSnapshot(projectId: number): Promise<Inspiratio
   }
 }
 
-async function assertCandidateDependenciesAdopted(
+export async function assertMasterCandidateDependenciesAdoptedV1(
   event: AgentEvent,
   payload: MasterCandidatePayload,
+  scope: WorkspaceScope,
 ): Promise<void> {
   const taskIds = payload.dependsOnTaskIds ?? []
   if (!taskIds.length) return
-  const events = await db.agentEvents
-    .where('conversationId')
-    .equals(event.conversationId)
-    .toArray()
-  const candidateByTask = new Map<string, number>()
+  const events = (await readOwnedRows<AgentEvent>(scope, 'agentEvents', { owner: 'work' }))
+    .filter(row => row.conversationId === event.conversationId)
+  const candidates: Array<{
+    event: AgentEvent
+    payload: Partial<MasterCandidatePayload>
+  }> = []
+  const legacyCandidateByTask = new Map<string, number>()
   const adoptedCandidateIds = new Set<number>()
   for (const row of events) {
     if (row.kind === 'candidate' && row.id != null) {
       const candidate = parseAgentEventPayload<Partial<MasterCandidatePayload>>(row, {})
-      if (candidate.taskId) candidateByTask.set(candidate.taskId, row.id)
+      candidates.push({ event: row, payload: candidate })
+      if (candidate.taskId) legacyCandidateByTask.set(candidate.taskId, row.id)
     } else if (row.kind === 'confirmation') {
       const confirmation = parseAgentEventPayload<{
         candidateEventId?: number
@@ -806,17 +1965,74 @@ async function assertCandidateDependenciesAdopted(
       }
     }
   }
-  const missing = taskIds.filter(taskId => {
-    const candidateId = candidateByTask.get(taskId)
-    return candidateId == null || !adoptedCandidateIds.has(candidateId)
-  })
-  if (missing.length) {
-    throw new Error(getT()('agent:orchestrator.dependencyNotAdopted', { ids: missing.join('、') }))
+
+  const bindings = payload.dependencyBindings
+  if (bindings === undefined) {
+    const missing = taskIds.filter(taskId => {
+      const candidateId = legacyCandidateByTask.get(taskId)
+      return candidateId == null || !adoptedCandidateIds.has(candidateId)
+    })
+    if (missing.length) {
+      throw new Error(`请先采纳本候选依赖的上游结果：${missing.join('、')}。`)
+    }
+    return
+  }
+  if (
+    bindings.length !== taskIds.length
+    || bindings.some((binding, index) => binding.taskId !== taskIds[index])
+  ) throw new Error('下游候选的冻结依赖清单与计划不一致。')
+
+  const durableRunId = event.durableRunId ?? payload.runId
+  const durableSnapshot = durableRunId == null ? null : await readAgentRunV1(scope, durableRunId)
+  if (durableSnapshot && payload.runGeneration !== durableSnapshot.projection.generation) {
+    throw new Error('下游候选不属于当前 Run generation，请重新生成。')
+  }
+  for (const binding of bindings) {
+    if (
+      durableSnapshot?.contract.dependencyReceiptPolicy?.requiredForJoin
+      && !binding.verificationReceiptHash
+    ) throw new Error(`依赖 ${binding.taskId} 缺少步骤验证回执，请重新生成下游候选。`)
+    const eligible = candidates.filter(candidate => (
+      candidate.payload.taskId === binding.taskId
+      && (payload.runId == null || candidate.payload.runId === payload.runId)
+      && (binding.candidateHash == null || candidate.payload.candidateHash === binding.candidateHash)
+    ))
+    let upstream: typeof eligible[number] | undefined
+    for (let index = eligible.length - 1; index >= 0; index -= 1) {
+      if (await hashCanonicalValue(eligible[index].event.content) === binding.outputHash) {
+        upstream = eligible[index]
+        break
+      }
+    }
+    if (!upstream?.event.id) {
+      throw new Error(`依赖 ${binding.taskId} 的冻结候选版本已经变化，请重新生成下游候选。`)
+    }
+    if (
+      binding.generation !== undefined
+      && (upstream.payload.runGeneration ?? payload.runGeneration) !== binding.generation
+    ) throw new Error(`依赖 ${binding.taskId} 来自不同 Run generation，请重新生成。`)
+    if (durableSnapshot && binding.candidateHash) {
+      const step = durableSnapshot.projection.steps[`master:${binding.taskId}`]
+      if (
+        !step
+        || step.status !== 'succeeded'
+        || step.confirmation !== 'adopt'
+        || !step.adoptionHash
+        || step.candidateHash !== binding.candidateHash
+        || (
+          binding.verificationReceiptHash !== undefined
+          && step.verificationReceiptHash !== binding.verificationReceiptHash
+        )
+      ) throw new Error(`请先完成采纳本候选依赖的上游结果：${binding.taskId}。`)
+    } else if (!adoptedCandidateIds.has(upstream.event.id)) {
+      throw new Error(`请先采纳本候选依赖的上游结果：${binding.taskId}。`)
+    }
   }
 }
 
 export async function adoptMasterCandidate(input: {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   event: AgentEvent
   payload: MasterCandidatePayload
@@ -824,18 +2040,15 @@ export async function adoptMasterCandidate(input: {
   runtime?: ExecutedMasterCandidate
   languageShadowPolicy?: Partial<Record<'agents', 'shadow' | 'enforce'>>
 }): Promise<string> {
-  await assertCandidateDependenciesAdopted(input.event, input.payload)
+  assertMasterCreativeArtifactAdoptableV1(input.payload)
   let projectReadSucceeded = true
-  let project: Awaited<ReturnType<typeof db.projects.get>> | undefined = undefined
+  let project: Awaited<ReturnType<typeof db.projects.get>> | undefined
   try {
     project = await db.projects.get(input.projectId)
   } catch {
     projectReadSucceeded = false
   }
   if (projectReadSucceeded) {
-    // Revalidate for the explicit adoption policy, but do not count the same
-    // unchanged in-memory candidate twice. Restored or edited candidates remain
-    // observable through the sanitized runner warning.
     const alreadyObserved = input.runtime != null && input.runtime.draft === input.draft
     const report = runLanguageShadow({
       family: 'agents',
@@ -846,7 +2059,7 @@ export async function adoptMasterCandidate(input: {
         input.payload.mode ?? 'single',
       ),
     }, undefined, { observe: !alreadyObserved })
-    const languageIssues = adaptLanguageShadowReportToIssues({
+    const issues = adaptLanguageShadowReportToIssues({
       family: 'agents',
       report,
       mode: resolveLanguageShadowPolicy({
@@ -854,82 +2067,174 @@ export async function adoptMasterCandidate(input: {
         ...input.languageShadowPolicy,
       }).agents,
     })
-    if (languageIssues.length) {
-      throw new Error(languageIssues.map(issue => issue.message).join('；'))
-    }
+    if (issues.length) throw new Error(issues.map(issue => issue.message).join('；'))
   }
-  if (input.runtime) {
-    const output = input.payload.agentId === 'world-origin'
-      ? input.draft
-      : input.payload.agentId === 'character'
-        ? parseCharacterCandidateDraft(input.draft)
-        : input.payload.agentId === 'inspiration'
-          ? parseInspirationCandidateDraft(input.draft, input.payload.mode ?? 'single')
-          : input.payload.agentId === 'outline'
-            ? parseOutlineCandidateDraft(input.draft)
-            : parseProseCandidateDraft(input.draft)
-    const result = await adoptGenerationNodeOutput(input.runtime.runtimeNode, output)
-    if (!result.adopted) {
-      throw new Error(result.gate?.issues.map(issue => issue.message).join('；') || getT()('agent:orchestrator.gateRejected'))
-    }
+  const runtime = input.runtime
+  if (!projectReadSucceeded && runtime) {
+    await adoptRuntimeCandidate({ ...input, runtime })
+    return '候选已通过运行节点采纳。'
+  }
+  const scope = await resolveCandidateScope(input)
+  await assertMasterCandidateDependenciesAdoptedV1(input.event, input.payload, scope)
+  if (runtime) {
+    await adoptRuntimeCandidate({ ...input, runtime })
   } else if (input.payload.agentId === 'world-origin') {
-    const base = input.payload.baseSnapshot as WorldOriginSnapshot
-    if (!sameWorldSnapshot(base, await currentWorldSnapshot(input.projectId, input.worldGroupId))) {
-      throw new Error(getT()('agent:orchestrator.worldOriginStale'))
+    if (input.payload.skillId === 'world-origin.worldview-field') {
+      if (!input.payload.worldviewField) throw new Error('世界基座候选缺少目标字段，请重新生成。')
+      await adoptRestoredWorldviewFieldCandidate({
+        projectId: input.projectId,
+        scope,
+        worldGroupId: input.worldGroupId,
+        snapshot: input.payload.baseSnapshot as WorldviewFieldCopilotSnapshot,
+        targetField: input.payload.worldviewField,
+        draft: input.draft,
+      })
+    } else if (input.payload.skillId === 'world-origin.story-core') {
+      if (!input.payload.storyCoreField) throw new Error('故事核心候选缺少目标字段，请重新生成。')
+      await adoptRestoredStoryCoreCandidate({
+        projectId: input.projectId,
+        scope,
+        snapshot: input.payload.baseSnapshot as StoryCoreCopilotSnapshot,
+        targetField: input.payload.storyCoreField,
+        draft: input.draft,
+      })
+    } else if (input.payload.skillId === 'world-origin.creative-rules') {
+      if (!input.payload.creativeRulesField) throw new Error('创作规则候选缺少目标字段，请重新生成。')
+      await adoptRestoredCreativeRulesCandidateV1({
+        projectId: input.projectId,
+        scope,
+        snapshot: input.payload.baseSnapshot as CreativeRulesCopilotSnapshotV1,
+        targetField: input.payload.creativeRulesField,
+        draft: input.draft,
+      })
+    } else {
+      const base = input.payload.baseSnapshot as WorldOriginSnapshot
+      if (!sameWorldSnapshot(base, await currentWorldSnapshot(scope, input.worldGroupId))) {
+        throw new Error('世界来源已在候选生成后发生变化，请重新生成。')
+      }
+      const draft = input.draft.trim()
+      if (draft.length < 4 || draft.length > 12_000) throw new Error('世界来源候选长度无效。')
+      await adopt({
+        projectId: input.projectId,
+        scope,
+        worldGroupId: input.worldGroupId,
+        target: 'worldviews',
+        mode: 'replace',
+        data: { worldOrigin: draft },
+      })
     }
-    const draft = input.draft.trim()
-    if (draft.length < 4 || draft.length > 12_000) throw new Error(getT()('agent:orchestrator.worldOriginLengthInvalid'))
-    await adopt({
-      projectId: input.projectId,
-      worldGroupId: input.worldGroupId,
-      target: 'worldviews',
-      mode: 'replace',
-      data: { worldOrigin: draft },
-    })
   } else if (input.payload.agentId === 'character') {
-    const base = input.payload.baseSnapshot as CharacterRosterSnapshot
-    const current = await currentRosterSnapshot(input.projectId, input.worldGroupId)
-    if (base.serialized !== current.serialized) throw new Error(getT()('agent:orchestrator.characterRosterChanged'))
-    const candidate = parseCharacterCandidateDraft(input.draft)
-    const normalized = candidate.name.normalize('NFKC').trim().toLocaleLowerCase('zh-CN')
-    if (current.visibleNames.includes(normalized)) throw new Error(getT()('agent:orchestrator.characterDuplicate', { name: candidate.name }))
-    await adopt({
-      projectId: input.projectId,
-      worldGroupId: input.worldGroupId,
-      target: 'characters',
-      mode: 'add',
-      data: { ...candidate, isCrossWorld: false },
-    })
+    if (input.payload.skillId === 'character.supplement') {
+      if (!input.payload.characterSupplementRequest) {
+        throw new Error('角色补全候选缺少固定目标与字段，请重新生成。')
+      }
+      await adoptRestoredCharacterSupplementCandidateV1({
+        projectId: input.projectId,
+        scope,
+        worldGroupId: input.worldGroupId,
+        snapshot: input.payload.baseSnapshot as CharacterSupplementCopilotSnapshotV1,
+        draft: input.draft,
+      })
+    } else {
+      const base = input.payload.baseSnapshot as CharacterRosterSnapshot
+      const current = await currentRosterSnapshot(scope, input.worldGroupId)
+      if (base.serialized !== current.serialized) throw new Error('角色主档已变化，请重新生成。')
+      const candidate = parseCharacterCandidateDraft(input.draft)
+      const normalized = candidate.name.normalize('NFKC').trim().toLocaleLowerCase('zh-CN')
+      if (current.visibleNames.includes(normalized)) throw new Error(`当前世界已存在角色“${candidate.name}”。`)
+      await adopt({
+        projectId: input.projectId,
+        scope,
+        worldGroupId: input.worldGroupId,
+        target: 'characters',
+        mode: 'add',
+        data: { ...candidate, isCrossWorld: false },
+      })
+    }
   } else if (input.payload.agentId === 'inspiration') {
     const base = input.payload.baseSnapshot as InspirationWorkspaceSnapshot
-    const current = await currentInspirationSnapshot(input.projectId)
-    if (JSON.stringify(base) !== JSON.stringify(current)) throw new Error(getT()('agent:orchestrator.inspirationWorkspaceChanged'))
+    const current = await currentInspirationSnapshot(scope)
+    if (JSON.stringify(base) !== JSON.stringify(current)) throw new Error('灵感工作区已变化，请重新生成。')
     const mode = input.payload.mode ?? 'single'
     const result = parseInspirationCandidateDraft(input.draft, mode)
-    await useInspirationWorkspaceStore.getState().load(input.projectId)
-    await useInspirationWorkspaceStore.getState().saveVersion(input.projectId, {
+    const parentVersionId = latestInspirationVersion(
+      parseInspirationVersions(base.versions),
       mode,
-      parentVersionId: null,
+    )?.id ?? null
+    await useInspirationWorkspaceStore.getState().load(scope)
+    await useInspirationWorkspaceStore.getState().saveVersion(scope, {
+      mode,
+      parentVersionId,
       fragmentIds: input.payload.selectedFragmentIds ?? [],
       result: result as InspirationCopilotResult,
     })
   } else if (input.payload.agentId === 'outline') {
-    const mode = input.payload.outlineMode
-    if (!mode) throw new Error(getT()('agent:orchestrator.outlineMissingMode'))
-    await adoptRestoredOutlineCandidate({
-      projectId: input.projectId,
-      worldGroupId: input.worldGroupId,
-      mode,
-      parentVolumeId: input.payload.outlineParentId ?? null,
-      snapshot: input.payload.baseSnapshot as OutlineCopilotSnapshot,
-      draft: input.draft,
-    })
+    if (input.payload.skillId === 'outline.world-game') {
+      await adoptRestoredWorldGameCandidateV1({
+        scope,
+        snapshot: input.payload.baseSnapshot as WorldGameCopilotSnapshotV1,
+        draft: input.draft,
+      })
+    } else if (input.payload.skillId === 'outline.character-revision') {
+      if (!input.payload.characterRevisionRequest) {
+        throw new Error('角色中途重规划候选缺少固定变更请求，请重新生成。')
+      }
+      await adoptRestoredCharacterRevisionCandidateV1({
+        projectId: input.projectId,
+        scope,
+        snapshot: input.payload.baseSnapshot as CharacterRevisionCopilotSnapshotV1,
+        draft: input.draft,
+      })
+    } else if (input.payload.skillId === 'outline.character-driven') {
+      if (input.payload.characterDrivenPlanId == null) {
+        throw new Error('角色驱动候选缺少目标方案，请重新生成。')
+      }
+      await adoptRestoredCharacterDrivenCandidateV1({
+        projectId: input.projectId,
+        scope,
+        planId: input.payload.characterDrivenPlanId,
+        snapshot: input.payload.baseSnapshot as CharacterDrivenCopilotSnapshotV1,
+        draft: input.draft,
+      })
+    } else if (input.payload.skillId === 'outline.story-arcs') {
+      await adoptRestoredStoryArcCandidate({
+        projectId: input.projectId,
+        scope,
+        worldGroupId: input.worldGroupId,
+        snapshot: input.payload.baseSnapshot as StoryArcCopilotSnapshot,
+        draft: input.draft,
+      })
+    } else if (input.payload.skillId === 'outline.storyline-progress') {
+      if (input.payload.storylineProgressChapterId == null) {
+        throw new Error('故事线进度候选缺少目标章节，请重新生成。')
+      }
+      await adoptRestoredStorylineProgressCandidateV1({
+        projectId: input.projectId,
+        scope,
+        chapterId: input.payload.storylineProgressChapterId,
+        snapshot: input.payload.baseSnapshot as StorylineProgressCopilotSnapshotV1,
+        draft: input.draft,
+      })
+    } else {
+      const mode = input.payload.outlineMode
+      if (!mode) throw new Error('大纲候选缺少写回模式，请重新生成。')
+      await adoptRestoredOutlineCandidate({
+        projectId: input.projectId,
+        scope,
+        worldGroupId: input.worldGroupId,
+        mode,
+        parentVolumeId: input.payload.outlineParentId ?? null,
+        snapshot: input.payload.baseSnapshot as OutlineCopilotSnapshot,
+        draft: input.draft,
+      })
+    }
   } else {
     if (!input.payload.proseOperation || input.payload.proseOutlineNodeId == null) {
-      throw new Error(getT()('agent:orchestrator.proseMissingTarget'))
+      throw new Error('正文候选缺少目标章节或写回模式，请重新生成。')
     }
     await adoptRestoredProseCandidate({
       projectId: input.projectId,
+      scope,
       worldGroupId: input.worldGroupId,
       operation: input.payload.proseOperation,
       outlineNodeId: input.payload.proseOutlineNodeId,
@@ -939,22 +2244,60 @@ export async function adoptMasterCandidate(input: {
   }
 
   await Promise.all([
-    useWorldviewStore.getState().loadAll(input.projectId, input.worldGroupId),
-    useCharacterStore.getState().loadAll(input.projectId),
-    useOutlineStore.getState().loadAll(input.projectId),
-    useChapterStore.getState().loadAll(input.projectId),
+    useWorldviewStore.getState().loadAll(scope, input.worldGroupId),
+    useCharacterStore.getState().loadAll(scope),
+    useOutlineStore.getState().loadAll(scope),
+    useStoryArcStore.getState().loadAll(scope),
+    useChapterStore.getState().loadAll(scope),
+    useCharacterDrivenPlanStore.getState().loadAll(scope),
   ])
   return input.payload.agentId === 'world-origin'
-    ? getT()('agent:orchestrator.adoptSuccessWorldOrigin')
+    ? input.payload.skillId === 'world-origin.worldview-field'
+      ? `世界基座“${input.payload.label}”已写入当前世界。`
+      : input.payload.skillId === 'world-origin.story-core'
+      ? `故事核心“${input.payload.label}”已写入项目。`
+      : input.payload.skillId === 'world-origin.creative-rules'
+      ? `创作规则“${input.payload.label}”已写入项目。`
+      : '世界来源已写入项目。'
     : input.payload.agentId === 'character'
-      ? getT()('agent:orchestrator.adoptSuccessCharacter', { name: (parseCharacterCandidateDraft(input.draft) as CharacterCopilotCandidate).name })
+      ? input.payload.skillId === 'character.supplement'
+        ? `角色设定已补全 ${input.payload.characterSupplementRequest?.dimensions.length ?? 0} 个字段。`
+        : `角色“${(parseCharacterCandidateDraft(input.draft) as CharacterCopilotCandidate).name}”已加入项目。`
       : input.payload.agentId === 'inspiration'
-        ? input.payload.mode === 'multiworld' ? getT()('agent:orchestrator.adoptSuccessInspirationMulti') : getT()('agent:orchestrator.adoptSuccessInspirationSingle')
+        ? `已保存新的${input.payload.mode === 'multiworld' ? '多世界' : '单世界'}灵感版本。`
         : input.payload.agentId === 'outline'
-          ? input.payload.outlineMode === 'volumes'
-            ? getT()('agent:orchestrator.adoptSuccessVolumeOutline')
-            : getT()('agent:orchestrator.adoptSuccessChapterOutline')
+          ? input.payload.skillId === 'outline.world-game'
+            ? 'AI 演化游戏草稿已写入项目；可继续冻结 GameRelease 并立即试玩。'
+            : input.payload.skillId === 'outline.character-revision'
+            ? '选中的未来大纲 patch 已写入项目；已写正文、故事主线和只读影响建议均未修改。'
+            : input.payload.skillId === 'outline.character-driven'
+            ? '角色驱动卷章方案已保存到当前版本。'
+            : input.payload.skillId === 'outline.story-arcs'
+            ? '故事线已写入项目。'
+            : input.payload.skillId === 'outline.storyline-progress'
+            ? '本章故事线进度、交汇和疑似新线候选已按作者确认写入项目。'
+            : input.payload.outlineMode === 'volumes'
+            ? '卷级大纲已写入项目。'
+            : '章节大纲已写入目标卷。'
           : input.payload.proseOperation === 'continue'
-            ? getT()('agent:orchestrator.adoptSuccessProseContinue')
-            : getT()('agent:orchestrator.adoptSuccessProseGenerate')
+            ? '续写内容已追加到目标章节。'
+            : '正文已写入目标章节。'
+}
+
+export function assertMasterCreativeArtifactAdoptableV1(payload: MasterCandidatePayload): void {
+  const artifact = payload.creativeArtifact
+  if (artifact === undefined) return
+  let validatedArtifact: CreativeArtifactV1
+  try {
+    validatedArtifact = parseCreativeArtifactV1(artifact)
+  } catch {
+    throw new Error('该候选的创作产物合同无效，不能采纳。')
+  }
+  if (creativeArtifactCanAdoptV1(validatedArtifact)) return
+  const summary = validatedArtifact.issues.slice(0, 3).map(issue => issue.message).join('；')
+  throw new Error(
+    validatedArtifact.status === 'blocked'
+      ? `该候选存在阻断问题，不能采纳。${summary}`
+      : `该候选需要手动修复并通过本地校验后才能采纳。${summary}`,
+  )
 }

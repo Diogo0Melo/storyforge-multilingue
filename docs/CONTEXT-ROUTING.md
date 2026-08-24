@@ -25,10 +25,13 @@
 | 局部 UI、交互、样式、明确 Bug | 组件、store/service、调用方、现有回归 | 相关源码与测试的命中片段；触及数据时再转数据路线 | Blueprint、完整路线图、协作日志 |
 | AI 读取、Prompt、上下文预算 | `moduleKey`、`reads`、`CONTEXT_SOURCES`、adapter/runner | `context-sources.ts`、`assemble-context.ts`、对应 Prompt/AI Manual 行与测试 | 其它领域 Prompt、整份 AI Manual |
 | AI 写回、解析、采纳 | `writes`、field key、schema key、adopt 调用方 | `field-registry.ts`、`adoption-schema.ts`、`adopt.ts`、对应 parser/use-case/test | 无关表、无关面板 |
-| Agent Harness、长运行恢复、完成验证 | run/step/attempt、`completed` 来源、context/write scope、checkpoint/receipt | `AI-HARNESS-ARCHITECTURE-20260803.md` 中命中的差距、目标架构或 H0-H5 阶段；再读 Runner、orchestrator、GenerationNode、三注册表和 simulation runtime 对应片段 | 未命中的外部研究、完整 Blueprint、其它阶段实施细节 |
+| Agent Harness、创作可靠性、长运行恢复、完成验证 | run/step/attempt、`completed` 来源、context/write scope、checkpoint/receipt、产物级调用停止与质量分级 | 先读 `AI-HARNESS-REBUILD-RELEASE-20260817.md` 当前总览；实现任务再按命中范围读取 Harness/CREL 设计、Runner、orchestrator、GenerationNode、三注册表和 simulation runtime 对应片段 | 未命中的外部研究、完整 Blueprint、其它阶段实施细节 |
+| 记忆工程、硬盘映像、人工自检、双向同步 | `MEMORY-*`、`MEMORY-CLOSE-*`、documentId、baseline、projection、folder handle、sync receipt | 新收口任务先读 `MEMORY-ENGINEERING-CLOSURE-CHARTER-20260817.md`；追溯 MEMORY-0～10 再读原施工方案对应阶段；用户操作/恢复/隐私读 `MEMORY-WORKSPACE-GUIDE.md`；再读 `project-tables.ts`、目标领域表/field/context 登记、folder storage、Harness ledger/post-adoption 与相关测试 | 完整 Harness 历史完成卡、未命中的 CREL 评测、整份 Blueprint |
 | schema、迁移、删除、合并、导入导出 | 表名、owner、refs、world scope、迁移版本 | `project-tables.ts`、`schema.ts`、相关 lifecycle 实现、迁移/往返/删除测试；Blueprint 对应数据段 | 其它 Phase、历史完成流水 |
 | 新体系或完整功能 | 稳定 ID、唯一归属、前置依赖 | 路线图中对应体系、能力基线同名章节、关联设计文档；若有 Blueprint ID，仅读该 ID 的“前置/改法/验证/完成判据” | 路线图其它体系、完整 Blueprint |
 | Fork、upstream、同步或合并 | remotes、`origin/main`、当前 branch 与 worktree 状态 | [`FORK-MAINTENANCE.md`](FORK-MAINTENANCE.md)，以及需要时读取 `COLLAB-WORKFLOW.md` 的相关流程 | 未命中的完整协作日志、无关历史文档 |
+| 从世界引擎派生或扩展上层产品 | `WorldRelease`、产品世界数据需求、`SourceSelection`、产品 owner | 先读 `WORLD-ENGINE-TO-PRODUCT-DEVELOPMENT-CHARTER.md`；再读该产品能力基线、设计文档、来源适配器和三注册表命中片段 | 其它产品的完整生产/媒资实现、假设中的跨产品公共层 |
+| i18n、内容语言或 AI 生成内容 | i18n 文案入口、项目 `contentLanguage`、生成调用方 | 相关 i18n 资源、项目语言设置、内容生成入口与三注册表命中片段 | UI locale 代替项目内容语言、未登记的文案或生成旁路 |
 | PR、合并、发布、跨模型交接 | branch/commit/PR/check 状态 | `COLLAB-WORKFLOW.md` 相关流程、PR diff、受影响测试 | 全部协作日志 |
 | 历史追溯、来源审计 | 任务 ID、commit、文件名 | `git log` / `git blame` / `rg` 命中；必要时读 `ROADMAP-LEGACY.md` 或 `COLLAB-LOG.md` 邻近片段 | 历史文档全文 |
 | 宪法冲突或新增架构规则 | 冲突的注册表/红线条款 | `CLAUDE.md` 对应章节、架构检查器和当前代码证据 | 与冲突无关的设计文档 |
@@ -40,7 +43,7 @@
 
 ```bash
 # 找任务在当前路线图中的唯一归属
-rg -n -C 4 'CANON-1|CONSISTENCY-2' docs/roadmap
+rg -n -C 4 'MEMORY-|CANON-1|CONSISTENCY-2' docs/roadmap docs/MEMORY-ENGINEERING-DEVELOPMENT-PLAN-20260817.md
 
 # 找 Blueprint 中某任务的标题，再读取该标题到下一同级标题之间
 rg -n '^#{2,4} .*2\\.7|^#{2,4} .*INVENTORY-1' docs/MASTER-BLUEPRINT.md

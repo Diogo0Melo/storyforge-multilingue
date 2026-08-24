@@ -119,6 +119,7 @@ ${template.systemPrompt}
           ...examples,
           [kind]: [...(kind === 'good' ? good : bad), ...newExamples],
         })
+        toast.info(t('promptExamples.tip'))
       }
     } catch (e) {
       toast.error(t('promptExamples.generateError', { error: e instanceof Error ? e.message : String(e) }))
@@ -222,7 +223,12 @@ ${template.systemPrompt}
           Token: ↑{ai.tokenUsage.inputTokens.toLocaleString()} ↓{ai.tokenUsage.outputTokens.toLocaleString()}
         </div>
       )}
-      <p className="mt-3 text-xs text-text-muted">
+      {!readOnly && (
+        <p className="mt-3 text-xs text-text-muted">
+          {t('promptExamples.draftNotice')}
+        </p>
+      )}
+      <p className="mt-2 text-xs text-text-muted">
         {t('promptExamples.tip')}
       </p>
     </div>

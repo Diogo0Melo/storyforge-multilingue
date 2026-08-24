@@ -30,6 +30,7 @@
     "structuredStreamingReview": "A IA está gerando conteúdo estruturado… (um plano revisável aparecerá abaixo quando estiver pronto)",
     "structuredDoneWithAccept": "✓ Conteúdo estruturado gerado. Clique em Adotar para preencher automaticamente os campos correspondentes.",
     "structuredDoneReview": "✓ Conteúdo estruturado gerado. O sistema o analisou no plano revisável abaixo.",
+    "editableCandidateAria": "Conteúdo candidato de IA editável",
     "showRaw": "Ver dados brutos",
     "hideRaw": "Ocultar dados brutos",
     "thinking": "A IA está pensando...",
@@ -69,6 +70,7 @@
   },
   "extractionReview": {
     "analyzing": "A IA está analisando e organizando candidatos…",
+    "writing": "Gravando as seleções confirmadas…",
     "empty": "Nenhum novo conteúdo encontrado para gravar.",
     "confirmWrite": "Confirmar gravação ({{count}})",
     "closeTitle": "Fechar"

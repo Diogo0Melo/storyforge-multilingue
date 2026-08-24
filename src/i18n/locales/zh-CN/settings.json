@@ -136,6 +136,18 @@
     "contextTierLabel": "上下文输入档位",
     "contextTierAria": "{{label}}上下文输入档位",
     "noPresetsWarning": "先保存至少一个配置预设，才能给任务绑定专用模型。",
+    "reliabilityLabel": "启用创作可靠性工程",
+    "reliabilityAria": "启用创作可靠性工程",
+    "reliabilityDescriptionEnabled": "只对可定位的结构问题追加一次受控定向修复，主观质量提示不会自动重试。",
+    "reliabilityDescriptionDisabled": "关闭后只生成一次，校验和作者修改不会再次调用模型。",
+    "qualityModeLabel": "创作结果模式",
+    "qualityModeAria": "创作结果模式",
+    "qualityModeDescription": "控制生成后的结构校验与定向修复策略。",
+    "qualityModes": {
+      "economy": { "label": "节省", "description": "只生成一次，不追加定向修复" },
+      "balanced": { "label": "均衡", "description": "保留一次受控定向修复" },
+      "refine": { "label": "精修", "description": "使用更完整上下文进行受控定向修复" }
+    },
     "tasks": {
       "creation": {
         "label": "创作生成",
@@ -256,6 +268,64 @@
       "readyWithEmbedding": "检索索引已就绪:扫描 {{chapters}} 章,当前 {{chunks}} 块;摘要树 {{summaryChapters}} 章、{{summaryVolumes}} 卷、{{summaryBooks}} 全书;语义向量已全部就绪。",
       "completed": "完成:扫描 {{chapters}} 章,重建 {{rebuiltChapters}} 章 / {{chunks}} 块;摘要树 {{summaryChapters}} 章、{{summaryVolumes}} 卷、{{summaryBooks}} 全书;本次嵌入 {{embedded}} 块,跳过已就绪 {{skipped}} 块",
       "failed": "建立索引失败:{{error}}（已有索引仍可用;embedding 失败会自动退回关键词检索）"
+    }
+  },
+  "creativeReliabilityCommunity": {
+    "title": "创作可靠性体验反馈",
+    "description": "当前处于实验性社区观察期，不代表已经证明“替作者完成 80%”。独立作者 A/B 与原质量门不再作为本轮开发阻塞项；历史结果没有因此变成通过，后续将按作者主动提交的真实反馈评估。",
+    "usageTitle": "使用边界与费用",
+    "usage": {
+      "limits": "节省模式最多 1 次生成；均衡和精修最多“1 次生成 + 1 次定向修复”，不会隐藏第 3 次调用或自动更换服务商。",
+      "costs": "费用由你的服务商和模型决定；只有登记了价格才显示预计金额，否则只展示服务商返回的 token 与耗时。",
+      "validation": "本地规则和机器验证只能发现结构问题，不能代替作者判断故事是否值得继续编辑。",
+      "rollback": "如需立即回退，可在上方任务模型路由中关闭“启用创作可靠性工程”；已有候选和已采纳内容不受影响。"
+    },
+    "stageLabel": "体验环节",
+    "stageAria": "创作反馈体验环节",
+    "outcomeLabel": "最终怎么处理",
+    "outcomeAria": "创作反馈处理结果",
+    "ratingLabel": "可用程度（1～5）",
+    "ratingAria": "创作反馈可用程度",
+    "editMinutesLabel": "预计还要修改多少分钟",
+    "editMinutesAria": "创作反馈预计修改分钟",
+    "tagsLegend": "主要问题（可多选）",
+    "tagAria": "创作反馈问题：{{tag}}",
+    "save": "记下这次体验",
+    "export": "导出反馈 JSON（{{count}}）",
+    "clear": "清空本机记录",
+    "privacyBeforeLink": "这里不收集书名、项目 ID、正文、提示词、模型输出或 API Key，也不会自动上传。导出后可在 ",
+    "privacyAfterLink": "主动提交；如遇技术错误，可同时附上“数据管理 → 下载诊断信息”生成的隐私诊断包。",
+    "stages": {
+      "storyArc": "故事线",
+      "outline": "卷纲 / 章纲",
+      "detailedOutline": "场景细纲",
+      "prose": "正文候选",
+      "longForm": "长篇连续创作"
+    },
+    "outcomes": {
+      "kept": "基本保留",
+      "edited": "修改后使用",
+      "discarded": "放弃使用"
+    },
+    "tags": {
+      "irrelevant": "偏离设定",
+      "stalled": "剧情不推进",
+      "infodump": "设定堆砌",
+      "structure": "结构问题",
+      "continuity": "前后不一致",
+      "cost": "费用偏高",
+      "latency": "等待过久",
+      "other": "其他"
+    },
+    "messages": {
+      "saved": "已记在本机；没有调用 AI，也没有上传。",
+      "saveError": "反馈保存失败",
+      "exported": "反馈 JSON 已生成；只有你主动提交给社区后，维护者才会收到。",
+      "clearTitle": "清空本机创作反馈？",
+      "clearMessage": "将删除当前浏览器保存的 {{count}} 条结构化反馈。作品、候选和 AI 配置不会改变。",
+      "clearConfirm": "清空反馈",
+      "clearCancel": "保留",
+      "cleared": "本机反馈记录已清空。"
     }
   },
   "modelList": {
@@ -412,13 +482,13 @@
     "newVariableTitle": "新增变量",
     "newVariableMessage": "变量名仅支持字母、数字、下划线。",
     "userPromptTemplateLabel": "User Prompt 模板",
-    "templateSyntaxHint": "支持 <code>{{var}}</code> 和 <code>{{#if var}}...{{/if}}</code>"
+    "templateSyntaxHint": "支持 <code>&#123;&#123;var&#125;&#125;</code> 和 <code>&#123;&#123;#if var&#125;&#125;...&#123;&#123;/if&#125;&#125;</code>"
   },
   "promptParameters": {
     "title": "可调参数",
     "add": "新增参数",
-    "empty": "尚无参数。声明参数后，模板里可用 <code>{{key}}</code> 引用，可选参数支持 <code>{{#if usesKey}}...{{/if}}</code> 包住。",
-    "keyPlaceholder": "key（用于 {{key}}）",
+    "empty": "尚无参数。声明参数后，模板里可用 <code>&#123;&#123;key&#125;&#125;</code> 引用，可选参数支持 <code>&#123;&#123;#if usesKey&#125;&#125;...&#123;&#123;/if&#125;&#125;</code> 包住。",
+    "keyPlaceholder": "key（用于 &#123;&#123;key&#125;&#125;）",
     "labelPlaceholder": "UI 显示名",
     "defaultPlaceholder": "默认值",
     "optionalToggle": "允许关闭",
@@ -452,7 +522,8 @@
     "addPlaceholder": "粘贴示例内容",
     "noExamplesError": "AI 输出未识别到示例，请重试或手动添加",
     "generateError": "生成失败：{{error}}",
-    "tip": "提示：好示例最多取前 3 条、反例最多前 2 条拼入 prompt（避免 token 浪费）。"
+    "tip": "提示：好示例最多取前 3 条、反例最多前 2 条拼入 prompt（避免 token 浪费）。",
+    "draftNotice": "示例修改会先加入当前草稿，点击顶部「保存」后才会生效。"
   },
   "promptModuleKeys": {
     "worldviewDimension": "世界观 · 维度生成",
@@ -1043,6 +1114,18 @@
     "chapterExpand": {
       "name": "内置-文本扩写",
       "description": "将文本扩展丰富，增加细节、心理与环境，情节走向不变。"
+    },
+    "chapterCondense": {
+      "name": "内置-文本缩写",
+      "description": "在保留事实、因果、人物立场与信息边界的前提下压缩局部正文。"
+    },
+    "chapterRewrite": {
+      "name": "内置-保真改写",
+      "description": "用不同表达重写局部正文，同时保持故事事实和信息边界。"
+    },
+    "chapterCheck": {
+      "name": "内置-局部正文查漏",
+      "description": "检查局部正文中的可核对问题，只给报告，不生成替换稿。"
     },
     "chapterDeAi": {
       "name": "内置-去 AI 味改写",

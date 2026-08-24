@@ -12,30 +12,28 @@ import {
 import { useCharacterStore } from '../../stores/character'
 import { useOutlineStore } from '../../stores/outline'
 import { useCharacterDrivenPlanStore } from '../../stores/character-driven-plan'
-import { useAIStream } from '../../hooks/useAIStream'
-import { createAISessionKey } from '../../stores/ai-generation-session'
-import {
-  buildCharacterDrivenPlotPrompt,
-  parsePlotOutput,
-  type CharacterArcInput,
-  type PlotVolume,
-} from '../../lib/ai/character-driven-plot'
-import AIStreamOutput from '../shared/AIStreamOutput'
 import AutoResizeTextarea from '../shared/AutoResizeTextarea'
 import { useDialog } from '../shared/Dialog'
-import type { Project } from '../../lib/types'
+import type { Project, WorkspaceScope } from '../../lib/types'
 import {
   parseCharacterDrivenPlanArcs,
   parseCharacterDrivenPlotVolumes,
+  type CharacterDrivenPlanArc,
+  type CharacterDrivenPlotVolume,
 } from '../../lib/types'
 import { characterAxesLabel } from '../../lib/character/character-axes'
 import { adoptCharacterDrivenVolumes } from '../../lib/story-planning/character-driven-adoption'
 import { useDomainT } from '../../i18n'
 import { projectCharacterDrivenPlanStatus } from '../../i18n/display-projection'
 import CharacterRevisionPanel from './CharacterRevisionPanel'
+import { useMasterCopilot } from '../agent/useMasterCopilot'
+
+type CharacterArcInput = CharacterDrivenPlanArc
+type PlotVolume = CharacterDrivenPlotVolume
 
 interface Props {
   project: Project
+  worldGroupId: number | null
 }
 
 export function applyCharacterArcAutoFill(
@@ -49,7 +47,7 @@ export function applyCharacterArcAutoFill(
   }
 }
 
-export default function CharacterDrivenPlotPanel({ project }: Props) {
+export default function CharacterDrivenPlotPanel({ project, worldGroupId }: Props) {
   const { t } = useDomainT('outline')
   const { characters, loadAll: loadChars } = useCharacterStore()
   const { loadAll: loadOutline } = useOutlineStore()
@@ -64,14 +62,18 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
     copyAsNewVersion,
     renamePlan,
     saveInputs,
-    saveGenerated,
     markAdopted,
     setActivePlan,
     deletePlan,
   } = useCharacterDrivenPlanStore()
-  const ai = useAIStream(createAISessionKey(project.id!, 'character-driven-plot.generate'))
+  const workspaceScope = useMemo<WorkspaceScope | undefined>(() => (
+    project.id != null && project.activeWorldId != null && project.activeWorkId != null
+      ? { projectId: project.id, worldId: project.activeWorldId, workId: project.activeWorkId }
+      : undefined
+  ), [project.activeWorkId, project.activeWorldId, project.id])
+  const scopeInput = workspaceScope ?? project.id!
+  const copilot = useMasterCopilot({ project, worldGroupId })
   const dialog = useDialog()
-  const generationPlanId = useRef<number | null>(null)
 
   const [mode, setMode] = useState<'planning' | 'revision'>('planning')
   const [arcs, setArcs] = useState<CharacterArcInput[]>([])
@@ -82,33 +84,55 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
   const [importing, setImporting] = useState(false)
   const [importDone, setImportDone] = useState(false)
 
-  useEffect(() => { loadChars(project.id!) }, [project.id, loadChars])
-  useEffect(() => { loadOutline(project.id!) }, [project.id, loadOutline])
-  useEffect(() => { loadPlans(project.id!) }, [project.id, loadPlans])
+  useEffect(() => { loadChars(scopeInput) }, [loadChars, scopeInput])
+  useEffect(() => { loadOutline(scopeInput) }, [loadOutline, scopeInput])
+  useEffect(() => { loadPlans(scopeInput) }, [loadPlans, scopeInput])
 
   const currentPlan = useMemo(
     () => plans.find(plan => plan.id === currentPlanId) ?? null,
     [plans, currentPlanId],
   )
+  const selectedPlanId = currentPlan?.id ?? null
+  const selectedPlanCreatedAt = currentPlan?.createdAt ?? null
+  const selectedPlanGeneratedVolumes = currentPlan?.generatedVolumes ?? null
+  const selectedPlanStatus = currentPlan?.status ?? null
+  const selectedPlanInputsRef = useRef<{ arcs: string | null; userHint: string }>({
+    arcs: null,
+    userHint: '',
+  })
+  selectedPlanInputsRef.current = {
+    arcs: currentPlan?.arcs ?? null,
+    userHint: currentPlan?.userHint ?? '',
+  }
 
+  // Hydrate author inputs only when selecting/loading a different immutable plan
+  // identity. Same-plan async saves update the store object and must not replay an
+  // older blur snapshot over newer local typing.
   useEffect(() => {
-    if (!currentPlan) {
+    const selectedPlanInputs = selectedPlanInputsRef.current
+    if (selectedPlanId == null || selectedPlanInputs.arcs == null) {
       setArcs([])
       setUserHint('')
+      return
+    }
+    const nextArcs = parseCharacterDrivenPlanArcs(selectedPlanInputs.arcs)
+    setArcs(nextArcs)
+    setUserHint(selectedPlanInputs.userHint)
+  }, [selectedPlanId, selectedPlanCreatedAt])
+
+  useEffect(() => {
+    if (selectedPlanGeneratedVolumes == null) {
       setParsedVolumes(null)
       return
     }
-    const nextArcs = parseCharacterDrivenPlanArcs(currentPlan.arcs)
-    const nextVolumes = parseCharacterDrivenPlotVolumes(currentPlan.generatedVolumes)
-    setArcs(nextArcs)
-    setUserHint(currentPlan.userHint)
+    const nextVolumes = parseCharacterDrivenPlotVolumes(selectedPlanGeneratedVolumes)
     setParsedVolumes(nextVolumes.length ? nextVolumes : null)
     setSelectedVolumes(new Set(nextVolumes.map((_, index) => index)))
     setExpandedVolumes(new Set(nextVolumes.map((_, index) => index)))
-    setImportDone(currentPlan.status === 'adopted')
-  }, [currentPlan?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+    setImportDone(selectedPlanStatus === 'adopted')
+  }, [selectedPlanGeneratedVolumes, selectedPlanId, selectedPlanStatus])
 
-  const persistInputs = (nextArcs: CharacterArcInput[], nextHint = userHint) => {
+  const persistInputs = async (nextArcs: CharacterArcInput[], nextHint = userHint) => {
     if (currentPlan?.id == null) return
     const characterIds = new Set(characters.flatMap(character =>
       character.id == null ? [] : [character.id],
@@ -122,7 +146,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
     if (normalized.some((arc, index) => arc.characterId !== nextArcs[index]?.characterId)) {
       setArcs(normalized)
     }
-    void saveInputs(currentPlan.id, { arcs: normalized, userHint: nextHint })
+    await saveInputs(currentPlan.id, { arcs: normalized, userHint: nextHint })
   }
 
   // 可选角色列表（排除已添加的）
@@ -176,46 +200,17 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
   // 开始生成
   const handleGenerate = async () => {
     if (!currentPlan?.id || arcs.length === 0 || arcs.some(a => !a.initialState.trim() || !a.targetState.trim())) return
-    setParsedVolumes(null)
-    setImportDone(false)
-    generationPlanId.current = currentPlan.id
     await saveInputs(currentPlan.id, { arcs, userHint })
-
-    const resolvedArcs = arcs.map(arc => {
-      const character = arc.characterId == null
-        ? null
-        : characters.find(item => item.id === arc.characterId)
-      return character
-        ? { ...arc, name: character.name, role: characterAxesLabel(character) }
-        : arc
-    })
-
-    const messages = await buildCharacterDrivenPlotPrompt(
-      project.id!,
-      project.name,
-      project.genres?.join('/') || '',
-      resolvedArcs,
-      userHint || undefined,
+    await copilot.submitTargetedRequest(
+      '依据当前角色驱动方案的起始状态、目标状态和作者要求，编排与既有主线一致的卷章方案。',
+      {
+        agentId: 'outline',
+        skillId: 'outline.character-driven',
+        instruction: '依据当前角色驱动方案的起始状态、目标状态和作者要求，编排与既有主线一致的卷章方案。',
+        characterDrivenPlanId: currentPlan.id,
+      },
     )
-
-    await ai.start(messages, undefined, { category: 'outline.character-driven', projectId: project.id!, outputKind: 'mixed' })
   }
-
-  // 解析 AI 输出
-  useEffect(() => {
-    if (!ai.isStreaming && ai.output) {
-      const volumes = parsePlotOutput(ai.output)
-      if (volumes.length > 0) {
-        const targetPlanId = generationPlanId.current ?? currentPlanId
-        if (targetPlanId != null) void saveGenerated(targetPlanId, volumes)
-        if (targetPlanId === currentPlanId) {
-          setParsedVolumes(volumes)
-          setSelectedVolumes(new Set(volumes.map((_, i) => i)))
-          setExpandedVolumes(new Set(volumes.map((_, i) => i)))
-        }
-      }
-    }
-  }, [ai.isStreaming, ai.output, currentPlanId, saveGenerated])
 
   // 采纳 → 写入大纲
   const handleAcceptToOutline = async () => {
@@ -225,9 +220,9 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
       const selected = Array.from(selectedVolumes)
         .sort((a, b) => a - b)
         .flatMap(index => parsedVolumes[index] ? [parsedVolumes[index]] : [])
-      await adoptCharacterDrivenVolumes({ projectId: project.id!, volumes: selected })
+      await adoptCharacterDrivenVolumes({ projectId: project.id!, scope: workspaceScope, volumes: selected })
       if (currentPlan?.id != null) await markAdopted(currentPlan.id)
-      await loadOutline(project.id!)
+      await loadOutline(scopeInput)
       setImportDone(true)
     } finally {
       setImporting(false)
@@ -257,16 +252,35 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
   const canGenerate = currentPlan != null
     && arcs.length > 0
     && arcs.every(a => a.initialState.trim() && a.targetState.trim())
-    && !ai.isStreaming
+    && !copilot.loading
+    && !copilot.busy
+    && copilot.pendingCandidates.length === 0
+    && (project.enableMultiWorld !== true || worldGroupId != null)
+
+  const pendingCharacterDrivenCandidates = copilot.pendingCandidates.filter(candidate => (
+    candidate.payload.skillId === 'outline.character-driven'
+    && candidate.payload.characterDrivenPlanId === currentPlan?.id
+  ))
+  const hasOtherPendingCandidates = copilot.pendingCandidates.some(candidate => (
+    candidate.payload.skillId !== 'outline.character-driven'
+    || candidate.payload.characterDrivenPlanId !== currentPlan?.id
+  ))
+  const planSelectionDisabled = copilot.busy
+  const planMutationDisabled = copilot.busy || copilot.pendingCandidates.length > 0
+
+  const handleConfirmCandidate = async (
+    candidate: typeof pendingCharacterDrivenCandidates[number],
+  ) => {
+    await copilot.adoptCandidate(candidate)
+    await loadPlans(scopeInput)
+  }
 
   const handleCreatePlan = async () => {
-    ai.reset()
     await createPlan(project.id!)
   }
 
   const handleCopyPlan = async () => {
     if (!currentPlan?.id) return
-    ai.reset()
     await copyAsNewVersion(currentPlan.id)
   }
 
@@ -287,7 +301,6 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
       confirmText: t('common:delete'),
       tone: 'danger',
     })) return
-    ai.reset()
     await deletePlan(currentPlan.id)
   }
 
@@ -296,6 +309,7 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
       <CharacterRevisionPanel
         project={project}
         plan={currentPlan}
+        copilot={copilot}
         onSwitchToPlanning={() => setMode('planning')}
       />
     )
@@ -354,11 +368,8 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
       <div className="flex flex-wrap items-center gap-2 px-4 py-2 border-b border-border bg-bg-base">
         <select
           value={currentPlan.id}
-          disabled={ai.isStreaming}
-          onChange={event => {
-            ai.reset()
-            selectPlan(Number(event.target.value))
-          }}
+          disabled={planSelectionDisabled}
+          onChange={event => selectPlan(Number(event.target.value))}
           className="min-w-48 text-xs bg-bg-surface border border-border rounded px-2 py-1.5 text-text-primary"
           aria-label={t('characterDriven.planSelectAria')}
         >
@@ -368,16 +379,16 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
             </option>
           ))}
         </select>
-        <button onClick={handleCreatePlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-accent disabled:opacity-40">
+        <button onClick={handleCreatePlan} disabled={planMutationDisabled} className="inline-flex items-center gap-1 text-xs text-accent disabled:opacity-40">
           <Plus className="w-3.5 h-3.5" />{t('characterDriven.createPlan')}
         </button>
-        <button onClick={handleCopyPlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-accent disabled:opacity-40">
+        <button onClick={handleCopyPlan} disabled={planMutationDisabled} className="inline-flex items-center gap-1 text-xs text-accent disabled:opacity-40">
           <Copy className="w-3.5 h-3.5" />{t('characterDriven.copyAsNewVersion')}
         </button>
-        <button onClick={handleRenamePlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-text-muted disabled:opacity-40">
+        <button onClick={handleRenamePlan} disabled={planMutationDisabled} className="inline-flex items-center gap-1 text-xs text-text-muted disabled:opacity-40">
           <Pencil className="w-3.5 h-3.5" />{t('characterDriven.rename')}
         </button>
-        <button onClick={handleDeletePlan} disabled={ai.isStreaming} className="inline-flex items-center gap-1 text-xs text-red-500 disabled:opacity-40">
+        <button onClick={handleDeletePlan} disabled={planMutationDisabled} className="inline-flex items-center gap-1 text-xs text-red-500 disabled:opacity-40">
           <Trash2 className="w-3.5 h-3.5" />{t('common:delete')}
         </button>
         <button
@@ -530,57 +541,113 @@ export default function CharacterDrivenPlotPanel({ project }: Props) {
 
         {/* ── 生成按钮 ──────────────────────────────── */}
         {arcs.length > 0 && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleGenerate}
               disabled={!canGenerate}
               className="flex items-center gap-1.5 px-4 py-2 bg-accent text-white rounded-lg text-sm font-medium hover:bg-accent-hover disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
             >
-              {ai.isStreaming ? (
+              {copilot.busy ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <Sparkles className="w-4 h-4" />
               )}
-              {ai.isStreaming ? t('characterDriven.generating') : t('characterDriven.generatePlot')}
+              {copilot.busy ? t('characterDriven.generating') : t('characterDriven.generatePlot')}
             </button>
-            {ai.isStreaming && (
+            {copilot.busy && (
               <button
-                onClick={ai.stop}
+                onClick={copilot.stop}
                 className="text-xs text-text-muted hover:text-red-500 transition-colors"
               >
                 {t('characterDriven.stop')}
               </button>
             )}
+            {copilot.recoveryAvailable && !copilot.busy && (
+              <button
+                onClick={() => { void copilot.resume() }}
+                className="text-xs text-accent hover:underline"
+              >
+                {t('characterDriven.resume')}
+              </button>
+            )}
           </div>
         )}
 
-        {/* ── AI 输出 ──────────────────────────────── */}
-        {(ai.output || ai.isStreaming || ai.error) && (
-          <section>
-            <AIStreamOutput
-              output={ai.output}
-              isStreaming={ai.isStreaming}
-              error={ai.error}
-              tokenUsage={ai.tokenUsage}
-              onStop={ai.stop}
-              onAccept={() => {
-                const vols = parsePlotOutput(ai.output)
-                if (vols.length > 0) {
-                  void saveGenerated(currentPlan.id!, vols)
-                  setParsedVolumes(vols)
-                  setSelectedVolumes(new Set(vols.map((_, i) => i)))
-                  setExpandedVolumes(new Set(vols.map((_, i) => i)))
-                }
-              }}
-              onRetry={handleGenerate}
-              placeholder={t('characterDriven.awaitingGeneration')}
-              moduleKey="plot.character-driven"
-            />
-          </section>
+        {copilot.error && (
+          <p className="rounded border border-error/30 bg-error/5 px-3 py-2 text-xs text-error">
+            {copilot.error}
+          </p>
         )}
 
+        {hasOtherPendingCandidates && (
+          <p className="rounded border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-text-secondary">
+            {t('characterDriven.otherPending')}
+          </p>
+        )}
+
+        {pendingCharacterDrivenCandidates.map(candidate => (
+          <section
+            key={candidate.event.id}
+            className="border border-accent/30 bg-bg-surface p-4 rounded-lg"
+          >
+            <div className="mb-2 flex items-center justify-between gap-3">
+              <h3 className="text-sm font-semibold text-text-primary">{t('characterDriven.candidateTitle', { label: candidate.payload.label })}</h3>
+              <span className="text-[11px] text-text-muted">
+                {candidate.payload.contextEvidence
+                  ? t('characterDriven.contextTokens', { count: candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString() })
+                  : t('characterDriven.contextSources', { count: candidate.payload.contextSources.length })}
+              </span>
+            </div>
+            <AutoResizeTextarea
+              aria-label={t('characterDriven.candidateAria')}
+              value={candidate.event.content}
+              disabled={copilot.busy}
+              onChange={event => {
+                void copilot.updateCandidate(candidate.event.id!, event.target.value)
+              }}
+              className="min-h-72 w-full resize-y bg-bg-base border border-border px-3 py-2 font-mono text-xs leading-5 text-text-primary rounded"
+              minRows={14}
+            />
+            {candidate.payload.contextEvidence && (
+              <details className="mt-2 border border-border/60 bg-bg-base px-3 py-2 text-[11px] text-text-muted rounded">
+                <summary className="cursor-pointer text-text-secondary">{t('characterDriven.inputEvidence')}</summary>
+                <p className="mt-2 break-words">
+                  {t('characterDriven.evidenceIncluded', { items: candidate.payload.contextEvidence.included.join('、') || t('characterDriven.none') })}
+                </p>
+                {candidate.payload.contextEvidence.trimmed.length > 0 && (
+                  <p className="mt-1 text-warning">
+                    {t('characterDriven.evidenceTrimmed', { items: candidate.payload.contextEvidence.trimmed.join('、') })}
+                  </p>
+                )}
+              </details>
+            )}
+            <div className="mt-3 flex justify-end gap-2">
+              <button
+                type="button"
+                disabled={copilot.busy}
+                onClick={() => { void copilot.rejectCandidate(candidate) }}
+                className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-muted hover:bg-bg-hover hover:text-text-primary rounded disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                {t('characterDriven.reject')}
+              </button>
+              <button
+                type="button"
+                disabled={copilot.busy}
+                onClick={() => { void handleConfirmCandidate(candidate) }}
+                className="flex items-center gap-1 bg-accent px-3 py-1.5 text-xs text-white hover:opacity-90 rounded disabled:opacity-50"
+              >
+                {copilot.busy
+                  ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  : <Check className="h-3.5 w-3.5" />}
+                {t('characterDriven.saveCandidate')}
+              </button>
+            </div>
+          </section>
+        ))}
+
         {/* ── 解析结果预览 ─────────────────────────── */}
-        {parsedVolumes && parsedVolumes.length > 0 && !ai.isStreaming && (
+        {parsedVolumes && parsedVolumes.length > 0 && (
           <section className="border border-border rounded-lg overflow-hidden">
             <div className="flex items-center justify-between px-4 py-2.5 bg-bg-surface border-b border-border">
               <div className="flex items-center gap-2">

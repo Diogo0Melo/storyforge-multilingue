@@ -8,6 +8,7 @@
  * 必填外键(onUnmapped: 'require')缺失映射 → 抛错整体回滚(完整性保护);孤儿(onUnmapped:
  * 'drop')跳过该行;portals 等 JSON 自引用走两阶段(先建全表映射,再回填重映射)。
  */
+import Dexie from 'dexie'
 import { db } from '../db/schema'
 import { PROJECT_TABLES } from '../registry/project-tables'
 import { remapWorldPortalTargets } from '../utils/world-portals'
@@ -22,11 +23,127 @@ import {
   stringifyCharacterDrivenPlanArcs,
 } from '../types/character-driven-plan'
 import { getT } from '../../i18n'
+import { ensureWorkspaceOwnership } from '../world-engine/ownership'
+import { rebindPortableAgentRunContractV1 } from '../agent/run/contract-portability'
+import { finalizeImportedAgentRunLedgersV1 } from '../agent/run/ledger-portability'
+import {
+  generateWorkspaceUid,
+  generateWorkCode,
+  isWorkspaceUid,
+  isWorkCode,
+} from '../memory/identity'
+
+const STRICT_EXPORT_VERSION = 4
+
+function strictOwnerShadow(spec: TableSpec, row: Record<string, any>): {
+  kind: 'world' | 'work' | 'instance'
+  exportId: number
+  field: string
+} | null {
+  if (spec.name === 'worlds' || spec.name === 'works') return null
+  const locator = spec.domainOwner?.locator
+  if (!locator || locator.kind === 'workspace' || locator.kind === 'compat-project') return null
+  if (locator.kind === 'field') {
+    if (locator.owner !== 'world' && locator.owner !== 'work') return null
+    const shadowField = locator.owner === 'world' ? '_worldOwnerExportId' : '_workOwnerExportId'
+    const opposite = locator.owner === 'world' ? '_workOwnerExportId' : '_worldOwnerExportId'
+    if (row[opposite] != null || !Number.isInteger(row[shadowField])) {
+      throw new Error(`[deriveImport] v4 owner 缺失或越界:${spec.name}.${shadowField}`)
+    }
+    return { kind: locator.owner, exportId: row[shadowField], field: locator.field }
+  }
+  if (locator.kind === 'exclusive-fields') {
+    const hasWorld = Number.isInteger(row._worldOwnerExportId)
+    const hasWork = Number.isInteger(row._workOwnerExportId)
+    if (hasWorld === hasWork) throw new Error(`[deriveImport] v4 owner 必须且只能有一个:${spec.name}`)
+    return hasWorld
+      ? { kind: 'world', exportId: row._worldOwnerExportId, field: locator.worldField }
+      : { kind: 'work', exportId: row._workOwnerExportId, field: locator.workField }
+  }
+  if (locator.kind === 'exclusive-work-instance') {
+    const hasWork = Number.isInteger(row._workOwnerExportId)
+    const hasInstance = Number.isInteger(row._instanceOwnerExportId)
+    if (hasWork === hasInstance) throw new Error(`[deriveImport] v4 Work/Instance owner 必须且只能有一个:${spec.name}`)
+    return hasWork
+      ? { kind: 'work', exportId: row._workOwnerExportId, field: locator.workField }
+      : { kind: 'instance', exportId: row._instanceOwnerExportId, field: locator.instanceField }
+  }
+  return null
+}
+
+function validateStrictOwnership(data: ProjectExportData): void {
+  if (data.version !== STRICT_EXPORT_VERSION) return
+  const value = data as unknown as Record<string, any>
+  if (!Array.isArray(value.worlds) || !value.worlds.length || !Array.isArray(value.works) || !value.works.length) {
+    throw new Error('[deriveImport] v4 备份缺少 World/Work 根')
+  }
+  const worldIds = new Set(value.worlds.map((row: any) => row?._exportId))
+  const workIds = new Set(value.works.map((row: any) => row?._exportId))
+  const instanceIds = new Set((value.simulationSessions ?? []).map((row: any) => row?._exportId))
+  if (worldIds.size !== value.worlds.length || workIds.size !== value.works.length
+    || [...worldIds].some(id => !Number.isInteger(id)) || [...workIds].some(id => !Number.isInteger(id))) {
+    throw new Error('[deriveImport] v4 World/Work 便携 ID 重复或无效')
+  }
+  const ownership = value.ownership
+  if (!ownership || !worldIds.has(ownership.worldExportId) || !workIds.has(ownership.workExportId)) {
+    throw new Error('[deriveImport] v4 active owner 指针缺失或越界')
+  }
+  for (const spec of PROJECT_TABLES) {
+    if (!spec.exportable || spec.name === 'projects' || spec.name === 'worlds' || spec.name === 'works') continue
+    const rows = value[spec.name]
+    if (!Array.isArray(rows)) continue
+    for (const row of rows) {
+      if (!row || typeof row !== 'object') throw new Error(`[deriveImport] ${spec.name} 包含非法记录`)
+      if ('worldId' in row || 'workId' in row) throw new Error(`[deriveImport] v4 ${spec.name} 泄露本地主键 owner`)
+      const shadow = strictOwnerShadow(spec, row)
+      if (!shadow) continue
+      const validIds = shadow.kind === 'world' ? worldIds : shadow.kind === 'work' ? workIds : instanceIds
+      if (!validIds.has(shadow.exportId)) throw new Error(`[deriveImport] v4 owner 越界:${spec.name}`)
+    }
+  }
+}
+
+function restoreStrictOwner(
+  dataVersion: number,
+  spec: TableSpec,
+  obj: Record<string, any>,
+  newIdMaps: Map<string, Map<number, number>>,
+): void {
+  if (dataVersion !== STRICT_EXPORT_VERSION) return
+  const shadow = strictOwnerShadow(spec, obj)
+  delete obj._worldOwnerExportId
+  delete obj._workOwnerExportId
+  delete obj._instanceOwnerExportId
+  if (!shadow) return
+  const ownerMap = newIdMaps.get(shadow.kind === 'world' ? 'worlds' : shadow.kind === 'work' ? 'works' : 'simulationSessions')
+  const mapped = ownerMap?.get(shadow.exportId)
+  if (mapped == null) throw new Error(`[deriveImport] v4 owner 无法重映射:${spec.name}`)
+  if (obj[shadow.field] != null && obj[shadow.field] !== mapped) {
+    throw new Error(`[deriveImport] v4 owner 与外键冲突:${spec.name}.${shadow.field}`)
+  }
+  obj[shadow.field] = mapped
+  const locator = spec.domainOwner?.locator
+  if (locator?.kind === 'exclusive-fields') {
+    obj[shadow.kind === 'world' ? locator.workField : locator.worldField] = null
+  } else if (locator?.kind === 'exclusive-work-instance') {
+    obj[shadow.kind === 'work' ? locator.instanceField : locator.workField] = null
+  }
+}
 
 /** 表级拓扑排序:被 remapVia 指向的表必须先导入(selfTree 不算表间依赖) */
 function deriveImportOrder(specs: TableSpec[]): TableSpec[] {
   const done = new Set<string>()
   const order: TableSpec[] = []
+  // World/Work are ownership roots, so v4 must materialize them before any
+  // domain-owned row. Optional backward references (for example Work -> active
+  // character plan) are patched after all tables have been imported.
+  for (const rootName of ['worlds', 'works']) {
+    const root = specs.find(spec => spec.name === rootName)
+    if (root) {
+      order.push(root)
+      done.add(root.name)
+    }
+  }
   let guard = 0
   while (order.length < specs.length) {
     if (guard++ > specs.length + 2) throw new Error(getT()('errors-lib:export.registryImportDependencyCycle'))
@@ -38,7 +155,14 @@ function deriveImportOrder(specs: TableSpec[]): TableSpec[] {
       const refDeps = (spec.exportRefRemap ?? [])
         .filter(ref => ref.remapVia !== spec.name)
         .map(ref => ref.remapVia)
-      const deps = [...new Set([...fieldDeps, ...refDeps])]
+      const ownerDeps = spec.domainOwner?.locator?.kind === 'field'
+        ? [spec.domainOwner.locator.owner === 'world' ? 'worlds' : spec.domainOwner.locator.owner === 'work' ? 'works' : null]
+        : spec.domainOwner?.locator?.kind === 'exclusive-fields' ? ['worlds', 'works']
+          : spec.domainOwner?.locator?.kind === 'exclusive-work-instance' ? ['works', 'simulationSessions'] : []
+      const portableDeps = spec.portableData?.kind === 'agent-run-root'
+        ? spec.portableData.dependencies
+        : []
+      const deps = [...new Set([...fieldDeps, ...refDeps, ...ownerDeps, ...portableDeps].filter((d): d is string => !!d && d !== spec.name))]
       if (deps.every(d => done.has(d))) {
         order.push(spec)
         done.add(spec.name)
@@ -87,19 +211,49 @@ function patchSelfIdPaths(obj: Record<string, any>, paths: string[], newId: numb
   return patch
 }
 
+function restorePortableBinaryBlob(value: unknown, label: string): ArrayBuffer {
+  if (value instanceof ArrayBuffer) return value
+  if (typeof value !== 'string') throw new Error(`[deriveImport] ${label} 缺少便携二进制`)
+  const match = /^data:([^;,]+)?;base64,([A-Za-z0-9+/=]*)$/.exec(value)
+  if (!match) throw new Error(`[deriveImport] ${label} 不是合法 data URL`)
+  let binary: string
+  try { binary = atob(match[2]) } catch { throw new Error(`[deriveImport] ${label} base64 无效`) }
+  const bytes = new Uint8Array(binary.length)
+  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index)
+  return bytes.buffer
+}
+
+async function assertPortableBinaryIntegrity(
+  spec: TableSpec,
+  row: Record<string, any>,
+  data: ArrayBuffer,
+): Promise<void> {
+  const integrity = spec.portableData?.kind === 'binary-blob' ? spec.portableData.integrity : null
+  if (!integrity) return
+  const referenceId = row[integrity.referenceField]
+  const metadataTable = (db as any)[integrity.metadataTable]
+  const metadata = Number.isInteger(referenceId) && metadataTable ? await metadataTable.get(referenceId) : null
+  if (!metadata) throw new Error(`[deriveImport] ${spec.name} 缺少二进制元数据引用`)
+  if (metadata[integrity.sizeField] !== data.byteLength) throw new Error(`[deriveImport] ${spec.name} 二进制大小与元数据不一致`)
+  const digest = await Dexie.waitFor(crypto.subtle.digest('SHA-256', data))
+  const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('')
+  if (metadata[integrity.hashField] !== hash) throw new Error(`[deriveImport] ${spec.name} 二进制哈希与元数据不一致`)
+}
+
 /**
  * 派生导入:把 ProjectExportData 写成一个新项目,返回新项目 id。
  * 与手写 importProjectJSON 行为一致(往返完整性由 R-export-fullcoverage 锁死)。
  */
 export async function deriveImportProjectJSON(data: ProjectExportData): Promise<number> {
   if (!data.version || !data.project) throw new Error(getT()('errors-lib:export.registryImportInvalidFormat'))
+  validateStrictOwnership(data)
   const now = Date.now()
   const specs = PROJECT_TABLES.filter(s => s.exportable && s.name !== 'projects')
   const order = deriveImportOrder(specs)
   const projectSpec = PROJECT_TABLES.find(spec => spec.name === 'projects')
   if (!projectSpec) throw new Error(getT()('errors-lib:export.registryImportProjectsRootMissing'))
 
-  return await db.transaction('rw', transactionTablesFor('importProject'), async () => {
+  const importedProjectId = await db.transaction('rw', transactionTablesFor('importProject'), async () => {
     const projectData: Record<string, any> = { ...data.project }
     const pendingProjectRefs = new Map<string, number | null>()
     for (const rm of projectSpec.exportRemap ?? []) {
@@ -109,6 +263,13 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
       // 数据库主键不具备跨项目便携性；旧备份若只有原始 ID，宁可清空也不能误绑定。
       delete projectData[rm.field]
     }
+    const requestedWorkspaceUid = projectData.workspaceUid
+    const workspaceUidCollision = isWorkspaceUid(requestedWorkspaceUid)
+      ? await db.projects.where('workspaceUid').equals(requestedWorkspaceUid).first()
+      : null
+    projectData.workspaceUid = isWorkspaceUid(requestedWorkspaceUid) && !workspaceUidCollision
+      ? requestedWorkspaceUid
+      : generateWorkspaceUid()
     const newProjectId = await db.projects.add({
       ...projectData,
       name: `${data.project.name}${getT()('errors-lib:export.registryImportProjectSuffix')}`,
@@ -124,6 +285,7 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
     }
 
     const newIdMaps = new Map<string, Map<number, number>>()
+    const deferredForeignKeys: Array<{ table: any; id: number; field: string; target: string; exportId: number }> = []
 
     for (const spec of order) {
       const rawRows: any[] = (data as any)[spec.name] ?? []
@@ -137,6 +299,7 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
         // 注册表声明的兜底默认值先铺底，再用 row 覆盖：老数据/跨版本导入缺某非可选字段时，
         // 落库仍满足类型不变量（如 outlineNodes.summary 恒为 string，杜绝「导入后大纲崩」）。
         const obj: any = { ...spec.defaults, ...row }
+        if (spec.name === 'works' && !isWorkCode(obj.code)) obj.code = generateWorkCode()
         const exportId = obj._exportId
         delete obj._exportId
 
@@ -145,6 +308,7 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
         let hasUnmappedKnowledgeRef = false
         let hasUnmappedTemporalSourceRef = false
         let hasUnmappedCultivationProgressRef = false
+        const rowDeferredForeignKeys: Array<{ field: string; target: string; exportId: number }> = []
         for (const rm of spec.exportRemap ?? []) {
           const exportVal = obj[rm.exportAs]
           delete obj[rm.exportAs]
@@ -162,12 +326,16 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
               if (rm.onUnmapped === 'require') {
                 throw new Error(getT()('errors-lib:export.registryImportRequiredFkMissing', { table: spec.name, field: rm.field, value: exportVal }))
               }
+              if (!rm.selfTree) {
+                rowDeferredForeignKeys.push({ field: rm.field, target: rm.remapVia, exportId: exportVal })
+              }
             }
             mappedId = got ?? null
           }
           obj[rm.field] = mappedId
         }
         if (dropRow) continue
+        restoreStrictOwner(data.version, spec, obj, newIdMaps)
         if (spec.name === 'knowledgeLedger' && hasUnmappedKnowledgeRef && obj.status !== 'rejected') {
           obj.status = 'source-missing'
         }
@@ -187,6 +355,29 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
         }
 
         if (spec.owner === 'project') obj.projectId = newProjectId
+        if (spec.portableData?.kind === 'binary-blob') {
+          const binary = restorePortableBinaryBlob(
+            obj[spec.portableData.field],
+            `${spec.name}.${spec.portableData.field}`,
+          )
+          await assertPortableBinaryIntegrity(spec, obj, binary)
+          obj[spec.portableData.field] = binary
+        }
+        if (spec.portableData?.kind === 'agent-run-root') {
+          const contractIdMaps = new Map(newIdMaps)
+          // Agent runs are a lineage tree. A child contract may reference the
+          // already-imported parent in this same table before the table map is
+          // published after the row loop.
+          contractIdMaps.set(spec.name, newIdMap)
+          const rebound = await Dexie.waitFor(rebindPortableAgentRunContractV1({
+            contractJson: obj[spec.portableData.contractField],
+            contractHash: obj[spec.portableData.contractHashField],
+            projectId: newProjectId,
+            idMaps: contractIdMaps,
+          }))
+          obj[spec.portableData.contractField] = rebound.contractJson
+          obj[spec.portableData.contractHashField] = rebound.contractHash
+        }
         if (spec.name === 'characters') {
           Object.assign(obj, normalizeCharacterAxes(obj))
         }
@@ -207,6 +398,9 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
         }
 
         const newId = await (db as any)[spec.name].add(obj) as number
+        for (const deferred of rowDeferredForeignKeys) {
+          deferredForeignKeys.push({ table: (db as any)[spec.name], id: newId, ...deferred })
+        }
         if (spec.selfIdPaths?.length) {
           const selfPatch = patchSelfIdPaths(obj, spec.selfIdPaths, newId)
           if (Object.keys(selfPatch).length > 0) {
@@ -224,7 +418,9 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
           const refMap = rr.remapVia === spec.name ? newIdMap : (newIdMaps.get(rr.remapVia) ?? newIdMap)
           for (const p of pendingRefRemap) {
             const remapped = remapWorldPortalTargets(p.stashed[rr.field], (exportId: number) => refMap.get(exportId))
-            if (remapped) await (db as any)[spec.name].update(p.newId, { [rr.field]: remapped, updatedAt: now })
+            // Import reconstructs the same formal record under new local IDs;
+            // reference remapping must not manufacture a new author edit time.
+            if (remapped) await (db as any)[spec.name].update(p.newId, { [rr.field]: remapped })
           }
         } else {
           const refMap = newIdMaps.get(rr.remapVia)
@@ -244,13 +440,18 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
                   refMap,
                 )
             if (patch !== undefined) {
-              await (db as any)[spec.name].update(pending.newId, { [rr.field]: patch, updatedAt: now })
+              await (db as any)[spec.name].update(pending.newId, { [rr.field]: patch })
             }
           }
         }
       }
 
       newIdMaps.set(spec.name, newIdMap)
+    }
+
+    for (const deferred of deferredForeignKeys) {
+      const mapped = newIdMaps.get(deferred.target)?.get(deferred.exportId)
+      if (mapped != null) await deferred.table.update(deferred.id, { [deferred.field]: mapped })
     }
 
     const projectPatch: Record<string, number | null> = {}
@@ -271,8 +472,22 @@ export async function deriveImportProjectJSON(data: ProjectExportData): Promise<
       await migrateStateCardsToTemporalFactCandidates(db, newProjectId)
     }
 
+    const agentRunIds = [...(newIdMaps.get('agentRuns')?.values() ?? [])]
+    if (agentRunIds.length > 0) {
+      await finalizeImportedAgentRunLedgersV1({
+        projectId: newProjectId,
+        runIds: agentRunIds,
+        idMaps: newIdMaps,
+      })
+    }
+
     return newProjectId
   })
+  // v1-v3 had no portable owner shadows. Upgrade only after the import
+  // transaction commits; the ownership service performs its own preflight and
+  // atomic stamping without guessing external IDs.
+  if (data.version < STRICT_EXPORT_VERSION) await ensureWorkspaceOwnership(importedProjectId)
+  return importedProjectId
 }
 
 function remapPortableIdArray(value: unknown, idMap: Map<number, number>, stringify: boolean): number[] | string {

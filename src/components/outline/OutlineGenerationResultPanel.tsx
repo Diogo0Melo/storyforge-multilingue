@@ -19,6 +19,7 @@ interface Props {
   onStop: () => void
   onAccept: (text: string) => void
   onRetry: () => void
+  onDismiss: () => void
   onConfirmVolumes: () => void
   onConfirmChapters: () => void
   onCancelPreview: () => void
@@ -38,6 +39,7 @@ export default function OutlineGenerationResultPanel({
   onStop,
   onAccept,
   onRetry,
+  onDismiss,
   onConfirmVolumes,
   onConfirmChapters,
   onCancelPreview,
@@ -54,6 +56,7 @@ export default function OutlineGenerationResultPanel({
           onStop={onStop}
           onAccept={onAccept}
           onRetry={onRetry}
+          onDismiss={onDismiss}
           moduleKey={moduleKey}
         />
       )}

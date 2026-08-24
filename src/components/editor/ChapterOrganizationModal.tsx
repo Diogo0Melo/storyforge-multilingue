@@ -63,6 +63,7 @@ export default function ChapterOrganizationModal({
   const domainMeta = useMemo(() => getDomainMeta(t), [t])
   const statusLabel = useMemo(() => getStatusLabel(t), [t])
   const { candidate } = run
+  const durable = candidate.durable
   const [selection, setSelection] = useState<ChapterOrganizationSelection>(() => (
     selectAllChapterOrganizationCandidates(candidate)
   ))
@@ -175,10 +176,15 @@ export default function ChapterOrganizationModal({
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-bg-base p-3 text-xs text-text-secondary sm:grid-cols-3">
+          <div className="grid grid-cols-1 gap-2 rounded-xl border border-border bg-bg-base p-3 text-xs text-text-secondary sm:grid-cols-4">
             <span>{t('chapterOrganization.budgetTokens', { used: candidate.budget.usedTokens.toLocaleString(), max: candidate.budget.maxTokens.toLocaleString() })}</span>
             <span>{t('chapterOrganization.budgetCalls', { calls: candidate.budget.calls, maxCalls: candidate.budget.maxCalls })}</span>
             <span>{t('chapterOrganization.sourceHashPrefix')} {candidate.sourceTextHash.slice(0, 12)}…</span>
+            {durable && (
+              <span title={durable.contextManifestHash}>
+                Run #{durable.runId} · durable
+              </span>
+            )}
           </div>
 
           {renderSection({

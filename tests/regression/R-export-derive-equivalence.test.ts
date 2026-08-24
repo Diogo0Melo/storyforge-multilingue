@@ -23,6 +23,18 @@ const legacyFixturePath = path.resolve(__dirname, '../fixtures/legacy-export-v3.
  */
 function normalize(data: any) {
   data.exportedAt = 0
+  delete data.project?.ownershipSchemaVersion
+  delete data.project?.worldCode
+  delete data.project?.worldVersion
+  const stripOwners = (value: unknown) => {
+    if (Array.isArray(value)) for (const row of value) stripOwners(row)
+    else if (value && typeof value === 'object') {
+      delete (value as any).worldId
+      delete (value as any).workId
+      for (const child of Object.values(value as Record<string, unknown>)) stripOwners(child)
+    }
+  }
+  stripOwners(data)
   for (const t of ['outlineNodes', 'worldNodes']) {
     for (const row of (data as any)[t] ?? []) delete row.parentId
   }
@@ -49,6 +61,8 @@ function normalize(data: any) {
     delete row.characterId
     delete row._characterExportId
   }
+  // HARNESS-4: 叙事视角角色是当前格式新增的章节 FK；旧 v3 fixture 没有对应字段。
+  for (const row of data.chapters ?? []) delete row._perspectiveCharacterExportId
   // CONSISTENCY-3: temporalFacts 新增四类可移植设定来源 FK。旧 fixture 没有这些
   // 影子字段；新格式的实际往返由 R-CONSISTENCY3-world-constitution 锁定。
   for (const row of data.temporalFacts ?? []) {
@@ -76,6 +90,11 @@ function normalize(data: any) {
   // Its exact remap and roundtrip contract is covered by R-export-fullcoverage.
   delete data.agentConversations
   delete data.agentEvents
+  // HARNESS-1 durable run ledger postdates the historical v3 fixture. Its
+  // replay, remap and roundtrip contracts are covered by R-HARNESS1 tests.
+  delete data.agentRuns
+  delete data.agentRunEvents
+  delete data.agentRunCheckpoints
   delete data.nodeFlows
   delete data.nodeRuns
   // SIM-1 process/runtime data is newer than the legacy v3 fixture.
@@ -83,6 +102,31 @@ function normalize(data: any) {
   delete data.simulationSessions
   delete data.simulationEvents
   delete data.simulationCheckpoints
+  // WORLD-2C roots/bindings are optional extensions to v3 until strict v4 ownership.
+  // Their portable remaps are covered by R-export-fullcoverage and R-WORLD2C.
+  delete data.worlds
+  delete data.works
+  delete data.workCharacterBindings
+  // WORLD-2D/2E tables postdate the historical v3 fixture. Their portable
+  // owner/FK contracts are covered by strict v4 full-coverage and WORLD-2E tests.
+  delete data.narrativeModules
+  delete data.narrativeNodes
+  delete data.narrativeBeats
+  delete data.narrativeChoices
+  delete data.worldRevisions
+  delete data.worldReleases
+  delete data.gameDefinitions
+  delete data.gameReleases
+  delete data.interactionCharacterProfiles
+  delete data.interactionSceneTemplates
+  delete data.adventureModules
+  delete data.avgMediaAssets
+  delete data.avgMediaBlobs
+  delete data.avgPresentationModules
+  delete data.narrativeSimulationModules
+  delete data.openWorldModules
+  delete data.project?._activeWorldExportId
+  delete data.project?._activeWorkExportId
   for (const row of data.characters ?? []) {
     delete row._raceEntryExportId
     delete row._cultivationSystemExportId

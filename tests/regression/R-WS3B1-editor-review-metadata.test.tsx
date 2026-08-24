@@ -13,7 +13,6 @@ import { createRoot } from 'react-dom/client'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import FloatingToolbar from '../../src/components/editor/FloatingToolbar'
 import ReviewPanel from '../../src/components/editor/ReviewPanel'
 import { db } from '../../src/lib/db/schema'
 import { useReviewResultStore } from '../../src/stores/review-result'
@@ -36,53 +35,16 @@ vi.mock('../../src/hooks/useAIStream', () => ({
   }),
 }))
 
-describe('WS-3B Phase 1 · FloatingToolbar 动作级元信息', () => {
-  let host: HTMLDivElement
-  let root: ReturnType<typeof createRoot>
-
-  beforeEach(() => {
-    startMock.mockReset()
-    startMock.mockResolvedValue('')
-    host = document.createElement('div')
-    document.body.append(host)
-    root = createRoot(host)
-  })
-
-  afterEach(async () => {
-    await act(async () => root.unmount())
-    host.remove()
-  })
-
-  async function renderToolbar(projectId: number) {
-    await act(async () => {
-      root.render(createElement(FloatingToolbar, {
-        projectId,
-        getSelectedText: () => '这是一段足够长的选中文本，用于触发浮动工具栏显示。',
-        getSelectionRect: () => ({ top: 100, left: 100, width: 80 }) as DOMRect,
-        replaceSelectedText: () => undefined,
-      }))
-    })
-    await act(async () => {
-      document.dispatchEvent(new Event('selectionchange'))
-    })
-  }
-
-  it.each([
-    ['润色', { category: 'chapter.toolbar.polish', outputKind: 'creative' }],
-    ['扩写', { category: 'chapter.toolbar.expand', outputKind: 'creative' }],
-    ['缩写', { category: 'chapter.toolbar.condense', outputKind: 'creative' }],
-    ['改写', { category: 'chapter.toolbar.rewrite', outputKind: 'creative' }],
-    ['查漏', { category: 'chapter.toolbar.check', outputKind: 'functional-prose' }],
-  ] as const)('%s 动作携带 %j 与 projectId', async (label, expected) => {
-    await renderToolbar(42)
-    const button = Array.from(host.querySelectorAll('button'))
-      .find(item => item.textContent?.includes(label)) as HTMLButtonElement | undefined
-    expect(button, `按钮「${label}」应可见`).toBeTruthy()
-    await act(async () => {
-      button!.click()
-      await vi.waitFor(() => expect(startMock).toHaveBeenCalledOnce(), { timeout: 3000 })
-    })
-    expect(startMock.mock.calls[0][2]).toEqual({ ...expected, projectId: 42 })
+describe('WS-3B Phase 1 · FloatingToolbar durable Harness 元信息', () => {
+  it('局部编辑 durable entrypoint 按动作声明 chapter.toolbar 与输出策略', () => {
+    const source = readFileSync(
+      resolve(process.cwd(), 'src/lib/agent/run/selection-edit-durable.ts'),
+      'utf8',
+    )
+    expect(source).toContain('generateSelectionEditCandidateV1')
+    expect(source).toContain("category: 'chapter.toolbar'")
+    expect(source).toContain("outputKind: input.action === 'check' ? 'functional-prose' : 'creative'")
+    expect(source).toContain('projectId: input.scope.projectId')
   })
 })
 

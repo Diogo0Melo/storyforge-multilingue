@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Sparkles } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useDomainT } from '../../i18n'
 import { useWorldviewStore } from '../../stores/worldview'
 import { useWorldGroupStore } from '../../stores/world-group'
@@ -7,23 +6,10 @@ import WorldGroupSwitcher from '../world-group/WorldGroupSwitcher'
 import CodexPanel from '../codex/CodexPanel'
 import CodexSearchBar from '../codex/CodexSearchBar'
 import { InlineTextarea } from '../shared/InlineEdit'
-import { useAIStream } from '../../hooks/useAIStream'
-import { createAISessionKey } from '../../stores/ai-generation-session'
-import { buildWorldviewPrompt } from '../../lib/ai/adapters/worldview-adapter'
-import { assembleContext } from '../../lib/registry/assemble-context'
-import AIStreamOutput from '../shared/AIStreamOutput'
-import PromptRunPanel from '../shared/PromptRunPanel'
-import AIFieldModeTabs from '../shared/AIFieldModeTabs'
+import { useMasterCopilot, type PendingMasterCandidate } from '../agent/useMasterCopilot'
+import WorldviewAgentControls from './WorldviewAgentControls'
 import type { Project, NaturalResources } from '../../lib/types'
-import type { FieldGenerationMode } from '../../lib/ai/field-generation-context'
-
-async function buildRulesSourceContext(projectId: number, worldGroupId: number | null): Promise<string> {
-  return (await assembleContext({
-    projectId,
-    worldGroupId,
-    sourceKeys: ['canonAssertions', 'worldRules', 'historical'],
-  })).text
-}
+import type { WorldviewAgentField } from '../../lib/agent/worldview-field-copilot'
 
 interface Props { project: Project }
 
@@ -48,6 +34,15 @@ const FIELDS = [
   { key: 'climateByRegion' as const,  emoji: '🌦', ctxKey: 'climate' },
 ] as const
 
+const NATURAL_PANEL_KEY_BY_AGENT_FIELD: Partial<Record<WorldviewAgentField, FieldKey>> = {
+  worldStructure: 'worldStructure',
+  worldDimensions: 'worldDimensions',
+  continentLayout: 'continentLayout',
+  mountainsRivers: 'mountainsRivers',
+  climateByRegion: 'climateByRegion',
+  naturalResourceOverview: 'naturalResources',
+}
+
 // 每个方面(子页) → 其专属词条分类(builtInKey)。(重镇/城池已移到人文环境;自然资源单独处理)
 const NATURAL_CODEX_KEYS: Record<string, string[] | undefined> = {
   worldStructure: ['natStructure'],
@@ -63,13 +58,17 @@ export default function WorldviewNaturalPanel({ project }: Props) {
   const { t } = useDomainT('worldview')
   const { worldview, saveWorldview, loadAll } = useWorldviewStore()
   const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
+  const copilot = useMasterCopilot({
+    project,
+    worldGroupId: project.enableMultiWorld ? activeGroupId : null,
+  })
 
   const [values, setValues] = useState<Record<string, string>>({})
   const [naturalResources, setNaturalResources] = useState<NaturalResources>({
     rareCreatures: '', herbs: '', minerals: '', others: '',
   })
   const [activeKey, setActiveKey] = useState<FieldKey>('worldStructure')
-  const [streamingKeys, setStreamingKeys] = useState<Set<string>>(new Set())
+  const [runningField, setRunningField] = useState<WorldviewAgentField | null>(null)
 
   useEffect(() => {
     loadAll(project.id!, project.enableMultiWorld ? activeGroupId : null)
@@ -94,38 +93,23 @@ export default function WorldviewNaturalPanel({ project }: Props) {
   const save = (patch: Partial<typeof worldview>) =>
     saveWorldview({ projectId: project.id!, ...patch })
 
-  // NOTE: 【...】 context markers are AI prompt content, not user-visible UI strings.
-  const buildCtx = useCallback((skipCtxKey: string): string => {
-    const parts: string[] = []
-    // ── 世界起源面板关键字段 ──
-    if (worldview?.worldOrigin)    parts.push(`【世界来源】${worldview.worldOrigin.slice(0, 200)}`)
-    if (worldview?.powerHierarchy) parts.push(`【力量体系】${worldview.powerHierarchy.slice(0, 150)}`)
-    // ── 本面板内互参 ──
-    for (const f of FIELDS) {
-      if (f.ctxKey !== skipCtxKey && values[f.key]) {
-        // Use zh labels for AI context — these are prompt payloads, not UI
-        const zhLabels: Record<string, string> = {
-          structure: '世界结构', dim: '疆域尺寸', continent: '地貌分布',
-          mountains: '山川水系', climate: '气候环境',
-        }
-        parts.push(`【${zhLabels[f.ctxKey]}】${values[f.key].slice(0, 150)}`)
-      }
-    }
-    // ── 人文环境面板关键字段 ──
-    if (worldview?.races)         parts.push(`【种族与民族】${worldview.races.slice(0, 100)}`)
-    if (worldview?.factionLayout) parts.push(`【势力分布】${worldview.factionLayout.slice(0, 100)}`)
-    return parts.join('\n')
-  }, [worldview, values])
+  const pendingWorldviewCandidates = copilot.pendingCandidates.filter(candidate => (
+    candidate.payload.skillId === 'world-origin.worldview-field'
+  ))
+  const pendingWorldviewField = pendingWorldviewCandidates[0]?.payload.worldviewField
+  const pendingPanelKey = pendingWorldviewField
+    ? NATURAL_PANEL_KEY_BY_AGENT_FIELD[pendingWorldviewField]
+    : undefined
+  const hasOtherPendingCandidates = copilot.pendingCandidates.some(candidate => (
+    candidate.payload.skillId !== 'world-origin.worldview-field'
+  ))
+  const streamingKeys = new Set<string>()
+  const runningPanelKey = runningField ? NATURAL_PANEL_KEY_BY_AGENT_FIELD[runningField] : undefined
+  if (copilot.busy && runningPanelKey) streamingKeys.add(runningPanelKey)
 
-  const handleStreamingChange = useCallback((key: string, streaming: boolean) => {
-    setStreamingKeys(prev => {
-      if (prev.has(key) === streaming) return prev
-      const next = new Set(prev)
-      if (streaming) next.add(key)
-      else next.delete(key)
-      return next
-    })
-  }, [])
+  useEffect(() => {
+    if (pendingPanelKey) setActiveKey(pendingPanelKey)
+  }, [pendingPanelKey])
 
   return (
     <div className="flex flex-col w-full h-full space-y-4">
@@ -140,6 +124,14 @@ export default function WorldviewNaturalPanel({ project }: Props) {
         <p className="text-xs text-text-muted mt-0.5">
           {t('natural.subtitle')}
         </p>
+        {copilot.recoveryAvailable && !copilot.busy && (
+          <div className="mt-3 rounded border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-text-secondary">
+            {t('agent:chat.recoveryAvailable')}
+            <button type="button" onClick={() => { void copilot.resume() }} className="ml-2 text-accent hover:underline">
+              {t('agent:chat.resumeButton')}
+            </button>
+          </div>
+        )}
         <div className="mt-3 max-w-xl">
           <CodexSearchBar
             categoryKeys={[...Object.values(NATURAL_CODEX_KEYS).flat().filter(Boolean) as string[], 'mineral', 'herb', 'beast']}
@@ -163,6 +155,7 @@ export default function WorldviewNaturalPanel({ project }: Props) {
             const label = f.key === 'naturalResources'
               ? t('natural.fields.naturalResources.label')
               : t(NATURAL_FIELD_KEYS[f.key as keyof typeof NATURAL_FIELD_KEYS].labelKey)
+            const hasPendingCandidate = pendingPanelKey === f.key
             return (
               <button
                 key={f.key}
@@ -176,6 +169,13 @@ export default function WorldviewNaturalPanel({ project }: Props) {
                 <span className="flex-1">{f.emoji} {label}</span>
                 {isFieldStreaming && !isActive && (
                   <span className="w-2 h-2 rounded-full bg-accent animate-pulse shrink-0" />
+                )}
+                {hasPendingCandidate && !isFieldStreaming && (
+                  <span
+                    aria-label={`${label}有待确认候选`}
+                    title="有待确认候选"
+                    className="w-2 h-2 rounded-full bg-warning shrink-0"
+                  />
                 )}
               </button>
             )
@@ -196,8 +196,17 @@ export default function WorldviewNaturalPanel({ project }: Props) {
                     save({ [f.key]: v })
                   }}
                   project={project}
-                  contextSummary={buildCtx(f.ctxKey)}
-                  onStreamingChange={streaming => handleStreamingChange(f.key, streaming)}
+                  agentField={f.key}
+                  activeGroupId={activeGroupId}
+                  copilot={copilot}
+                  candidate={pendingWorldviewCandidates.find(candidate => candidate.payload.worldviewField === f.key)}
+                  otherPendingWorldviewLabel={pendingWorldviewCandidates.find(candidate => candidate.payload.worldviewField !== f.key)?.payload.label}
+                  hasOtherPendingCandidates={hasOtherPendingCandidates}
+                  onRunningChange={running => setRunningField(running ? f.key : null)}
+                  onAdopted={async candidate => {
+                    await copilot.adoptCandidate(candidate)
+                    await loadAll(project.id!, project.enableMultiWorld ? activeGroupId : null)
+                  }}
                 />
                 {/* 全貌之下:本方面的专属词条(只显示对应那一类) */}
                 {NATURAL_CODEX_KEYS[f.key] && (
@@ -225,8 +234,17 @@ export default function WorldviewNaturalPanel({ project }: Props) {
                 save({ naturalResourceOverview: v })
               }}
               project={project}
-              contextSummary={buildCtx('resources')}
-              onStreamingChange={streaming => handleStreamingChange('naturalResources', streaming)}
+              agentField="naturalResourceOverview"
+              activeGroupId={activeGroupId}
+              copilot={copilot}
+              candidate={pendingWorldviewCandidates.find(candidate => candidate.payload.worldviewField === 'naturalResourceOverview')}
+              otherPendingWorldviewLabel={pendingWorldviewCandidates.find(candidate => candidate.payload.worldviewField !== 'naturalResourceOverview')?.payload.label}
+              hasOtherPendingCandidates={hasOtherPendingCandidates}
+              onRunningChange={running => setRunningField(running ? 'naturalResourceOverview' : null)}
+              onAdopted={async candidate => {
+                await copilot.adoptCandidate(candidate)
+                await loadAll(project.id!, project.enableMultiWorld ? activeGroupId : null)
+              }}
             />
             {/* 自然资源:矿物/草药/异兽 三类词条 */}
             <div>
@@ -263,29 +281,26 @@ export default function WorldviewNaturalPanel({ project }: Props) {
   )
 }
 
-// ── 单字段编辑器（各自独立的 AI 流） ──────────────────────────
-
-function SimpleFieldEditor({ fieldKey, value, onChange, project, contextSummary, onStreamingChange }: {
+// ── 单字段 Agent 控件（候选仅在作者确认后进入正式数据） ──────────────
+function SimpleFieldEditor({
+  fieldKey, value, onChange, project, agentField, activeGroupId, copilot,
+  candidate, otherPendingWorldviewLabel, hasOtherPendingCandidates,
+  onRunningChange, onAdopted,
+}: {
   fieldKey: FieldKey
   value: string
   onChange: (v: string) => void
   project: Project
-  contextSummary: string
-  onStreamingChange: (streaming: boolean) => void
+  agentField: WorldviewAgentField
+  activeGroupId: number | null
+  copilot: ReturnType<typeof useMasterCopilot>
+  candidate?: PendingMasterCandidate
+  otherPendingWorldviewLabel?: string
+  hasOtherPendingCandidates: boolean
+  onRunningChange: (running: boolean) => void
+  onAdopted: (candidate: PendingMasterCandidate) => Promise<void>
 }) {
   const { t } = useDomainT('worldview')
-  const [hint, setHint] = useState('')
-  const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({})
-  const [systemOverride, setSystemOverride] = useState<string | null>(null)
-  const [userOverride, setUserOverride] = useState<string | null>(null)
-  const [mode, setMode] = useState<FieldGenerationMode>('expand')
-  const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
-  const ai = useAIStream(createAISessionKey(
-    project.id!,
-    'worldview.dimension',
-    `${activeGroupId ?? 'global'}:${fieldKey}`,
-  ))
-
   const label = fieldKey === 'naturalResources'
     ? t('natural.fields.naturalResources.label')
     : t(NATURAL_FIELD_KEYS[fieldKey as keyof typeof NATURAL_FIELD_KEYS].labelKey)
@@ -293,30 +308,6 @@ function SimpleFieldEditor({ fieldKey, value, onChange, project, contextSummary,
     ? t('natural.fields.naturalResources.desc')
     : t(NATURAL_FIELD_KEYS[fieldKey as keyof typeof NATURAL_FIELD_KEYS].descKey)
   const emoji = fieldKey === 'naturalResources' ? '🌿' : FIELDS.find(f => f.key === fieldKey)?.emoji ?? ''
-
-  useEffect(() => {
-    onStreamingChange(ai.isStreaming)
-  }, [ai.isStreaming, onStreamingChange])
-
-  const handleGenerate = async () => {
-    const rulesCtx = await buildRulesSourceContext(project.id!, project.enableMultiWorld ? activeGroupId : null)
-    const opts = {
-      parameterValues: {
-        ...parameterValues,
-        worldRulesContext: rulesCtx,
-      },
-      overrides: (systemOverride != null || userOverride != null) ? {
-        systemPrompt: systemOverride ?? undefined,
-        userPromptTemplate: userOverride ?? undefined,
-      } : undefined,
-    }
-    // label is passed to AI prompt builder — intentional (AI needs dimension name)
-    const messages = buildWorldviewPrompt(
-      label, project.name, project.genre || '', contextSummary, hint, opts, value, mode,
-    )
-    ai.start(messages, undefined, { category: 'worldview.dimension', projectId: project.id!, outputKind: 'creative' })
-  }
-
   return (
     <div className="max-w-3xl space-y-4">
       <div>
@@ -327,29 +318,17 @@ function SimpleFieldEditor({ fieldKey, value, onChange, project, contextSummary,
       <div className="bg-bg-surface border border-border rounded-lg p-4">
         <InlineTextarea value={value} onChange={onChange} placeholder={desc} />
       </div>
-
-      <div className="flex items-center gap-2">
-        <AIFieldModeTabs value={mode} onChange={setMode} />
-        <input value={hint} onChange={e => setHint(e.target.value)}
-          placeholder={t('natural.hintPlaceholder')}
-          className="flex-1 px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent" />
-        <button onClick={handleGenerate} disabled={ai.isStreaming}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded disabled:opacity-50 shrink-0 bg-accent/10 text-accent hover:bg-accent/20">
-          <Sparkles className="w-3.5 h-3.5" /> {t('natural.aiGenerate')}
-        </button>
-      </div>
-
-      <PromptRunPanel moduleKey="worldview.dimension" parameterValues={parameterValues}
-        onParamChange={setParameterValues} systemOverride={systemOverride}
-        onSystemOverrideChange={setSystemOverride} userOverride={userOverride}
-        onUserOverrideChange={setUserOverride} />
-
-      {(ai.output || ai.isStreaming || ai.error) && (
-        <AIStreamOutput output={ai.output} isStreaming={ai.isStreaming} error={ai.error}
-          tokenUsage={ai.tokenUsage} onStop={ai.stop}
-          onAccept={(text: string) => { onChange(text); ai.reset() }}
-          onRetry={handleGenerate} moduleKey="worldview.dimension" />
-      )}
+      <WorldviewAgentControls
+        field={agentField}
+        project={project}
+        activeGroupId={activeGroupId}
+        copilot={copilot}
+        candidate={candidate}
+        otherPendingWorldviewLabel={otherPendingWorldviewLabel}
+        hasOtherPendingCandidates={hasOtherPendingCandidates}
+        onRunningChange={onRunningChange}
+        onAdopted={onAdopted}
+      />
     </div>
   )
 }

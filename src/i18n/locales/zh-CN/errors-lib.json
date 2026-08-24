@@ -565,5 +565,10 @@
     "transitionAdvance": "突破",
     "transitionRegress": "倒退",
     "transitionSwitch": "改道"
+  },
+  "cultivationScope": {
+    "chapterNotInWork": "来源章节不属于当前作品",
+    "characterNotInWorld": "角色不属于当前世界",
+    "systemNotInWorld": "修炼体系不属于当前世界"
   }
 }

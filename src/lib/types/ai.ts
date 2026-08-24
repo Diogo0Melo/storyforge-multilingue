@@ -79,6 +79,12 @@ export const PROVIDER_MODELS: Record<string, { value: string; label: string; des
     { value: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash', descKey: 'aiConfig.modelDesc.deepseekV4Flash' },
     { value: 'deepseek-v4-pro', label: 'DeepSeek V4 Pro', descKey: 'aiConfig.modelDesc.deepseekV4Pro' },
   ],
+  doubao: [
+    { value: 'doubao-1-5-pro-32k-250115', label: 'Doubao 1.5 Pro 32K', desc: '32K 上下文·纯文本生成' },
+    { value: 'deepseek-v4-flash-ga-260731', label: 'DeepSeek V4 Flash 正式版', desc: '火山方舟·快速文本推理' },
+    { value: 'deepseek-v4-pro-260425', label: 'DeepSeek V4 Pro', desc: '火山方舟·高质量文本推理' },
+    { value: 'deepseek-v4-flash-260425', label: 'DeepSeek V4 Flash', desc: '火山方舟·文本推理' },
+  ],
   // Gemini 模型列表（2026-05-11 通过 Google API 实际拉取校验）
   gemini: [
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash ⭐', descKey: 'aiConfig.modelDesc.gemini25Flash' },
@@ -116,8 +122,9 @@ export const PROVIDER_MODELS: Record<string, { value: string; label: string; des
     { value: 'Qwen/Qwen3-4B', label: 'Qwen3 4B', descKey: 'aiConfig.modelDesc.qwen3_4b' },
   ],
   agnes: [
-    { value: 'agnes-1.5-flash', label: 'Agnes 1.5 Flash', descKey: 'aiConfig.modelDesc.agnes15Flash' },
-    { value: 'Agnes-2.0-Flash', label: 'Agnes 2.0 Flash', descKey: 'aiConfig.modelDesc.agnes20Flash' },
+    { value: 'agnes-2.5-flash', label: 'Agnes 2.5 Flash', desc: '512K 上下文·Agent/推理推荐' },
+    { value: 'agnes-1.5-flash', label: 'Agnes 1.5 Flash', desc: '256K 上下文·内容生成/低延迟' },
+    { value: 'agnes-2.0-flash', label: 'Agnes 2.0 Flash', desc: '256K 上下文·兼容回退' },
   ],
   longcat: [
     { value: 'LongCat-2.0', label: 'LongCat 2.0', descKey: 'aiConfig.modelDesc.longcat20' },
@@ -146,7 +153,7 @@ export const PROVIDER_PRESETS: Record<string, Partial<AIConfig>> = {
   },
   doubao: {
     baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
-    model: 'doubao-pro-32k',
+    model: 'doubao-1-5-pro-32k-250115',
   },
   minimax: {
     baseUrl: 'https://api.minimax.chat/v1',
@@ -190,7 +197,7 @@ export const PROVIDER_PRESETS: Record<string, Partial<AIConfig>> = {
   },
   agnes: {
     baseUrl: 'https://apihub.agnes-ai.com/v1',
-    model: 'agnes-1.5-flash',
+    model: 'agnes-2.5-flash',
   },
   longcat: {
     baseUrl: 'https://api.longcat.chat/openai/v1',
@@ -205,4 +212,23 @@ export const PROVIDER_PRESETS: Record<string, Partial<AIConfig>> = {
     model: 'qwen2.5:7b',
     apiKey: 'ollama',
   },
+}
+
+const PROVIDER_MODEL_ALIASES: Partial<Record<AIProvider, ReadonlyMap<string, string>>> = {
+  agnes: new Map([
+    ['agnes-1.5-flash', 'agnes-1.5-flash'],
+    ['agnes-2.0-flash', 'agnes-2.0-flash'],
+    ['agnes-2.5-flash', 'agnes-2.5-flash'],
+  ]),
+  doubao: new Map([
+    ['doubao-pro-32k', 'doubao-1-5-pro-32k-250115'],
+    ['doubao-seed-2-0-pro-260215', 'doubao-1-5-pro-32k-250115'],
+    ['doubao-seed-2-0-lite-260215', 'doubao-1-5-pro-32k-250115'],
+    ['doubao-1-5-pro-32k-250115', 'doubao-1-5-pro-32k-250115'],
+  ]),
+}
+
+/** 将历史模型名迁移为各开放平台当前使用的大小写敏感 ID。 */
+export function normalizeProviderModel(provider: AIProvider, model: string): string {
+  return PROVIDER_MODEL_ALIASES[provider]?.get(model.trim().toLowerCase()) ?? model
 }

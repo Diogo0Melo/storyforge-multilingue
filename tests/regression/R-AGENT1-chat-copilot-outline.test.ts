@@ -5,11 +5,14 @@ import {
   createOutlineCopilotNode,
   parseOutlineCandidateDraft,
   prepareOutlineCopilot,
+  revalidateOutlineCreativeDraftV1,
+  runOutlineCreativeReliabilityV1,
   type OutlineCopilotInput,
   type OutlineCopilotMode,
   type OutlineCopilotSnapshot,
 } from '../../src/lib/agent/outline-copilot'
 import { adoptMasterCandidate } from '../../src/lib/agent/orchestrator'
+import { appendAgentEvent, getOrCreateAgentConversation } from '../../src/lib/agent/conversations'
 import { db } from '../../src/lib/db/schema'
 import {
   adoptGenerationNodeOutput,
@@ -17,8 +20,11 @@ import {
   runGenerationNode,
 } from '../../src/lib/generation/generation-node'
 import { assembleContext } from '../../src/lib/registry/assemble-context'
-import type { AgentEvent, Project } from '../../src/lib/types'
+import type { Project } from '../../src/lib/types'
+import { resolveScopeLike } from '../../src/lib/world-engine/scope'
 import { useAIConfigStore } from '../../src/stores/ai-config'
+import { buildNarrativeBriefV1 } from '../../src/lib/agent/narrative-brief'
+import { AgentTeamBudgetTracker } from '../../src/lib/agent/team-budget'
 
 async function addProject(enableMultiWorld = false): Promise<Project> {
   const now = Date.now()
@@ -82,11 +88,16 @@ async function makeNodeInput(input: {
     worldGroupId,
     authorRequest: input.mode === 'volumes' ? '规划三卷主线大纲' : '把这一卷展开为章节大纲',
     supplementalContext: '',
+    inputGuidance: '',
     mode: input.mode,
     parentVolumeId: input.parentVolumeId,
     nodes,
     volumes,
     assembled,
+    narrativeBrief: buildNarrativeBriefV1({
+      authorRequest: input.mode === 'volumes' ? '规划三卷主线大纲' : '把这一卷展开为章节大纲',
+      assembled,
+    }),
     snapshot: input.snapshot,
     config,
   }
@@ -121,8 +132,27 @@ describe('AGENT-1 27.1-d · ChatCopilot 大纲闭环', () => {
     expect(prepared.mode).toBe('volumes')
     expect(prepared.parentVolumeId).toBeNull()
     expect(prepared.contextSources).toContain('worldview')
+    expect(prepared.contextEvidence.inputState).toMatchObject({
+      state: 'partial',
+      handling: 'reference-and-create',
+    })
+    expect(prompt).toContain('partial / reference-and-create')
     expect(prompt).toContain('盐海每十年退潮')
     expect(prompt).toContain('规划全书三卷大纲')
+    expect(prompt).toContain('本轮叙事任务（运行时合同，不是新增 Canon）')
+    expect(prompt).toContain('退出变化')
+    expect(prepared.input.narrativeBrief.creativeFreedom.length).toBeGreaterThan(0)
+    expect(await db.outlineNodes.count()).toBe(0)
+  })
+
+  it('明确章纲 Skill 缺少上游卷纲时直接阻断，不悄悄改成卷纲任务', async () => {
+    const project = await addProject()
+    await expect(prepareOutlineCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '把第一卷展开为章节大纲',
+      skillId: 'outline.chapters',
+    })).rejects.toThrow('没有可展开的卷纲')
     expect(await db.outlineNodes.count()).toBe(0)
   })
 
@@ -160,6 +190,86 @@ describe('AGENT-1 27.1-d · ChatCopilot 大纲闭环', () => {
       { parentId: null, type: 'volume', title: '第一卷：退潮', summary: '作者修订后的第一卷核心冲突。' },
       { parentId: null, type: 'volume', title: '第二卷：涨潮' },
     ])
+  })
+
+  it('平衡模式只用一次定向修复恢复大纲 JSON，修复提示不重复发送完整世界上下文', async () => {
+    const project = await addProject()
+    const now = Date.now()
+    await db.worldviews.add({
+      projectId: project.id!,
+      worldGroupId: null,
+      worldOrigin: '盐海每十年退潮一次，海床会升起一座浮空城。',
+      createdAt: now,
+      updatedAt: now,
+    } as never)
+    const runAI = vi.fn()
+      .mockResolvedValueOnce('这里是大纲：第一卷退潮')
+      .mockResolvedValueOnce(JSON.stringify([
+        { title: '第一卷：退潮', summary: '守灯人进入浮空城并被迫选择是否追查潮汐钟。' },
+      ]))
+    const prepared = await prepareOutlineCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '规划全书卷纲',
+    }, { runAI })
+
+    const result = await runOutlineCreativeReliabilityV1({
+      prepared,
+      budget: new AgentTeamBudgetTracker('balanced'),
+      qualityMode: 'balanced',
+    })
+
+    expect(runAI).toHaveBeenCalledTimes(2)
+    expect(result.output).toEqual([
+      { title: '第一卷：退潮', summary: '守灯人进入浮空城并被迫选择是否追查潮汐钟。' },
+    ])
+    expect(result.artifact).toMatchObject({
+      status: 'ready',
+      repair: { callIndex: 2, result: 'repaired' },
+      callEvidence: [
+        { callIndex: 1, purpose: 'generate' },
+        { callIndex: 2, purpose: 'repair' },
+      ],
+    })
+    const repairPrompt = runAI.mock.calls[1][0]
+      .map((message: { content: string }) => message.content)
+      .join('\n')
+    expect(repairPrompt).toContain('outline-response-invalid')
+    expect(repairPrompt).not.toContain('盐海每十年退潮一次')
+  })
+
+  it('经济模式大纲失败保留可编辑原文且不做隐藏重试', async () => {
+    const project = await addProject()
+    const raw = '第一卷应该从退潮开始，但这里还不是 JSON。'
+    const runAI = vi.fn(async () => raw)
+    const prepared = await prepareOutlineCopilot({
+      projectId: project.id!,
+      worldGroupId: null,
+      authorRequest: '规划全书卷纲',
+    }, { runAI })
+
+    const result = await runOutlineCreativeReliabilityV1({
+      prepared,
+      budget: new AgentTeamBudgetTracker('balanced'),
+      qualityMode: 'economy',
+    })
+
+    expect(runAI).toHaveBeenCalledOnce()
+    expect(result.draft).toBe(raw)
+    expect(result.artifact.status).toBe('manual-repair')
+    expect(result.artifact.repair).toBeNull()
+
+    const revalidated = revalidateOutlineCreativeDraftV1({
+      draft: JSON.stringify([{
+        title: '第一卷：退潮',
+        summary: '守灯人进入浮空城，并决定追查潮汐钟。',
+      }], null, 2),
+      snapshot: prepared.snapshot,
+      previousArtifact: result.artifact,
+    })
+    expect(revalidated.status).toBe('ready')
+    expect(revalidated.callEvidence).toEqual(result.artifact.callEvidence)
+    expect(runAI).toHaveBeenCalledOnce()
   })
 
   it('已有卷时默认生成目标卷章节，并把章节写入正确父级与世界作用域', async () => {
@@ -268,22 +378,27 @@ describe('AGENT-1 27.1-d · ChatCopilot 大纲闭环', () => {
       worldGroupId: null,
       authorRequest: '规划卷纲',
     })
-    const event: AgentEvent = {
-      id: 1,
+    const scope = await resolveScopeLike(project.id!)
+    const conversation = await getOrCreateAgentConversation({
       projectId: project.id!,
-      conversationId: 1,
-      sequence: 1,
+      worldGroupId: null,
+      scope,
+    })
+    const event = await appendAgentEvent({
+      projectId: project.id!,
+      conversationId: conversation.id!,
       kind: 'candidate',
       content: '',
-      payload: '{}',
-      createdAt: Date.now(),
-    }
+      payload: {},
+      scope,
+    })
     const draft = JSON.stringify([
       { title: '第一卷：退潮', summary: '主角发现浮空城。' },
     ])
 
     const message = await adoptMasterCandidate({
       projectId: project.id!,
+      scope,
       worldGroupId: null,
       event,
       payload: {

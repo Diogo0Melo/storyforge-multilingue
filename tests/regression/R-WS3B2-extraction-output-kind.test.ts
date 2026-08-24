@@ -6,16 +6,14 @@
  * `outputKind: 'functional-structured'` in AICallMeta. Codex additionally
  * declares `languagePolicy: 'project'` so structured values use project language.
  *
- * Categories covered (all map to task-routing extraction kind):
- * - inventory.extract       (InventoryPanel)
- * - location.extract        (LocationPanel)
- * - codex.extract           (CodexPanel)
- * - relation.extract        (CharacterRelationPanel)
- * - foreshadow.structure    (ForeshadowPanel)
- * - canon.setting.extract   (WorldConstitutionPanel)
- * - storyline-progress.map  (StorylineProgressPanel)
- * - cultivation.progress    (CultivationProgressPanel)
- * - character.structure     (parse-character-output)
+ * Categories covered (all map to durable extraction Harness entrypoints):
+ * - inventory.extract       (inventory-extraction-durable)
+ * - location.extract        (location-extraction-durable)
+ * - codex.extract           (codex-extraction-durable)
+ * - relation.extract        (character-relationship-durable)
+ * - canon.setting.extract   (constitution-extraction-durable)
+ * - story.timeline          (story-timeline-extraction-durable)
+ * - cultivation.progress    (cultivation-progress-extraction-durable)
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -35,24 +33,18 @@ interface CallSiteSpec {
 }
 
 const CALL_SITES: CallSiteSpec[] = [
-  // These 4 files have the category string in both resolveRequestConfig (config check)
-  // and the actual chat() call; useLastIndex ensures we anchor on the AI call.
-  { file: 'src/components/items/InventoryPanel.tsx', category: 'inventory.extract', expectProjectId: true, useLastIndex: true },
-  { file: 'src/components/location/LocationPanel.tsx', category: 'location.extract', expectProjectId: true, useLastIndex: true },
+  { file: 'src/lib/agent/run/inventory-extraction-durable.ts', category: 'inventory.extract', expectProjectId: true },
+  { file: 'src/lib/agent/run/location-extraction-durable.ts', category: 'location.extract', expectProjectId: true },
   {
-    file: 'src/components/codex/CodexPanel.tsx',
+    file: 'src/lib/agent/run/codex-extraction-durable.ts',
     category: 'codex.extract',
     expectProjectId: true,
     expectLanguagePolicy: 'project',
-    useLastIndex: true,
   },
-  { file: 'src/components/cultivation/CultivationProgressPanel.tsx', category: 'cultivation.progress', expectProjectId: true, useLastIndex: true },
-  // These files have the category only at the actual AI call site.
-  { file: 'src/components/relations/CharacterRelationPanel.tsx', category: 'relation.extract', expectProjectId: true },
-  { file: 'src/components/foreshadow/ForeshadowPanel.tsx', category: 'foreshadow.structure', expectProjectId: true },
-  { file: 'src/components/facts/WorldConstitutionPanel.tsx', category: 'canon.setting.extract', expectProjectId: true },
-  { file: 'src/components/outline/StorylineProgressPanel.tsx', category: 'storyline-progress.map', expectProjectId: true },
-  { file: 'src/lib/ai/parse-character-output.ts', category: 'character.structure', expectProjectId: false },
+  { file: 'src/lib/agent/run/character-relationship-durable.ts', category: 'relation.extract', expectProjectId: true },
+  { file: 'src/lib/agent/run/constitution-extraction-durable.ts', category: 'canon.setting.extract', expectProjectId: true },
+  { file: 'src/lib/agent/run/story-timeline-extraction-durable.ts', category: 'story.timeline', expectProjectId: true },
+  { file: 'src/lib/agent/run/cultivation-progress-extraction-durable.ts', category: 'cultivation.progress', expectProjectId: true },
 ]
 
 describe('WS-3B Codex · extraction outputKind/languagePolicy contract', () => {

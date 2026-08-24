@@ -30,6 +30,7 @@
     "structuredStreamingReview": "AI 正在生成结构化内容…（完成后将在下方生成可审查计划）",
     "structuredDoneWithAccept": "✓ 已生成结构化内容，点「采纳」自动整理填入对应栏目。",
     "structuredDoneReview": "✓ 已生成结构化内容，系统已解析为下方可审查计划。",
+    "editableCandidateAria": "可编辑的 AI 候选内容",
     "showRaw": "查看原始数据",
     "hideRaw": "收起原始数据",
     "thinking": "AI 思考中...",
@@ -69,6 +70,7 @@
   },
   "extractionReview": {
     "analyzing": "AI 正在分析并整理候选项…",
+    "writing": "正在写入已确认的选项…",
     "empty": "没有发现可写入的新内容。",
     "confirmWrite": "确认写入（{{count}}）",
     "closeTitle": "关闭"

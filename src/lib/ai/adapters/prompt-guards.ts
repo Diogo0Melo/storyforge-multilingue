@@ -69,3 +69,7 @@ export function appendUserConstraint(messages: ChatMessage[], constraint: string
   if (user) user.content = `${user.content}\n\n${constraint}`
   return next
 }
+
+export function appendSimplifiedChineseOutputConstraint(messages: ChatMessage[]): ChatMessage[] {
+  return appendUserConstraint(messages, SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT)
+}

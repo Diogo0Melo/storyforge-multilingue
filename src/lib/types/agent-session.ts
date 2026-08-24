@@ -12,7 +12,10 @@ export type AgentEventKind = typeof AGENT_EVENT_KINDS[number]
 export interface AgentConversation {
   id?: number
   projectId: number
+  workId?: number | null
   worldGroupId?: number | null
+  /** Stable product-owned channel. Missing means the legacy general copilot. */
+  purpose?: string
   title: string
   status: 'active' | 'archived'
   createdAt: number
@@ -28,7 +31,10 @@ export interface AgentConversation {
 export interface AgentEvent {
   id?: number
   projectId: number
+  workId?: number | null
   conversationId: number
+  /** Durable run ownership outside the hash-bound candidate payload; absent on legacy events. */
+  durableRunId?: number | null
   sequence: number
   kind: AgentEventKind
   role?: 'user' | 'assistant' | 'system'

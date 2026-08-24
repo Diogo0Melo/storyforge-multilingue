@@ -1,524 +1,105 @@
-import { useState, useEffect, useCallback } from 'react'
-import { Sparkles, Loader2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { useDomainT } from '../../i18n'
 import { useWorldviewStore } from '../../stores/worldview'
 import { useWorldGroupStore } from '../../stores/world-group'
-import { useAIConfigStore } from '../../stores/ai-config'
 import WorldGroupSwitcher from '../world-group/WorldGroupSwitcher'
 import { InlineTextarea } from '../shared/InlineEdit'
-import { useAIStream } from '../../hooks/useAIStream'
-import { createAISessionKey } from '../../stores/ai-generation-session'
-import { buildWorldviewPrompt } from '../../lib/ai/adapters/worldview-adapter'
-import { assembleContext } from '../../lib/registry/assemble-context'
-import { streamChat } from '../../lib/ai/client'
-import AIStreamOutput from '../shared/AIStreamOutput'
+import { useMasterCopilot, type PendingMasterCandidate } from '../agent/useMasterCopilot'
+import WorldviewAgentControls from './WorldviewAgentControls'
+import WorldviewOriginSidebar, { WORLDVIEW_ORIGIN_FIELDS, type WorldviewOriginFieldKey } from './WorldviewOriginSidebar'
+import CultivationSystemsPanel from './CultivationSystemsPanel'
 import CodexPanel from '../codex/CodexPanel'
 import CodexSearchBar from '../codex/CodexSearchBar'
-import PromptRunPanel from '../shared/PromptRunPanel'
-import AIFieldModeTabs from '../shared/AIFieldModeTabs'
-import WorldviewOriginSidebar, {
-  WORLDVIEW_ORIGIN_FIELDS,
-  type WorldviewOriginFieldKey,
-} from './WorldviewOriginSidebar'
-import CultivationSystemsPanel from './CultivationSystemsPanel'
 import type { Project, DivineDesign } from '../../lib/types'
-import type { FieldGenerationMode } from '../../lib/ai/field-generation-context'
+import type { WorldviewAgentField } from '../../lib/agent/worldview-field-copilot'
+import { INITIAL_RECORD_TARGET_CLASS, initialRecordTargetAttributes, useInitialRecordTarget } from '../shared/initial-record-target'
 
-async function buildRulesSourceContext(projectId: number, worldGroupId: number | null): Promise<string> {
-  return (await assembleContext({
-    projectId,
-    worldGroupId,
-    sourceKeys: ['canonAssertions', 'worldRules', 'historical'],
-  })).text
+const ORIGIN_FIELD_KEYS = {
+  origin: { labelKey: 'origin.fields.origin.label' as const, descKey: 'origin.fields.origin.desc' as const },
+  power: { labelKey: 'origin.fields.power.label' as const, descKey: 'origin.fields.power.desc' as const },
+  divine: { labelKey: 'origin.fields.divine.label' as const, descKey: 'origin.fields.divine.desc' as const },
+}
+const AGENT_FIELD_BY_ORIGIN_KEY: Record<WorldviewOriginFieldKey, WorldviewAgentField> = {
+  origin: 'worldOrigin', power: 'powerHierarchy', divine: 'divineDesign',
 }
 
-/**
- * 下游 → 上游「反推」上下文:生成世界观时,结合用户已填的【下游内容】一起反推。
- * 通过注册表一次性拉取 故事核心 + 角色 + 故事线(均为已登记的 CONTEXT_SOURCE),
- * 这样"先填角色/故事、再生成世界观"时,AI 能读到它们并反向推导出一致的世界设定。
- * 注:storyCore 是项目级、characters 是世界级——必须传 worldGroupId 才能召回当前世界的角色。
- * (替代原先只取 storyCore 的单独调用,合并为一次装配,顺带补齐角色/故事线。)
- */
-async function buildDownstreamReverseContext(projectId: number, worldGroupId: number | null): Promise<string> {
-  return (await assembleContext({
-    projectId,
-    worldGroupId,
-    sourceKeys: ['canonAssertions', 'storyCore', 'characters', 'storyArcs'],
-  })).text
-}
+interface Props { project: Project; initialWorldviewId?: number | null }
 
-interface Props {
-  project: Project
-}
-
-// ── 主面板 ─────────────────────────────────────────────────────
-
-/** v3 §2.1 — 世界观.世界起源（三个子模块） */
-export default function WorldviewOriginPanel({ project }: Props) {
+export default function WorldviewOriginPanel({ project, initialWorldviewId }: Props) {
   const { t } = useDomainT('worldview')
   const { worldview, saveWorldview, loadAll } = useWorldviewStore()
-  const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
-
+  const activeGroupId = useWorldGroupStore(state => state.activeGroupId)
+  const copilot = useMasterCopilot({ project, worldGroupId: project.enableMultiWorld ? activeGroupId : null })
   const [active, setActive] = useState<WorldviewOriginFieldKey>('origin')
   const [worldOrigin, setWorldOrigin] = useState('')
   const [powerHierarchy, setPowerHierarchy] = useState('')
-  const [divineDesign, setDivineDesign] = useState<DivineDesign>({
-    hasDivinity: false,
-    divineRank: '',
-    divineNames: '',
-    divineRules: '',
-  })
-  const [streamingKeys, setStreamingKeys] = useState<Set<string>>(new Set())
+  const [divineDesign, setDivineDesign] = useState<DivineDesign>({ hasDivinity: false, divineRank: '', divineNames: '', divineRules: '' })
+  const [runningField, setRunningField] = useState<WorldviewAgentField | null>(null)
 
-  // 多世界模式下按当前世界组加载，单世界传 null 走原逻辑
-  useEffect(() => {
-    loadAll(project.id!, project.enableMultiWorld ? activeGroupId : null)
-  }, [project.id, project.enableMultiWorld, activeGroupId, loadAll])
-
-  // 同步 store -> 本地 state
+  useInitialRecordTarget(initialWorldviewId, worldview?.id === initialWorldviewId)
+  useEffect(() => { loadAll(project.id!, project.enableMultiWorld ? activeGroupId : null) }, [project.id, project.enableMultiWorld, activeGroupId, loadAll])
   useEffect(() => {
     if (!worldview) return
     setWorldOrigin(worldview.worldOrigin || '')
     setPowerHierarchy(worldview.powerHierarchy || '')
-    setDivineDesign(worldview.divineDesign || {
-      hasDivinity: false, divineRank: '', divineNames: '', divineRules: '',
-    })
+    setDivineDesign(worldview.divineDesign || { hasDivinity: false, divineRank: '', divineNames: '', divineRules: '' })
   }, [worldview])
 
-  // 通用保存
-  const save = (patch: Partial<typeof worldview>) =>
-    saveWorldview({ projectId: project.id!, ...patch })
+  const pendingCandidates = copilot.pendingCandidates.filter(candidate => candidate.payload.skillId === 'world-origin.worldview-field')
+  const pendingOriginKey = (Object.entries(AGENT_FIELD_BY_ORIGIN_KEY) as Array<[WorldviewOriginFieldKey, WorldviewAgentField]>).find(([, field]) => field === pendingCandidates[0]?.payload.worldviewField)?.[0]
+  const hasOtherPendingCandidates = copilot.pendingCandidates.some(candidate => candidate.payload.skillId !== 'world-origin.worldview-field')
+  const streamingKeys = new Set<string>()
+  const pendingKeys = new Set<string>()
+  const runningOriginKey = (Object.entries(AGENT_FIELD_BY_ORIGIN_KEY) as Array<[WorldviewOriginFieldKey, WorldviewAgentField]>).find(([, field]) => field === runningField)?.[0]
+  if (copilot.busy && runningOriginKey) streamingKeys.add(runningOriginKey)
+  if (pendingOriginKey) pendingKeys.add(pendingOriginKey)
+  useEffect(() => { if (pendingOriginKey) setActive(pendingOriginKey) }, [pendingOriginKey])
 
-  // AI 上下文（排除当前字段，并注入自然环境 + 人文环境关键信息）
-  // NOTE: 【...】 context markers are AI prompt content, not user-visible UI strings.
-  const buildCtx = useCallback((excludeKey: string): string => {
-    const parts: string[] = []
-    // ── 本面板内互参 ──
-    if (excludeKey !== 'origin' && worldOrigin) parts.push(`【世界来源】${worldOrigin.slice(0, 200)}`)
-    if (excludeKey !== 'power'  && powerHierarchy) parts.push(`【力量体系】${powerHierarchy.slice(0, 200)}`)
-    if (excludeKey !== 'divine' && divineDesign.hasDivinity) {
-      parts.push(`【神明与信仰】${divineDesign.divineNames || ''}：${divineDesign.divineRules?.slice(0, 100) || ''}`)
-    }
-    // ── 自然环境面板关键字段 ──
-    if (worldview?.worldStructure)  parts.push(`【世界结构】${worldview.worldStructure.slice(0, 150)}`)
-    if (worldview?.continentLayout) parts.push(`【地貌分布】${worldview.continentLayout.slice(0, 150)}`)
-    if (worldview?.climateByRegion) parts.push(`【气候环境】${worldview.climateByRegion.slice(0, 100)}`)
-    // ── 人文环境面板关键字段 ──
-    if (worldview?.races)           parts.push(`【种族与民族】${worldview.races.slice(0, 100)}`)
-    if (worldview?.factionLayout)   parts.push(`【势力分布】${worldview.factionLayout.slice(0, 100)}`)
-    return parts.join('\n')
-  }, [worldOrigin, powerHierarchy, divineDesign, worldview])
-
-  const handleStreamingChange = useCallback((key: string, streaming: boolean) => {
-    setStreamingKeys(prev => {
-      if (prev.has(key) === streaming) return prev
-      const next = new Set(prev)
-      if (streaming) next.add(key)
-      else next.delete(key)
-      return next
-    })
-  }, [])
+  const adopt = async (candidate: PendingMasterCandidate) => {
+    await copilot.adoptCandidate(candidate)
+    await loadAll(project.id!, project.enableMultiWorld ? activeGroupId : null)
+  }
+  const save = (patch: Record<string, unknown>) => { void saveWorldview({ projectId: project.id!, ...patch }) }
+  const currentCandidate = (field: WorldviewAgentField) => pendingCandidates.find(candidate => candidate.payload.worldviewField === field)
+  const otherPending = (field: WorldviewAgentField) => pendingCandidates.find(candidate => candidate.payload.worldviewField !== field)?.payload.label
 
   return (
-    <div className="flex flex-col w-full max-w-5xl space-y-4">
-      {/* 顶部 */}
+    <div {...initialRecordTargetAttributes(worldview?.id === initialWorldviewId, worldview?.id)} className={`flex flex-col w-full max-w-5xl space-y-4 rounded-xl ${worldview?.id === initialWorldviewId ? INITIAL_RECORD_TARGET_CLASS : ''}`}>
       <div className="pb-4 border-b border-border/40">
-        <div className="flex items-start justify-between gap-3">
-          <h2 className="text-xl font-bold text-text-primary flex items-center gap-2">
-            {t('origin.title')}
-          </h2>
-          {project.enableMultiWorld && <WorldGroupSwitcher />}
-        </div>
-        <p className="text-xs text-text-muted mt-0.5">
-          {t('origin.subtitle')}
-        </p>
-        <div className="mt-3 max-w-xl">
-          <CodexSearchBar
-            categoryKeys={['originPower', 'originDeity']}
-            onJump={(catKey) => setActive(catKey === 'originDeity' ? 'divine' : 'power')}
-          />
-        </div>
+        <div className="flex items-start justify-between gap-3"><h2 className="text-xl font-bold text-text-primary">{t('origin.title')}</h2>{project.enableMultiWorld && <WorldGroupSwitcher />}</div>
+        <p className="text-xs text-text-muted mt-0.5">{t('origin.subtitle')}</p>
+        <div className="mt-3 max-w-xl"><CodexSearchBar categoryKeys={['originPower', 'originDeity']} onJump={category => setActive(category === 'originDeity' ? 'divine' : 'power')} /></div>
+        {copilot.recoveryAvailable && !copilot.busy && <div className="mt-3 rounded border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-text-secondary">{t('agent:chat.recoveryAvailable')}<button type="button" onClick={() => { void copilot.resume() }} className="ml-2 text-accent hover:underline">{t('agent:chat.resumeButton')}</button></div>}
       </div>
-
       <div className="flex gap-4">
-        {/* ── 左侧边栏 ── */}
-        <WorldviewOriginSidebar active={active} streamingKeys={streamingKeys} onSelect={setActive} />
-
-        {/* ── 右侧：所有字段同时渲染，hidden 控制显示 ── */}
+        <WorldviewOriginSidebar active={active} streamingKeys={streamingKeys} pendingKeys={pendingKeys} onSelect={setActive} />
         <div className="flex-1 min-w-0">
-          {/* 世界来源 */}
-          <div className={active === 'origin' ? '' : 'hidden'}>
-            <TextFieldEditor
-              fieldKey="origin"
-              value={worldOrigin}
-              onChange={v => { setWorldOrigin(v); save({ worldOrigin: v }) }}
-              project={project}
-              contextSummary={buildCtx('origin')}
-              onStreamingChange={streaming => handleStreamingChange('origin', streaming)}
-            />
-          </div>
-
-          {/* 力量体系:全貌(上) + 具体词条(下) */}
-          <div className={active === 'power' ? '' : 'hidden'}>
-            <TextFieldEditor
-              fieldKey="power"
-              value={powerHierarchy}
-              onChange={v => { setPowerHierarchy(v); save({ powerHierarchy: v }) }}
-              project={project}
-              contextSummary={buildCtx('power')}
-              onStreamingChange={streaming => handleStreamingChange('power', streaming)}
-            />
-            <CultivationSystemsPanel project={project} />
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold text-text-primary mb-1">{t('origin.powerCodexHeading')}</h3>
-              <p className="text-xs text-text-muted mb-3">{t('origin.powerCodexHint')}</p>
-              <CodexPanel
-                project={project}
-                fixedCategoryKeys={['originPower']}
-                extractionSourceText={powerHierarchy}
-                embedded
-              />
-            </div>
-          </div>
-
-          {/* 神明与信仰:全貌(上) + 具体词条(下) */}
-          <div className={active === 'divine' ? '' : 'hidden'}>
-            <DivineFieldEditor
-              divineDesign={divineDesign}
-              onDivineChange={async (next) => {
-                setDivineDesign(next)
-                await save({ divineDesign: next })
-              }}
-              project={project}
-              contextSummary={buildCtx('divine')}
-              onStreamingChange={streaming => handleStreamingChange('divine', streaming)}
-            />
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold text-text-primary mb-1">{t('origin.divineCodexHeading')}</h3>
-              <p className="text-xs text-text-muted mb-3">{t('origin.divineCodexHint')}</p>
-              <CodexPanel
-                project={project}
-                fixedCategoryKeys={['originDeity']}
-                extractionSourceText={[
-                  divineDesign.divineNames,
-                  divineDesign.divineRank,
-                  divineDesign.divineRules,
-                ].filter(Boolean).join('\n\n')}
-                embedded
-              />
-            </div>
-          </div>
+          <div className={active === 'origin' ? '' : 'hidden'}><TextFieldEditor fieldKey="origin" value={worldOrigin} onChange={value => { setWorldOrigin(value); save({ worldOrigin: value }) }} project={project} activeGroupId={activeGroupId} copilot={copilot} candidate={currentCandidate('worldOrigin')} otherPendingLabel={otherPending('worldOrigin')} hasOtherPendingCandidates={hasOtherPendingCandidates} onRunningChange={running => setRunningField(running ? 'worldOrigin' : null)} onAdopted={adopt} /></div>
+          <div className={active === 'power' ? '' : 'hidden'}><TextFieldEditor fieldKey="power" value={powerHierarchy} onChange={value => { setPowerHierarchy(value); save({ powerHierarchy: value }) }} project={project} activeGroupId={activeGroupId} copilot={copilot} candidate={currentCandidate('powerHierarchy')} otherPendingLabel={otherPending('powerHierarchy')} hasOtherPendingCandidates={hasOtherPendingCandidates} onRunningChange={running => setRunningField(running ? 'powerHierarchy' : null)} onAdopted={adopt} /><CultivationSystemsPanel project={project} /><div className="mt-6"><h3 className="text-sm font-semibold text-text-primary mb-1">{t('origin.powerCodexHeading')}</h3><p className="text-xs text-text-muted mb-3">{t('origin.powerCodexHint')}</p><CodexPanel project={project} fixedCategoryKeys={['originPower']} extractionSourceText={powerHierarchy} embedded /></div></div>
+          <div className={active === 'divine' ? '' : 'hidden'}><DivineFieldEditor divineDesign={divineDesign} onDivineChange={next => { setDivineDesign(next); save({ divineDesign: next }) }} project={project} activeGroupId={activeGroupId} copilot={copilot} candidate={currentCandidate('divineDesign')} otherPendingLabel={otherPending('divineDesign')} hasOtherPendingCandidates={hasOtherPendingCandidates} onRunningChange={running => setRunningField(running ? 'divineDesign' : null)} onAdopted={adopt} /><div className="mt-6"><h3 className="text-sm font-semibold text-text-primary mb-1">{t('origin.divineCodexHeading')}</h3><p className="text-xs text-text-muted mb-3">{t('origin.divineCodexHint')}</p><CodexPanel project={project} fixedCategoryKeys={['originDeity']} extractionSourceText={[divineDesign.divineNames, divineDesign.divineRank, divineDesign.divineRules].filter(Boolean).join('\n\n')} embedded /></div></div>
         </div>
       </div>
     </div>
   )
 }
 
-// ── 文本字段编辑器（世界来源 / 力量体系） ────────────────────────
+function AgentFieldControls({ field, project, activeGroupId, copilot, candidate, otherPendingLabel, hasOtherPendingCandidates, onRunningChange, onAdopted, buttonLabel }: { field: WorldviewAgentField; project: Project; activeGroupId: number | null; copilot: ReturnType<typeof useMasterCopilot>; candidate?: PendingMasterCandidate; otherPendingLabel?: string; hasOtherPendingCandidates: boolean; onRunningChange: (running: boolean) => void; onAdopted: (candidate: PendingMasterCandidate) => Promise<void>; buttonLabel?: string }) {
+  return <WorldviewAgentControls field={field} project={project} activeGroupId={activeGroupId} copilot={copilot} candidate={candidate} otherPendingWorldviewLabel={otherPendingLabel} hasOtherPendingCandidates={hasOtherPendingCandidates} onRunningChange={onRunningChange} onAdopted={onAdopted} buttonLabel={buttonLabel} />
+}
 
-/** Static key map for origin fields — no computed keys. */
-const ORIGIN_FIELD_KEYS = {
-  origin: { labelKey: 'origin.fields.origin.label' as const, descKey: 'origin.fields.origin.desc' as const },
-  power:  { labelKey: 'origin.fields.power.label' as const,  descKey: 'origin.fields.power.desc' as const },
-  divine: { labelKey: 'origin.fields.divine.label' as const, descKey: 'origin.fields.divine.desc' as const },
-} satisfies Record<WorldviewOriginFieldKey, { labelKey: string; descKey: string }>
-
-function TextFieldEditor({
-  fieldKey, value, onChange, project, contextSummary, onStreamingChange,
-}: {
-  fieldKey: WorldviewOriginFieldKey
-  value: string
-  onChange: (v: string) => void
-  project: Project
-  contextSummary: string
-  onStreamingChange: (streaming: boolean) => void
-}) {
+function TextFieldEditor({ fieldKey, value, onChange, project, activeGroupId, copilot, candidate, otherPendingLabel, hasOtherPendingCandidates, onRunningChange, onAdopted }: { fieldKey: 'origin' | 'power'; value: string; onChange: (value: string) => void; project: Project; activeGroupId: number | null; copilot: ReturnType<typeof useMasterCopilot>; candidate?: PendingMasterCandidate; otherPendingLabel?: string; hasOtherPendingCandidates: boolean; onRunningChange: (running: boolean) => void; onAdopted: (candidate: PendingMasterCandidate) => Promise<void> }) {
   const { t } = useDomainT('worldview')
-  const [hint, setHint] = useState('')
-  const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({})
-  const [systemOverride, setSystemOverride] = useState<string | null>(null)
-  const [userOverride, setUserOverride] = useState<string | null>(null)
-  const [mode, setMode] = useState<FieldGenerationMode>('expand')
-  const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
-  const ai = useAIStream(createAISessionKey(
-    project.id!,
-    'worldview.dimension',
-    `${activeGroupId ?? 'global'}:${fieldKey}`,
-  ))
-
-  const fieldLabel = t(ORIGIN_FIELD_KEYS[fieldKey].labelKey)
-  const fieldDesc = t(ORIGIN_FIELD_KEYS[fieldKey].descKey)
-  const fieldIcon = WORLDVIEW_ORIGIN_FIELDS.find(f => f.key === fieldKey)?.icon ?? ''
-
-  useEffect(() => {
-    onStreamingChange(ai.isStreaming)
-  }, [ai.isStreaming, onStreamingChange])
-
-  const handleGenerate = async () => {
-    // Phase 32: 注入世界规则
-    const rulesCtx = await buildRulesSourceContext(project.id!, project.enableMultiWorld ? activeGroupId : null)
-    // 下游 → 上游反推:带上用户已填的故事核心 + 角色 + 故事线,生成世界观时结合反推
-    const downstreamCtx = await buildDownstreamReverseContext(project.id!, project.enableMultiWorld ? activeGroupId : null)
-    const fullContext = [downstreamCtx, contextSummary].filter(Boolean).join('\n\n')
-    const opts = {
-      parameterValues: {
-        ...parameterValues,
-        worldRulesContext: rulesCtx,
-      },
-      overrides: (systemOverride != null || userOverride != null) ? {
-        systemPrompt: systemOverride ?? undefined,
-        userPromptTemplate: userOverride ?? undefined,
-      } : undefined,
-    }
-    // fieldLabel is passed to AI prompt builder — this is intentional (AI needs the dimension name)
-    const messages = buildWorldviewPrompt(
-      fieldLabel, project.name, project.genre || '', fullContext, hint, opts, value, mode,
-    )
-    ai.start(messages, undefined, { category: 'worldview.dimension', projectId: project.id!, outputKind: 'creative' })
-  }
-
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-          <span>{fieldIcon}</span> {fieldLabel}
-        </h2>
-        <p className="text-xs text-text-muted mt-0.5">{fieldDesc}</p>
-      </div>
-
-      <div className="bg-bg-surface border border-border rounded-lg p-4">
-        <InlineTextarea value={value} onChange={onChange} placeholder={fieldDesc} />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <AIFieldModeTabs value={mode} onChange={setMode} />
-        <input
-          value={hint} onChange={e => setHint(e.target.value)}
-          placeholder={t('origin.hintPlaceholder')}
-          className="flex-1 px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
-        />
-        <button onClick={handleGenerate} disabled={ai.isStreaming}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded disabled:opacity-50 bg-accent/10 text-accent hover:bg-accent/20">
-          <Sparkles className="w-3.5 h-3.5" /> {t('origin.aiGenerate')}
-        </button>
-      </div>
-
-      <PromptRunPanel moduleKey="worldview.dimension" parameterValues={parameterValues}
-        onParamChange={setParameterValues} systemOverride={systemOverride}
-        onSystemOverrideChange={setSystemOverride} userOverride={userOverride}
-        onUserOverrideChange={setUserOverride} />
-
-      {(ai.output || ai.isStreaming || ai.error) && (
-        <AIStreamOutput output={ai.output} isStreaming={ai.isStreaming} error={ai.error}
-          tokenUsage={ai.tokenUsage} onStop={ai.stop}
-          onAccept={(text: string) => { onChange(text); ai.reset() }}
-          onRetry={handleGenerate} moduleKey="worldview.dimension" />
-      )}
-    </div>
-  )
+  const label = t(ORIGIN_FIELD_KEYS[fieldKey].labelKey)
+  const description = t(ORIGIN_FIELD_KEYS[fieldKey].descKey)
+  const icon = WORLDVIEW_ORIGIN_FIELDS.find(field => field.key === fieldKey)?.icon
+  return <div className="space-y-4"><div><h2 className="text-lg font-bold text-text-primary">{icon} {label}</h2><p className="text-xs text-text-muted mt-0.5">{description}</p></div><div className="bg-bg-surface border border-border rounded-lg p-4"><InlineTextarea value={value} onChange={onChange} placeholder={description} /></div><AgentFieldControls field={fieldKey === 'origin' ? 'worldOrigin' : 'powerHierarchy'} project={project} activeGroupId={activeGroupId} copilot={copilot} candidate={candidate} otherPendingLabel={otherPendingLabel} hasOtherPendingCandidates={hasOtherPendingCandidates} onRunningChange={onRunningChange} onAdopted={onAdopted} /></div>
 }
 
-// ── 神明与信仰编辑器（独立 AI 流） ─────────────────────────────────
-
-function DivineFieldEditor({
-  divineDesign, onDivineChange, project, contextSummary, onStreamingChange,
-}: {
-  divineDesign: DivineDesign
-  onDivineChange: (next: DivineDesign) => Promise<void>
-  project: Project
-  contextSummary: string
-  onStreamingChange: (streaming: boolean) => void
-}) {
+function DivineFieldEditor({ divineDesign, onDivineChange, project, activeGroupId, copilot, candidate, otherPendingLabel, hasOtherPendingCandidates, onRunningChange, onAdopted }: { divineDesign: DivineDesign; onDivineChange: (next: DivineDesign) => void; project: Project; activeGroupId: number | null; copilot: ReturnType<typeof useMasterCopilot>; candidate?: PendingMasterCandidate; otherPendingLabel?: string; hasOtherPendingCandidates: boolean; onRunningChange: (running: boolean) => void; onAdopted: (candidate: PendingMasterCandidate) => Promise<void> }) {
   const { t } = useDomainT('worldview')
-  const [hint, setHint] = useState('')
-  const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({})
-  const [systemOverride, setSystemOverride] = useState<string | null>(null)
-  const [userOverride, setUserOverride] = useState<string | null>(null)
-  const [mode, setMode] = useState<FieldGenerationMode>('expand')
-  const activeGroupId = useWorldGroupStore(s => s.activeGroupId)
-  const ai = useAIStream(createAISessionKey(
-    project.id!,
-    'worldview.dimension',
-    `${activeGroupId ?? 'global'}:divine`,
-  ))
-
-  const fieldLabel = t('origin.fields.divine.label')
-  const fieldDesc = t('origin.fields.divine.desc')
-  const fieldIcon = '🌟'
-
-  useEffect(() => {
-    onStreamingChange(ai.isStreaming)
-  }, [ai.isStreaming, onStreamingChange])
-
-  const handleGenerate = async () => {
-    const rulesCtx = await buildRulesSourceContext(project.id!, project.enableMultiWorld ? activeGroupId : null)
-    // 下游 → 上游反推:带上用户已填的故事核心 + 角色 + 故事线,生成世界观时结合反推
-    const downstreamCtx = await buildDownstreamReverseContext(project.id!, project.enableMultiWorld ? activeGroupId : null)
-    const fullContext = [downstreamCtx, contextSummary].filter(Boolean).join('\n\n')
-    const opts = {
-      parameterValues: {
-        ...parameterValues,
-        worldRulesContext: rulesCtx,
-      },
-      overrides: (systemOverride != null || userOverride != null) ? {
-        systemPrompt: systemOverride ?? undefined,
-        userPromptTemplate: userOverride ?? undefined,
-      } : undefined,
-    }
-    // AI prompt content below — NOT user-visible UI strings, intentionally untranslated
-    const messages = buildWorldviewPrompt(
-      '神明与信仰设定',
-      project.name, project.genre || '', fullContext,
-      hint || '请设计完整的信仰体系，包含：1）主流信仰与层级 2）主要神明/信仰名号与职司 3）规则、风俗与禁忌。分三个小节输出。',
-      opts,
-      [
-        divineDesign.divineRank && `信仰层级:${divineDesign.divineRank}`,
-        divineDesign.divineNames && `神明名号:${divineDesign.divineNames}`,
-        divineDesign.divineRules && `信仰规则:${divineDesign.divineRules}`,
-      ].filter(Boolean).join('\n'),
-      mode,
-    )
-    ai.start(messages, undefined, { category: 'worldview.divine', projectId: project.id!, outputKind: 'creative' })
-  }
-
-  const [splitting, setSplitting] = useState(false)
-
-  const handleAccept = async (text: string) => {
-    // 用 AI 将生成的信仰体系文本拆分为三个结构化字段
-    setSplitting(true)
-    try {
-      // AI system prompt — NOT user-visible, intentionally untranslated
-      const splitMessages = [
-        {
-          role: 'system' as const,
-          content: `你是一个文本结构化助手。用户提供了一段关于信仰/神明体系的描述文本，请将其拆分为三个部分，输出纯 JSON（不要 markdown 包裹）：
-{
-  "divineRank": "信仰层级体系（主流信仰分类、层级划分、信仰强弱等）",
-  "divineNames": "主要神明/信仰的名号与职司（名字、头衔、掌管领域等）",
-  "divineRules": "规则、风俗与禁忌（信仰相关的戒律、仪式、禁忌、节日等）"
+  return <div className="space-y-4"><div><h2 className="text-lg font-bold text-text-primary">🌟 {t('origin.fields.divine.label')}</h2><p className="text-xs text-text-muted mt-0.5">{t('origin.fields.divine.desc')}</p></div><label className="flex items-center gap-2 text-sm cursor-pointer"><input type="checkbox" checked={divineDesign.hasDivinity} onChange={event => onDivineChange({ ...divineDesign, hasDivinity: event.target.checked })} className="accent-accent" /><span className="text-text-secondary">{t('origin.divine.hasDivinity')}</span></label>{divineDesign.hasDivinity && <div className="space-y-0 divide-y divide-border/40"><DivineRow label={t('origin.divine.rankLabel')} value={divineDesign.divineRank} placeholder={t('origin.divine.rankPlaceholder')} onChange={value => onDivineChange({ ...divineDesign, divineRank: value })} /><DivineRow label={t('origin.divine.namesLabel')} value={divineDesign.divineNames} placeholder={t('origin.divine.namesPlaceholder')} onChange={value => onDivineChange({ ...divineDesign, divineNames: value })} /><DivineRow label={t('origin.divine.rulesLabel')} value={divineDesign.divineRules} placeholder={t('origin.divine.rulesPlaceholder')} onChange={value => onDivineChange({ ...divineDesign, divineRules: value })} /></div>}<AgentFieldControls field="divineDesign" project={project} activeGroupId={activeGroupId} copilot={copilot} candidate={candidate} otherPendingLabel={otherPendingLabel} hasOtherPendingCandidates={hasOtherPendingCandidates} onRunningChange={onRunningChange} onAdopted={onAdopted} buttonLabel={t('origin.divine.generateButton')} /></div>
 }
-如果原文中某个部分没有涉及，对应字段填空字符串。保留原文的细节，不要缩写或省略。`,
-        },
-        { role: 'user' as const, content: text },
-      ]
-      const config = useAIConfigStore.getState().config
-      let accumulated = ''
-      const stream = streamChat(splitMessages, config, new AbortController().signal, {}, { category: 'worldview.divine.split', projectId: project.id!, outputKind: 'functional-structured' })
-      for await (const chunk of stream) {
-        accumulated += chunk
-      }
-      // 解析 JSON
-      const cleaned = accumulated.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?\s*```\s*$/i, '').trim()
-      const parsed = JSON.parse(cleaned)
-      await onDivineChange({
-        hasDivinity: true,
-        divineRank: String(parsed.divineRank || '').trim() || text,
-        divineNames: String(parsed.divineNames || '').trim(),
-        divineRules: String(parsed.divineRules || '').trim(),
-      })
-    } catch {
-      // AI 拆分失败时，全部内容放入 divineRank，不丢失数据
-      await onDivineChange({
-        hasDivinity: true,
-        divineRank: text,
-        divineNames: '',
-        divineRules: '',
-      })
-    } finally {
-      setSplitting(false)
-      ai.reset()
-    }
-  }
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-bold text-text-primary flex items-center gap-2">
-          <span>{fieldIcon}</span> {fieldLabel}
-        </h2>
-        <p className="text-xs text-text-muted mt-0.5">{fieldDesc}</p>
-      </div>
-
-      {/* 存在神明/信仰 checkbox */}
-      <label className="flex items-center gap-2 text-sm cursor-pointer">
-        <input
-          type="checkbox"
-          checked={divineDesign.hasDivinity}
-          onChange={e => {
-            onDivineChange({ ...divineDesign, hasDivinity: e.target.checked })
-          }}
-          className="accent-accent"
-        />
-        <span className="text-text-secondary">{t('origin.divine.hasDivinity')}</span>
-      </label>
-
-      {divineDesign.hasDivinity && (
-        <div className="space-y-0 divide-y divide-border/40">
-          <div className="flex gap-4 py-3 first:pt-0">
-            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">{t('origin.divine.rankLabel')}</span>
-            <div className="flex-1 min-w-0">
-              <InlineTextarea
-                value={divineDesign.divineRank}
-                onChange={v => onDivineChange({ ...divineDesign, divineRank: v })}
-                placeholder={t('origin.divine.rankPlaceholder')}
-              />
-            </div>
-          </div>
-          <div className="flex gap-4 py-3">
-            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">{t('origin.divine.namesLabel')}</span>
-            <div className="flex-1 min-w-0">
-              <InlineTextarea
-                value={divineDesign.divineNames}
-                onChange={v => onDivineChange({ ...divineDesign, divineNames: v })}
-                placeholder={t('origin.divine.namesPlaceholder')}
-              />
-            </div>
-          </div>
-          <div className="flex gap-4 py-3">
-            <span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">{t('origin.divine.rulesLabel')}</span>
-            <div className="flex-1 min-w-0">
-              <InlineTextarea
-                value={divineDesign.divineRules}
-                onChange={v => onDivineChange({ ...divineDesign, divineRules: v })}
-                placeholder={t('origin.divine.rulesPlaceholder')}
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* AI 生成 */}
-      <div className="flex items-center gap-2">
-        <AIFieldModeTabs value={mode} onChange={setMode} />
-        <input
-          value={hint} onChange={e => setHint(e.target.value)}
-          placeholder={t('origin.hintPlaceholder')}
-          className="flex-1 px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
-        />
-        <button onClick={handleGenerate} disabled={ai.isStreaming}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs rounded disabled:opacity-50 bg-accent/10 text-accent hover:bg-accent/20">
-          <Sparkles className="w-3.5 h-3.5" /> {t('origin.divine.generateButton')}
-        </button>
-      </div>
-
-      <PromptRunPanel moduleKey="worldview.dimension" parameterValues={parameterValues}
-        onParamChange={setParameterValues} systemOverride={systemOverride}
-        onSystemOverrideChange={setSystemOverride} userOverride={userOverride}
-        onUserOverrideChange={setUserOverride} />
-
-      {splitting && (
-        <div className="flex items-center gap-2 p-3 bg-accent/10 border border-accent/20 rounded-lg text-sm text-accent">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          {t('origin.divine.splittingStatus')}
-        </div>
-      )}
-
-      {(ai.output || ai.isStreaming || ai.error) && (
-        <AIStreamOutput output={ai.output} isStreaming={ai.isStreaming} error={ai.error}
-          tokenUsage={ai.tokenUsage} onStop={ai.stop}
-          onAccept={handleAccept}
-          onRetry={handleGenerate} moduleKey="worldview.dimension" />
-      )}
-    </div>
-  )
+function DivineRow({ label, value, placeholder, onChange }: { label: string; value: string; placeholder: string; onChange: (value: string) => void }) {
+  return <div className="flex gap-4 py-3"><span className="w-24 shrink-0 text-xs text-text-muted pt-0.5 text-right">{label}</span><div className="flex-1 min-w-0"><InlineTextarea value={value} onChange={onChange} placeholder={placeholder} /></div></div>
 }

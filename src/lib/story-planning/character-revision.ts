@@ -6,12 +6,17 @@
  * (changeLabels/strategyLabels/applyConfirm* 等)仍留在 errors-lib:revision.*。
  */
 import { getT } from '../../i18n'
-import { db } from '../db/schema'
 import { normalizeChapterText } from '../ai/chapter-memory/text-normalization'
 import { walkOutlineChaptersInCanonicalOrder } from '../outline/canonical-outline-walk'
 import { buildBestChapterByOutlineMap } from '../chapters/selectors'
-import { adopt } from '../registry/adopt'
-import type { OutlineNode } from '../types'
+import {
+  isLegacyReadScope,
+  readOwnedRows,
+  resolveReadScopeLike,
+  type WorkspaceScopeLike,
+} from '../world-engine/scope'
+import type { Chapter, OutlineNode } from '../types'
+import type { WorkspaceScope } from '../types/world-ownership'
 
 export type CharacterRevisionChangeType =
   | 'add-character'
@@ -49,6 +54,7 @@ export interface CharacterRevisionChapterSnapshot {
 
 export interface CharacterRevisionSnapshot {
   projectId: number
+  workspaceScope?: WorkspaceScope
   chapters: CharacterRevisionChapterSnapshot[]
   lastWrittenOrdinal: number
   lastWrittenChapterId: number | null
@@ -121,11 +127,6 @@ export interface CharacterRevisionPlan {
   warnings: string[]
 }
 
-export interface CharacterRevisionApplyResult {
-  appliedOutlineNodeIds: number[]
-  skipped: Array<{ outlineNodeId: number; reason: string }>
-}
-
 function asRecord(value: unknown): Record<string, unknown> | null {
   return value != null && typeof value === 'object'
     ? value as Record<string, unknown>
@@ -167,10 +168,12 @@ function findVolumeTitle(node: OutlineNode, nodesById: Map<number, OutlineNode>)
   return '未分卷'
 }
 
-export async function buildCharacterRevisionSnapshot(projectId: number): Promise<CharacterRevisionSnapshot> {
+export async function buildCharacterRevisionSnapshot(scopeInput: WorkspaceScopeLike): Promise<CharacterRevisionSnapshot> {
+  const scope = await resolveReadScopeLike(scopeInput)
+  const projectId = typeof scopeInput === 'number' ? scopeInput : scopeInput.projectId
   const [outlineNodes, chapters] = await Promise.all([
-    db.outlineNodes.where('projectId').equals(projectId).toArray(),
-    db.chapters.where('projectId').equals(projectId).toArray(),
+    readOwnedRows<OutlineNode>(scope, 'outlineNodes', { owner: 'work' }),
+    readOwnedRows<Chapter>(scope, 'chapters', { owner: 'work' }),
   ])
   const walk = walkOutlineChaptersInCanonicalOrder(outlineNodes)
   const bestChapterByOutline = buildBestChapterByOutlineMap(chapters)
@@ -198,6 +201,7 @@ export async function buildCharacterRevisionSnapshot(projectId: number): Promise
   const chaptersById = new Map(chapters.filter(chapter => chapter.id != null).map(chapter => [chapter.id!, chapter]))
   return {
     projectId,
+    ...(!isLegacyReadScope(scope) ? { workspaceScope: scope } : {}),
     chapters: snapshots,
     lastWrittenOrdinal: lastWritten?.ordinal ?? 0,
     lastWrittenChapterId: lastWritten?.chapterId ?? null,
@@ -423,70 +427,4 @@ export function parseCharacterRevisionOutput(
     options,
     warnings: [...new Set(warnings)],
   }
-}
-
-/**
- * 应用前重新读取项目现状，防止分析后作者又编辑了大纲。这里只允许改无正文的未来章，
- * 所有字段写入继续经过 adopt()/FIELD_REGISTRY。
- */
-export async function applyCharacterRevisionPatches(input: {
-  projectId: number
-  protectedThroughOrdinal: number
-  anchorNodeIds: number[]
-  patches: CharacterRevisionPatch[]
-}): Promise<CharacterRevisionApplyResult> {
-  const fresh = await buildCharacterRevisionSnapshot(input.projectId)
-  const protectedThrough = effectiveProtectedThrough(fresh, input.protectedThroughOrdinal)
-  const currentByNode = new Map(fresh.chapters.map(chapter => [chapter.outlineNodeId, chapter]))
-  const anchors = new Set(input.anchorNodeIds)
-  const result: CharacterRevisionApplyResult = { appliedOutlineNodeIds: [], skipped: [] }
-
-  for (const patch of input.patches) {
-    const current = currentByNode.get(patch.outlineNodeId)
-    if (!current) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipNodeMissing') })
-      continue
-    }
-    if (current.written || current.ordinal <= protectedThrough) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipNodeProtected') })
-      continue
-    }
-    if (current.title !== patch.currentTitle || current.summary !== patch.currentSummary) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipOutlineChanged') })
-      continue
-    }
-    if (anchors.has(patch.outlineNodeId) && patch.proposedTitle !== current.title) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipAnchorTitleProtected') })
-      continue
-    }
-
-    const outlineWrite = await adopt({
-      projectId: input.projectId,
-      worldGroupId: current.worldGroupId,
-      target: 'outlineNodes',
-      recordId: patch.outlineNodeId,
-      mode: 'replace',
-      data: {
-        title: patch.proposedTitle,
-        summary: patch.proposedSummary,
-      },
-    })
-    if (!outlineWrite.written.length) {
-      result.skipped.push({ outlineNodeId: patch.outlineNodeId, reason: getT()('errors-lib:revision.skipAdoptRejected') })
-      continue
-    }
-
-    // 历史上“仅大纲”章可能已有空 Chapter 行；标题也经 adopt() 同步，正文始终不写。
-    if (current.chapterId != null && patch.proposedTitle !== current.title) {
-      await adopt({
-        projectId: input.projectId,
-        target: 'chapters',
-        recordId: current.chapterId,
-        mode: 'replace',
-        data: { title: patch.proposedTitle },
-      })
-    }
-    result.appliedOutlineNodeIds.push(patch.outlineNodeId)
-  }
-  return result
 }

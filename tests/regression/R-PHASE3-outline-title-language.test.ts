@@ -11,6 +11,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import i18n, { getSupportedUiLang } from '../../src/i18n'
+import { db } from '../../src/lib/db/schema'
 import { CORE_PROMPT_SEEDS } from '../../src/lib/ai/prompt-seeds-core'
 import {
   buildChapterOutlinePrompt,
@@ -55,6 +56,32 @@ afterEach(async () => {
   chatMock.calls = []
   if (i18n.language !== 'zh-CN') await i18n.changeLanguage('zh-CN')
 })
+
+async function seedBatchProject(contentLanguage?: Project['contentLanguage']): Promise<Project> {
+  await db.delete()
+  await db.open()
+  const now = 1
+  const projectId = await db.projects.add({
+    ...makeProject(contentLanguage),
+  } as never) as number
+  const worldId = await db.worlds.add({
+    projectId, code: 'batch-outline-world', name: '批量章纲世界', description: '',
+    currentVersion: 1, createdAt: now, updatedAt: now,
+  } as never) as number
+  const workId = await db.works.add({
+    projectId, worldId, title: '批量章纲作品', description: '', genres: ['玄幻'],
+    status: 'drafting', targetWordCount: 500_000, createdAt: now, updatedAt: now,
+  } as never) as number
+  for (const volume of makeVolumes(projectId)) {
+    await db.outlineNodes.add({ ...volume, workId, worldGroupId: null } as never)
+  }
+  await db.projects.update(projectId, {
+    activeWorldId: worldId, activeWorkId: workId, ownershipSchemaVersion: 1,
+    worldCode: 'batch-outline-world', worldVersion: 1,
+  })
+  return { ...makeProject(contentLanguage), id: projectId, activeWorldId: worldId, activeWorkId: workId,
+    ownershipSchemaVersion: 1, worldCode: 'batch-outline-world', worldVersion: 1 }
+}
 
 describe('Phase 3 · 核心种子模板不再硬编码中文序数示例', () => {
   it('卷纲种子：移除 第1卷/第2卷，改引用示例变量，且声明新变量', () => {
@@ -161,6 +188,8 @@ function makeProject(contentLanguage?: Project['contentLanguage']): Project {
     id: 1,
     name: '语言传播测试',
     genre: '玄幻',
+    genres: ['玄幻'],
+    status: 'drafting',
     description: '',
     targetWordCount: 500_000,
     enableMultiWorld: false,
@@ -170,10 +199,10 @@ function makeProject(contentLanguage?: Project['contentLanguage']): Project {
   }
 }
 
-function makeVolumes(): OutlineNode[] {
+function makeVolumes(projectId = 1): OutlineNode[] {
   return [
-    { id: 1, projectId: 1, type: 'volume', parentId: null, title: '第一卷·原样标题', summary: '主角入世', order: 0, createdAt: 1, updatedAt: 1 },
-    { id: 2, projectId: 1, type: 'volume', parentId: null, title: '第二卷', summary: '宗门大战', order: 1, createdAt: 1, updatedAt: 1 },
+    { id: 1, projectId, type: 'volume', parentId: null, title: '第一卷·原样标题', summary: '主角入世', order: 0, createdAt: 1, updatedAt: 1 },
+    { id: 2, projectId, type: 'volume', parentId: null, title: '第二卷', summary: '宗门大战', order: 1, createdAt: 1, updatedAt: 1 },
   ]
 }
 
@@ -297,12 +326,15 @@ describe('Phase 3 · generation-plan 传播项目内容语言', () => {
 
 describe('Phase 3 · batch-outline-runner 传播项目内容语言', () => {
   it('contentLanguage=pt-BR 时批量章纲 prompt 使用葡语示例，标题原样且不被改写', async () => {
-    const volumes = makeVolumes()
+    const project = await seedBatchProject('pt-BR')
+    const volumes = makeVolumes(project.id)
     const volumesSnapshot = structuredClone(volumes)
 
     const result = await runBatchOutlineGeneration({
+      project,
+      nodes: volumes,
       volumes,
-      worldContext: '【世界观】九州',
+      assembleContext: async () => makeAssembled(),
       contentLanguage: 'pt-BR',
     })
 
@@ -323,9 +355,12 @@ describe('Phase 3 · batch-outline-runner 传播项目内容语言', () => {
   })
 
   it('contentLanguage=zh-CN 时批量章纲保留中文示例', async () => {
+    const project = await seedBatchProject('zh-CN')
     await runBatchOutlineGeneration({
-      volumes: makeVolumes(),
-      worldContext: '【世界观】九州',
+      project,
+      nodes: makeVolumes(project.id),
+      volumes: makeVolumes(project.id),
+      assembleContext: async () => makeAssembled(),
       contentLanguage: 'zh-CN',
     })
     expect(chatMock.calls.length).toBe(2)
@@ -335,9 +370,12 @@ describe('Phase 3 · batch-outline-runner 传播项目内容语言', () => {
   })
 
   it('未提供 contentLanguage 的直接调用方回退语言无关占位符', async () => {
+    const project = await seedBatchProject()
     await runBatchOutlineGeneration({
-      volumes: makeVolumes(),
-      worldContext: '【世界观】九州',
+      project,
+      nodes: makeVolumes(project.id),
+      volumes: makeVolumes(project.id),
+      assembleContext: async () => makeAssembled(),
     })
     const prompt = textOf(chatMock.calls[0])
     expect(prompt).toContain('[{"title":"...","summary":"..."},{"title":"...","summary":"..."}]')

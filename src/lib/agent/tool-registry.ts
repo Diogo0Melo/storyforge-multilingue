@@ -10,6 +10,7 @@ import type {
   AgentToolJsonSchema,
   AgentToolResult,
 } from './types'
+import { assertRecordInScope, isLegacyReadScope, readOwnedRows, resolveReadScope } from '../world-engine/scope'
 
 type ArgRules = {
   allowed: readonly string[]
@@ -58,7 +59,7 @@ const READ_TOOL_SPECS: readonly ReadToolSpec[] = [
     name: 'read_story_core',
     description: '读取项目级故事核心和作者明确激活的角色驱动方案。',
     parameters: EMPTY_SCHEMA,
-    sourceKeys: ['storyCore', 'characterDrivenPlan'],
+    sourceKeys: ['storyCore', 'activeNarrativeBlueprint', 'characterDrivenPlan'],
     inputBudgetTokens: 8000,
     argRules: { allowed: [] },
   },
@@ -81,7 +82,7 @@ const READ_TOOL_SPECS: readonly ReadToolSpec[] = [
       },
       additionalProperties: false,
     },
-    sourceKeys: ['outlineTree', 'chapterOutline'],
+    sourceKeys: ['activeNarrativeBlueprint', 'outlineTree', 'chapterOutline'],
     inputBudgetTokens: 7000,
     argRules: { allowed: ['outlineNodeId', 'chapterId'] },
   },
@@ -186,6 +187,21 @@ const READ_TOOL_SPECS: readonly ReadToolSpec[] = [
     argRules: { allowed: ['fragmentIds', 'mode'], required: ['fragmentIds', 'mode'] },
   },
   {
+    name: 'read_character_driven_plan',
+    description: '只读取本次明确选择的角色驱动方案输入，不注入旧生成结果。',
+    parameters: {
+      type: 'object',
+      properties: {
+        planId: { type: 'integer', minimum: 1, description: '本次角色驱动规划方案 ID' },
+      },
+      required: ['planId'],
+      additionalProperties: false,
+    },
+    sourceKeys: ['characterDrivenPlan'],
+    inputBudgetTokens: 7000,
+    argRules: { allowed: ['planId'], required: ['planId'] },
+  },
+  {
     name: 'search_text',
     description: '在当前项目与世界作用域内做本地包含匹配，只返回有界短摘，不调用网络或 embedding。',
     parameters: {
@@ -215,6 +231,7 @@ function emptyMeta(toolName: string, sourceKeys: readonly string[], budget: numb
     included: [],
     omitted: [],
     trimmed: [],
+    sourceEvidence: [],
     totalInputTokens: 0,
     inputBudget: budget,
     overBudgetBeforeTrim: false,
@@ -246,7 +263,7 @@ function validateArgs(spec: ReadToolSpec, raw: Record<string, unknown>): Record<
   if (missing.length) throw new Error(`缺少必填参数：${missing.join(', ')}`)
 
   const args = { ...raw }
-  for (const key of ['chapterId', 'outlineNodeId', 'characterId']) {
+  for (const key of ['chapterId', 'outlineNodeId', 'characterId', 'planId']) {
     if (key in args) args[key] = positiveInteger(args[key], key)
   }
   if ('query' in args) {
@@ -286,6 +303,7 @@ async function resolveScope(
   args: Record<string, unknown>,
 ): Promise<AssembleContextInput> {
   const projectId = positiveInteger(context.projectId, 'projectId')!
+  const workspaceScope = await resolveReadScope({ projectId, scope: context.scope })
   const project = await db.projects.get(projectId)
   if (!project) throw new Error('项目不存在')
   const fragmentIds = args.fragmentIds as string[] | undefined
@@ -295,7 +313,7 @@ async function resolveScope(
     && inspirationMode !== (project.enableMultiWorld ? 'multiworld' : 'single')
   ) throw new Error('灵感反推模式与当前项目不一致')
   if (fragmentIds) {
-    const workspace = await db.inspirationWorkspaces.where('projectId').equals(projectId).first()
+    const workspace = (await readOwnedRows<any>(workspaceScope, 'inspirationWorkspaces', { owner: 'work' }))[0]
     const available = new Set(parseInspirationFragments(workspace?.fragments).map(item => item.id))
     if (fragmentIds.some(fragmentId => !available.has(fragmentId))) {
       throw new Error('灵感碎片不存在或不属于当前项目')
@@ -313,19 +331,24 @@ async function resolveScope(
   }
   if (worldGroupId != null) {
     const group = await db.worldGroups.get(worldGroupId)
-    if (!group || group.projectId !== projectId) throw new Error('世界组不属于当前项目')
+    if (!await assertRecordInScope(workspaceScope, 'worldGroups', group, { owner: 'world' })) {
+      throw new Error('世界组不属于当前项目或当前 World')
+    }
   }
 
   const chapterId = args.chapterId as number | undefined
   const outlineNodeId = args.outlineNodeId as number | undefined
   const characterId = args.characterId as number | undefined
+  const characterDrivenPlanId = args.planId as number | undefined
   let chapterOutlineNodeId: number | undefined
   const assertOutlineWorld = async (nodeId: number) => {
     let node = await db.outlineNodes.get(nodeId)
     const visited = new Set<number>()
     let effectiveWorld: number | null = null
     while (node) {
-      if (node.projectId !== projectId) throw new Error('大纲节点不属于当前项目')
+      if (!await assertRecordInScope(workspaceScope, 'outlineNodes', node, { owner: 'work' })) {
+        throw new Error('大纲节点不属于当前作品')
+      }
       if (node.worldGroupId != null) {
         effectiveWorld = node.worldGroupId
         break
@@ -340,13 +363,17 @@ async function resolveScope(
   }
   if (chapterId != null) {
     const chapter = await db.chapters.get(chapterId)
-    if (!chapter || chapter.projectId !== projectId) throw new Error('章节不属于当前项目')
+    if (!chapter || !await assertRecordInScope(workspaceScope, 'chapters', chapter, { owner: 'work' })) {
+      throw new Error('章节不属于当前项目或当前作品')
+    }
     chapterOutlineNodeId = chapter.outlineNodeId
     await assertOutlineWorld(chapter.outlineNodeId)
   }
   if (outlineNodeId != null) {
     const node = await db.outlineNodes.get(outlineNodeId)
-    if (!node || node.projectId !== projectId) throw new Error('大纲节点不属于当前项目')
+    if (!node || !await assertRecordInScope(workspaceScope, 'outlineNodes', node, { owner: 'work' })) {
+      throw new Error('大纲节点不属于当前作品')
+    }
     await assertOutlineWorld(outlineNodeId)
   }
   if (chapterOutlineNodeId != null && outlineNodeId != null && chapterOutlineNodeId !== outlineNodeId) {
@@ -354,16 +381,28 @@ async function resolveScope(
   }
   if (characterId != null) {
     const character = await db.characters.get(characterId)
-    if (!character || character.projectId !== projectId) throw new Error('角色不属于当前项目')
+    if (!character || !await assertRecordInScope(workspaceScope, 'characters', character, { owner: 'world' })) {
+      throw new Error('角色不属于当前 World')
+    }
     if (
       needsWorld
       && !character.isCrossWorld
       && (character.homeWorldGroupId ?? null) !== (worldGroupId ?? null)
     ) throw new Error('角色不属于当前世界作用域')
   }
+  if (characterDrivenPlanId != null) {
+    const plan = await db.characterDrivenPlans.get(characterDrivenPlanId)
+    if (!plan || !await assertRecordInScope(
+      workspaceScope,
+      'characterDrivenPlans',
+      plan,
+      { owner: 'work' },
+    )) throw new Error('角色驱动方案不存在或不属于当前作品')
+  }
 
   return {
     projectId,
+    scope: isLegacyReadScope(workspaceScope) ? undefined : workspaceScope,
     ...(needsWorld || explicitWorld ? { worldGroupId: worldGroupId ?? null } : {}),
     chapterId,
     outlineNodeId,
@@ -373,6 +412,7 @@ async function resolveScope(
     searchKinds: args.kinds as string[] | undefined,
     inspirationFragmentIds: fragmentIds,
     inspirationMode,
+    characterDrivenPlanId,
     provider: context.provider,
     model: context.model,
     sourceKeys: [...spec.sourceKeys],
@@ -381,6 +421,7 @@ async function resolveScope(
       context.contextPolicy?.maxInputTokens ?? spec.inputBudgetTokens,
     ),
     sourceBudgetScale: context.contextPolicy?.sourceBudgetScale,
+    sourceTransformer: context.sourceTransformer,
   }
 }
 
@@ -401,6 +442,7 @@ async function executeReadTool(
         included: assembled.included,
         omitted: assembled.omitted,
         trimmed: assembled.trimmed,
+        sourceEvidence: assembled.sourceEvidence,
         totalInputTokens: assembled.totalInputTokens,
         inputBudget: assembled.inputBudget,
         overBudgetBeforeTrim: assembled.overBudgetBeforeTrim,
@@ -429,9 +471,26 @@ export const AGENT_READ_TOOLS: readonly AgentToolDefinition[] = READ_TOOL_SPECS.
   }
 })
 
+/** Maximum context capability exposed by the generic read-only runner. */
+export const AGENT_READ_CONTEXT_SOURCE_KEYS: readonly string[] = [...new Set(
+  AGENT_READ_TOOLS.flatMap(tool => tool.sourceKeys),
+)].sort()
+
 export const AGENT_TOOL_BY_NAME: ReadonlyMap<string, AgentToolDefinition> = new Map(
   AGENT_READ_TOOLS.map(tool => [tool.name, tool] as const),
 )
+
+/** Canonical tool declaration input for the HARNESS-18 runtime binding hash. */
+export function getAgentToolSchemaSnapshotV1(): unknown {
+  return AGENT_READ_TOOLS.map(tool => ({
+    name: tool.name,
+    description: tool.description,
+    risk: tool.risk,
+    parameters: tool.parameters,
+    sourceKeys: [...tool.sourceKeys],
+    inputBudgetTokens: tool.inputBudgetTokens,
+  }))
+}
 
 export async function executeAgentTool(
   name: string,

@@ -23,7 +23,7 @@ import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { DialogProvider } from '../../src/components/shared/Dialog'
 import OutlinePreview from '../../src/components/outline/OutlinePreview'
-import StoryTimelinePanel from '../../src/components/timeline/StoryTimelinePanel'
+import StoryTimelinePanel, { waitForStoryTimelineAsyncWork } from '../../src/components/timeline/StoryTimelinePanel'
 import PromptTemplateList from '../../src/components/settings/prompt/PromptTemplateList'
 import { db } from '../../src/lib/db/schema'
 import { useAIConfigStore } from '../../src/stores/ai-config'
@@ -174,7 +174,11 @@ describe('Phase1-i18n · StoryTimelinePanel 命名空间就绪与语义错误状
     await db.open()
   })
 
-  afterEach(() => {
+  afterEach(async () => {
+    // Unmounts cancel state publication, while this await lets every tracked
+    // lifecycle read settle before the shared Dexie instance is closed. Any
+    // rejection is deliberately propagated by the helper.
+    await waitForStoryTimelineAsyncWork()
     db.close()
     useStoryTimelineStore.setState({ events: [], loading: false })
   })
@@ -196,9 +200,23 @@ describe('Phase1-i18n · StoryTimelinePanel 命名空间就绪与语义错误状
       name: '年表测试', genre: 'xuanhuan', genres: ['xuanhuan'], status: 'ongoing',
       description: '', targetWordCount: 100_000, createdAt: 1, updatedAt: 1,
     } as never)
+    const worldId = await db.worlds.add({
+      projectId, code: 'timeline-world', name: '年表世界', description: '',
+      currentVersion: 1, createdAt: 1, updatedAt: 1,
+    } as never) as number
+    const workId = await db.works.add({
+      projectId, worldId, title: '年表作品', description: '', genres: ['xuanhuan'],
+      status: 'drafting', targetWordCount: 100_000, createdAt: 1, updatedAt: 1,
+    } as never) as number
+    await db.projects.update(projectId, {
+      activeWorldId: worldId, activeWorkId: workId, ownershipSchemaVersion: 1,
+      worldCode: 'timeline-world', worldVersion: 1,
+    })
     const project = {
       id: projectId, name: '年表测试', genre: 'xuanhuan', genres: ['xuanhuan'],
       status: 'ongoing', description: '', targetWordCount: 100_000,
+      activeWorldId: worldId, activeWorkId: workId, ownershipSchemaVersion: 1,
+      worldCode: 'timeline-world', worldVersion: 1,
       createdAt: 1, updatedAt: 1,
     } as unknown as Project
 

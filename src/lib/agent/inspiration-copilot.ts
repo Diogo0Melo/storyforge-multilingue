@@ -25,18 +25,37 @@ import {
   parseInspirationVersions,
 } from '../inspiration/workspace'
 import type { AIConfig } from '../types'
+import type { WorkspaceScope } from '../types/world-ownership'
 import type {
   InspirationResultMode,
   InspirationVersion,
   InspirationWorkspace,
 } from '../types/inspiration-workspace'
 import {
+  attachAgentContextInputStateV1,
   evidenceFromContextResult,
   resolveAgentContextPolicy,
   type AgentContextEvidence,
   type AgentContextProfile,
 } from './context-policy'
+import {
+  createAgentContextCompressionSessionV1,
+  type AgentContextCompressionRuntimeV1,
+} from './context-compression'
 import { executeAgentTool } from './tool-registry'
+import {
+  buildAgentSkillInputGuidanceV1,
+  resolveAgentSkillInputStateV1,
+  resolveAgentSkillV1,
+  type AgentSkillId,
+} from './skill-registry'
+import type { MasterCandidateModelIdentityV1 } from './master-candidate-semantic-review'
+import {
+  isLegacyReadScope,
+  readOwnedRows,
+  resolveReadScopeLike,
+  type WorkspaceScopeLike,
+} from '../world-engine/scope'
 
 export type InspirationCopilotResult = ReverseResult | ReverseMultiWorldResult
 
@@ -49,11 +68,13 @@ export interface InspirationWorkspaceSnapshot {
 
 export interface InspirationCopilotInput {
   projectId: number
+  scope?: WorkspaceScope
   projectName: string
   genres: string
   mode: InspirationResultMode
   authorRequest: string
   contextText: string
+  inputGuidance: string
   selectedFragmentIds: string[]
   parentVersionId: string | null
   snapshot: InspirationWorkspaceSnapshot
@@ -71,6 +92,7 @@ export interface PreparedInspirationCopilot {
   selectedFragmentIds: string[]
   snapshot: InspirationWorkspaceSnapshot
   contextEvidence: AgentContextEvidence
+  modelIdentity: MasterCandidateModelIdentityV1
 }
 
 interface InspirationCopilotDependencies {
@@ -107,9 +129,17 @@ function sameSnapshot(
     && left.versions === right.versions
 }
 
-async function readWorkspaceSnapshot(projectId: number): Promise<InspirationWorkspaceSnapshot> {
-  const row = await db.inspirationWorkspaces.where('projectId').equals(projectId).first() ?? null
+async function snapshotFromResolvedScope(scope: WorkspaceScope): Promise<InspirationWorkspaceSnapshot> {
+  const row = (await readOwnedRows<InspirationWorkspace>(
+    scope,
+    'inspirationWorkspaces',
+    { owner: 'work' },
+  ))[0] ?? null
   return snapshotOf(row)
+}
+
+async function readWorkspaceSnapshot(scopeInput: WorkspaceScopeLike): Promise<InspirationWorkspaceSnapshot> {
+  return snapshotFromResolvedScope(await resolveReadScopeLike(scopeInput))
 }
 
 function assertAuthorRequest(value: string): string {
@@ -119,7 +149,10 @@ function assertAuthorRequest(value: string): string {
   return request
 }
 
-function resultHasValue(result: InspirationCopilotResult, mode: InspirationResultMode): boolean {
+export function hasInspirationCandidateMaterialV1(
+  result: InspirationCopilotResult,
+  mode: InspirationResultMode,
+): boolean {
   if (mode === 'multiworld') {
     const candidate = result as ReverseMultiWorldResult
     return candidate.worlds.some(world => [
@@ -168,16 +201,21 @@ export function parseInspirationCandidateDraft(
  */
 export async function prepareInspirationCopilot(input: {
   projectId: number
+  scope?: WorkspaceScope
   selectedFragmentIds: string[]
   authorRequest: string
+  skillId?: AgentSkillId
   routingCategory?: string
   contextProfile?: AgentContextProfile
+  contextCompressionRuntime?: AgentContextCompressionRuntimeV1
   signal?: AbortSignal
 }): Promise<PreparedInspirationCopilot> {
   const project = await db.projects.get(input.projectId)
   if (!project) throw new Error(getT()('agent:copilot.inspiration.projectNotFound'))
   const mode: InspirationResultMode = project.enableMultiWorld ? 'multiworld' : 'single'
-  const snapshot = await readWorkspaceSnapshot(input.projectId)
+  const readScope = await resolveReadScopeLike(input.scope ?? input.projectId)
+  const scope = isLegacyReadScope(readScope) ? undefined : readScope
+  const snapshot = await snapshotFromResolvedScope(readScope)
   const fragments = parseInspirationFragments(snapshot.fragments)
   const selectedFragmentIds = [...new Set(input.selectedFragmentIds)]
   if (
@@ -195,14 +233,33 @@ export async function prepareInspirationCopilot(input: {
     { category: routingCategory },
   ).config
   const contextProfile = input.contextProfile ?? 'full'
-  const contextPolicy = resolveAgentContextPolicy('agent-inspiration', contextProfile)
+  const skill = resolveAgentSkillV1('inspiration', input.skillId)
+  const authorRequest = assertAuthorRequest(input.authorRequest)
+  const compression = input.contextCompressionRuntime
+    ? createAgentContextCompressionSessionV1({
+        policy: skill.contextCompression,
+        config,
+        projectId: input.projectId,
+        authorRequest,
+        routingCategory,
+        signal: input.signal,
+        runtime: input.contextCompressionRuntime,
+      })
+    : undefined
+  const [readToolName] = skill.readToolNames
+  if (!readToolName || skill.readToolNames.length !== 1) {
+    throw new Error(`Agent Skill ${skill.id} 的只读工具契约无效`)
+  }
+  const contextPolicy = resolveAgentContextPolicy(skill.contextTaskKind, contextProfile)
   const context = await executeAgentTool(
-    'read_inspiration_workspace',
+    readToolName,
     {
       projectId: input.projectId,
+      scope,
       provider: config.provider,
       model: config.model,
       contextPolicy,
+      sourceTransformer: compression?.sourceTransformer,
     },
     { fragmentIds: selectedFragmentIds, mode },
   )
@@ -215,13 +272,21 @@ export async function prepareInspirationCopilot(input: {
   let previousResult: InspirationCopilotResult | null = null
   if (parent) previousResult = parseResult(parent.resultJson, mode)
 
+  const inputState = resolveAgentSkillInputStateV1(skill, [context.meta])
+  const contextEvidence = attachAgentContextInputStateV1(
+    evidenceFromContextResult(contextProfile, context.meta),
+    inputState,
+  )
+  const inputGuidance = buildAgentSkillInputGuidanceV1(skill, inputState)
   const nodeInput: InspirationCopilotInput = {
     projectId: input.projectId,
+    scope,
     projectName: project.name,
     genres: project.genres?.join('/') || project.genre || '',
     mode,
-    authorRequest: assertAuthorRequest(input.authorRequest),
-    contextText: context.content,
+    authorRequest,
+    contextText: `${inputGuidance}\n\n${context.content}`,
+    inputGuidance,
     selectedFragmentIds,
     parentVersionId: parent?.id ?? null,
     snapshot,
@@ -238,7 +303,8 @@ export async function prepareInspirationCopilot(input: {
     contextSources: context.meta.included,
     selectedFragmentIds,
     snapshot,
-    contextEvidence: evidenceFromContextResult(contextProfile, context.meta),
+    contextEvidence,
+    modelIdentity: { provider: config.provider, model: config.model },
   }
 }
 
@@ -249,10 +315,11 @@ export function createInspirationCopilotNode(
   input: InspirationCopilotInput,
   dependencies: InspirationCopilotDependencies = {},
 ): GenerationNode<InspirationCopilotInput, InspirationCopilotResult, InspirationVersion> {
-  const readCurrent = dependencies.readCurrent ?? (() => readWorkspaceSnapshot(input.projectId))
+  const scopeInput = input.scope ?? input.projectId
+  const readCurrent = dependencies.readCurrent ?? (() => readWorkspaceSnapshot(scopeInput))
   const saveVersion = dependencies.saveVersion ?? (async result => {
-    await useInspirationWorkspaceStore.getState().load(input.projectId)
-    return useInspirationWorkspaceStore.getState().saveVersion(input.projectId, {
+    await useInspirationWorkspaceStore.getState().load(scopeInput)
+    return useInspirationWorkspaceStore.getState().saveVersion(scopeInput, {
       mode: input.mode,
       parentVersionId: input.parentVersionId,
       fragmentIds: input.selectedFragmentIds,
@@ -304,7 +371,7 @@ export function createInspirationCopilotNode(
           message: getT()('agent:copilot.inspiration.tooLong', { max: MAX_INSPIRATION_RESULT_CHARS }),
         })
       }
-      if (!resultHasValue(output, input.mode)) {
+      if (!hasInspirationCandidateMaterialV1(output, input.mode)) {
         issues.push({ code: 'inspiration-empty-shell', message: getT()('agent:copilot.inspiration.emptyShell') })
       }
       if (input.mode === 'multiworld' && (output as ReverseMultiWorldResult).worlds.length === 0) {

@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 import { useDomainT } from '../../i18n'
 import type { Character, Project, StateCard, StateField } from '../../lib/types'
-import { parseFields, stringifyFields } from '../../lib/types/state-card'
+import { parseFields, stringifyFields, STATE_CATEGORY_LABELS } from '../../lib/types/state-card'
 import { useStateCardStore } from '../../stores/state-card'
 import { useCharacterStore } from '../../stores/character'
 import { useChapterStore } from '../../stores/chapter'
@@ -18,10 +18,17 @@ import { useItemLedgerStore } from '../../stores/item-ledger'
 import { useCodexStore } from '../../stores/codex'
 import { aggregateInventory } from '../../lib/types/item-ledger'
 import { CInput } from '../shared/CompositionInput'
+import { resolveScopeLike } from '../../lib/world-engine/scope'
+import {
+  INITIAL_RECORD_TARGET_CLASS,
+  initialRecordTargetAttributes,
+  useInitialRecordTarget,
+} from '../shared/initial-record-target'
 
 interface Props {
   project: Project
   onOpenInventory?: () => void
+  initialStateCardId?: number | null
 }
 
 const LOCATION_KEYS = ['位置', '地点', '所在地', '当前地点', 'location']
@@ -33,7 +40,7 @@ function findField(fields: StateField[], keys: string[]): string {
   return fields.find(field => normalized.some(key => field.key.toLocaleLowerCase().includes(key)))?.value || ''
 }
 
-export default function StatePanel({ project, onOpenInventory }: Props) {
+export default function StatePanel({ project, onOpenInventory, initialStateCardId }: Props) {
   const { t } = useDomainT('state')
   const projectId = project.id!
   const { cards, loading, loadAll, addCard, updateCard, buildStateContext } = useStateCardStore()
@@ -44,19 +51,24 @@ export default function StatePanel({ project, onOpenInventory }: Props) {
   const [editingCharacter, setEditingCharacter] = useState<number | null>(null)
 
   useEffect(() => {
-    void Promise.all([
-      loadAll(projectId),
-      loadCharacters(projectId),
-      loadChapters(projectId),
-      loadItems(projectId),
-      loadCodex(projectId),
-    ])
+    void resolveScopeLike(projectId).then(scope => Promise.all([
+      loadAll(scope),
+      loadCharacters(scope),
+      loadChapters(scope),
+      loadItems(scope),
+      loadCodex(scope),
+    ]))
   }, [projectId, loadAll, loadCharacters, loadChapters, loadItems, loadCodex])
 
   const characterCards = useMemo(
     () => cards.filter(card => card.category === 'character'),
     [cards],
   )
+  const targetCard = cards.find(card => card.id === initialStateCardId) ?? null
+  const targetCharacterExists = targetCard != null
+    && targetCard.category === 'character'
+    && characters.some(character => character.name === targetCard.entityName)
+  useInitialRecordTarget(initialStateCardId, targetCard != null)
   const charInventory = useCallback(
     (characterId: number) => aggregateInventory(itemEntries, characterId).filter(item => item.quantity > 0),
     [itemEntries],
@@ -111,6 +123,14 @@ export default function StatePanel({ project, onOpenInventory }: Props) {
         <Summary label={t('panel.summaryMissingState')} value={Math.max(0, characters.length - characterCards.length)} />
       </div>
 
+      {targetCard && !targetCharacterExists && (
+        <StandaloneStateTargetCard
+          card={targetCard}
+          chapterTitle={targetCard.lastChapterId ? chapterById.get(targetCard.lastChapterId)?.title : undefined}
+          onSave={fields => updateCard(targetCard.id!, { fields: stringifyFields(fields) })}
+        />
+      )}
+
       {loading ? (
         <div className="text-sm text-text-muted text-center py-10">{t('panel.loading')}</div>
       ) : characters.length === 0 ? (
@@ -133,6 +153,7 @@ export default function StatePanel({ project, onOpenInventory }: Props) {
                 inventoryBacked={charInventory(character.id!).length > 0}
                 onOpenInventory={onOpenInventory}
                 knownFactions={factionNames}
+                targeted={card?.id === initialStateCardId}
                 editing={editingCharacter === character.id}
                 onToggleEdit={() => setEditingCharacter(editingCharacter === character.id ? null : character.id!)}
                 onSave={async fields => {
@@ -166,9 +187,110 @@ function Summary({ label, value, accent }: { label: string; value: number; accen
   )
 }
 
+function StandaloneStateTargetCard({
+  card,
+  chapterTitle,
+  onSave,
+}: {
+  card: StateCard
+  chapterTitle?: string
+  onSave: (fields: StateField[]) => Promise<void>
+}) {
+  const fields = useMemo(() => parseFields(card.fields || '[]'), [card.fields])
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<StateField[]>(fields)
+
+  useEffect(() => {
+    if (editing) setDraft(fields.length ? fields : [{ key: '当前状态', value: '' }])
+  }, [editing, fields])
+
+  return (
+    <article
+      {...initialRecordTargetAttributes(true, card.id)}
+      className={`rounded-xl border border-border bg-bg-surface p-4 ${INITIAL_RECORD_TARGET_CLASS}`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <div className="flex items-center gap-2">
+            <h3 className="font-semibold text-text-primary">{card.entityName}</h3>
+            <span className="rounded bg-bg-elevated px-1.5 py-0.5 text-[10px] text-text-muted">
+              {STATE_CATEGORY_LABELS[card.category]}
+            </span>
+          </div>
+          {chapterTitle && <p className="mt-1 text-xs text-text-muted">最近：{chapterTitle}</p>}
+        </div>
+        <button
+          type="button"
+          onClick={() => setEditing(value => !value)}
+          className="p-1 text-text-muted hover:text-accent"
+          title="编辑状态"
+        >
+          {editing ? <X className="h-4 w-4" /> : <Edit3 className="h-4 w-4" />}
+        </button>
+      </div>
+
+      {editing ? (
+        <div className="mt-4 space-y-2">
+          {draft.map((field, index) => (
+            <div key={index} className="flex gap-2">
+              <CInput
+                value={field.key}
+                onChange={event => setDraft(current => current.map((item, i) => i === index ? { ...item, key: event.target.value } : item))}
+                placeholder="字段"
+                className="w-28 rounded border border-border bg-bg-base px-2 py-1.5 text-xs"
+              />
+              <CInput
+                value={field.value}
+                onChange={event => setDraft(current => current.map((item, i) => i === index ? { ...item, value: event.target.value } : item))}
+                placeholder="当前值"
+                className="flex-1 rounded border border-border bg-bg-base px-2 py-1.5 text-xs"
+              />
+              <button
+                type="button"
+                onClick={() => setDraft(current => current.filter((_, i) => i !== index))}
+                className="p-1 text-text-muted hover:text-red-400"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+          <div className="flex items-center justify-between">
+            <button
+              type="button"
+              onClick={() => setDraft(current => [...current, { key: '', value: '' }])}
+              className="text-xs text-accent"
+            >
+              + 添加字段
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                void onSave(draft.filter(field => field.key.trim() && field.value.trim())).then(() => setEditing(false))
+              }}
+              className="inline-flex items-center gap-1 rounded bg-accent px-2.5 py-1.5 text-xs text-white"
+            >
+              <Save className="h-3.5 w-3.5" /> 保存
+            </button>
+          </div>
+        </div>
+      ) : fields.length ? (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {fields.map((field, index) => (
+            <span key={index} className="rounded-lg bg-bg-elevated px-2 py-1 text-xs text-text-secondary">
+              <span className="text-text-muted">{field.key}：</span>{field.value}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="mt-3 text-xs text-text-muted">暂无状态字段。</p>
+      )}
+    </article>
+  )
+}
+
 function CharacterStateCard({
   character, card, chapterTitle, protagonistItems, inventoryBacked, onOpenInventory,
-  knownFactions, editing, onToggleEdit, onSave,
+  knownFactions, targeted, editing, onToggleEdit, onSave,
 }: {
   character: Character
   card: StateCard | null
@@ -177,6 +299,7 @@ function CharacterStateCard({
   inventoryBacked: boolean
   onOpenInventory?: () => void
   knownFactions: string[]
+  targeted: boolean
   editing: boolean
   onToggleEdit: () => void
   onSave: (fields: StateField[]) => Promise<void>
@@ -204,7 +327,12 @@ function CharacterStateCard({
   )
 
   return (
-    <article className="rounded-xl border border-border bg-bg-surface p-4">
+    <article
+      {...initialRecordTargetAttributes(targeted, card?.id)}
+      className={`rounded-xl border border-border bg-bg-surface p-4 ${
+        targeted ? INITIAL_RECORD_TARGET_CLASS : ''
+      }`}
+    >
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 rounded-full bg-accent/10 text-accent flex items-center justify-center font-semibold">
           {character.name.slice(0, 1)}

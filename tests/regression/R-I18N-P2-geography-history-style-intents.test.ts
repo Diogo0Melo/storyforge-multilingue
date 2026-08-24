@@ -57,29 +57,31 @@ describe('fix-5b · geography/history/style 调用点 outputKind 源码锚定', 
   })
 
   it('geography.world-map 声明 mixed（JSON 信封：枚举/数值/seed/证据为协议字段，补全地名为作者面向）', () => {
-    const source = readSource('src/components/geography/WorldMapPanel.tsx')
-    expectAllOccurrencesDeclare(source, "category: 'geography.world-map'", 'WorldMapPanel.tsx', 'mixed')
+    const source = readSource('src/lib/agent/run/world-map-config-durable.ts')
+    expectAllOccurrencesDeclare(source, "category: 'geography.world-map'", 'world-map-config-durable.ts', 'mixed')
     expect(source).toContain(
-      "{ category: 'geography.world-map', projectId: project.id!, outputKind: 'mixed' }",
+      "category: 'geography.world-map'",
     )
+    expect(source).toContain('projectId: input.scope.projectId')
   })
 
   it('history.consult 声明 functional-prose（作者面向考据散文跟随 UI 语言），storm 既有 creative 不削弱', () => {
-    const source = readSource('src/components/history/useHistoryAI.ts')
-    expectAllOccurrencesDeclare(source, "category: 'history.consult'", 'useHistoryAI.ts', 'functional-prose')
-    expect(source).toContain(
-      "{ category: 'history.consult', projectId, outputKind: 'functional-prose' }",
-    )
-    expect(source).toContain("{ category: 'history.storm', projectId, outputKind: 'creative' }")
+    const source = readSource('src/lib/agent/run/history-agent-durable.ts')
+    const chatIndex = source.lastIndexOf('chat(prepared.messages')
+    expect(chatIndex).toBeGreaterThanOrEqual(0)
+    const callSite = source.slice(chatIndex, chatIndex + 500)
+    expect(callSite).toContain("category: input.mode === 'consult' ? 'history.consult' : 'history.storm'")
+    expect(callSite).toContain("outputKind: input.mode === 'consult' ? 'functional-prose' : 'creative'")
   })
 
   it('style.learn 的 chat 调用声明 functional-prose；resolveRequestConfig 配置解析点保持原形状', () => {
-    const source = readSource('src/components/style/StyleLearningPanel.tsx')
-    expect(source).toContain(
-      "const out = await chat(messages, aiConfig, { category: 'style.learn', projectId: project.id!, outputKind: 'functional-prose' })",
-    )
-    // 非 AI 调用的配置解析出现点不挂 outputKind
-    expect(source).toContain("resolveRequestConfig(aiConfig, { category: 'style.learn' })")
+    const source = readSource('src/lib/agent/run/style-learning-durable.ts')
+    const chatIndex = source.lastIndexOf('chat(prepared.messages')
+    expect(chatIndex).toBeGreaterThanOrEqual(0)
+    const callSite = source.slice(chatIndex, chatIndex + 500)
+    expect(callSite).toContain("category: 'style.learn'")
+    expect(callSite).toContain("outputKind: 'functional-prose'")
+    expect(callSite).toContain('projectId: input.scope.projectId')
   })
 })
 

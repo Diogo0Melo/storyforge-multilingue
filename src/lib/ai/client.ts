@@ -2,9 +2,9 @@ import type { AIConfig, ChatMessage } from '../types'
 import { AIError } from '../types'
 import { createLog, updateLog, type TokenUsage } from './logger'
 import { recordUsage } from './usage-log'
-import { trimMessagesToFit } from './context-budget'
+import { estimateTokens, trimMessagesToFit } from './context-budget'
 import { buildOpenAIEndpoint } from './openai-endpoint'
-import { useAIConfigStore } from '../../stores/ai-config'
+import { getAIConfigPresetSessionApiKey, useAIConfigStore } from '../../stores/ai-config'
 import { resolveAIConfigForTask, type AITaskKind } from './task-routing'
 import { getT } from '../../i18n'
 import {
@@ -46,11 +46,19 @@ export function resolveRequestConfig(config: AIConfig, meta?: AICallMeta) {
     category: meta?.category,
     requestedConfig: config,
     globalConfig: state.config,
-    presets: state.presets,
+    presets: state.presets.map(preset => ({
+      ...preset,
+      config: {
+        ...preset.config,
+        apiKey: preset.config.apiKey || getAIConfigPresetSessionApiKey(preset.id),
+      },
+    })),
     routes: state.taskRoutes,
     explicitOverrides: meta?.configOverrides,
   })
 }
+
+export type AIRequestConfigResolution = ReturnType<typeof resolveRequestConfig>
 
 function warnRouteFallback(resolved: ReturnType<typeof resolveRequestConfig>, meta?: AICallMeta): void {
   if (resolved.fallbackReason) {
@@ -89,18 +97,55 @@ export interface StreamResult {
 /** 可变容器，chat 写入非流式调用返回的真实 token 用量。 */
 export interface ChatResult {
   usage?: TokenUsage
+  /** Raw OpenAI-compatible tool_calls; the Agent protocol validates it. */
+  toolCalls?: unknown
+  toolCallsPresent?: boolean
+  finishReason?: string
+}
+
+export interface ChatToolDefinition {
+  type: 'function'
+  function: {
+    name: string
+    description: string
+    parameters: unknown
+  }
+}
+
+export interface ChatRequestOptions {
+  tools?: readonly ChatToolDefinition[]
+  toolChoice?: 'auto'
+  responseFormat?: 'json_object'
+}
+
+export function estimateChatRequestOptionsTokens(options?: ChatRequestOptions): number {
+  if (!options) return 0
+  return estimateTokens(JSON.stringify({
+    ...(options.tools ? { tools: options.tools, tool_choice: options.toolChoice } : {}),
+    ...(options.responseFormat ? { response_format: { type: options.responseFormat } } : {}),
+  }))
 }
 
 /**
  * 根据 provider 构造请求 URL 和 headers
  */
-function buildRequest(config: AIConfig, messages: ChatMessage[], stream: boolean) {
+function buildRequest(
+  config: AIConfig,
+  messages: ChatMessage[],
+  stream: boolean,
+  options?: ChatRequestOptions,
+) {
   // 基础请求体：所有 provider 都需要的字段
   const body: Record<string, unknown> = {
     model: config.model,
     messages,
     stream,
   }
+  if (options?.tools) {
+    body.tools = options.tools
+    body.tool_choice = options.toolChoice
+  }
+  if (options?.responseFormat) body.response_format = { type: options.responseFormat }
 
   // 流式请求时要求返回 token 用量
   // stream_options 仅 OpenAI / DeepSeek / Qwen 等兼容 provider 支持
@@ -299,8 +344,10 @@ export async function chat(
   meta?: AICallMeta,
   signal?: AbortSignal,
   result?: ChatResult,
+  options?: ChatRequestOptions,
+  frozenResolution?: AIRequestConfigResolution,
 ): Promise<string> {
-  const resolved = resolveRequestConfig(config, meta)
+  const resolved = frozenResolution ?? resolveRequestConfig(config, meta)
   warnRouteFallback(resolved, meta)
   config = resolved.config
   // WS-3A：唯一网络边界的输出语言注入点（先于裁剪，约束计入上下文预算）
@@ -309,7 +356,13 @@ export async function chat(
   // 基础消息 → 约束按原样重新追加到末尾；约束无法保留时拒绝请求。
   const protectedConstraint = detectInjectedOutputConstraint(messages)
   const trimmed = trimMessagesToFit(
-    messages, config.provider, config.model, config.maxTokens, config.contextWindow, protectedConstraint,
+    messages,
+    config.provider,
+    config.model,
+    config.maxTokens,
+    config.contextWindow,
+    estimateChatRequestOptionsTokens(options),
+    protectedConstraint,
   )
   if (protectedConstraint && trimmed.constraintPreserved !== true) {
     throw new Error(
@@ -327,7 +380,7 @@ export async function chat(
   if (!trimmed.protectedEnvelopePreserved) {
     throw new Error(getT()('errors-lib:ai.contextEnvelopeUnfit'))
   }
-  const req = buildRequest(config, trimmed.messages, false)
+  const req = buildRequest(config, trimmed.messages, false, options)
 
   const response = await fetch(req.url, {
     method: 'POST',
@@ -351,5 +404,14 @@ export async function chat(
     if (result) result.usage = usage
     void recordUsage(usageEntry(meta, config, resolved.taskKind, usage))
   }
-  return json.choices?.[0]?.message?.content || ''
+  const choice = json.choices?.[0]
+  if (result && choice?.message && typeof choice.message === 'object'
+    && Object.prototype.hasOwnProperty.call(choice.message, 'tool_calls')) {
+    result.toolCallsPresent = true
+    result.toolCalls = choice.message.tool_calls
+  }
+  if (result && typeof choice?.finish_reason === 'string') {
+    result.finishReason = choice.finish_reason
+  }
+  return typeof choice?.message?.content === 'string' ? choice.message.content : ''
 }

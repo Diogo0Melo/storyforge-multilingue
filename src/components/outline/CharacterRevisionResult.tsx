@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, Clipboard, Loader2 } from 'lucide-react'
+import { AlertTriangle, Check, Clipboard, Loader2, X } from 'lucide-react'
 import { useDomainT } from '../../i18n'
 import type { CharacterRevisionPlan } from '../../lib/story-planning/character-revision'
 
@@ -11,6 +11,7 @@ interface Props {
   onTogglePatch: (outlineNodeId: number) => void
   onCopy: () => void
   onApply: () => void
+  onReject?: () => void
 }
 
 export default function CharacterRevisionResult({
@@ -22,6 +23,7 @@ export default function CharacterRevisionResult({
   onTogglePatch,
   onCopy,
   onApply,
+  onReject,
 }: Props) {
   const { t, lang } = useDomainT('outline')
   const selectedOption = analysis.options.find(option => option.id === selectedOptionId) ?? null
@@ -168,6 +170,15 @@ export default function CharacterRevisionResult({
           {t('revisionResult.applyButton')}
         </button>
         <span className="text-xs text-text-muted">{t('revisionResult.applySafetyNote')}</span>
+        {onReject && (
+          <button
+            onClick={onReject}
+            disabled={applying}
+            className="inline-flex items-center gap-1.5 rounded border border-border px-3 py-2 text-sm text-text-muted disabled:opacity-40"
+          >
+            <X className="w-4 h-4" />{t('revisionResult.rejectButton')}
+          </button>
+        )}
       </div>
     </section>
   )

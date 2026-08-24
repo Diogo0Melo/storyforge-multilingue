@@ -1,5 +1,6 @@
 import { getT } from '../../i18n'
 import { adopt } from '../registry/adopt'
+import type { WorkspaceScope } from '../types'
 
 export interface GeneratedOutlineItem {
   title: string
@@ -8,6 +9,7 @@ export interface GeneratedOutlineItem {
 
 export interface AdoptGeneratedOutlineItemsInput {
   projectId: number
+  workspaceScope?: WorkspaceScope
   worldGroupId?: number | null
   parentId: number | null
   type: 'volume' | 'chapter'
@@ -50,6 +52,7 @@ export async function adoptGeneratedOutlineItems(
     const item = input.items[index]
     const result = await adopt({
       projectId: input.projectId,
+      scope: input.workspaceScope,
       worldGroupId: input.worldGroupId,
       target: 'outlineNodes',
       mode: 'add',

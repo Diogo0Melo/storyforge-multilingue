@@ -1,7 +1,7 @@
 import JSON5 from 'json5'
 import { getT } from '../../i18n'
 import { useAIConfigStore } from '../../stores/ai-config'
-import { chat, resolveRequestConfig } from '../ai/client'
+import { chat, resolveRequestConfig, type ChatResult } from '../ai/client'
 import {
   parseChapterOutlineOutput,
   parseVolumeOutlineOutput,
@@ -21,37 +21,60 @@ import {
 import { buildOutlineGenerationPlan } from '../outline/generation-plan'
 import type { OutlineGenerationRequest } from '../outline/generation-request'
 import { assembleContext } from '../registry/assemble-context'
+import {
+  isLegacyReadScope,
+  readOwnedRows,
+  resolveReadScopeLike,
+  resolveScope,
+  scopeTransactionTables,
+} from '../world-engine/scope'
 import type {
   AIConfig,
+  ChatMessage,
   OutlineNode,
   Project,
+  WorkspaceScope,
 } from '../types'
 import {
+  attachAgentContextInputStateV1,
   evidenceFromContextResult,
   resolveAgentContextPolicy,
   type AgentContextEvidence,
   type AgentContextProfile,
 } from './context-policy'
+import {
+  createAgentContextCompressionSessionV1,
+  type AgentContextCompressionRuntimeV1,
+} from './context-compression'
+import {
+  getDefaultAgentSkillV1,
+  buildAgentSkillInputGuidanceV1,
+  resolveAgentSkillInputStateV1,
+  resolveAgentSkillV1,
+  type AgentSkillExecutionModeV1,
+  type AgentSkillId,
+} from './skill-registry'
+import {
+  buildNarrativeBriefV1,
+  formatNarrativeBriefForPromptV1,
+  type NarrativeBriefV1,
+} from './narrative-brief'
+import {
+  createCreativeIssueV1,
+  runCreativeExecutionV1,
+  type CreativeExecutionResultV1,
+  type CreativeParseOutcomeV1,
+  type CreativeRawModelResultV1,
+} from './creative-execution'
+import type { CreativeAssumptionV1, CreativeQualityModeV1 } from './creative-reliability'
+import {
+  isCreativeReliabilityRuntimeEnabledV1,
+  parseCreativeArtifactV1,
+  type CreativeArtifactV1,
+} from './creative-reliability'
+import type { AgentTeamBudgetTracker } from './team-budget'
 
-export const OUTLINE_COPILOT_SOURCE_KEYS = [
-  'canonAssertions',
-  'worldview',
-  'storyCore',
-  'characterDrivenPlan',
-  'powerSystem',
-  'cultivationProgress',
-  'codex',
-  'characters',
-  'creativeRules',
-  'worldRules',
-  'historical',
-  'locations',
-  'foreshadows',
-  'storyArcs',
-  'storylineProgress',
-  'existingVolumeOutlines',
-  'writtenChapterProgress',
-] as const
+export const OUTLINE_COPILOT_SOURCE_KEYS = getDefaultAgentSkillV1('outline').contextSourceKeys
 
 export type OutlineCopilotMode = 'volumes' | 'chapters'
 
@@ -63,14 +86,18 @@ export interface OutlineCopilotSnapshot {
 
 export interface OutlineCopilotInput {
   project: Project
+  scope?: WorkspaceScope
   worldGroupId: number | null
   authorRequest: string
   supplementalContext: string
+  inputGuidance: string
   mode: OutlineCopilotMode
   parentVolumeId: number | null
   nodes: OutlineNode[]
   volumes: OutlineNode[]
   assembled: Awaited<ReturnType<typeof assembleContext>>
+  narrativeBrief: NarrativeBriefV1
+  creativeReliabilityEnabled?: boolean
   snapshot: OutlineCopilotSnapshot
   config: AIConfig
   parameterValues?: Record<string, unknown>
@@ -92,6 +119,9 @@ export interface PreparedOutlineCopilot {
   parentVolumeId: number | null
   label: string
   contextEvidence: AgentContextEvidence
+  input: OutlineCopilotInput
+  modelIdentity: { provider: string; model: string }
+  runRaw: (messages: ChatMessage[]) => Promise<CreativeRawModelResultV1>
 }
 
 interface OutlineCopilotDependencies {
@@ -173,8 +203,10 @@ async function readSnapshot(
   worldGroupId: number | null,
   mode: OutlineCopilotMode,
   parentVolumeId: number | null,
+  scope?: WorkspaceScope,
 ): Promise<OutlineCopilotSnapshot> {
-  const rows = await db.outlineNodes.where('projectId').equals(projectId).toArray()
+  const resolved = scope ?? await resolveReadScopeLike(projectId)
+  const rows = await readOwnedRows<OutlineNode>(resolved, 'outlineNodes', { owner: 'work' })
   return snapshotOf(rows, worldGroupId, mode, parentVolumeId)
 }
 
@@ -185,7 +217,12 @@ function assertAuthorRequest(value: string): string {
   return request
 }
 
-function determineMode(request: string, volumes: OutlineNode[]): OutlineCopilotMode {
+function determineMode(
+  request: string,
+  volumes: OutlineNode[],
+  executionMode: AgentSkillExecutionModeV1 = 'auto',
+): OutlineCopilotMode {
+  if (executionMode === 'volumes' || executionMode === 'chapters') return executionMode
   if (!volumes.length) return 'volumes'
   if (/卷纲|卷级|分卷|全书大纲|新增.{0,6}卷|规划.{0,6}卷/.test(request)) return 'volumes'
   return 'chapters'
@@ -291,7 +328,13 @@ function buildOutlineMessages(input: OutlineCopilotInput) {
     nodes: input.nodes,
     volumes: input.volumes,
     assembled: input.assembled,
-    hint: `${input.authorRequest}${supplemental}`,
+    hint: [
+      input.inputGuidance,
+      input.authorRequest + supplemental,
+      ...(input.creativeReliabilityEnabled !== false
+        ? [formatNarrativeBriefForPromptV1(input.narrativeBrief)]
+        : []),
+    ].join('\n\n'),
     options: { parameterValues: input.parameterValues },
   })
   if (plan.status === 'skip') throw new Error(plan.reason)
@@ -305,19 +348,23 @@ async function adoptCandidate(input: {
   parentVolumeId: number | null
   snapshot: OutlineCopilotSnapshot
   items: GeneratedOutlineItem[]
+  scope?: WorkspaceScope
 }): Promise<AdoptGeneratedOutlineItemsResult> {
-  return db.transaction('rw', db.outlineNodes, async () => {
+  const workspaceScope = await resolveScope({ projectId: input.projectId, scope: input.scope })
+  return db.transaction('rw', scopeTransactionTables(db.outlineNodes), async () => {
     const current = await readSnapshot(
       input.projectId,
       input.worldGroupId,
       input.mode,
       input.parentVolumeId,
+      workspaceScope,
     )
     if (current.serialized !== input.snapshot.serialized) throw new OutlineCopilotStaleError()
     const issues = candidateIssues(input.items, current)
     if (issues.length) throw new Error(issues.map(issue => issue.message).join('；'))
     const result = await adoptGeneratedOutlineItems({
       projectId: input.projectId,
+      workspaceScope,
       worldGroupId: input.worldGroupId,
       parentId: input.mode === 'volumes' ? null : input.parentVolumeId,
       type: input.mode === 'volumes' ? 'volume' : 'chapter',
@@ -333,6 +380,7 @@ async function adoptCandidate(input: {
 
 export async function adoptRestoredOutlineCandidate(input: {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   mode: OutlineCopilotMode
   parentVolumeId: number | null
@@ -347,8 +395,10 @@ export async function adoptRestoredOutlineCandidate(input: {
 
 export async function prepareOutlineCopilot(input: {
   projectId: number
+  scope?: WorkspaceScope
   worldGroupId: number | null
   authorRequest: string
+  skillId?: AgentSkillId
   supplementalContext?: string
   routingCategory?: string
   contextProfile?: AgentContextProfile
@@ -356,8 +406,11 @@ export async function prepareOutlineCopilot(input: {
   /** 节点级 AI preset 的解析结果；未提供时沿用全局路由配置。 */
   configOverride?: AIConfig
   generationOverrides?: { temperature?: number; maxTokens?: number }
+  contextCompressionRuntime?: AgentContextCompressionRuntimeV1
+  inheritedAssumptions?: readonly CreativeAssumptionV1[]
+  creativeReliabilityEnabled?: boolean
   signal?: AbortSignal
-}): Promise<PreparedOutlineCopilot> {
+}, dependencies: OutlineCopilotDependencies = {}): Promise<PreparedOutlineCopilot> {
   const project = await db.projects.get(input.projectId)
   if (!project) throw new Error(getT()('agent:copilot.outline.projectNotFound'))
   if (project.enableMultiWorld && input.worldGroupId == null) {
@@ -365,12 +418,15 @@ export async function prepareOutlineCopilot(input: {
   }
   const worldGroupId = project.enableMultiWorld ? input.worldGroupId : null
   const request = assertAuthorRequest(input.authorRequest)
-  const allNodes = await db.outlineNodes.where('projectId').equals(input.projectId).toArray()
+  const skill = resolveAgentSkillV1('outline', input.skillId)
+  const readScope = input.scope ?? await resolveReadScopeLike(input.projectId)
+  const scope = isLegacyReadScope(readScope) ? undefined : readScope
+  const allNodes = await readOwnedRows<OutlineNode>(readScope, 'outlineNodes', { owner: 'work' })
   const nodes = rowsInWorld(allNodes, worldGroupId)
   const volumes = nodes
     .filter(node => node.type === 'volume' && node.parentId === null)
     .sort((left, right) => left.order - right.order)
-  const mode = determineMode(request, volumes)
+  const mode = determineMode(request, volumes, skill.executionMode)
   const targetVolume = mode === 'chapters' ? chooseTargetVolume(request, volumes) : null
   if (mode === 'chapters' && !targetVolume?.id) throw new Error(getT()('agent:copilot.outline.noExpandableVolume'))
 
@@ -383,31 +439,61 @@ export async function prepareOutlineCopilot(input: {
     { category: routingCategory },
   ).config
   const contextProfile = input.contextProfile ?? 'full'
-  const contextPolicy = resolveAgentContextPolicy('agent-outline', contextProfile)
+  const contextPolicy = resolveAgentContextPolicy(skill.contextTaskKind, contextProfile)
+  const compression = input.contextCompressionRuntime
+    ? createAgentContextCompressionSessionV1({
+        policy: skill.contextCompression,
+        config,
+        projectId: input.projectId,
+        authorRequest: request,
+        routingCategory,
+        signal: input.signal,
+        runtime: input.contextCompressionRuntime,
+      })
+    : undefined
   const assembled = await assembleContext({
     projectId: input.projectId,
+    scope,
     worldGroupId,
     outlineNodeId: parentVolumeId,
     provider: config.provider,
     model: config.model,
-    sourceKeys: [...OUTLINE_COPILOT_SOURCE_KEYS],
+    sourceKeys: [...skill.contextSourceKeys],
     inputBudgetMaxTokens: contextPolicy.maxInputTokens,
     sourceBudgetScale: contextPolicy.sourceBudgetScale,
+    sourceTransformer: compression?.sourceTransformer,
   })
-  const currentNodes = await db.outlineNodes.where('projectId').equals(input.projectId).toArray()
+  const currentNodes = await readOwnedRows<OutlineNode>(readScope, 'outlineNodes', { owner: 'work' })
   const snapshot = snapshotOf(currentNodes, worldGroupId, mode, parentVolumeId)
   if (before.serialized !== snapshot.serialized) throw new OutlineCopilotStaleError()
 
+  const inputState = resolveAgentSkillInputStateV1(skill, [assembled])
+  const contextEvidence = attachAgentContextInputStateV1(
+    evidenceFromContextResult(contextProfile, assembled),
+    inputState,
+  )
+  const inputGuidance = buildAgentSkillInputGuidanceV1(skill, inputState)
+  const narrativeBrief = buildNarrativeBriefV1({
+    authorRequest: request,
+    assembled,
+    inheritedAssumptions: input.inheritedAssumptions,
+  })
+  const creativeReliabilityEnabled = input.creativeReliabilityEnabled
+    ?? isCreativeReliabilityRuntimeEnabledV1()
   const nodeInput: OutlineCopilotInput = {
     project,
+    scope,
     worldGroupId,
     authorRequest: request,
     supplementalContext: input.supplementalContext ?? '',
+    inputGuidance,
     mode,
     parentVolumeId,
     nodes: rowsInWorld(currentNodes, worldGroupId),
     volumes,
     assembled,
+    narrativeBrief,
+    creativeReliabilityEnabled,
     snapshot,
     config,
     parameterValues: input.parameterValues,
@@ -415,7 +501,32 @@ export async function prepareOutlineCopilot(input: {
     routingCategory,
     signal: input.signal,
   }
-  const node = createOutlineCopilotNode(nodeInput)
+  const runRaw = async (messages: ChatMessage[]): Promise<CreativeRawModelResultV1> => {
+    const startedAt = Date.now()
+    const result: ChatResult = {}
+    const output = dependencies.runAI
+      ? await dependencies.runAI(messages)
+      : await chat(messages, config, {
+          category: routingCategory,
+          projectId: input.projectId,
+          configOverrides: {
+            maxTokens: input.generationOverrides?.maxTokens ?? (mode === 'volumes' ? 8_000 : 12_000),
+            ...(input.generationOverrides?.temperature != null
+              ? { temperature: input.generationOverrides.temperature }
+              : {}),
+          },
+          contextOverflowPolicy: 'reject',
+        }, input.signal, result)
+    return {
+      output,
+      ...(result.usage ? { usage: result.usage } : {}),
+      durationMs: Math.max(0, Date.now() - startedAt),
+    }
+  }
+  const node = createOutlineCopilotNode(nodeInput, {
+    ...dependencies,
+    runAI: async messages => (await runRaw(messages)).output,
+  })
   return {
     node,
     prepared: prepareGenerationNode(node, nodeInput),
@@ -423,11 +534,208 @@ export async function prepareOutlineCopilot(input: {
     snapshot,
     mode,
     parentVolumeId,
-    contextEvidence: evidenceFromContextResult(contextProfile, assembled),
+    contextEvidence,
+    input: nodeInput,
+    modelIdentity: { provider: config.provider, model: config.model },
+    runRaw,
     label: mode === 'volumes'
       ? getT()('agent:copilot.outline.labelVolumeOutline')
       : getT()('agent:copilot.outline.labelChapterOutline', { title: targetVolume!.title }),
   }
+}
+
+function parseOutlineCreativeOutcomeV1(
+  raw: string,
+  prepared: PreparedOutlineCopilot,
+): CreativeParseOutcomeV1<GeneratedOutlineItem[]> {
+  if (raw.length > MAX_CANDIDATE_CHARS) {
+    const issue = createCreativeIssueV1({
+      code: 'outline-response-too-large',
+      path: '$',
+      message: `大纲响应超过 ${MAX_CANDIDATE_CHARS} 字符，不能安全持久化。`,
+      disposition: 'blocking',
+      action: 'replan',
+    })
+    return {
+      status: 'blocked',
+      output: [],
+      editableText: raw.slice(0, MAX_CANDIDATE_CHARS),
+      validFragments: [],
+      rejectedFragments: [{
+        version: 1,
+        id: 'outline-response',
+        path: '$',
+        text: raw.slice(0, 40_000),
+        status: 'rejected',
+        issueCodes: [issue.code],
+      }],
+      issues: [issue],
+      assumptions: prepared.input.narrativeBrief.assumptions,
+    }
+  }
+  try {
+    const parsed = prepared.mode === 'volumes'
+      ? parseVolumeOutlineOutput(raw)
+      : parseChapterOutlineOutput(raw)
+    const output = parseOutlineCandidateDraft(JSON.stringify(parsed))
+    const gateIssues = candidateIssues(output, prepared.snapshot)
+    const issues = gateIssues.map(item => createCreativeIssueV1({
+      code: item.code,
+      path: '$',
+      message: item.message,
+      disposition: 'blocking',
+      action: 'repair-once',
+    }))
+    return {
+      status: issues.length ? 'blocked' : 'ready',
+      output,
+      editableText: JSON.stringify(output, null, 2),
+      validFragments: output.map((item, index) => ({
+        version: 1,
+        id: `outline:${index}`,
+        path: `$[${index}]`,
+        text: JSON.stringify(item, null, 2),
+        status: 'valid',
+        issueCodes: [],
+      })),
+      rejectedFragments: [],
+      issues,
+      assumptions: prepared.input.narrativeBrief.assumptions,
+    }
+  } catch (error) {
+    const issue = createCreativeIssueV1({
+      code: 'outline-response-invalid',
+      path: '$',
+      message: error instanceof Error ? error.message : '大纲响应结构无效。',
+    })
+    return {
+      status: 'manual-repair',
+      output: [],
+      editableText: raw.trim(),
+      validFragments: [],
+      rejectedFragments: [{
+        version: 1,
+        id: 'outline-response',
+        path: '$',
+        text: raw.slice(0, 40_000),
+        status: 'rejected',
+        issueCodes: [issue.code],
+      }],
+      issues: [issue],
+      assumptions: prepared.input.narrativeBrief.assumptions,
+    }
+  }
+}
+
+function buildOutlineRepairMessagesV1(
+  raw: string,
+  issues: readonly import('./creative-reliability').CreativeArtifactIssueV1[],
+  mode: OutlineCopilotMode,
+): ChatMessage[] {
+  return [{
+    role: 'system',
+    content: [
+      '你是大纲 JSON 结构修复器，只修列出的确定性问题，不重新设计情节。',
+      '保留原有标题、摘要、顺序、因果和事实；不得引入新人物、新设定或新剧情。',
+      mode === 'volumes'
+        ? '返回卷纲 JSON 数组，每项只保留 title 和 summary。'
+        : '返回章纲 JSON 数组，每项只保留 title 和 summary。',
+      '只输出 JSON，不要解释，不要 Markdown。',
+    ].join('\n'),
+  }, {
+    role: 'user',
+    content: [
+      '【只允许修复的问题】',
+      JSON.stringify(issues.map(issue => ({ code: issue.code, path: issue.path }))),
+      '【上一次原始输出】',
+      raw,
+    ].join('\n'),
+  }]
+}
+
+export async function runOutlineCreativeReliabilityV1(input: {
+  prepared: PreparedOutlineCopilot
+  budget: AgentTeamBudgetTracker
+  qualityMode: CreativeQualityModeV1
+  validate?: (output: GeneratedOutlineItem[]) => Promise<GenerationGateIssue[]> | GenerationGateIssue[]
+}): Promise<CreativeExecutionResultV1<GeneratedOutlineItem[]>> {
+  return runCreativeExecutionV1({
+    initialMessages: input.prepared.prepared.messages,
+    runRaw: input.prepared.runRaw,
+    parse: raw => parseOutlineCreativeOutcomeV1(raw, input.prepared),
+    buildRepairMessages: (raw, issues) => buildOutlineRepairMessagesV1(
+      raw,
+      issues,
+      input.prepared.mode,
+    ),
+    validate: input.validate,
+    budget: input.budget,
+    callLabel: '大纲领域 Agent',
+    maxOutputTokens: input.prepared.input.generationOverrides?.maxTokens
+      ?? (input.prepared.mode === 'volumes' ? 8_000 : 12_000),
+    qualityMode: input.qualityMode,
+    modelIdentity: input.prepared.modelIdentity,
+    canonEvidenceRefs: input.prepared.contextEvidence.sourceEvidence
+      ?.filter(item => item.status === 'included' && item.sourceHash)
+      .map(item => `${item.key}:${item.sourceHash}`),
+  })
+}
+
+export function revalidateOutlineCreativeDraftV1(input: {
+  draft: string
+  snapshot: OutlineCopilotSnapshot
+  previousArtifact: CreativeArtifactV1
+}): CreativeArtifactV1 {
+  let status: CreativeArtifactV1['status'] = 'ready'
+  let validFragments: CreativeArtifactV1['validFragments'] = []
+  let rejectedFragments: CreativeArtifactV1['rejectedFragments'] = []
+  let issues: CreativeArtifactV1['issues'] = []
+  try {
+    const output = parseOutlineCandidateDraft(input.draft)
+    const gateIssues = candidateIssues(output, input.snapshot)
+    validFragments = output.map((item, index) => ({
+      version: 1,
+      id: `outline:${index}`,
+      path: `$[${index}]`,
+      text: JSON.stringify(item, null, 2),
+      status: 'valid',
+      issueCodes: [],
+    }))
+    if (gateIssues.length) {
+      status = 'blocked'
+      issues = gateIssues.map(item => createCreativeIssueV1({
+        code: item.code,
+        path: '$',
+        message: item.message,
+        disposition: 'blocking',
+        action: 'edit',
+      }))
+    }
+  } catch (error) {
+    status = 'manual-repair'
+    issues = [createCreativeIssueV1({
+      code: 'outline-author-draft-invalid',
+      path: '$',
+      message: error instanceof Error ? error.message : '作者修订的大纲结构无效。',
+      action: 'edit',
+    })]
+    rejectedFragments = [{
+      version: 1,
+      id: 'outline-author-draft',
+      path: '$',
+      text: input.draft.slice(0, 40_000),
+      status: 'rejected',
+      issueCodes: issues.map(issue => issue.code),
+    }]
+  }
+  return parseCreativeArtifactV1({
+    ...input.previousArtifact,
+    status,
+    editableText: input.draft.slice(0, MAX_CANDIDATE_CHARS),
+    validFragments,
+    rejectedFragments,
+    issues,
+  })
 }
 
 export function createOutlineCopilotNode(
@@ -439,6 +747,7 @@ export function createOutlineCopilotNode(
     input.worldGroupId,
     input.mode,
     input.parentVolumeId,
+    input.scope,
   ))
   const saveItems = dependencies.saveItems ?? (items => adoptCandidate({
     projectId: input.project.id!,
@@ -447,6 +756,7 @@ export function createOutlineCopilotNode(
     parentVolumeId: input.parentVolumeId,
     snapshot: input.snapshot,
     items,
+    scope: input.scope,
   }))
   const runAI = dependencies.runAI ?? (messages => chat(messages, input.config, {
     category: input.routingCategory ?? (input.mode === 'volumes' ? 'outline.volume' : 'outline.chapter'),

@@ -18,8 +18,6 @@ interface Props {
   canEdit: boolean
   consultActive: boolean
   stormActive: boolean
-  consultPreparing: boolean
-  stormPreparing: boolean
   consultAI: HistoryAgentViewState
   stormAI: HistoryAgentViewState
   onToggle: () => void
@@ -27,8 +25,12 @@ interface Props {
   onConsult: () => void
   onStorm: () => void
   onDelete: () => void
-  onAcceptConsult: (text: string) => void
-  onAcceptStorm: (text: string) => void
+  onAcceptConsult: () => void
+  onAcceptStorm: () => void
+  onRejectConsult: () => void
+  onRejectStorm: () => void
+  onRetryConsult: () => void
+  onRetryStorm: () => void
 }
 
 export default function HistoryKeywordCard({
@@ -38,8 +40,6 @@ export default function HistoryKeywordCard({
   canEdit,
   consultActive,
   stormActive,
-  consultPreparing,
-  stormPreparing,
   consultAI,
   stormAI,
   onToggle,
@@ -49,6 +49,10 @@ export default function HistoryKeywordCard({
   onDelete,
   onAcceptConsult,
   onAcceptStorm,
+  onRejectConsult,
+  onRejectStorm,
+  onRetryConsult,
+  onRetryStorm,
 }: Props) {
   const { t } = useDomainT('history')
   // era 数据域是 `HistoricalEra | string`（开放集）；仅当命中受控纪元时才走
@@ -211,8 +215,6 @@ export default function HistoryKeywordCard({
             canEdit={canEdit}
             consultActive={consultActive}
             stormActive={stormActive}
-            consultPreparing={consultPreparing}
-            stormPreparing={stormPreparing}
             consultAI={consultAI}
             stormAI={stormAI}
             savedConsult={keyword.aiConsult}
@@ -225,6 +227,10 @@ export default function HistoryKeywordCard({
             onDelete={onDelete}
             onAcceptConsult={onAcceptConsult}
             onAcceptStorm={onAcceptStorm}
+            onRejectConsult={onRejectConsult}
+            onRejectStorm={onRejectStorm}
+            onRetryConsult={onRetryConsult}
+            onRetryStorm={onRetryStorm}
             onClearConsult={() => onChange({ aiConsult: undefined })}
             onClearStorm={() => onChange({ aiBrainstorm: undefined })}
           />

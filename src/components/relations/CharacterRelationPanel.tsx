@@ -2,16 +2,26 @@ import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { Plus, Trash2, ArrowRightLeft, ArrowRight, Users, GitFork, List, Sparkles, Check, X, AlertCircle } from 'lucide-react'
 import { useCharacterRelationStore } from '../../stores/character-relation'
 import { useCharacterStore } from '../../stores/character'
-import { useAIStream } from '../../hooks/useAIStream'
-import { createAISessionKey } from '../../stores/ai-generation-session'
-import { buildRelationExtractPrompt, parseRelationOutput, matchRelations, type MatchedRelation } from '../../lib/ai/relation-extractor'
+import type { MatchedRelation } from '../../lib/ai/relation-extractor'
 import type { Project, RelationType } from '../../lib/types'
 import { CInput, CTextarea } from '../shared/CompositionInput'
 import { useToast } from '../shared/Toast'
-import { syncRelationToCharacterFields } from '../../lib/relations/relationship-summary'
+import { useAIConfigStore } from '../../stores/ai-config'
+import { resolveScopeLike } from '../../lib/world-engine/scope'
+import {
+  adoptCharacterRelationshipCandidateV1,
+  generateCharacterRelationshipCandidateV1,
+  readPendingCharacterRelationshipCandidateV1,
+  rejectCharacterRelationshipCandidateV1,
+} from '../../lib/agent/run/character-relationship-durable'
 import RelationGraph from './RelationGraph'
 import { useDomainT } from '../../i18n'
 import { projectCanonicalLabel, RELATION_TYPE_LABEL_KEYS } from '../../i18n/display-projection'
+import {
+  INITIAL_RECORD_TARGET_CLASS,
+  initialRecordTargetAttributes,
+  useInitialRecordTarget,
+} from '../shared/initial-record-target'
 
 const RELATION_TYPE_VALUES: RelationType[] = [
   'family',
@@ -28,9 +38,11 @@ const RELATION_TYPE_VALUES: RelationType[] = [
 
 interface Props {
   project: Project
+  worldGroupId: number | null
+  initialRelationId?: number | null
 }
 
-export default function CharacterRelationPanel({ project }: Props) {
+export default function CharacterRelationPanel({ project, worldGroupId, initialRelationId }: Props) {
   const { t } = useDomainT('relations')
   const { relations, addRelation, updateRelation, deleteRelation } = useCharacterRelationStore()
   const { characters } = useCharacterStore()
@@ -43,7 +55,10 @@ export default function CharacterRelationPanel({ project }: Props) {
   const [graphWidth, setGraphWidth] = useState(700)
 
   // ── AI 提取相关状态 ──
-  const ai = useAIStream(createAISessionKey(projectId, 'relation.extract'))
+  const aiConfig = useAIConfigStore(state => state.config)
+  const [extracting, setExtracting] = useState(false)
+  const [extractError, setExtractError] = useState('')
+  const [extractRunId, setExtractRunId] = useState<number | null>(null)
   const [extractedRelations, setExtractedRelations] = useState<MatchedRelation[]>([])
   const [selectedExtracted, setSelectedExtracted] = useState<Set<number>>(new Set())
   const [showExtractPanel, setShowExtractPanel] = useState(false)
@@ -51,8 +66,11 @@ export default function CharacterRelationPanel({ project }: Props) {
   const [savedId, setSavedId] = useState<number | null>(null)
 
   const projectCharacters = useMemo(
-    () => characters.filter((c) => c.projectId === projectId),
-    [characters, projectId],
+    () => characters.filter((c) => (
+      c.projectId === projectId
+      && (c.isCrossWorld || (c.homeWorldGroupId ?? null) === worldGroupId)
+    )),
+    [characters, projectId, worldGroupId],
   )
   const projectRelations = useMemo(
     () => relations.filter((r) => r.projectId === projectId),
@@ -70,6 +88,14 @@ export default function CharacterRelationPanel({ project }: Props) {
   )
 
   useEffect(() => {
+    if (validProjectRelations.some(relation => relation.id === initialRelationId)) setView('list')
+  }, [initialRelationId, validProjectRelations])
+  useInitialRecordTarget(
+    initialRelationId,
+    view === 'list' && validProjectRelations.some(relation => relation.id === initialRelationId),
+  )
+
+  useEffect(() => {
     if (!containerRef.current) return
     const ro = new ResizeObserver(entries => {
       const w = entries[0]?.contentRect.width
@@ -79,59 +105,82 @@ export default function CharacterRelationPanel({ project }: Props) {
     return () => ro.disconnect()
   }, [])
 
-  // ── AI 提取：流完成后自动解析 ──
+  // HARNESS-60: recover durable candidate instead of component session output.
   useEffect(() => {
-    if (!ai.isStreaming && ai.output) {
-      setShowExtractPanel(true)
-      const parsed = parseRelationOutput(ai.output)
-      const matched = matchRelations(parsed, projectCharacters, validProjectRelations)
-      setExtractedRelations(matched)
-      // 默认选中所有非重复的
-      const sel = new Set<number>()
-      matched.forEach((r, i) => { if (!r.isDuplicate) sel.add(i) })
-      setSelectedExtracted(sel)
-    }
-  }, [ai.isStreaming, ai.output, projectCharacters, validProjectRelations])
+    let active = true
+    void resolveScopeLike(projectId).then(scope => readPendingCharacterRelationshipCandidateV1({ scope, worldGroupId }))
+      .then(recovered => {
+        if (!active || !recovered) return
+        setShowExtractPanel(true)
+        setExtractRunId(recovered.snapshot.run.id)
+        setExtractedRelations(recovered.candidate.relations)
+        setSelectedExtracted(new Set(recovered.candidate.relations.flatMap((relation, index) => (
+          relation.isDuplicate ? [] : [index]
+        ))))
+      })
+      .catch(error => { if (active) setExtractError(error instanceof Error ? error.message : '候选恢复失败') })
+    return () => { active = false }
+  }, [projectId, worldGroupId])
 
   const handleAIExtract = useCallback(async () => {
     setShowExtractPanel(true)
+    setExtracting(true)
+    setExtractError('')
     setExtractedRelations([])
     setSelectedExtracted(new Set())
-    const messages = await buildRelationExtractPrompt(projectId, projectCharacters)
-    ai.start(messages, undefined, { category: 'relation.extract', projectId, outputKind: 'functional-structured' })
-  }, [projectId, projectCharacters, ai])
+    try {
+      const scope = await resolveScopeLike(projectId)
+      const generated = await generateCharacterRelationshipCandidateV1({
+        scope,
+        worldGroupId,
+        aiConfig,
+      })
+      setExtractRunId(generated.snapshot.run.id)
+      setExtractedRelations(generated.candidate.relations)
+      setSelectedExtracted(new Set(generated.candidate.relations.flatMap((relation, index) => (
+        relation.isDuplicate ? [] : [index]
+      ))))
+    } catch (error) {
+      setExtractError(error instanceof Error ? error.message : t('panel.extractEmptyResult'))
+    } finally {
+      setExtracting(false)
+    }
+  }, [aiConfig, projectId, t, worldGroupId])
 
   const handleAcceptExtracted = async () => {
-    let written = 0
+    if (extractRunId == null) return
     try {
-      for (const [i, rel] of extractedRelations.entries()) {
-        if (!selectedExtracted.has(i)) continue
-        if (!projectCharacterIds.has(rel.fromCharacterId) || !projectCharacterIds.has(rel.toCharacterId)) {
-          toast.error(t('messages.skippedForeignRelationToast'))
-          continue
-        }
-        const relation = {
-          projectId,
-          fromCharacterId: rel.fromCharacterId,
-          toCharacterId: rel.toCharacterId,
-          relationType: rel.type,
-          label: rel.label,
-          description: rel.description,
-          isBidirectional: rel.bidirectional,
-        }
-        await addRelation(relation)
-        await syncRelationToCharacterFields({ projectId, relation, characters: projectCharacters })
-        written++
-      }
-      if (written > 0) await useCharacterStore.getState().loadAll(projectId)
-      toast.success(t('messages.importSuccessToast', { count: written }))
+      const scope = await resolveScopeLike(projectId)
+      const result = await adoptCharacterRelationshipCandidateV1({
+        scope, runId: extractRunId, selectedIndexes: [...selectedExtracted],
+      })
+      await Promise.all([
+        useCharacterStore.getState().loadAll(projectId),
+        useCharacterRelationStore.getState().loadAll(scope),
+      ])
+      toast.success(t('messages.importSuccessToast', { count: result.written }))
     } catch (err) {
       toast.error(t('messages.importFailedToast', { message: err instanceof Error ? err.message : String(err) }))
       return
     }
     setShowExtractPanel(false)
     setExtractedRelations([])
-    ai.reset()
+    setExtractRunId(null)
+  }
+
+  const handleRejectExtracted = async () => {
+    if (extractRunId != null) {
+      try {
+        await rejectCharacterRelationshipCandidateV1({ scope: await resolveScopeLike(projectId), runId: extractRunId })
+      } catch (error) {
+        setExtractError(error instanceof Error ? error.message : t('panel.extractEmptyResult'))
+        return
+      }
+    }
+    setShowExtractPanel(false)
+    setExtractedRelations([])
+    setSelectedExtracted(new Set())
+    setExtractRunId(null)
   }
 
   // 新建关系
@@ -220,12 +269,12 @@ export default function CharacterRelationPanel({ project }: Props) {
           </div>
           <button
             onClick={handleAIExtract}
-            disabled={projectCharacters.length < 2 || ai.isStreaming}
+            disabled={projectCharacters.length < 2 || extracting || extractRunId != null}
             className="flex items-center gap-1.5 px-3 py-1.5 bg-accent/10 text-accent rounded-lg text-sm hover:bg-accent/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             title={t('panel.aiExtractButtonTitle')}
           >
             <Sparkles className="w-4 h-4" />
-            {ai.isStreaming ? t('panel.aiExtractButtonStreaming') : t('panel.aiExtractButtonIdle')}
+            {extracting ? t('panel.aiExtractButtonStreaming') : t('panel.aiExtractButtonIdle')}
           </button>
           <button
             onClick={handleAdd}
@@ -248,24 +297,24 @@ export default function CharacterRelationPanel({ project }: Props) {
               {t('panel.extractPanelTitle')}
             </h3>
             <button
-              onClick={() => { setShowExtractPanel(false); ai.reset() }}
+              onClick={() => { void handleRejectExtracted() }}
               className="text-text-muted hover:text-text-primary"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          {ai.isStreaming && (
+          {extracting && (
             <div className="flex items-center gap-2 text-sm text-text-muted">
               <span className="animate-spin">⏳</span>
               {t('panel.extractStreamingHint')}
             </div>
           )}
 
-          {ai.error && (
+          {extractError && (
             <div className="flex items-center gap-2 text-sm text-red-400">
               <AlertCircle className="w-4 h-4" />
-              {ai.error}
+              {extractError}
             </div>
           )}
 
@@ -325,7 +374,7 @@ export default function CharacterRelationPanel({ project }: Props) {
               </div>
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
-                  onClick={() => { setShowExtractPanel(false); ai.reset() }}
+                  onClick={() => { void handleRejectExtracted() }}
                   className="px-3 py-1.5 text-sm text-text-muted hover:text-text-primary transition-colors"
                 >
                   {t('panel.extractCancelButton')}
@@ -342,7 +391,7 @@ export default function CharacterRelationPanel({ project }: Props) {
             </>
           )}
 
-          {!ai.isStreaming && !ai.error && extractedRelations.length === 0 && ai.output && (
+          {!extracting && !extractError && extractedRelations.length === 0 && extractRunId != null && (
             <div className="text-sm text-text-muted py-2">
               {t('panel.extractEmptyResult')}
             </div>
@@ -377,7 +426,10 @@ export default function CharacterRelationPanel({ project }: Props) {
           return (
             <div
               key={rel.id}
-              className="bg-bg-surface border border-border rounded-lg p-4 hover:border-accent/30 transition-colors"
+              {...initialRecordTargetAttributes(rel.id === initialRelationId, rel.id)}
+              className={`bg-bg-surface border border-border rounded-lg p-4 hover:border-accent/30 transition-colors ${
+                rel.id === initialRelationId ? INITIAL_RECORD_TARGET_CLASS : ''
+              }`}
             >
               {/* 关系概览行 */}
               <div className="flex items-center gap-3 mb-3">
