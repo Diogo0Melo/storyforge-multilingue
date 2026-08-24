@@ -141,6 +141,7 @@
     "enginePageDescFull": "The world is the shared foundation for writing, nodes, and interactive features. Each world has its own code and version.",
     "engineCreateZero": "Create world from scratch",
     "engineManageSettings": "Manage world settings",
+    "engineContinueStepWriting": "Continue step-by-step writing",
     "engineSyncButton": "Sync step-by-step settings",
     "engineSyncing": "Syncing…",
     "engineSyncedMessage": "Synced to the World Engine. Existing step-by-step content remains intact.",

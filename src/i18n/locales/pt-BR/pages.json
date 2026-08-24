@@ -141,6 +141,7 @@
     "enginePageDescFull": "O mundo é a base comum para escrita, nós e recursos interativos. Cada mundo tem seu próprio código e versão.",
     "engineCreateZero": "Criar mundo do zero",
     "engineManageSettings": "Gerenciar configurações do mundo",
+    "engineContinueStepWriting": "Continuar criação passo a passo",
     "engineSyncButton": "Sincronizar configurações passo a passo",
     "engineSyncing": "Sincronizando…",
     "engineSyncedMessage": "Sincronizado com o Motor do Mundo. O conteúdo passo a passo existente permanece intacto.",

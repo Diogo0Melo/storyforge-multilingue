@@ -140,6 +140,7 @@
     "enginePageDescFull": "世界是所有写作、节点和互动功能的共同基座。每个世界都有独立编号和版本。",
     "engineCreateZero": "从零创建世界",
     "engineManageSettings": "管理世界设定",
+    "engineContinueStepWriting": "继续分步骤创作",
     "engineSyncButton": "同步分步骤设定",
     "engineSyncing": "同步中…",
     "engineSyncedMessage": "已同步为世界引擎。原有分步骤内容保持不变。",

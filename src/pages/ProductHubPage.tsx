@@ -36,7 +36,6 @@ import ProjectStorageFolderField from '../components/shared/ProjectStorageFolder
 import { bindCreatedProjectStorageWorkspace } from '../lib/storage/project-storage-workspace'
 import './product-hub.css'
 
-const WorldGroupOverview = lazy(() => import('../components/world-group/WorldGroupOverview'))
 const NodeAuthoringWorkspace = lazy(() => import('../components/node-authoring/NodeAuthoringWorkspace'))
 const SimulationRuntimePanel = lazy(() => import('../components/simulation/SimulationRuntimePanel'))
 const ChatGamePanel = lazy(() => import('../components/simulation/ChatGamePanel'))
@@ -251,34 +250,12 @@ function WorldCard({ world, onOpen, t }: { world: ProductWorld; onOpen: () => vo
 }
 
 function WorldEnginePage({ worlds, activeWorld, onSelectWorld, onOpenCreate, onOpenWorldPicker, onImported, onOpenModule, onOpenGame, t }: { worlds: ProductWorld[]; activeWorld?: ProductWorld; onSelectWorld: (world: ProductWorld) => void; onOpenCreate: () => void; onOpenWorldPicker: () => void; onImported: (projectId: number) => void; onOpenModule: (module: SidebarModule) => void; onOpenGame: (product: 'storygame' | 'text-adventure' | 'avg') => void; t: DomainTFunction }) {
-  const { updateProject } = useProjectStore()
-  const { migrateToMultiWorld, ensurePrimaryGroup } = useWorldGroupStore()
-  const [syncing, setSyncing] = useState(false)
-  const [message, setMessage] = useState('')
   if (!activeWorld) return <><PageHeading eyebrow={t('productHub.enginePageEyebrow')} title={t('productHub.enginePageTitle')} description={t('productHub.enginePageDescShort')} action={<Button variant="primary" icon={Plus} onClick={onOpenCreate}>{t('productHub.engineCreateZero')}</Button>} /><EmptyProjectState onCreate={onOpenCreate} t={t} /><WorldSharingPanel onImported={onImported} /></>
-  const sync = async () => {
-    setSyncing(true); setMessage('')
-    try {
-      if (activeWorld.project.id) {
-        const migrated = await migrateToMultiWorld(activeWorld.project.id)
-        if (!migrated) {
-          setMessage(t('productHub.engineCancelledMessage'))
-          return
-        }
-        await ensurePrimaryGroup(activeWorld.project.id)
-        await updateProject(activeWorld.project.id, { enableMultiWorld: true })
-        setMessage(t('productHub.engineSyncedMessage'))
-      }
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : String(error))
-    } finally { setSyncing(false) }
-  }
   return <>
     <PageHeading eyebrow={t('productHub.enginePageEyebrow')} title={t('productHub.enginePageTitle')} description={t('productHub.enginePageDescFull')} action={<><Button icon={Hash} onClick={onOpenWorldPicker}>{t('productHub.homeUseCode')}</Button><Button variant="primary" icon={Plus} onClick={onOpenCreate}>{t('productHub.engineCreateZero')}</Button></>} />
     <div className="sf-subnav">{worlds.map(world => <button key={world.code} className={world.code === activeWorld.code ? 'active' : ''} onClick={() => onSelectWorld(world)}><WorldGlyph accent={world.accent} small /><span>{world.name}</span><span>{world.code}</span></button>)}<span className="sf-subnav-spacer" /></div>
-    <section className="sf-worlds-featured"><div className="sf-worlds-featured-visual"><WorldGlyph accent={activeWorld.accent} /></div><div className="sf-worlds-featured-copy"><span className="sf-overline">WORLD ENGINE · {activeWorld.source}</span><h2>{activeWorld.name}</h2><p>{activeWorld.description}</p><span className="sf-world-code-large"><Hash className="h-4 w-4" /> {activeWorld.code} · v{activeWorld.version}</span><div className="sf-worlds-featured-actions"><Button variant="primary" icon={ArrowRight} onClick={() => document.getElementById('world-engine-editor')?.scrollIntoView({ behavior: 'smooth' })}>{t('productHub.engineManageSettings')}</Button>{!activeWorld.project.enableMultiWorld && <Button icon={Check} onClick={() => void sync()} disabled={syncing}>{syncing ? t('productHub.engineSyncing') : t('productHub.engineSyncButton')}</Button>}</div>{message && <p className="sf-product-message">{message}</p>}</div><div className="sf-worlds-featured-stats"><div><strong>{activeWorld.completeness}%</strong><span>{t('productHub.engineStatsCompleteness')}</span></div><div><strong>v{activeWorld.version}</strong><span>{t('productHub.engineStatsVersion')}</span></div><div><strong>{activeWorld.project.enableMultiWorld ? t('productHub.engineStatsBaseActive') : t('productHub.engineStatsBasePending')}</strong><span>{t('productHub.engineStatsBaseLabel')}</span></div></div></section>
-    <section id="world-engine-editor" className="sf-product-panel"><div className="sf-section-header"><div><div className="sf-eyebrow">WORLD CONTENT</div><h2>{activeWorld.project.enableMultiWorld ? t('productHub.engineEditorMultiTitle') : t('productHub.engineEditorStepTitle')}</h2></div><span className="sf-project-status"><StatusDot tone={activeWorld.project.enableMultiWorld ? 'success' : 'warning'} />{activeWorld.project.enableMultiWorld ? t('productHub.engineStatusActive') : t('productHub.engineStatusPending')}</span></div>{activeWorld.project.enableMultiWorld ? <Suspense fallback={<FeaturePanelFallback t={t} />}><WorldGroupOverview project={activeWorld.project} /></Suspense> : <div className="sf-product-inline-empty"><p>{t('productHub.engineInlineEmpty')}</p><Button variant="primary" icon={Check} onClick={() => void sync()} disabled={syncing}>{syncing ? t('productHub.engineSyncing') : t('productHub.engineInlineSync')}</Button></div>}</section>
-    <WorldEngineWorkspace project={activeWorld.project} projection={activeWorld.projection} activeWorkId={activeWorld.project.activeWorkId} onWorkChanged={() => onImported(activeWorld.projectId)} onOpenModule={onOpenModule} onOpenGame={onOpenGame} />
+    <section className="sf-worlds-featured"><div className="sf-worlds-featured-visual"><WorldGlyph accent={activeWorld.accent} /></div><div className="sf-worlds-featured-copy"><span className="sf-overline">WORLD ENGINE · {activeWorld.source}</span><h2>{activeWorld.name}</h2><p>{activeWorld.description}</p><span className="sf-world-code-large"><Hash className="h-4 w-4" /> {activeWorld.code} · v{activeWorld.version}</span><div className="sf-worlds-featured-actions"><Button variant="primary" icon={ArrowRight} onClick={() => document.getElementById('world-engine-editor')?.scrollIntoView({ behavior: 'smooth' })}>{t('productHub.engineManageSettings')}</Button><Button icon={BookOpenText} onClick={() => onOpenModule('outline')}>{t('productHub.engineContinueStepWriting')}</Button></div></div><div className="sf-worlds-featured-stats"><div><strong>{activeWorld.completeness}%</strong><span>{t('productHub.engineStatsCompleteness')}</span></div><div><strong>v{activeWorld.version}</strong><span>{t('productHub.engineStatsVersion')}</span></div><div><strong>{activeWorld.project.enableMultiWorld ? t('productHub.engineStatsBaseActive') : t('productHub.engineStatsBasePending')}</strong><span>{t('productHub.engineStatsBaseLabel')}</span></div></div></section>
+    <section id="world-engine-editor" className="sf-product-panel"><WorldEngineWorkspace project={activeWorld.project} projection={activeWorld.projection} activeWorkId={activeWorld.project.activeWorkId} onWorkChanged={() => onImported(activeWorld.projectId)} onOpenModule={onOpenModule} onOpenGame={onOpenGame} /></section>
     <WorldSharingPanel project={activeWorld.project} onImported={onImported} />
   </>
 }
@@ -299,7 +276,7 @@ function NodesPage({ project, world, onOpenWorldPicker, onCreate, t }: { project
 function TtrpgPage({ project, world, onOpenWorldPicker, onCreate, t }: { project?: Project; world?: ProductWorld; onOpenWorldPicker: () => void; onCreate: () => void; t: DomainTFunction }) {
   const worldGroupId = useSelectedWorldGroupId(project)
   if (!project || !world) return <><PageHeading eyebrow={t('productHub.ttrpgPageEyebrow')} title={t('productHub.ttrpgPageTitle')} description={t('productHub.ttrpgPageDescShort')} /><EmptyProjectState onCreate={onCreate} t={t} /></>
-  return <><PageHeading eyebrow={t('productHub.ttrpgPageEyebrow')} title={t('productHub.ttrpgPageTitle')} description={t('productHub.ttrpgPageDescFull')} /><BindingBanner world={world} onChange={onOpenWorldPicker} t={t} /><section className="sf-product-runtime-surface"><Suspense fallback={<FeaturePanelFallback t={t} />}><SimulationRuntimePanel project={project} worldGroupId={worldGroupId} sessionKind={'ttrpg' satisfies SimulationSessionKind} /></Suspense></section></>
+  return <><PageHeading eyebrow={t('productHub.ttrpgPageEyebrow')} title={t('productHub.ttrpgPageTitle')} description={t('productHub.ttrpgPageDescFull')} /><BindingBanner world={world} onChange={onOpenWorldPicker} t={t} /><section className="sf-product-runtime-surface"><Suspense fallback={<FeaturePanelFallback t={t} />}><SimulationRuntimePanel project={project} worldGroupId={worldGroupId} workspaceScope={scopeForProject(project)} sessionKind={'ttrpg' satisfies SimulationSessionKind} /></Suspense></section></>
 }
 
 function ChatGamePage({ project, world, onOpenWorldPicker, onCreate, t }: { project?: Project; world?: ProductWorld; onOpenWorldPicker: () => void; onCreate: () => void; t: DomainTFunction }) {
