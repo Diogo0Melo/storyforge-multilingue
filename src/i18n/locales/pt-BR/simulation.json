@@ -254,6 +254,7 @@
         "libraryIntro": "Escolha uma obra na biblioteca e entre na página de título para começar ou continuar; nenhum arquivo é criado antes de entrar.",
         "resync": "Ressincronizar",
         "titlePageAria": "Detalhes da história ramificada",
+        "catalogListAria": "Lista de histórias ramificadas",
         "fallbackDescription": "Uma história esperando pelas suas escolhas.",
         "playAsAria": "Você vai interpretar {{name}}",
         "playAsLabel": "Você vai interpretar",
@@ -295,6 +296,8 @@
         "toChoicesAria": "Ir para as escolhas",
         "makeChoice": "Fazer escolha",
         "continueButton": "Continuar",
+        "viewEnding": "Ver final",
+        "viewEndingAria": "Ver final",
         "choicesAria": "Escolhas da história",
         "yourChoiceLabel": "Sua escolha",
         "conditionNotMet": "A condição ainda não foi atendida.",
@@ -348,6 +351,7 @@
         "detailIntro": "Confirme mapa, personagens, itens, habilidades e missões e comece uma nova jornada.",
         "libraryIntro": "Escolha uma aventura e comece a jornada na página de título dedicada; personagens, mapa, itens, habilidades e missões se revelam ao entrar no jogo.",
         "titlePageAria": "Detalhes da aventura de texto",
+        "listAria": "Lista de aventuras de texto",
         "tag": "Aventura de texto",
         "fallbackDescription": "Uma aventura movida por exploração, itens, habilidades e missões.",
         "statsLocations": "Locais {{count}}",
@@ -524,6 +528,7 @@
         "checkpointNamePlaceholder": "Nomeie este momento",
         "save": "Salvar",
         "checkpointsHeading": "Checkpoints existentes",
+        "checkpointMetaLine": "evento #{{sequence}} · {{time}}",
         "branchHere": "Ramificar daqui",
         "checkpointsEmptyHint": "Ações são salvas automaticamente; crie checkpoints manuais nos momentos importantes.",
         "timelineBranchHeading": "Ramificações da linha do tempo atual",
@@ -549,7 +554,9 @@
         "emptyCatalog": "Ainda não há AVG para jogar",
         "sessionsAria": "Arquivos existentes",
         "continueTitle": "Continuar jogo",
-        "continueTimeline": "Continuar linha do tempo"
+        "continueTimeline": "Continuar linha do tempo",
+        "catalogListAria": "Lista de jogos AVG",
+        "playerTitleFallback": "AVG / Galgame"
       },
       "workbench": {
         "projectsHeading": "Projetos AVG",
@@ -600,6 +607,7 @@
       },
       "preferences": {
         "controlsAria": "Controles de jogo",
+        "closePanel": "Fechar",
         "historyTitle": "Histórico",
         "savesTitle": "Salvar e carregar",
         "quickSaveTitle": "Salvamento rápido",
@@ -623,6 +631,39 @@
         "quickSavedNotice": "Salvo rapidamente",
         "imagesOffNotice": "Imagens desligadas: história e escolhas em texto puro continuam jogáveis.",
         "mediaMissingNotice": "{{count}} mídias ausentes; usando texto/silêncio como contingência."
+      },
+      "stage": {
+        "backgroundAria": "Cenário {{asset}}",
+        "textOnlyStageAria": "Palco somente texto",
+        "actorAria": "Personagem {{actor}}",
+        "sceneAria": "Cena {{title}}"
+      },
+      "dialogue": {
+        "continueLabel": "Continuar"
+      },
+      "ending": {
+        "completedLine": "A história chegou ao fim."
+      },
+      "choices": {
+        "heading": "Escolha sua ação"
+      },
+      "history": {
+        "empty": "Ainda não há diálogos para revisar."
+      },
+      "saves": {
+        "saveCurrentProgress": "Salvar progresso atual",
+        "checkpointsHeading": "Checkpoints da linha do tempo",
+        "checkpointEventLine": "Evento #{{sequence}}",
+        "forkFromHere": "Iniciar nova ramificação daqui",
+        "checkpointsEmpty": "Ainda sem checkpoints; as escolhas da história continuam sendo salvas automaticamente.",
+        "otherSessionsHeading": "Outros arquivos",
+        "independentTimeline": "Linha do tempo independente",
+        "loadSession": "Carregar",
+        "otherSessionsEmpty": "Ainda não há outros arquivos.",
+        "deleteCurrentSession": "Excluir arquivo atual",
+        "deleteConfirmTitle": "Excluir o arquivo AVG atual?",
+        "deleteConfirmMessage": "Os eventos, checkpoints e execuções desta linha do tempo serão excluídos; outros arquivos e publicações imutáveis permanecem intactos.",
+        "deleteConfirmAction": "Excluir arquivo"
       }
     }
   },

@@ -253,6 +253,7 @@
         "libraryIntro": "先从游戏库选择作品，再进入标题页开始或继续；进入前不会自动创建存档。",
         "resync": "重新同步",
         "titlePageAria": "分支叙事游戏详情",
+        "catalogListAria": "分支叙事游戏列表",
         "fallbackDescription": "一段等待你作出选择的故事。",
         "playAsAria": "你将扮演 {{name}}",
         "playAsLabel": "你将扮演",
@@ -294,6 +295,8 @@
         "toChoicesAria": "进入选择",
         "makeChoice": "作出选择",
         "continueButton": "继续",
+        "viewEnding": "查看结局",
+        "viewEndingAria": "查看结局",
         "choicesAria": "剧情选择",
         "yourChoiceLabel": "你的选择",
         "conditionNotMet": "当前条件未满足。",
@@ -347,6 +350,7 @@
         "detailIntro": "确认地图、角色、物品、技能与任务规模，然后开始新的旅程。",
         "libraryIntro": "先选择一部冒险，再从独立标题页开始旅程；角色、地图、物品、技能与任务会在进入游戏后展开。",
         "titlePageAria": "文字冒险游戏详情",
+        "listAria": "文字冒险游戏列表",
         "tag": "文字冒险",
         "fallbackDescription": "一场由探索、物品、能力和任务共同推进的冒险。",
         "statsLocations": "{{count}} 个地点",
@@ -523,6 +527,7 @@
         "checkpointNamePlaceholder": "为此刻命名",
         "save": "保存",
         "checkpointsHeading": "已有检查点",
+        "checkpointMetaLine": "事件 #{{sequence}} · {{time}}",
         "branchHere": "从这里分支",
         "checkpointsEmptyHint": "行动会自动保存；你也可以为重要时刻建立手动检查点。",
         "timelineBranchHeading": "当前时间线分支",
@@ -548,7 +553,9 @@
         "emptyCatalog": "还没有可游玩的 AVG",
         "sessionsAria": "已有存档",
         "continueTitle": "继续游戏",
-        "continueTimeline": "继续时间线"
+        "continueTimeline": "继续时间线",
+        "catalogListAria": "AVG 游戏列表",
+        "playerTitleFallback": "AVG / Galgame"
       },
       "workbench": {
         "projectsHeading": "AVG 项目",
@@ -599,6 +606,7 @@
       },
       "preferences": {
         "controlsAria": "游玩控制",
+        "closePanel": "关闭",
         "historyTitle": "历史",
         "savesTitle": "存读档",
         "quickSaveTitle": "快速存档",
@@ -622,6 +630,39 @@
         "quickSavedNotice": "已快速存档",
         "imagesOffNotice": "图片关闭：纯文字剧情与选择保持可玩。",
         "mediaMissingNotice": "{{count}} 项媒资缺失，已使用文字/静默降级。"
+      },
+      "stage": {
+        "backgroundAria": "背景 {{asset}}",
+        "textOnlyStageAria": "纯文字降级舞台",
+        "actorAria": "角色 {{actor}}",
+        "sceneAria": "场景 {{title}}"
+      },
+      "dialogue": {
+        "continueLabel": "继续"
+      },
+      "ending": {
+        "completedLine": "故事已完结。"
+      },
+      "choices": {
+        "heading": "选择你的行动"
+      },
+      "history": {
+        "empty": "还没有可以回看的对白。"
+      },
+      "saves": {
+        "saveCurrentProgress": "保存当前进度",
+        "checkpointsHeading": "时间线检查点",
+        "checkpointEventLine": "事件 #{{sequence}}",
+        "forkFromHere": "从这里开始新分支",
+        "checkpointsEmpty": "尚无检查点；剧情选择仍会自动保存。",
+        "otherSessionsHeading": "其他存档",
+        "independentTimeline": "独立时间线",
+        "loadSession": "读取",
+        "otherSessionsEmpty": "还没有其他存档。",
+        "deleteCurrentSession": "删除当前存档",
+        "deleteConfirmTitle": "删除当前 AVG 存档？",
+        "deleteConfirmMessage": "该时间线的事件、检查点和实例级运行都会删除；其它存档及不可变发布保持不变。",
+        "deleteConfirmAction": "删除存档"
       }
     }
   },

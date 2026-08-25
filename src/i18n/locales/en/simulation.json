@@ -254,6 +254,7 @@
         "libraryIntro": "Pick a title from the library first, then open its title page to start or continue; no save is created until you enter.",
         "resync": "Resync",
         "titlePageAria": "Branching story details",
+        "catalogListAria": "Branching story list",
         "fallbackDescription": "A story waiting for your choices.",
         "playAsAria": "You will play as {{name}}",
         "playAsLabel": "You will play as",
@@ -295,6 +296,8 @@
         "toChoicesAria": "Go to choices",
         "makeChoice": "Make a choice",
         "continueButton": "Continue",
+        "viewEnding": "View ending",
+        "viewEndingAria": "View ending",
         "choicesAria": "Story choices",
         "yourChoiceLabel": "Your choice",
         "conditionNotMet": "Requirements not met yet.",
@@ -348,6 +351,7 @@
         "detailIntro": "Review the map, characters, items, skills, and quests, then start a new journey.",
         "libraryIntro": "Pick an adventure first, then start from its dedicated title page; characters, map, items, skills, and quests unfold once you enter.",
         "titlePageAria": "Text adventure details",
+        "listAria": "Text adventure list",
         "tag": "Text adventure",
         "fallbackDescription": "An adventure driven by exploration, items, abilities, and quests.",
         "statsLocations": "Locations {{count}}",
@@ -524,6 +528,7 @@
         "checkpointNamePlaceholder": "Name this moment",
         "save": "Save",
         "checkpointsHeading": "Existing checkpoints",
+        "checkpointMetaLine": "event #{{sequence}} · {{time}}",
         "branchHere": "Branch from here",
         "checkpointsEmptyHint": "Actions autosave; you can also create manual checkpoints for important moments.",
         "timelineBranchHeading": "Current timeline branches",
@@ -549,7 +554,9 @@
         "emptyCatalog": "No AVGs to play yet",
         "sessionsAria": "Existing saves",
         "continueTitle": "Continue game",
-        "continueTimeline": "Continue timeline"
+        "continueTimeline": "Continue timeline",
+        "catalogListAria": "AVG game list",
+        "playerTitleFallback": "AVG / Galgame"
       },
       "workbench": {
         "projectsHeading": "AVG projects",
@@ -600,6 +607,7 @@
       },
       "preferences": {
         "controlsAria": "Playback controls",
+        "closePanel": "Close",
         "historyTitle": "History",
         "savesTitle": "Save & load",
         "quickSaveTitle": "Quick save",
@@ -623,6 +631,39 @@
         "quickSavedNotice": "Quick-saved",
         "imagesOffNotice": "Images off: text-only story and choices remain playable.",
         "mediaMissingNotice": "{{count}} media assets missing; falling back to text/silence."
+      },
+      "stage": {
+        "backgroundAria": "Background {{asset}}",
+        "textOnlyStageAria": "Text-only fallback stage",
+        "actorAria": "Character {{actor}}",
+        "sceneAria": "Scene {{title}}"
+      },
+      "dialogue": {
+        "continueLabel": "Continue"
+      },
+      "ending": {
+        "completedLine": "The story has ended."
+      },
+      "choices": {
+        "heading": "Choose your action"
+      },
+      "history": {
+        "empty": "No dialogue to review yet."
+      },
+      "saves": {
+        "saveCurrentProgress": "Save current progress",
+        "checkpointsHeading": "Timeline checkpoints",
+        "checkpointEventLine": "Event #{{sequence}}",
+        "forkFromHere": "Start a new branch from here",
+        "checkpointsEmpty": "No checkpoints yet; story choices still autosave.",
+        "otherSessionsHeading": "Other saves",
+        "independentTimeline": "Independent timeline",
+        "loadSession": "Load",
+        "otherSessionsEmpty": "No other saves yet.",
+        "deleteCurrentSession": "Delete current save",
+        "deleteConfirmTitle": "Delete the current AVG save?",
+        "deleteConfirmMessage": "This timeline's events, checkpoints, and instance-level runs will be deleted; other saves and immutable releases remain untouched.",
+        "deleteConfirmAction": "Delete save"
       }
     }
   },

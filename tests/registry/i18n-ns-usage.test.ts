@@ -47,6 +47,14 @@ const CROSS_NS_ALLOWLIST: Record<string, ReadonlySet<string>> = {
   'components/node-flow/NodeInspector.tsx': new Set(['outline']),
   'components/node-authoring/NodeAuthoringWorkspace.tsx': new Set(['outline']),
   'components/shared/PromptRunPanel.tsx': new Set(['settings']),
+  // Phase-3 canonical product projections: the text-game players/workbenches
+  // read the simulation ns by design; local label copies are not permitted.
+  'components/text-game/StoryGamePlayer.tsx': new Set(['simulation']),
+  'components/text-game/StoryGameWorkbench.tsx': new Set(['simulation']),
+  'components/text-game/AdventureGamePlayer.tsx': new Set(['simulation']),
+  'components/text-game/AdventureGameWorkbench.tsx': new Set(['simulation']),
+  'components/text-game/AvgGamePlayer.tsx': new Set(['simulation']),
+  'components/text-game/AvgGameWorkbench.tsx': new Set(['simulation']),
 }
 
 function slashRelative(absPath: string): string {
