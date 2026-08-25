@@ -151,17 +151,55 @@ O restante da superfície auditada segue válido:
    (adventure, narrative simulation, character interaction, open world), provando que
    a política resolvida chega ao prompt pelo caminho central.
 
-Proibido: consertar por chamada (bypass por harness) ou espalhar injeção de idioma
-fora das autoridades da seção 2.
+### Política central de runtime-skill (verificada na pesquisa; não implementada)
+
+Os 11 skill ids abaixo existem em `src/lib/agent/skill-registry.ts` e são consumidos
+pelos quatro harnesses via `` category: `runtime.${skillId}` ``. O registro central
+deve implementar exatamente esta tabela:
+
+| Categoria completa | Bucket / placement | Política de idioma | Verificado em |
+| --- | --- | --- | --- |
+| `runtime.prose.adventure-intent-parser` | functional-structured | none (sem restrição de idioma) | `skill-registry.ts:2314`, `adventure/harness.ts` |
+| `runtime.prose.interaction-scene-director` | functional-structured | none | `skill-registry.ts:2274`, `character-interaction/harness.ts` |
+| `runtime.character.interaction-memory-curator` | functional-structured | none | `skill-registry.ts:2294`, `character-interaction/harness.ts` |
+| `runtime.prose.adventure-result-narrator` | creative | project (`contentLanguage` resolvido) | `skill-registry.ts:2354`, `adventure/harness.ts` |
+| `runtime.character.interaction-reply` | creative | project | `skill-registry.ts:2254`, `character-interaction/harness.ts` |
+| `runtime.prose.simulation-turn-briefing` | creative | project | `skill-registry.ts:2374`, `narrative-simulation/harness.ts` |
+| `runtime.prose.simulation-advisor-performance` | creative | project | `skill-registry.ts`, `narrative-simulation/harness.ts` |
+| `runtime.prose.simulation-outcome-narrator` | creative | project | `skill-registry.ts`, `narrative-simulation/harness.ts` |
+| `runtime.prose.simulation-actor-action-suggestion` | creative | project | `skill-registry.ts`, `narrative-simulation/harness.ts` |
+| `runtime.prose.open-world-quest-expression` | creative | project | `skill-registry.ts:2454`, `open-world/harness.ts` |
+| `runtime.prose.open-world-scene-narration` | creative | project | `skill-registry.ts:2474`, `open-world/harness.ts` |
+
+**Regras de ordenação e fechamento (obrigatórias no registro central):**
+
+- As três entradas estruturadas exatas devem ser registradas **antes** de qualquer
+  prefixo criativo `runtime.prose.*` — caso contrário o prefixo amplo sombrearia os
+  parsers estruturados que compartilham o mesmo namespace.
+- **Nenhuma política genérica `runtime.*` é válida**: categoria `runtime.*`
+  desconhecida continua falhando fechado (sem rota dedicada, sem política herdada),
+  nunca silenciosamente aceita por um catch-all.
+
+Proibido: consertar por chamada (bypass por harness), injetar idioma localmente em
+qualquer Harness ou espalhar injeção de idioma fora das autoridades da seção 2.
 
 ## 6. Matriz proposta de escrita/teste (lanes ordenadas, sem expansão de escopo)
 
 **Lane A — autoridade AI (independente, primeiro):**
-1. Registrar `runtime.*` em `task-routing.ts`/`client.ts` (metadados centrais,
-   seção 5) com placement explícito.
-2. Regressão focada de `project.contentLanguage` nos quatro caminhos de runtime.
-3. Reexecutar `tests/regression/R-I18N-P7-placement.test.ts` estendido à nova
-   categoria; gates existentes (`tests/registry/i18n-ns-usage.test.ts`,
+1. Registrar as 11 categorias da tabela da seção 5 em `task-routing.ts`/`client.ts`
+   (metadados centrais) — entradas estruturadas exatas antes de qualquer prefixo
+   criativo `runtime.prose.*`; sem política genérica `runtime.*`.
+2. Contrato de teste da lane: exercitar **as 11 categorias pelo caminho real de
+   metadados `chat(..., { category, projectId })`** (não por helpers internos
+   chamados diretamente), provando que:
+   - as 8 criativas resolvem e injetam o `project.contentLanguage` do projeto no
+     prompt;
+   - as 3 estruturadas não adicionam nenhuma restrição de idioma;
+   - uma categoria falsa `runtime.unknown.*` **falha fechado** em produção, em vez
+     de pular silenciosamente o gate ou cair no modelo global sem contrato.
+3. Regressão focada de `project.contentLanguage` nos quatro caminhos de runtime.
+4. Reexecutar `tests/regression/R-I18N-P7-placement.test.ts` estendido às novas
+   categorias; gates existentes (`tests/registry/i18n-ns-usage.test.ts`,
    `i18n-values.test.ts`) continuam valendo.
 
 **Lane B — projeção compartilhada + contrato de locales (serial, após A):**
