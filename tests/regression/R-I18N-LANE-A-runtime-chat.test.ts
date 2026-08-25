@@ -5,11 +5,13 @@
  * - RUNTIME_CATEGORY_POLICIES is authoritative: caller-supplied
  *   languagePolicy/outputKind cannot override a registered runtime policy.
  * - Public chat(..., { category, projectId }) outbound requests prove:
- *   creative runtime injects the resolved project contentLanguage;
- *   structured runtime injects none;
+ *   creative runtime injects the resolved project contentLanguage AND rides
+ *   the creation preset; structured runtime injects none AND rides the
+ *   extraction preset (distinct presets/models/base URLs, distinct global);
  *   unknown runtime categories keep approved D3/D12 PRODUCTION semantics
- *   (console.error, no inheritance, no injection, user call preserved) —
- *   dev/test additionally throws (covered in output-language-gate.test.ts).
+ *   (console.error, no inheritance, no injection, user call preserved on the
+ *   GLOBAL model) — dev/test additionally throws before any network call
+ *   (covered in output-language-gate.test.ts).
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../src/lib/db/schema'
@@ -25,6 +27,7 @@ import {
 
 const now = 1_900_000_000_000
 
+/** Distinct global config: unknown runtime categories must land HERE, not on a preset. */
 const globalConfig: AIConfig = {
   provider: 'deepseek',
   apiKey: 'global-key',
@@ -34,16 +37,32 @@ const globalConfig: AIConfig = {
   maxTokens: 0,
 }
 
-function routedPreset(): AIConfigPreset {
+function creationPreset(): AIConfigPreset {
   return {
-    id: 'runtime-lane',
-    name: 'runtime-lane',
+    id: 'runtime-creation',
+    name: 'runtime-creation',
     config: {
       ...globalConfig,
       provider: 'ollama',
       apiKey: '',
-      model: 'qwen-local',
-      baseUrl: 'http://localhost:11434/v1',
+      model: 'creative-model',
+      baseUrl: 'http://creation.local/v1',
+      maxTokens: 2_048,
+      contextWindow: 131_072,
+    },
+  }
+}
+
+function extractionPreset(): AIConfigPreset {
+  return {
+    id: 'runtime-extraction',
+    name: 'runtime-extraction',
+    config: {
+      ...globalConfig,
+      provider: 'ollama',
+      apiKey: '',
+      model: 'structured-model',
+      baseUrl: 'http://extraction.local/v1',
       maxTokens: 2_048,
       contextWindow: 131_072,
     },
@@ -81,6 +100,26 @@ function stubChatFetch(captured: CapturedRequest[]): ReturnType<typeof vi.fn> {
   })
 }
 
+/**
+ * Wires the real client boundary: distinct creation/extraction presets bound
+ * to their task kinds, mocked fetch capturing every outbound request.
+ */
+async function setupBoundary(captured: CapturedRequest[]) {
+  const fetchMock = stubChatFetch(captured)
+  vi.stubGlobal('fetch', fetchMock)
+
+  const { useAIConfigStore } = await import('../../src/stores/ai-config')
+  const creation = creationPreset()
+  const extraction = extractionPreset()
+  useAIConfigStore.setState({
+    config: globalConfig,
+    presets: [creation, extraction],
+    taskRoutes: { creation: creation.id, extraction: extraction.id },
+  })
+  const { chat } = await import('../../src/lib/ai/client')
+  return { chat, fetchMock }
+}
+
 let consoleErrorSpy: ReturnType<typeof vi.spyOn> | undefined
 
 beforeEach(async () => {
@@ -101,19 +140,10 @@ afterEach(async () => {
 })
 
 describe('R-I18N-LANE-A · public chat() metadata boundary for runtime categories', () => {
-  it('creative runtime category reaches the wire with the resolved project contentLanguage, and explicit meta cannot strip it', async () => {
+  it('creative runtime category reaches the wire on the CREATION preset with the resolved project contentLanguage, and explicit meta cannot strip either', async () => {
     const projectId = await addProject('pt-BR')
     const captured: CapturedRequest[] = []
-    vi.stubGlobal('fetch', stubChatFetch(captured))
-
-    const { useAIConfigStore } = await import('../../src/stores/ai-config')
-    const preset = routedPreset()
-    useAIConfigStore.setState({
-      config: globalConfig,
-      presets: [preset],
-      taskRoutes: { creation: preset.id, extraction: preset.id },
-    })
-    const { chat } = await import('../../src/lib/ai/client')
+    const { chat } = await setupBoundary(captured)
 
     const expectedBlock = buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)
 
@@ -138,27 +168,18 @@ describe('R-I18N-LANE-A · public chat() metadata boundary for runtime categorie
 
     expect(captured).toHaveLength(2)
     for (const request of captured) {
-      expect(request.url).toBe('http://localhost:11434/v1/chat/completions')
-      // Routing consumed the category through the same metadata path.
-      expect(request.body.model).toBe('qwen-local')
+      // Routing consumed the category: creation preset model + base URL.
+      expect(request.url).toBe('http://creation.local/v1/chat/completions')
+      expect(request.body.model).toBe('creative-model')
       const user = [...request.body.messages].reverse().find(message => message.role === 'user')!
       expect(user.content.endsWith(expectedBlock)).toBe(true)
     }
   })
 
-  it('structured runtime category reaches the wire without any output-language constraint, even under explicit creative meta', async () => {
+  it('structured runtime category reaches the wire on the EXTRACTION preset without any output-language constraint, even under explicit creative meta', async () => {
     const projectId = await addProject('en')
     const captured: CapturedRequest[] = []
-    vi.stubGlobal('fetch', stubChatFetch(captured))
-
-    const { useAIConfigStore } = await import('../../src/stores/ai-config')
-    const preset = routedPreset()
-    useAIConfigStore.setState({
-      config: globalConfig,
-      presets: [preset],
-      taskRoutes: { creation: preset.id, extraction: preset.id },
-    })
-    const { chat } = await import('../../src/lib/ai/client')
+    const { chat } = await setupBoundary(captured)
 
     await expect(chat(
       [{ role: 'user', content: 'parse intent' }],
@@ -179,7 +200,9 @@ describe('R-I18N-LANE-A · public chat() metadata boundary for runtime categorie
 
     expect(captured).toHaveLength(2)
     for (const request of captured) {
-      expect(request.body.model).toBe('qwen-local')
+      // Routing consumed the category: extraction preset model + base URL.
+      expect(request.url).toBe('http://extraction.local/v1/chat/completions')
+      expect(request.body.model).toBe('structured-model')
       expect(request.body.messages.every(message => !message.content.includes(STORYFORGE_OUTPUT_POLICY_START))).toBe(true)
       expect(request.body.messages.every(message => !message.content.includes(ENGLISH_OUTPUT_CONSTRAINT))).toBe(true)
     }
@@ -187,17 +210,7 @@ describe('R-I18N-LANE-A · public chat() metadata boundary for runtime categorie
 
   it('unknown runtime categories fail closed in dev/test before any network call', async () => {
     const captured: CapturedRequest[] = []
-    const fetchMock = stubChatFetch(captured)
-    vi.stubGlobal('fetch', fetchMock)
-
-    const { useAIConfigStore } = await import('../../src/stores/ai-config')
-    const preset = routedPreset()
-    useAIConfigStore.setState({
-      config: globalConfig,
-      presets: [preset],
-      taskRoutes: { creation: preset.id, extraction: preset.id },
-    })
-    const { chat } = await import('../../src/lib/ai/client')
+    const { chat, fetchMock } = await setupBoundary(captured)
 
     for (const category of ['runtime.unknown.fake-skill', 'runtime.prose.unknown']) {
       await expect(chat(
@@ -209,22 +222,12 @@ describe('R-I18N-LANE-A · public chat() metadata boundary for runtime categorie
     expect(fetchMock).not.toHaveBeenCalled()
   })
 
-  it('unknown runtime categories keep approved D3/D12 PRODUCTION semantics: log, no inheritance, no injection, call preserved', async () => {
+  it('unknown runtime categories keep approved D3/D12 PRODUCTION semantics: log, no inheritance, no injection, call preserved on the GLOBAL model', async () => {
     const projectId = await addProject('pt-BR')
     const captured: CapturedRequest[] = []
-    const fetchMock = stubChatFetch(captured)
-    vi.stubGlobal('fetch', fetchMock)
     consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     vi.stubEnv('PROD', true)
-
-    const { useAIConfigStore } = await import('../../src/stores/ai-config')
-    const preset = routedPreset()
-    useAIConfigStore.setState({
-      config: globalConfig,
-      presets: [preset],
-      taskRoutes: { creation: preset.id, extraction: preset.id },
-    })
-    const { chat } = await import('../../src/lib/ai/client')
+    const { chat, fetchMock } = await setupBoundary(captured)
 
     for (const category of ['runtime.unknown.fake-skill', 'runtime.prose.unknown']) {
       // Production never breaks the user call...
@@ -239,6 +242,9 @@ describe('R-I18N-LANE-A · public chat() metadata boundary for runtime categorie
 
     expect(fetchMock).toHaveBeenCalledTimes(2)
     for (const request of captured) {
+      // Unregistered runtime categories stay unrouted: global model + base URL.
+      expect(request.url).toBe('https://global.example/v1/chat/completions')
+      expect(request.body.model).toBe('global-model')
       expect(request.body.messages.every(message => !message.content.includes(STORYFORGE_OUTPUT_POLICY_START))).toBe(true)
       expect(request.body.messages.every(message => !message.content.includes(PORTUGUESE_OUTPUT_CONSTRAINT))).toBe(true)
     }
