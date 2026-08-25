@@ -18,3 +18,6 @@ playwright-report/
 release/
 packaging/desktop-server/web/*
 !packaging/desktop-server/web/placeholder.txt
+
+# Deepwork session state (git-local, OpenCode-readable)
+.slim/deepwork/
