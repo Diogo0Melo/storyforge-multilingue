@@ -2,7 +2,9 @@
 
 > **Status**: inventário factual reconciliado, **anterior à implementação**.
 > Não afirma migração concluída; delimita fronteira, autoridades, alvos e verificação
-> para a fase de adaptação i18n do merge `9223f69`.
+> para a fase de adaptação i18n do merge `9223f69`. Revisado após bloqueio Oracle:
+> superfícies ausentes, enums canônicos adicionais e a lacuna real de categoria
+> `runtime.*` foram incorporados (seções 3–6). Nada do descrito aqui está implementado.
 
 ## 1. Fronteira provada
 
@@ -43,12 +45,22 @@ Contagem ≈ linhas contendo caracteres CJK (sinal de volume, não meta exata).
 | --- | --- | --- |
 | `src/components/text-game/StoryGamePlayer.tsx` | ~130 | fallback frio de catálogo vazio (linha 313) |
 | `src/components/text-game/StoryGameWorkbench.tsx` | ~247 | mapa local `NODE_LABELS` (linha 63) |
+| `src/components/text-game/AdventureGamePlayer.tsx` | ~254 | mapas locais `QUEST_STATUS`/`ACTION_KIND` (52–58); journal com ternário de outcome (477) |
 | `src/components/text-game/AdventureGameWorkbench.tsx` | ~106 | estados vazios/frios em prosa zh-CN |
+| `src/components/text-game/AvgGamePlayer.tsx` | ~115 | rótulos de beat hardcoded `'旁白'`/`'未知角色'` (237) |
 | `src/components/text-game/AvgGameWorkbench.tsx` | ~70 | opções cruas de `AvgMediaKind` (linha 32) |
+| `src/components/text-game/NarrativeSimulationPlayer.tsx` | ~61 | — |
 | `src/components/text-game/NarrativeSimulationWorkbench.tsx` | ~115 | — |
 | `src/components/text-game/TextOpenWorldPlayer.tsx` | ~52 | — |
+| `src/components/text-game/TextOpenWorldWorkbench.tsx` | ~42 | — |
 | `src/components/world-engine/WorldEngineWorkspace.tsx` | ~83 | — |
 | `src/components/world-engine/WorldNarrativeReleasePanel.tsx` | ~187 | `KIND_LABELS` (64), `INSTANCE_KINDS` (72) |
+
+Classificação dos acrescidos: os quatro novos arquivos entram em **P0** por
+consistência com seus pares — jogadores (`AdventureGamePlayer`, `AvgGamePlayer`,
+`NarrativeSimulationPlayer`) acompanham os workbenches P0 dos respectivos jogos, e
+`TextOpenWorldWorkbench` acompanha o par player/workbench P0 da família text-game
+(mesmo critério que já pôs `StoryGameWorkbench` em P0).
 
 ### P1 — painéis de gestão/autoría
 
@@ -65,14 +77,17 @@ Contagem ≈ linhas contendo caracteres CJK (sinal de volume, não meta exata).
 | --- | --- |
 | `src/components/settings/ProjectStorageWorkspacePanel.tsx` | ~39 |
 
-### Fallbacks frios (StoryGame / Adventure)
+### Fallbacks frios (StoryGame / Adventure / Narrative Simulation / Open World)
 
 Componentes de jogo renderizam prosa zh-CN fixa em estado frio (sem snapshot/publicação),
 ex.: `StoryGamePlayer.tsx:313`
 ("还没有可游玩的分支叙事，请先在作者工作台完成发布。"). Esses textos devem virar chaves
 resolvidas via `useDomainT` no primeiro render, senão o cold mount exibe chinês em
 qualquer locale — mesma classe de bug que `tests/e2e/workspace-cold-i18n.spec.ts`
-já cobre para a sidebar.
+já cobre para a sidebar. A cobertura de cold mount deve se estender
+obrigatoriamente aos players de **Narrative Simulation** e **Open World**
+(`NarrativeSimulationPlayer.tsx`, `TextOpenWorldPlayer.tsx`), além dos players
+StoryGame/Adventure/Avg já listados.
 
 ## 4. Projeções canônicas necessárias (adições em `display-projection.ts`)
 
@@ -85,6 +100,15 @@ Valores persistidos permanecem canônicos no storage; apenas o rótulo é projet
 | `NarrativeNode.kind` | `entry`, `scene`, `choice`, `ending` | `StoryGameWorkbench.tsx` (`NODE_LABELS`: 63, 362, 365, 373) |
 | `AvgMediaKind` | `background`, `character-pose`, `character-expression`, `cg`, `ui`, `bgm`, `ambience`, `sfx`, `voice` | `AvgGameWorkbench.tsx:32` (`<option>{value}</option>` cru) e lista de assets |
 | `SimulationSessionKind` | `sandbox`, `npc-evolution`, `ttrpg`, `chatgame`, `storygame`, `textadventure`, `avg`, `textsimulation`, `textworld` | `WorldNarrativeReleasePanel.tsx` (`INSTANCE_KINDS`: 72, 524); `SimulationRuntimePanel.tsx:62–71` já tem `KIND_LABEL_KEYS`/`KIND_FALLBACK_LABELS` — absorver em `display-projection.ts`, não duplicar |
+| `NarrativeBeatKind` | `narration`, `dialogue`, `action`, `system` | `StoryGameWorkbench.tsx` (`BEAT_LABELS`: ~89–115, 366, 377); `StoryGamePlayer.tsx` (`displayBeat`: 99–106, rótulos fixos `'行动'`/`'系统'`); `AvgGamePlayer.tsx:237` (`'旁白'`/`'未知角色'`) |
+| `AdventureQuestStatus` | `locked`, `available`, `active`, `completed`, `failed` | `AdventureGamePlayer.tsx:52–53` (mapa local `QUEST_STATUS`; renders 278 e 476) |
+| `AdventureActionKind` | `look`, `move`, `talk`, `take`, `give`, `use`, `inspect`, `attempt`, `rest`, `quest-action` | `AdventureGamePlayer.tsx:57–58` (mapa local `ACTION_KIND`; render 477) |
+| `AdventureCheckOutcome` | `success`, `costly-success`, `failure`, `not-attempted` | `AdventureGamePlayer.tsx:477` (ternário parcial `=== 'success' ? '成功' : item.outcome` — cai cru para os demais valores) |
+
+Direção das projeções acrescidas: storage permanece canônico; cada enum ganha **um
+mapa compartilhado** em `display-projection.ts`, consumido pelas duas pontas
+(workbench de autoria e player), eliminando os mapas locais duplicados hoje
+espelhados entre workbench e player.
 
 **Preservados como canônicos (intencionais, não classificar como pendência):**
 valores persistidos fora do conjunto canônico caem crus por design (contrato do
@@ -95,29 +119,68 @@ storage; nenhum valor canônico vaza chave i18n crua (fallback = valor persistid
 de avaliação do AI Harness não são UI de autor; permanecem neutros e devem ser
 classificados INTENTIONAL, não migrados.
 
-## 5. Superfície AI — sem adaptação necessária
+## 5. Superfície AI — lacuna real de categoria `runtime.*` (não corrigida)
 
-- Todas as chamadas auditadas passam pelo gate do cliente (`client.ts`) + placement
-  de `task-routing.ts`; nenhuma lê `project.contentLanguage` diretamente (únicos
+**Achado Oracle confirmado no código:** os quatro caminhos de Harness de runtime emitem
+categoria dinâmica `` `runtime.${input.skillId}` `` —
+`src/lib/adventure/harness.ts:246`,
+`src/lib/narrative-simulation/harness.ts:247`,
+`src/lib/character-interaction/harness.ts:397`,
+`src/lib/open-world/harness.ts:139`. Nenhum prefixo `runtime` está registrado em
+`classifyAITask` (`task-routing.ts:62–138`) nem em
+`OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY`; logo essas chamadas caem fora de todos os
+buckets → `taskKind = null` (ficam no modelo global, sem rota dedicada) e placement
+não registrado → `'textual-fallback'` genérico, sem contrato explícito.
+
+O restante da superfície auditada segue válido:
+
+- As demais chamadas passam pelo gate do cliente (`client.ts`) + placement de
+  `task-routing.ts`; nenhuma lê `project.contentLanguage` diretamente (únicos
   toques: normalização na escrita em `stores/project.ts` e o resolvedor
   `content-language.ts`).
 - Caminhos estruturados/eval recebem intencionalmente nenhuma restrição de idioma
-  criativo (neutros por design); a matriz está travada por
+  criativo (neutros por design); a matriz existente está travada por
   `tests/regression/R-I18N-P7-placement.test.ts`.
-- Consequência: fase 1 não exige mudança em `src/lib/ai/**` além do que as
-  autoridades já fornecem.
 
-## 6. Verificação planejada (reuso primeiro)
+**Remediação de Fase 2 — central e estreita (ainda por fazer; nada foi corrigido):**
 
-1. Estender `tests/regression/R-i18n-display-projections.test.ts` com os cinco mapas
-   novos (presença nos 3 locales + fallback de valor canônico).
-2. Manter gates existentes: `tests/registry/i18n-ns-usage.test.ts`,
-   `tests/registry/i18n-values.test.ts` (disciplina de namespace/valores das chaves novas).
-3. Estender o padrão de `tests/e2e/workspace-cold-i18n.spec.ts` para cold mounts de
-   StoryGamePlayer/Adventure/Avg (zero chave crua em estado frio).
-4. Reexecutar `tests/regression/R-I18N-P7-placement.test.ts` como prova de que a
-   superfície AI não mudou.
-5. Regressão direcionada nova por tier (P0/P1/P2) conforme cada lote pousar.
+1. Registrar as categorias `runtime.*` centralmente nos metadados de roteamento
+   (`task-routing.ts`) e no gate do cliente (`client.ts`), com placement explícito —
+   sem tocar nos quatro harnesses individualmente.
+2. Uma regressão focada de `project.contentLanguage` cobrindo os caminhos de runtime
+   (adventure, narrative simulation, character interaction, open world), provando que
+   a política resolvida chega ao prompt pelo caminho central.
+
+Proibido: consertar por chamada (bypass por harness) ou espalhar injeção de idioma
+fora das autoridades da seção 2.
+
+## 6. Matriz proposta de escrita/teste (lanes ordenadas, sem expansão de escopo)
+
+**Lane A — autoridade AI (independente, primeiro):**
+1. Registrar `runtime.*` em `task-routing.ts`/`client.ts` (metadados centrais,
+   seção 5) com placement explícito.
+2. Regressão focada de `project.contentLanguage` nos quatro caminhos de runtime.
+3. Reexecutar `tests/regression/R-I18N-P7-placement.test.ts` estendido à nova
+   categoria; gates existentes (`tests/registry/i18n-ns-usage.test.ts`,
+   `i18n-values.test.ts`) continuam valendo.
+
+**Lane B — projeção compartilhada + contrato de locales (serial, após A):**
+4. Adicionar os nove mapas da seção 4 em `display-projection.ts` e estender
+   `tests/regression/R-i18n-display-projections.test.ts` (presença nos 3 locales +
+   fallback de valor canônico), absorvendo os mapas locais duplicados
+   (`KIND_LABELS`, `NODE_LABELS`, `BEAT_LABELS`, `QUEST_STATUS`, `ACTION_KIND`,
+   `INSTANCE_KINDS`).
+
+**Lane C — consumidores (paralelizável por tier, após B):**
+5. Migrar os componentes P0 → P1 → P2 para `useDomainT` + mapas compartilhados;
+   regressão direcionada nova por lote.
+6. Estender o padrão de `tests/e2e/workspace-cold-i18n.spec.ts` para cold mounts de
+   StoryGamePlayer/Adventure/Avg **e Narrative Simulation/Open World** (zero chave
+   crua em estado frio).
+
+**Guarda:** nenhuma lane expande para schema, `PROJECT_TABLES`, `FIELD_REGISTRY` ou
+`CONTEXT_SOURCES`; o inventário não cria tabelas nem campos novos — só leitura de
+valores já persistidos e metadados de roteamento.
 
 ## 7. Remanescentes da segunda auditoria
 
