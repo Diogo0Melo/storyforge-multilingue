@@ -424,3 +424,82 @@ describe('WS-3A 双重注入守卫', () => {
     expect(detectOutputLanguagePolicyBlock(result)).toBe(block)
   })
 })
+
+describe('Lane A · runtime Harness categories (closed exact allowlist)', () => {
+  const CREATIVE_RUNTIME_CATEGORIES = [
+    'runtime.prose.adventure-result-narrator',
+    'runtime.character.interaction-reply',
+    'runtime.prose.simulation-turn-briefing',
+    'runtime.prose.simulation-advisor-performance',
+    'runtime.prose.simulation-outcome-narrator',
+    'runtime.prose.simulation-actor-action-suggestion',
+    'runtime.prose.open-world-quest-expression',
+    'runtime.prose.open-world-scene-narration',
+  ] as const
+
+  const STRUCTURED_RUNTIME_CATEGORIES = [
+    'runtime.prose.adventure-intent-parser',
+    'runtime.prose.interaction-scene-director',
+    'runtime.character.interaction-memory-curator',
+  ] as const
+
+  it('as 8 categorias criativas resolvem e injetam o contentLanguage do projeto', async () => {
+    const projectId = await addProject('pt-BR')
+    for (const category of CREATIVE_RUNTIME_CATEGORIES) {
+      const result = await applyOutputLanguageGate(baseMessages(), { category, projectId })
+      expect(
+        lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)),
+        category,
+      ).toBe(true)
+    }
+  })
+
+  it('criativa sem projeto cai no uiLocale (escolha reportada do contrato D1)', async () => {
+    const result = await applyOutputLanguageGate(baseMessages(), {
+      category: CREATIVE_RUNTIME_CATEGORIES[0],
+    })
+    expect(lastUser(result).endsWith(buildStoryForgeOutputPolicyBlock(SIMPLIFIED_CHINESE_OUTPUT_CONSTRAINT))).toBe(true)
+  })
+
+  it('as 3 categorias estruturadas não adicionam nenhuma restrição de idioma', async () => {
+    const projectId = await addProject('pt-BR')
+    for (const category of STRUCTURED_RUNTIME_CATEGORIES) {
+      const result = await applyOutputLanguageGate(baseMessages(), { category, projectId })
+      expect(hasOutputLanguageConstraint(result), category).toBe(false)
+      expect(result).toEqual(baseMessages())
+    }
+  })
+
+  it('registro é exato: descendente de skill registrado falha fechado', async () => {
+    await expect(
+      applyOutputLanguageGate(baseMessages(), {
+        category: 'runtime.prose.adventure-result-narrator.extra',
+        projectId: 1,
+      }),
+    ).rejects.toThrow(/unregistered runtime category/)
+  })
+
+  it('classificação exata: criativas → creation, estruturadas → extraction', () => {
+    for (const category of CREATIVE_RUNTIME_CATEGORIES) {
+      expect(classifyAITask(category), category).toBe('creation')
+    }
+    for (const category of STRUCTURED_RUNTIME_CATEGORIES) {
+      expect(classifyAITask(category), category).toBe('extraction')
+    }
+    // Normalização de caixa/espacos usa o mesmo allowlist exato.
+    expect(classifyAITask('RUNTIME.PROSE.SIMULATION-TURN-BRIEFING')).toBe('creation')
+  })
+
+  it('categorias desconhecidas falham fechado mesmo com declaração explícita', async () => {
+    for (const category of ['runtime.unknown.fake-skill', 'runtime.prose.unknown']) {
+      await expect(applyOutputLanguageGate(baseMessages(), { category }))
+        .rejects.toThrow(/unregistered runtime category/)
+      await expect(applyOutputLanguageGate(baseMessages(), { category, outputKind: 'creative' }))
+        .rejects.toThrow(/unregistered runtime category/)
+      await expect(applyOutputLanguageGate(baseMessages(), { category, languagePolicy: 'project' }))
+        .rejects.toThrow(/unregistered runtime category/)
+      await expect(applyOutputLanguageGate(baseMessages(), { category, languagePolicy: 'none' }))
+        .rejects.toThrow(/unregistered runtime category/)
+    }
+  })
+})

@@ -43,6 +43,62 @@ export function resolveOutputLanguagePlacement(category?: string): OutputLanguag
   return 'textual-fallback'
 }
 
+// ── Runtime Harness categories (Lane A · closed exact allowlist) ──────────
+
+/**
+ * Output-language policy for AI Harness runtime categories, emitted by the
+ * adventure / narrative-simulation / character-interaction / open-world
+ * harnesses as `runtime.${skillId}`.
+ *
+ * CLOSED ALLOWLIST: registration is EXACT — there is deliberately no generic
+ * or prefix `runtime.*` policy. Registered categories route like their
+ * semantic peers ('project' → creation, 'none' → extraction); any other
+ * `runtime.`-namespaced category is flagged by isUnregisteredRuntimeCategory
+ * and fails closed in the client gate (dev/test throw; production logs and
+ * skips injection) instead of inheriting a policy.
+ *
+ * Policy semantics mirror OutputKind:
+ * - 'none'    → functional-structured transport: no output-language constraint.
+ * - 'project' → creative prose: inject the resolved project contentLanguage.
+ */
+export type RuntimeCategoryPolicy = 'none' | 'project'
+
+export const RUNTIME_CATEGORY_POLICIES = Object.freeze({
+  // structured / language-neutral transports
+  'runtime.prose.adventure-intent-parser': 'none',
+  'runtime.prose.interaction-scene-director': 'none',
+  'runtime.character.interaction-memory-curator': 'none',
+  // creative prose following the resolved project contentLanguage
+  'runtime.prose.adventure-result-narrator': 'project',
+  'runtime.character.interaction-reply': 'project',
+  'runtime.prose.simulation-turn-briefing': 'project',
+  'runtime.prose.simulation-advisor-performance': 'project',
+  'runtime.prose.simulation-outcome-narrator': 'project',
+  'runtime.prose.simulation-actor-action-suggestion': 'project',
+  'runtime.prose.open-world-quest-expression': 'project',
+  'runtime.prose.open-world-scene-narration': 'project',
+} as const satisfies Record<string, RuntimeCategoryPolicy>)
+
+/** Exact-match policy lookup; `null` for anything outside the allowlist. */
+export function resolveRuntimeCategoryPolicy(category?: string): RuntimeCategoryPolicy | null {
+  const normalized = category?.trim().toLowerCase()
+  if (!normalized) return null
+  return Object.prototype.hasOwnProperty.call(RUNTIME_CATEGORY_POLICIES, normalized)
+    ? RUNTIME_CATEGORY_POLICIES[normalized as keyof typeof RUNTIME_CATEGORY_POLICIES]
+    : null
+}
+
+/**
+ * True only for `runtime.`-namespaced categories outside the closed allowlist
+ * (including descendants of registered skills). The client gate must fail
+ * closed for these regardless of any explicit meta declaration.
+ */
+export function isUnregisteredRuntimeCategory(category?: string): boolean {
+  const normalized = category?.trim().toLowerCase()
+  return !!normalized && normalized.startsWith('runtime.')
+    && !Object.prototype.hasOwnProperty.call(RUNTIME_CATEGORY_POLICIES, normalized)
+}
+
 export const AGENT_ROLE_CATEGORIES = {
   orchestrator: 'agent.orchestrator',
   'world-origin': 'agent.world-origin',
@@ -167,6 +223,12 @@ export function classifyAITask(category?: string): AITaskKind | null {
     normalized === prefix || normalized.startsWith(`${prefix}.`)
   ))
   if (agentRole) return agentRole[1]
+  // Lane A: runtime Harness categories are an EXACT closed allowlist.
+  // Registered categories route like their semantic peers; unregistered
+  // runtime categories return null so the client gate fails closed instead
+  // of inheriting any generic or prefix policy.
+  const runtimePolicy = resolveRuntimeCategoryPolicy(normalized)
+  if (runtimePolicy) return runtimePolicy === 'project' ? 'creation' : 'extraction'
   if (matchesPrefix(normalized, EXTRACTION_PREFIXES)) return 'extraction'
   if (matchesPrefix(normalized, ANALYSIS_PREFIXES)) return 'analysis'
   if (matchesPrefix(normalized, REVIEW_PREFIXES)) return 'review'

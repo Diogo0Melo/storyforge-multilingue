@@ -28,7 +28,9 @@ import {
 import { resolveProjectContentLanguage } from './content-language'
 import {
   classifyAITask,
+  isUnregisteredRuntimeCategory,
   resolveOutputLanguagePlacement,
+  resolveRuntimeCategoryPolicy,
   type AITaskKind,
 } from './task-routing'
 import { db } from '../db/schema'
@@ -181,27 +183,50 @@ export async function applyOutputLanguageGate(
   meta?: AICallMeta,
 ): Promise<ChatMessage[]> {
   const placement = resolveOutputLanguagePlacement(meta?.category)
+  // Lane A (fail-closed): an unregistered `runtime.*` category must never
+  // inherit a policy — not even from an explicit meta declaration. The
+  // runtime allowlist in task-routing.ts is exact; anything else under the
+  // namespace is a routing bug and fails closed here (D3/D12 semantics:
+  // dev/test throw; production logs and skips injection without breaking
+  // the user call).
+  if (isUnregisteredRuntimeCategory(meta?.category)) {
+    const message = `[AI] output-language gate: unregistered runtime category "${meta?.category ?? ''}". `
+      + 'Runtime categories are a closed allowlist (RUNTIME_CATEGORY_POLICIES in task-routing.ts); register the skill or fix the emitted category.'
+    if (import.meta.env.PROD) {
+      console.error(message)
+      return messages
+    }
+    throw new Error(message)
+  }
   // 1) languagePolicy 显式声明优先；显式策略不需要先分类 category。
   let languagePolicy = meta?.languagePolicy
   if (!languagePolicy) {
     // 兼容旧调用方：先使用显式 outputKind，再由 category 做过渡期推导。
     let outputKind = meta?.outputKind
     if (!outputKind) {
-      const taskKind = classifyAITask(meta?.category)
-      if (!taskKind) {
-        // 失败保险（D3/D12）：未登记 category 在 dev/test 必须暴露；生产绝不破坏调用。
-        if (import.meta.env.PROD) {
-          console.error(
-            `[AI] output-language gate: unknown task category "${meta?.category ?? ''}" — skipping language constraint injection`,
+      // Lane A: registered runtime categories derive straight from the
+      // closed allowlist (single source of truth), independent of the
+      // task-kind interim map below.
+      const runtimePolicy = resolveRuntimeCategoryPolicy(meta?.category)
+      if (runtimePolicy) {
+        outputKind = runtimePolicy === 'project' ? 'creative' : 'functional-structured'
+      } else {
+        const taskKind = classifyAITask(meta?.category)
+        if (!taskKind) {
+          // 失败保险（D3/D12）：未登记 category 在 dev/test 必须暴露；生产绝不破坏调用。
+          if (import.meta.env.PROD) {
+            console.error(
+              `[AI] output-language gate: unknown task category "${meta?.category ?? ''}" — skipping language constraint injection`,
+            )
+            return messages
+          }
+          throw new Error(
+            `[AI] output-language gate: unknown task category "${meta?.category ?? ''}". `
+            + 'Register it in task-routing.ts or declare outputKind explicitly in AICallMeta.',
           )
-          return messages
         }
-        throw new Error(
-          `[AI] output-language gate: unknown task category "${meta?.category ?? ''}". `
-          + 'Register it in task-routing.ts or declare outputKind explicitly in AICallMeta.',
-        )
+        outputKind = INTERIM_OUTPUT_KIND_BY_TASK_KIND[taskKind]
       }
-      outputKind = INTERIM_OUTPUT_KIND_BY_TASK_KIND[taskKind]
     }
 
     if (outputKind === 'creative' || outputKind === 'mixed') languagePolicy = 'project'

@@ -20,7 +20,9 @@ import {
   buildVolumeOutlinePrompt,
 } from '../../src/lib/ai/adapters/outline-adapter'
 import {
+  classifyAITask,
   OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY,
+  resolveAIConfigForTask,
   resolveOutputLanguagePlacement,
 } from '../../src/lib/ai/task-routing'
 import {
@@ -30,7 +32,7 @@ import {
   buildTtrpgEncounterPrompt,
   buildTtrpgGmPrompt,
 } from '../../src/lib/simulation/ttrpg'
-import type { ChatMessage } from '../../src/lib/types'
+import type { AIConfig, AIConfigPreset, ChatMessage } from '../../src/lib/types'
 
 const DIRECTIVE_HEADER = '【叙事字段语言契约】'
 
@@ -183,6 +185,101 @@ describe('R-I18N-P7 · declarative placement matrix', () => {
         ...policy,
       })).rejects.toThrow(/native-system-field-contract placement/)
       expect(messages.every(message => !message.content.includes(STORYFORGE_OUTPUT_POLICY_START))).toBe(true)
+    }
+  })
+})
+
+describe('R-I18N-P7 · Lane A runtime allowlist placement contracts', () => {
+  const RUNTIME_CREATIVE_CATEGORIES = [
+    'runtime.prose.adventure-result-narrator',
+    'runtime.character.interaction-reply',
+    'runtime.prose.simulation-turn-briefing',
+    'runtime.prose.simulation-advisor-performance',
+    'runtime.prose.simulation-outcome-narrator',
+    'runtime.prose.simulation-actor-action-suggestion',
+    'runtime.prose.open-world-quest-expression',
+    'runtime.prose.open-world-scene-narration',
+  ] as const
+
+  const RUNTIME_STRUCTURED_CATEGORIES = [
+    'runtime.prose.adventure-intent-parser',
+    'runtime.prose.interaction-scene-director',
+    'runtime.character.interaction-memory-curator',
+  ] as const
+
+  it('all 11 runtime categories stay on the default textual-fallback placement', () => {
+    for (const category of [...RUNTIME_CREATIVE_CATEGORIES, ...RUNTIME_STRUCTURED_CATEGORIES]) {
+      expect(resolveOutputLanguagePlacement(category), category).toBe('textual-fallback')
+      // No runtime category may leak into the native placement matrix.
+      expect(category in OUTPUT_LANGUAGE_PLACEMENT_BY_CATEGORY, category).toBe(false)
+    }
+  })
+
+  it('unknown runtime categories never classify and stay unrouted (no inherited policy)', () => {
+    for (const category of ['runtime.unknown.fake-skill', 'runtime.prose.unknown']) {
+      expect(classifyAITask(category), category).toBeNull()
+    }
+    // Exactness: even descendants of registered skills stay unclassified.
+    expect(classifyAITask('runtime.prose.simulation-turn-briefing.descendant')).toBeNull()
+  })
+
+  it('registered runtime categories route through their semantic peer preset', () => {
+    const globalConfig: AIConfig = {
+      provider: 'deepseek',
+      apiKey: 'global-key',
+      model: 'global-model',
+      baseUrl: 'https://global.example/v1',
+      temperature: 0.7,
+      maxTokens: 0,
+    }
+    const presets: AIConfigPreset[] = [
+      {
+        id: 'creation-preset',
+        name: 'creation-preset',
+        config: { ...globalConfig, provider: 'custom', apiKey: 'k', model: 'creative-model', baseUrl: 'https://creation.example/v1' },
+      },
+      {
+        id: 'extraction-preset',
+        name: 'extraction-preset',
+        config: { ...globalConfig, provider: 'custom', apiKey: 'k', model: 'structured-model', baseUrl: 'https://extraction.example/v1' },
+      },
+    ]
+    const routes = { creation: 'creation-preset', extraction: 'extraction-preset' }
+
+    for (const category of RUNTIME_CREATIVE_CATEGORIES) {
+      const resolved = resolveAIConfigForTask({
+        category,
+        requestedConfig: globalConfig,
+        globalConfig,
+        presets,
+        routes,
+      })
+      expect(resolved.taskKind, category).toBe('creation')
+      expect(resolved.config.model, category).toBe('creative-model')
+    }
+
+    for (const category of RUNTIME_STRUCTURED_CATEGORIES) {
+      const resolved = resolveAIConfigForTask({
+        category,
+        requestedConfig: globalConfig,
+        globalConfig,
+        presets,
+        routes,
+      })
+      expect(resolved.taskKind, category).toBe('extraction')
+      expect(resolved.config.model, category).toBe('structured-model')
+    }
+
+    for (const category of ['runtime.unknown.fake-skill', 'runtime.prose.unknown']) {
+      const unresolved = resolveAIConfigForTask({
+        category,
+        requestedConfig: globalConfig,
+        globalConfig,
+        presets,
+        routes,
+      })
+      expect(unresolved.taskKind, category).toBeNull()
+      expect(unresolved.config).toEqual(globalConfig)
     }
   })
 })
