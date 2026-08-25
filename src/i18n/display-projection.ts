@@ -30,6 +30,20 @@ import type {
 import type { NodeRunStatus } from '../lib/types/node-flow'
 import type { CultivationProgressStatus } from '../lib/types/cultivation-progress'
 import type { CharacterDrivenPlanStatus } from '../lib/types/character-driven-plan'
+// Phase 3 (i18n-upstream) canonical sets.
+import type { ProjectStatus } from '../lib/types/project'
+import type {
+  NarrativeModuleKind,
+  NarrativeNodeKind,
+} from '../lib/types/narrative-blueprint'
+import type { NarrativeBeatKind } from '../lib/types/text-game'
+import type { AvgMediaKind } from '../lib/types/avg'
+import type {
+  AdventureActionKind,
+  AdventureCheckOutcome,
+  AdventureQuestStatus,
+} from '../lib/types/adventure'
+import type { SimulationSessionKind } from '../lib/types/simulation-runtime'
 
 /**
  * Minimal translation function shape accepted by the projection helpers.
@@ -357,4 +371,117 @@ export const CHARACTER_DRIVEN_PLAN_STATUS_LABEL_KEYS: Record<CharacterDrivenPlan
 /** Display label for a persisted plan status (or raw if invalid/legacy). */
 export function projectCharacterDrivenPlanStatus(t: DisplayT, status: string): string {
   return projectCanonicalLabel(t, CHARACTER_DRIVEN_PLAN_STATUS_LABEL_KEYS, status)
+}
+
+// ── Phase 3 (i18n-upstream) · work status + interactive product kinds ──────
+//
+// Canonical sets from docs/I18N-UPSTREAM-MERGE-INVENTORY-20260824.md §4.
+// Persisted values stay canonical; only display is projected through the
+// shared `projectCanonicalLabel` helper (same ora-2 fallback contract as
+// above). Locale presence + non-empty labels in all 3 UI locales are enforced
+// by tests/regression/R-i18n-display-projections.test.ts (Phase 3 section).
+
+/**
+ * Work status — `Work.status` reuses `ProjectStatus`
+ * (src/lib/types/world-ownership.ts → src/lib/types/project.ts).
+ * Binds to the pages ns and REUSES the existing stable home-page keys
+ * (`home.statusDrafting` etc.) so the work manager renders exactly the same
+ * labels as project creation — no parallel label set.
+ */
+export const WORK_STATUS_LABEL_KEYS: Record<ProjectStatus, string> = {
+  drafting: 'home.statusDrafting',
+  ongoing: 'home.statusOngoing',
+  paused: 'home.statusPaused',
+  completed: 'home.statusCompleted',
+}
+
+/**
+ * Simulation session kinds (simulation ns → kind.*). The four launch kinds
+ * reuse the existing keys already rendered by SimulationRuntimePanel; the
+ * upstream product kinds extend the same object — one shared map, no
+ * duplicated local KIND_LABELS/KIND_FALLBACK_LABELS tables.
+ */
+export const SIMULATION_SESSION_KIND_LABEL_KEYS: Record<SimulationSessionKind, string> = {
+  sandbox: 'kind.sandbox',
+  'npc-evolution': 'kind.npcEvolution',
+  ttrpg: 'kind.ttrpg',
+  chatgame: 'kind.chatgame',
+  storygame: 'kind.storygame',
+  textadventure: 'kind.textadventure',
+  avg: 'kind.avg',
+  textsimulation: 'kind.textsimulation',
+  textworld: 'kind.textworld',
+}
+
+/** Narrative module kinds (simulation ns → moduleKind.*). */
+export const NARRATIVE_MODULE_KIND_LABEL_KEYS: Record<NarrativeModuleKind, string> = {
+  main: 'moduleKind.main',
+  side: 'moduleKind.side',
+  quest: 'moduleKind.quest',
+  opening: 'moduleKind.opening',
+  free: 'moduleKind.free',
+}
+
+/** Narrative node kinds (simulation ns → nodeKind.*). */
+export const NARRATIVE_NODE_KIND_LABEL_KEYS: Record<NarrativeNodeKind, string> = {
+  entry: 'nodeKind.entry',
+  scene: 'nodeKind.scene',
+  choice: 'nodeKind.choice',
+  ending: 'nodeKind.ending',
+}
+
+/** Narrative beat kinds (simulation ns → beatKind.*). */
+export const NARRATIVE_BEAT_KIND_LABEL_KEYS: Record<NarrativeBeatKind, string> = {
+  narration: 'beatKind.narration',
+  dialogue: 'beatKind.dialogue',
+  action: 'beatKind.action',
+  system: 'beatKind.system',
+}
+
+/**
+ * AVG media asset kinds (simulation ns → mediaKind.*). Values are derived
+ * from AVG_MEDIA_KINDS in src/lib/types/avg.ts; dotted canonical values map
+ * to camelCase key suffixes ('character-pose' → mediaKind.characterPose).
+ */
+export const AVG_MEDIA_KIND_LABEL_KEYS: Record<AvgMediaKind, string> = {
+  background: 'mediaKind.background',
+  'character-pose': 'mediaKind.characterPose',
+  'character-expression': 'mediaKind.characterExpression',
+  cg: 'mediaKind.cg',
+  ui: 'mediaKind.ui',
+  bgm: 'mediaKind.bgm',
+  ambience: 'mediaKind.ambience',
+  sfx: 'mediaKind.sfx',
+  voice: 'mediaKind.voice',
+}
+
+/** Text-adventure action kinds (simulation ns → adventure.actionKind.*). */
+export const ADVENTURE_ACTION_KIND_LABEL_KEYS: Record<AdventureActionKind, string> = {
+  look: 'adventure.actionKind.look',
+  move: 'adventure.actionKind.move',
+  talk: 'adventure.actionKind.talk',
+  take: 'adventure.actionKind.take',
+  give: 'adventure.actionKind.give',
+  use: 'adventure.actionKind.use',
+  inspect: 'adventure.actionKind.inspect',
+  attempt: 'adventure.actionKind.attempt',
+  rest: 'adventure.actionKind.rest',
+  'quest-action': 'adventure.actionKind.questAction',
+}
+
+/** Text-adventure quest statuses (simulation ns → adventure.questStatus.*). */
+export const ADVENTURE_QUEST_STATUS_LABEL_KEYS: Record<AdventureQuestStatus, string> = {
+  locked: 'adventure.questStatus.locked',
+  available: 'adventure.questStatus.available',
+  active: 'adventure.questStatus.active',
+  completed: 'adventure.questStatus.completed',
+  failed: 'adventure.questStatus.failed',
+}
+
+/** Text-adventure check outcomes (simulation ns → adventure.checkOutcome.*). */
+export const ADVENTURE_CHECK_OUTCOME_LABEL_KEYS: Record<AdventureCheckOutcome, string> = {
+  success: 'adventure.checkOutcome.success',
+  'costly-success': 'adventure.checkOutcome.costlySuccess',
+  failure: 'adventure.checkOutcome.failure',
+  'not-attempted': 'adventure.checkOutcome.notAttempted',
 }

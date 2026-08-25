@@ -3,7 +3,69 @@
     "sandbox": "沙盒",
     "npcEvolution": "NPC 演进",
     "ttrpg": "跑团",
-    "chatgame": "角色聊天"
+    "chatgame": "角色聊天",
+    "storygame": "故事游戏",
+    "textadventure": "文字冒险",
+    "avg": "视觉小说",
+    "textsimulation": "叙事模拟",
+    "textworld": "开放世界"
+  },
+  "moduleKind": {
+    "main": "主线",
+    "side": "支线",
+    "quest": "任务",
+    "opening": "开局",
+    "free": "自由探索"
+  },
+  "nodeKind": {
+    "entry": "入口",
+    "scene": "场景",
+    "choice": "抉择",
+    "ending": "结局"
+  },
+  "beatKind": {
+    "narration": "旁白",
+    "dialogue": "对话",
+    "action": "动作",
+    "system": "提示"
+  },
+  "mediaKind": {
+    "background": "背景",
+    "characterPose": "立绘姿势",
+    "characterExpression": "立绘表情",
+    "cg": "CG",
+    "ui": "界面",
+    "bgm": "音乐",
+    "ambience": "环境音",
+    "sfx": "音效",
+    "voice": "语音"
+  },
+  "adventure": {
+    "actionKind": {
+      "look": "观察",
+      "move": "移动",
+      "talk": "交谈",
+      "take": "拾取",
+      "give": "交付",
+      "use": "使用",
+      "inspect": "调查",
+      "attempt": "尝试",
+      "rest": "休整",
+      "questAction": "任务"
+    },
+    "questStatus": {
+      "locked": "未解锁",
+      "available": "可接取",
+      "active": "进行中",
+      "completed": "已完成",
+      "failed": "已失败"
+    },
+    "checkOutcome": {
+      "success": "成功",
+      "costlySuccess": "惨胜",
+      "failure": "失败",
+      "notAttempted": "未尝试"
+    }
   },
   "sessionStatus": {
     "active": "进行中",

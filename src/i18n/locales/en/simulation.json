@@ -3,7 +3,69 @@
     "sandbox": "Sandbox",
     "npcEvolution": "NPC Evolution",
     "ttrpg": "TTRPG Session",
-    "chatgame": "Character Chat"
+    "chatgame": "Character Chat",
+    "storygame": "Story Game",
+    "textadventure": "Text Adventure",
+    "avg": "Visual Novel",
+    "textsimulation": "Narrative Simulation",
+    "textworld": "Open World"
+  },
+  "moduleKind": {
+    "main": "Main Story",
+    "side": "Side Story",
+    "quest": "Quest",
+    "opening": "Opening",
+    "free": "Free Exploration"
+  },
+  "nodeKind": {
+    "entry": "Entry",
+    "scene": "Scene",
+    "choice": "Choice",
+    "ending": "Ending"
+  },
+  "beatKind": {
+    "narration": "Narration",
+    "dialogue": "Dialogue",
+    "action": "Action",
+    "system": "System"
+  },
+  "mediaKind": {
+    "background": "Background",
+    "characterPose": "Character Pose",
+    "characterExpression": "Character Expression",
+    "cg": "CG",
+    "ui": "UI",
+    "bgm": "BGM",
+    "ambience": "Ambience",
+    "sfx": "SFX",
+    "voice": "Voice"
+  },
+  "adventure": {
+    "actionKind": {
+      "look": "Look",
+      "move": "Move",
+      "talk": "Talk",
+      "take": "Take",
+      "give": "Give",
+      "use": "Use",
+      "inspect": "Inspect",
+      "attempt": "Attempt",
+      "rest": "Rest",
+      "questAction": "Quest Action"
+    },
+    "questStatus": {
+      "locked": "Locked",
+      "available": "Available",
+      "active": "Active",
+      "completed": "Completed",
+      "failed": "Failed"
+    },
+    "checkOutcome": {
+      "success": "Success",
+      "costlySuccess": "Costly Success",
+      "failure": "Failure",
+      "notAttempted": "Not Attempted"
+    }
   },
   "sessionStatus": {
     "active": "Active",

@@ -1,5 +1,6 @@
 /**
- * Phase 1 (i18n) — canonical → localized display projection regression tests.
+ * Phase 1 + Phase 3 (i18n) — canonical → localized display projection
+ * regression tests.
  *
  * Validates:
  * ① Every canonical value in each projection map resolves to a present locale
@@ -11,6 +12,11 @@
  *    is shown instead — a known canonical value never surfaces a raw key.
  * ③ Batch stage codes are stable language-neutral identifiers.
  * ④ zh-CN behavior is legitimate (keys exist and return Chinese text).
+ * ⑤ Phase 3 (docs/I18N-UPSTREAM-MERGE-INVENTORY-20260824.md §4): work status,
+ *    narrative module/node/beat kinds, AVG media kinds, adventure
+ *    action/quest/outcome kinds and simulation session kinds map every
+ *    supported canonical value to a NON-EMPTY localized label in all UI
+ *    locales; expected values are derived from source constant arrays.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -35,18 +41,41 @@ import {
   OUTLINE_BATCH_STAGE_LABEL_KEYS,
   DETAILED_BATCH_STAGE_LABEL_KEYS,
   CHARACTER_DRIVEN_PLAN_STATUS_LABEL_KEYS,
+  WORK_STATUS_LABEL_KEYS,
+  SIMULATION_SESSION_KIND_LABEL_KEYS,
+  NARRATIVE_MODULE_KIND_LABEL_KEYS,
+  NARRATIVE_NODE_KIND_LABEL_KEYS,
+  NARRATIVE_BEAT_KIND_LABEL_KEYS,
+  AVG_MEDIA_KIND_LABEL_KEYS,
+  ADVENTURE_ACTION_KIND_LABEL_KEYS,
+  ADVENTURE_QUEST_STATUS_LABEL_KEYS,
+  ADVENTURE_CHECK_OUTCOME_LABEL_KEYS,
   type DisplayT,
 } from '../../src/i18n/display-projection'
 import { OUTLINE_BATCH_STAGES } from '../../src/lib/ai/batch-outline-runner'
 import { BATCH_RUN_STAGES } from '../../src/lib/ai/batch-detail-runner'
+import { NARRATIVE_MODULE_KINDS, NARRATIVE_NODE_KINDS } from '../../src/lib/types/narrative-blueprint'
+import { NARRATIVE_BEAT_KINDS } from '../../src/lib/types/text-game'
+import { AVG_MEDIA_KINDS } from '../../src/lib/types/avg'
+import { ADVENTURE_ACTION_KINDS } from '../../src/lib/types/adventure'
+import { SIMULATION_SESSION_KINDS } from '../../src/lib/types/simulation-runtime'
 import type { ChapterStatus } from '../../src/lib/types/outline'
 import type { RelationType } from '../../src/lib/types/character-relation'
 import type { LocationTag } from '../../src/lib/types/location'
-import type { SimulationSessionStatus, SimulationTtrpgQuestStatus } from '../../src/lib/types/simulation-runtime'
+import type {
+  SimulationSessionStatus,
+  SimulationTtrpgQuestStatus,
+} from '../../src/lib/types/simulation-runtime'
 import type { NodeRunStatus } from '../../src/lib/types/node-flow'
 import type { CultivationProgressStatus } from '../../src/lib/types/cultivation-progress'
 import type { LocationType } from '../../src/lib/types/geography'
 import type { CharacterDrivenPlanStatus } from '../../src/lib/types/character-driven-plan'
+// Phase 3 (i18n-upstream) canonical sets.
+import type { ProjectStatus } from '../../src/lib/types/project'
+import type {
+  AdventureCheckOutcome,
+  AdventureQuestStatus,
+} from '../../src/lib/types/adventure'
 
 const LANGS = ['pt-BR', 'en', 'zh-CN'] as const
 
@@ -77,6 +106,29 @@ function assertAllKeysPresent(ns: string, keyMap: Record<string, string>, groupN
   if (failures.length > 0) {
     throw new Error(
       `Projection group "${groupName}" has ${failures.length} missing locale key(s):\n` +
+      failures.join('\n'),
+    )
+  }
+}
+
+/**
+ * Stronger presence check (Phase 3): every mapped key must resolve to a
+ * NON-EMPTY string label in all supported UI locales — presence alone is not
+ * enough; an empty label would render nothing for valid canonical data.
+ */
+function assertAllLabelsNonEmpty(ns: string, keyMap: Record<string, string>, groupName: string) {
+  const failures: string[] = []
+  for (const [value, key] of Object.entries(keyMap)) {
+    for (const lang of LANGS) {
+      const resolved = resolveKey(ns, key, lang)
+      if (typeof resolved !== 'string' || resolved.trim() === '') {
+        failures.push(`[${lang}] ${ns}:${key} (canonical: "${value}") → ${JSON.stringify(resolved) ?? 'undefined'}`)
+      }
+    }
+  }
+  if (failures.length > 0) {
+    throw new Error(
+      `Projection group "${groupName}" has ${failures.length} empty/non-string label(s):\n` +
       failures.join('\n'),
     )
   }
@@ -533,5 +585,137 @@ describe('stage projection missing-key safety (ora-2)', () => {
       expect(result).not.toBe(DETAILED_BATCH_STAGE_LABEL_KEYS[code])
       expect(result).not.toContain('.')
     }
+  })
+})
+
+// ── ⑧ Phase 3 (i18n-upstream): work status + interactive product kinds ────
+//
+// Canonical sets from docs/I18N-UPSTREAM-MERGE-INVENTORY-20260824.md §4.
+// Expected values are derived from the SOURCE constant arrays (never from the
+// manifest prose), so an upstream rename/spelling change fails loudly here.
+
+/** All Phase 3 shared maps, with the single ns each is bound to. */
+const PHASE_3_PROJECTIONS: Array<{ ns: string; map: Record<string, string>; name: string }> = [
+  { ns: 'pages', map: WORK_STATUS_LABEL_KEYS, name: 'workStatus' },
+  { ns: 'simulation', map: SIMULATION_SESSION_KIND_LABEL_KEYS, name: 'sessionKind' },
+  { ns: 'simulation', map: NARRATIVE_MODULE_KIND_LABEL_KEYS, name: 'moduleKind' },
+  { ns: 'simulation', map: NARRATIVE_NODE_KIND_LABEL_KEYS, name: 'nodeKind' },
+  { ns: 'simulation', map: NARRATIVE_BEAT_KIND_LABEL_KEYS, name: 'beatKind' },
+  { ns: 'simulation', map: AVG_MEDIA_KIND_LABEL_KEYS, name: 'mediaKind' },
+  { ns: 'simulation', map: ADVENTURE_ACTION_KIND_LABEL_KEYS, name: 'adventure.actionKind' },
+  { ns: 'simulation', map: ADVENTURE_QUEST_STATUS_LABEL_KEYS, name: 'adventure.questStatus' },
+  { ns: 'simulation', map: ADVENTURE_CHECK_OUTCOME_LABEL_KEYS, name: 'adventure.checkOutcome' },
+]
+
+describe('phase 3 projection label coverage', () => {
+  for (const { ns, map, name } of PHASE_3_PROJECTIONS) {
+    it(`${ns}: ${name} maps every supported canonical value to a non-empty localized label in all UI locales`, () => {
+      assertAllKeysPresent(ns, map, `phase3.${name}`)
+      assertAllLabelsNonEmpty(ns, map, `phase3.${name}`)
+    })
+  }
+
+  it('AvgMediaKind source spelling is pinned (derived from src/lib/types/avg.ts)', () => {
+    // Guards against silent upstream renames: the manifest spelling was NOT
+    // trusted — this list is transcribed from AVG_MEDIA_KINDS and both sides
+    // must stay in lockstep with the shared projection map.
+    expect([...AVG_MEDIA_KINDS].sort()).toEqual([
+      'ambience', 'background', 'bgm', 'cg', 'character-expression',
+      'character-pose', 'sfx', 'ui', 'voice',
+    ].sort())
+    expect(Object.keys(AVG_MEDIA_KIND_LABEL_KEYS).sort()).toEqual([...AVG_MEDIA_KINDS].sort())
+  })
+})
+
+describe('phase 3 map completeness vs canonical sources', () => {
+  it('WORK_STATUS_LABEL_KEYS covers all ProjectStatus values', () => {
+    const expected: ProjectStatus[] = ['drafting', 'ongoing', 'paused', 'completed']
+    expect(Object.keys(WORK_STATUS_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+
+  it('SIMULATION_SESSION_KIND_LABEL_KEYS covers exactly SIMULATION_SESSION_KINDS', () => {
+    expect(Object.keys(SIMULATION_SESSION_KIND_LABEL_KEYS).sort()).toEqual([...SIMULATION_SESSION_KINDS].sort())
+  })
+
+  it('NARRATIVE_MODULE_KIND_LABEL_KEYS covers exactly NARRATIVE_MODULE_KINDS', () => {
+    expect(Object.keys(NARRATIVE_MODULE_KIND_LABEL_KEYS).sort()).toEqual([...NARRATIVE_MODULE_KINDS].sort())
+  })
+
+  it('NARRATIVE_NODE_KIND_LABEL_KEYS covers exactly NARRATIVE_NODE_KINDS', () => {
+    expect(Object.keys(NARRATIVE_NODE_KIND_LABEL_KEYS).sort()).toEqual([...NARRATIVE_NODE_KINDS].sort())
+  })
+
+  it('NARRATIVE_BEAT_KIND_LABEL_KEYS covers exactly NARRATIVE_BEAT_KINDS', () => {
+    expect(Object.keys(NARRATIVE_BEAT_KIND_LABEL_KEYS).sort()).toEqual([...NARRATIVE_BEAT_KINDS].sort())
+  })
+
+  it('ADVENTURE_ACTION_KIND_LABEL_KEYS covers exactly ADVENTURE_ACTION_KINDS', () => {
+    expect(Object.keys(ADVENTURE_ACTION_KIND_LABEL_KEYS).sort()).toEqual([...ADVENTURE_ACTION_KINDS].sort())
+  })
+
+  it('ADVENTURE_QUEST_STATUS_LABEL_KEYS covers all AdventureQuestStatus values', () => {
+    const expected: AdventureQuestStatus[] = ['locked', 'available', 'active', 'completed', 'failed']
+    expect(Object.keys(ADVENTURE_QUEST_STATUS_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+
+  it('ADVENTURE_CHECK_OUTCOME_LABEL_KEYS covers all AdventureCheckOutcome values', () => {
+    const expected: AdventureCheckOutcome[] = ['success', 'costly-success', 'failure', 'not-attempted']
+    expect(Object.keys(ADVENTURE_CHECK_OUTCOME_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+})
+
+describe('phase 3 invalid-value fallback (ora-2)', () => {
+  const keyEchoT = (...args: any[]): string => (typeof args[0] === 'string' ? args[0] : '')
+
+  it('unknown/corrupted canonical values fall back to the raw persisted value', () => {
+    expect(projectCanonicalLabel(keyEchoT, WORK_STATUS_LABEL_KEYS, 'corrupted-status')).toBe('corrupted-status')
+    expect(projectCanonicalLabel(keyEchoT, SIMULATION_SESSION_KIND_LABEL_KEYS, 'no-such-kind')).toBe('no-such-kind')
+    expect(projectCanonicalLabel(keyEchoT, NARRATIVE_MODULE_KIND_LABEL_KEYS, '')).toBe('')
+    expect(projectCanonicalLabel(keyEchoT, NARRATIVE_NODE_KIND_LABEL_KEYS, 'legacy-node')).toBe('legacy-node')
+    expect(projectCanonicalLabel(keyEchoT, NARRATIVE_BEAT_KIND_LABEL_KEYS, 'song')).toBe('song')
+    expect(projectCanonicalLabel(keyEchoT, AVG_MEDIA_KIND_LABEL_KEYS, 'hologram')).toBe('hologram')
+    expect(projectCanonicalLabel(keyEchoT, ADVENTURE_ACTION_KIND_LABEL_KEYS, 'fly')).toBe('fly')
+    expect(projectCanonicalLabel(keyEchoT, ADVENTURE_QUEST_STATUS_LABEL_KEYS, 'expired')).toBe('expired')
+    expect(projectCanonicalLabel(keyEchoT, ADVENTURE_CHECK_OUTCOME_LABEL_KEYS, 'critical')).toBe('critical')
+  })
+
+  it('a known canonical value NEVER surfaces a raw i18n key when its mapped key is missing', () => {
+    // Worst case: t() echoes the mapped dotted key back. The projection must
+    // return the canonical persisted value instead — never the dotted key.
+    for (const { map, name } of PHASE_3_PROJECTIONS) {
+      for (const value of Object.keys(map)) {
+        const result = projectCanonicalLabel(keyEchoT, map, value)
+        expect(result, `${name}:${value}`).toBe(value)
+        expect(result, `${name}:${value}`).not.toContain('.')
+      }
+    }
+  })
+
+  it('empty/null missing-key results also fall back to the canonical value', () => {
+    const emptyT = (..._args: any[]): string => ''
+    const nullT = (() => null) as unknown as DisplayT
+    for (const { map } of PHASE_3_PROJECTIONS) {
+      for (const value of Object.keys(map)) {
+        expect(projectCanonicalLabel(emptyT, map, value)).toBe(value)
+        expect(projectCanonicalLabel(nullT, map, value)).toBe(value)
+      }
+    }
+  })
+
+  it('known values still project through t() when the key resolves', () => {
+    const localizedT = (...args: any[]): string => `<${typeof args[0] === 'string' ? args[0] : ''}>`
+    expect(projectCanonicalLabel(localizedT, SIMULATION_SESSION_KIND_LABEL_KEYS, 'textadventure'))
+      .toBe(`<${SIMULATION_SESSION_KIND_LABEL_KEYS.textadventure}>`)
+    expect(projectCanonicalLabel(localizedT, AVG_MEDIA_KIND_LABEL_KEYS, 'character-pose'))
+      .toBe(`<${AVG_MEDIA_KIND_LABEL_KEYS['character-pose']}>`)
+    expect(projectCanonicalLabel(localizedT, WORK_STATUS_LABEL_KEYS, 'drafting'))
+      .toBe(`<${WORK_STATUS_LABEL_KEYS.drafting}>`)
+  })
+
+  it('zh-CN phase 3 labels resolve to Chinese text (legitimacy spot check)', () => {
+    expect(resolveKey('simulation', 'kind.textadventure', 'zh-CN')).toBe('文字冒险')
+    expect(resolveKey('simulation', 'beatKind.narration', 'zh-CN')).toBe('旁白')
+    expect(resolveKey('simulation', 'adventure.questStatus.locked', 'zh-CN')).toBe('未解锁')
+    expect(resolveKey('pages', 'home.statusDrafting', 'zh-CN')).toBe('构思中')
   })
 })

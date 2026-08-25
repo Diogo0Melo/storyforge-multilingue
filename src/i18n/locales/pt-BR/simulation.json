@@ -3,7 +3,69 @@
     "sandbox": "Sandbox",
     "npcEvolution": "Evolução de NPC",
     "ttrpg": "Sessão de RPG",
-    "chatgame": "Chat com Personagens"
+    "chatgame": "Chat com Personagens",
+    "storygame": "Jogo de História",
+    "textadventure": "Aventura Textual",
+    "avg": "Novela Visual",
+    "textsimulation": "Simulação Narrativa",
+    "textworld": "Mundo Aberto"
+  },
+  "moduleKind": {
+    "main": "História Principal",
+    "side": "História Paralela",
+    "quest": "Missão",
+    "opening": "Abertura",
+    "free": "Exploração Livre"
+  },
+  "nodeKind": {
+    "entry": "Entrada",
+    "scene": "Cena",
+    "choice": "Escolha",
+    "ending": "Final"
+  },
+  "beatKind": {
+    "narration": "Narração",
+    "dialogue": "Diálogo",
+    "action": "Ação",
+    "system": "Sistema"
+  },
+  "mediaKind": {
+    "background": "Cenário",
+    "characterPose": "Pose de Personagem",
+    "characterExpression": "Expressão de Personagem",
+    "cg": "CG",
+    "ui": "Interface",
+    "bgm": "Música",
+    "ambience": "Ambiente",
+    "sfx": "Efeito Sonoro",
+    "voice": "Voz"
+  },
+  "adventure": {
+    "actionKind": {
+      "look": "Observar",
+      "move": "Mover",
+      "talk": "Conversar",
+      "take": "Pegar",
+      "give": "Entregar",
+      "use": "Usar",
+      "inspect": "Inspecionar",
+      "attempt": "Tentar",
+      "rest": "Descansar",
+      "questAction": "Ação de Missão"
+    },
+    "questStatus": {
+      "locked": "Bloqueada",
+      "available": "Disponível",
+      "active": "Em andamento",
+      "completed": "Concluída",
+      "failed": "Fracassada"
+    },
+    "checkOutcome": {
+      "success": "Sucesso",
+      "costlySuccess": "Sucesso com Custo",
+      "failure": "Fracasso",
+      "notAttempted": "Não Tentado"
+    }
   },
   "sessionStatus": {
     "active": "Ativa",
