@@ -198,19 +198,23 @@ export async function applyOutputLanguageGate(
     }
     throw new Error(message)
   }
-  // 1) languagePolicy 显式声明优先；显式策略不需要先分类 category。
-  let languagePolicy = meta?.languagePolicy
-  if (!languagePolicy) {
-    // 兼容旧调用方：先使用显式 outputKind，再由 category 做过渡期推导。
-    let outputKind = meta?.outputKind
-    if (!outputKind) {
-      // Lane A: registered runtime categories derive straight from the
-      // closed allowlist (single source of truth), independent of the
-      // task-kind interim map below.
-      const runtimePolicy = resolveRuntimeCategoryPolicy(meta?.category)
-      if (runtimePolicy) {
-        outputKind = runtimePolicy === 'project' ? 'creative' : 'functional-structured'
-      } else {
+  // 1) Lane A: registered runtime categories are governed centrally — the
+  // exact RUNTIME_CATEGORY_POLICIES entry is AUTHORITATIVE. Caller-supplied
+  // languagePolicy/outputKind cannot override it: a creative project runtime
+  // category stays project-constrained and a structured runtime category
+  // stays unconstrained, regardless of meta declarations.
+  const runtimePolicy = resolveRuntimeCategoryPolicy(meta?.category)
+  let languagePolicy: 'project' | 'ui' | 'none' | undefined
+  if (runtimePolicy) {
+    languagePolicy = runtimePolicy
+  } else {
+    // 非 runtime 类别：languagePolicy 显式声明优先；显式策略不需要先分类
+    // category（既有覆盖优先级原样保留）。
+    languagePolicy = meta?.languagePolicy
+    if (!languagePolicy) {
+      // 兼容旧调用方：先使用显式 outputKind，再由 category 做过渡期推导。
+      let outputKind = meta?.outputKind
+      if (!outputKind) {
         const taskKind = classifyAITask(meta?.category)
         if (!taskKind) {
           // 失败保险（D3/D12）：未登记 category 在 dev/test 必须暴露；生产绝不破坏调用。
@@ -227,11 +231,11 @@ export async function applyOutputLanguageGate(
         }
         outputKind = INTERIM_OUTPUT_KIND_BY_TASK_KIND[taskKind]
       }
-    }
 
-    if (outputKind === 'creative' || outputKind === 'mixed') languagePolicy = 'project'
-    else if (outputKind === 'functional-prose') languagePolicy = 'ui'
-    else languagePolicy = 'none'
+      if (outputKind === 'creative' || outputKind === 'mixed') languagePolicy = 'project'
+      else if (outputKind === 'functional-prose') languagePolicy = 'ui'
+      else languagePolicy = 'none'
+    }
   }
 
   // 2) Field-contract adapters own their system directive. Reject a textual

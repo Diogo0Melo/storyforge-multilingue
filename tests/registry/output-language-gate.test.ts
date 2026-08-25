@@ -470,6 +470,52 @@ describe('Lane A · runtime Harness categories (closed exact allowlist)', () => 
     }
   })
 
+  it('política do allowlist é autoritativa: declaração explícita não sobrescreve criativa project', async () => {
+    const projectId = await addProject('pt-BR')
+    for (const category of CREATIVE_RUNTIME_CATEGORIES) {
+      const viaOutputKind = await applyOutputLanguageGate(baseMessages(), {
+        category,
+        projectId,
+        outputKind: 'functional-structured',
+      })
+      expect(
+        lastUser(viaOutputKind).endsWith(buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)),
+        `${category} + outputKind functional-structured`,
+      ).toBe(true)
+
+      const viaLanguagePolicy = await applyOutputLanguageGate(baseMessages(), {
+        category,
+        projectId,
+        languagePolicy: 'none',
+      })
+      expect(
+        lastUser(viaLanguagePolicy).endsWith(buildStoryForgeOutputPolicyBlock(PORTUGUESE_OUTPUT_CONSTRAINT)),
+        `${category} + languagePolicy none`,
+      ).toBe(true)
+    }
+  })
+
+  it('política do allowlist é autoritativa: declaração explícita não injeta em estruturada', async () => {
+    const projectId = await addProject('pt-BR')
+    for (const category of STRUCTURED_RUNTIME_CATEGORIES) {
+      const viaOutputKind = await applyOutputLanguageGate(baseMessages(), {
+        category,
+        projectId,
+        outputKind: 'creative',
+      })
+      expect(hasOutputLanguageConstraint(viaOutputKind), `${category} + outputKind creative`).toBe(false)
+      expect(viaOutputKind).toEqual(baseMessages())
+
+      const viaLanguagePolicy = await applyOutputLanguageGate(baseMessages(), {
+        category,
+        projectId,
+        languagePolicy: 'project',
+      })
+      expect(hasOutputLanguageConstraint(viaLanguagePolicy), `${category} + languagePolicy project`).toBe(false)
+      expect(viaLanguagePolicy).toEqual(baseMessages())
+    }
+  })
+
   it('registro é exato: descendente de skill registrado falha fechado', async () => {
     await expect(
       applyOutputLanguageGate(baseMessages(), {
