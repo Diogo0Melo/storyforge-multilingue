@@ -248,7 +248,8 @@ export default function StoryGamePlayer(props: {
 
   const startGame = async (releaseId: number, title: string) => {
     await run(async () => {
-      await store.start(releaseId, `${title} · ${new Date().toLocaleDateString('zh-CN')} ${t('textGame.story.player.sessionNameSuffix')}`)
+      // 存档标题是写入存档表的持久数据（canonical stored value），不随 UI locale 投影。
+      await store.start(releaseId, `${title} · ${new Date().toLocaleDateString('zh-CN')} 存档`)
       setView('story')
     })
   }

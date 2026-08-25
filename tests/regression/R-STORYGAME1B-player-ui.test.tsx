@@ -165,6 +165,8 @@ describe('STORYGAME-1B · player loop', () => {
     await viWaitFor(() => expect(useStoryGamePlayerStore.getState().selectedSessionId).toBeNull())
     expect(host.textContent).toContain('游戏详情')
     expect(await db.simulationSessions.count()).toBe(1)
+    const [persistedSession] = await db.simulationSessions.toArray()
+    expect(persistedSession.title).toBe(`灯塔之夜 · ${new Date().toLocaleDateString('zh-CN')} 存档`)
     await click(host, '继续上次进度')
     await viWaitFor(() => expect(host.querySelector('button[aria-label="显示全文"]')).not.toBeNull())
     expect(host.textContent).not.toContain('雨水拍打着灯塔。')
