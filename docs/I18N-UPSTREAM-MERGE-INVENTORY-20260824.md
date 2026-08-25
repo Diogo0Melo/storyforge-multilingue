@@ -171,14 +171,21 @@ deve implementar exatamente esta tabela:
 | `runtime.prose.open-world-quest-expression` | creative | project | `skill-registry.ts:2454`, `open-world/harness.ts` |
 | `runtime.prose.open-world-scene-narration` | creative | project | `skill-registry.ts:2474`, `open-world/harness.ts` |
 
-**Regras de ordenação e fechamento (obrigatórias no registro central):**
+**Regras de registro exato e fechamento (obrigatórias no roteamento central):**
 
-- As três entradas estruturadas exatas devem ser registradas **antes** de qualquer
-  prefixo criativo `runtime.prose.*` — caso contrário o prefixo amplo sombrearia os
-  parsers estruturados que compartilham o mesmo namespace.
-- **Nenhuma política genérica `runtime.*` é válida**: categoria `runtime.*`
-  desconhecida continua falhando fechado (sem rota dedicada, sem política herdada),
-  nunca silenciosamente aceita por um catch-all.
+- O roteamento central registra **exatamente as 11 categorias completas aprovadas da
+  tabela acima** — ou uma allowlist igualmente fechada, validada antes do roteamento.
+  Somente entradas exatas: sem fallback genérico e sem correspondência por prefixo
+  (`runtime.prose.*`, `runtime.character.*` ou qualquer outro).
+- Não existe recomendação ou tolerância a prefixo criativo `runtime.prose.*` nesta
+  especificação: os 8 casos criativos são entradas individuais completas, não um
+  namespace com política própria.
+- **Nenhuma política genérica ou de prefixo `runtime.*` é válida**: categoria
+  `runtime.*` desconhecida continua falhando fechado (sem rota dedicada, sem política
+  herdada), nunca silenciosamente aceita por catch-all ou por herança de namespace.
+- A listagem das entradas estruturadas antes das criativas permanece apenas como
+  clareza de leitura; com registro somente-exato ela não produz nenhum efeito de
+  correspondência.
 
 Proibido: consertar por chamada (bypass por harness), injetar idioma localmente em
 qualquer Harness ou espalhar injeção de idioma fora das autoridades da seção 2.
@@ -186,17 +193,21 @@ qualquer Harness ou espalhar injeção de idioma fora das autoridades da seção
 ## 6. Matriz proposta de escrita/teste (lanes ordenadas, sem expansão de escopo)
 
 **Lane A — autoridade AI (independente, primeiro):**
-1. Registrar as 11 categorias da tabela da seção 5 em `task-routing.ts`/`client.ts`
-   (metadados centrais) — entradas estruturadas exatas antes de qualquer prefixo
-   criativo `runtime.prose.*`; sem política genérica `runtime.*`.
+1. Registrar em `task-routing.ts`/`client.ts` (metadados centrais) **exatamente as
+   11 categorias completas da tabela da seção 5** — ou allowlist igualmente fechada,
+   validada antes do roteamento; somente entradas exatas, sem fallback genérico ou
+   por prefixo `runtime.*`. A ordem estruturadas→criativas é apenas clareza de
+   leitura e não implica correspondência por prefixo.
 2. Contrato de teste da lane: exercitar **as 11 categorias pelo caminho real de
    metadados `chat(..., { category, projectId })`** (não por helpers internos
    chamados diretamente), provando que:
    - as 8 criativas resolvem e injetam o `project.contentLanguage` do projeto no
      prompt;
    - as 3 estruturadas não adicionam nenhuma restrição de idioma;
-   - uma categoria falsa `runtime.unknown.*` **falha fechado** em produção, em vez
-     de pular silenciosamente o gate ou cair no modelo global sem contrato.
+   - categorias falsas **`runtime.unknown.fake-skill`** e **`runtime.prose.unknown`**
+     falham fechado em produção através dos metadados reais do cliente — nenhuma das
+     duas herda a política creative/project, pula silenciosamente o gate ou cai no
+     modelo global sem contrato.
 3. Regressão focada de `project.contentLanguage` nos quatro caminhos de runtime.
 4. Reexecutar `tests/regression/R-I18N-P7-placement.test.ts` estendido às novas
    categorias; gates existentes (`tests/registry/i18n-ns-usage.test.ts`,
