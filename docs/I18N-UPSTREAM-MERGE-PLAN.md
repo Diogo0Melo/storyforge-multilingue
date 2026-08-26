@@ -99,10 +99,11 @@ Cada ocorrência mantida precisa aparecer na auditoria final como `INTENTIONAL +
 4. Verificar que identificadores técnicos (`CHATGAME-*`, hashes, IDs e conteúdo dinâmico) não sejam encapsulados em traduções que alterem seus valores, mas que seus labels/ações ao redor sejam localizados.
 5. Definir casos de teste por domínio antes da implementação, incluindo `en`/`pt-BR` para detectar vazamento de `zh-CN` e `zh-CN` para preservar o comportamento original.
 6. Registrar no plano a matriz de arquivos permitidos por writer. Arquivos compartilhados de locale e registry têm um único owner por onda.
-7. Se a projeção de `InteractionMemoryKind` exigir `src/i18n/display-projection.ts`, executar primeiro um passo serial de Lane A com esse arquivo e `tests/regression/R-i18n-display-projections.test.ts`; somente depois liberar as lanes B/C.
-8. Designar desde já a criação/manutenção de `tests/regression/R-PROJECT-STORAGE-FOLDER-i18n.test.tsx` ao Owner B e de `tests/regression/R-I18N-CHAPTER-POST-ADOPTION.test.tsx` ao Owner C, evitando comandos condicionais na fase final.
+7. A projeção de `InteractionMemoryKind` é obrigatória: executar primeiro um passo serial de Lane A com `src/i18n/display-projection.ts` e `tests/regression/R-i18n-display-projections.test.ts`; somente depois liberar as lanes B/C.
+8. O Orchestrator é owner serial de `tests/registry/i18n-ns-usage.test.ts` para a exceção `shared → settings` e da prova de cold mount; Lane B não edita o guard.
+9. Designar desde já a criação/manutenção de `tests/regression/R-PROJECT-STORAGE-FOLDER-i18n.test.tsx` ao Owner B e de `tests/regression/R-I18N-CHAPTER-POST-ADOPTION.test.tsx` ao Owner C, evitando comandos condicionais na fase final.
 
-**Ownership:** Orchestrator integra o contrato; Designer faz revisão **read-only**, serializada antes do handoff de cada Fixer, sobre redação, hierarquia e acessibilidade; nenhum fixer edita código durante esta fase.
+**Ownership:** Orchestrator integra o contrato; o Designer foi tentado como revisão **read-only**, mas o provedor indisponível foi registrado como waiver de uma onda. Nesta retomada o Orchestrator assume copy/acessibilidade percebida sem alterar layout; nenhum fixer edita código durante esta fase. Na Fase 2 os Fixers só fazem wiring mecânico que preserve a intenção visual existente.
 
 **Gate DOMAIN:** manifesto de chaves, paridade estrutural inicial, ownership sem conflito e testes de registry selecionados. Razão: uma chave mal alocada cria fallback, conflito ou bypass difícil de detectar depois.
 
@@ -112,35 +113,39 @@ Cada ocorrência mantida precisa aparecer na auditoria final como `INTENTIONAL +
 
 **Entrega da Fase 1:** `docs/I18N-UPSTREAM-MERGE-CONTRACT.md` fecha o manifesto por ocorrência, os owners `simulation`/`settings`/`editor`, os placeholders, os limites de conteúdo canônico, a projeção de `InteractionMemoryKind`, os erros/separadores e os testes de cada writer. O Designer não pôde executar a revisão read-only após duas tentativas por indisponibilidade do provedor; o Orchestrator registrou a revisão conservadora e não alterou layout ou interação. Os guards existentes permanecem como baseline; nenhuma alteração de componente/locale foi feita nesta fase.
 
+**Oracle 2/4 — NO-GO:** a revisão identificou lacunas nos produtores H57/Editor, assinaturas de placeholders, ownership do allowlist, decisão folha a folha do storage, projection obrigatória, estados post-adoption e contradição sobre o waiver do Designer. A remediation é documental e única; nenhum writer de UI é liberado até a re-revisão.
+
+**Remediation em curso:** o contrato foi ampliado para incluir todos os produtores visíveis de `ChapterEditor`, códigos de apresentação de erro traduzidos no render, assinaturas individuais, cold mount, guard serial do Orchestrator, seis valores de `InteractionMemoryKind`, `downstream-processing` e o waiver explícito do Designer para esta onda.
+
 ### Fase 2 — Implementação por domínio, em paralelo seguro
 
 **Dependência:** começa após o gate e Oracle 2/4. Os lanes abaixo não compartilham write targets.
 
 #### Lane A — Simulation
 
-- **Owner:** Fixer A, após revisão read-only serializada do Designer.
-- **Arquivos permitidos:** `ChatGamePanel.tsx`, os três `simulation.json` na seção `chatGame`, o teste `R-CHATGAME2BC-ui.test.tsx` e, se o contrato de projeção exigir, `display-projection.ts`/`R-i18n-display-projections.test.ts` no passo serial de projeção de Lane A.
+- **Owner:** Fixer A, após o passo serial obrigatório de projection; o waiver do Designer está registrado no contrato e o Orchestrator é owner de copy/acessibilidade percebida nesta onda.
+- **Arquivos permitidos:** `ChatGamePanel.tsx`, os três `simulation.json` na seção `chatGame`, o teste `R-CHATGAME2BC-ui.test.tsx`, `display-projection.ts` e `R-i18n-display-projections.test.ts` no passo serial obrigatório de projection.
 - **Não tocar:** stores de interaction, `ProductHubPage`, `client.ts`, runtime, schemas e outros blocos de `simulation.json` fora do contrato.
 - **Implementação:** substituir somente UI hard-coded por `t('chatGame.*')`; projetar `InteractionMemoryKind`; classificar os erros operacionais e renderizar mensagem estável/localizada; substituir separadores visíveis por formatter/locale; preservar protocol badges, conteúdo dinâmico, sequence/run IDs, callbacks, estados e layout.
 - **Regressão:** estender `tests/regression/R-CHATGAME2BC-ui.test.tsx` com casos explícitos `en`, `pt-BR` e `zh-CN`; verificar memory-kind projection, erro localizado, legacy state, empty state, acessibilidade, interpolations e comportamento. Não criar um segundo teste se o harness existente suportar esses casos.
 
 #### Lane B — Project storage
 
-- **Owner:** Fixer B, após revisão read-only serializada do Designer.
-- **Arquivos permitidos:** `ProjectStorageFolderField.tsx`, os três `settings.json` em `projectStorage` e `tests/regression/R-PROJECT-STORAGE-FOLDER-i18n.test.tsx` (owner definido; criar se ainda não existir).
+- **Owner:** Fixer B, após o guard/cold-mount serial do Orchestrator; o waiver do Designer está registrado no contrato.
+- **Arquivos permitidos:** `ProjectStorageFolderField.tsx`, os três `settings.json` em `projectStorage` e `tests/regression/R-PROJECT-STORAGE-FOLDER-i18n.test.tsx` (owner definido; criar se ainda não existir). O guard `tests/registry/i18n-ns-usage.test.ts` pertence somente ao Orchestrator.
 - **Não tocar:** `folder-backup`, persistência, `ProjectStorageWorkspacePanel`, callers ou lifecycle de storage.
 - **Implementação:** adicionar `useDomainT('settings')`; reutilizar a semântica já usada por `ProjectStorageWorkspacePanel`; traduzir erro, estados supported/unsupported, choose/change, helper e qualquer `aria-label`/tooltip necessário; preservar `FileSystemDirectoryHandle.name` como dado dinâmico.
 - **Regressão:** em `R-PROJECT-STORAGE-FOLDER-i18n.test.tsx`, renderizar `null`, folder selected, unsupported browser e permission denied nos três locales; conferir labels, helper, error, callback e disabled/busy state.
 
 #### Lane C — Editor toolbar + post-adoption lifecycle
 
-- **Owner:** Fixer C único para manter a unidade acoplada, após revisão read-only serializada do Designer.
-- **Arquivos permitidos:** `ChapterEditorToolbar.tsx`, trecho de lifecycle de `ChapterEditor.tsx`, os três `editor.json` e `R-AUDIT6-chapter-editor-toolbar.test.tsx`/regressões post-adoption relacionadas.
+- **Owner:** Fixer C único para manter a unidade acoplada, após o waiver do Designer registrado no contrato; o Orchestrator mantém a revisão de copy/acessibilidade percebida.
+- **Arquivos permitidos:** `ChapterEditorToolbar.tsx`, todos os produtores visíveis e o lifecycle nos trechos permitidos de `ChapterEditor.tsx`, os três `editor.json`, `R-AUDIT6-chapter-editor-toolbar.test.tsx` e `R-I18N-CHAPTER-POST-ADOPTION.test.tsx`/regressões post-adoption relacionadas.
 - **Não tocar:** hooks de estado, runtime de capítulo, Candidate/Adoption, persistência, AI routing ou contratos de dados.
 - **Implementação:** converter action map, contadores, status H57, labels de grupos, selects, placeholders, `aria-label`, `sr-only`, titles, buttons, candidate diff e receipts; localizar labels em torno de `impactInfo`, `policyId`, `policyReason`, hashes e conteúdos de candidato; classificar `transitionError`/`impact*Error` como mensagens estáveis ou diagnóstico, e substituir separadores culturais.
 - **Regressão:** atualizar `R-AUDIT6-chapter-editor-toolbar.test.tsx` para inicializar locale e consultar chave traduzida/role quando apropriado, sem relaxar assertions; criar `R-I18N-CHAPTER-POST-ADOPTION.test.tsx` para `ChapterEditor` lifecycle; cobrir `busy`, settled/blocked, review decisions, candidate confirm/reject, receipt, banners e erros.
 
-**Paralelismo:** após o passo serial opcional de projeção de Lane A, A, B e C podem rodar simultaneamente porque seus componentes e locale files são distintos. O registry compartilhado e qualquer geração de documentação ficam bloqueados para o Orchestrator até todas as lanes terminarem. Designer conclui sua revisão read-only antes do handoff de cada lane; não há edição simultânea Designer/Fixer.
+**Paralelismo:** após o passo serial obrigatório de projection de Lane A e o guard/cold-mount serial do Orchestrator para Lane B, A, B e C podem rodar simultaneamente porque seus componentes e locale files são distintos. O registry compartilhado e qualquer geração de documentação ficam bloqueados para o Orchestrator até todas as lanes terminarem. O waiver de uma onda substitui a revisão Designer indisponível; não há edição simultânea Designer/Fixer.
 
 **Gate FAST por lane:** Vitest da lane, `git diff --check` e locale key/placeholder check da área.
 
@@ -309,6 +314,6 @@ Só marcar o Deepwork como concluído quando todos os itens forem verdadeiros:
 
 - **Concluído:** recon, auditoria residual, matriz de testes, checkpoint de código e plano inicial.
 - **Concluído nesta etapa:** remediation documental aplicada, Oracle 1/4 re-review retornou GO e este plano foi commitado em `ca05503`. Próximo passo é iniciar a Fase 1 de contratos e, somente após seus gates, os writers da Fase 2.
-- **Concluído agora:** Fase 1 contratual documentada em `docs/I18N-UPSTREAM-MERGE-CONTRACT.md`, com baseline de guards selecionados pendente de execução/registro e commit atômico do Orchestrator.
-- **Próximo passo:** executar o gate DOMAIN da Fase 1, commitar somente os documentos reconciliados e solicitar Oracle 2/4.
-- **Não fazer ainda:** traduzir componentes, editar locales ou rodar gates RELEASE antes da aprovação do contrato e do Oracle 2/4.
+- **Remediation atual:** Fase 1 recebeu o NO-GO do Oracle 2/4 e a documentação está sendo corrigida em um único lote. O gate dos guards e o commit da remediation precedem a re-revisão Oracle 2/4.
+- **Próximo passo:** executar novamente os quatro guards selecionados, `git diff --check`, commitar somente os dois documentos reconciliados e solicitar Oracle 2/4 re-review.
+- **Não fazer ainda:** traduzir componentes, editar locales ou rodar gates RELEASE antes da aprovação do contrato e do Oracle 2/4 re-review.

@@ -112,10 +112,10 @@ evitar duplicatas semânticas.
 | pasta selecionada | `folderField.selected` | `name` | FIXED + `FileSystemDirectoryHandle.name` dinâmico |
 | sem pasta, browser suportado | `folderField.emptySupported` | — | FIXED |
 | browser sem FSA | `folderField.unsupported` | — | FIXED |
-| escolher/trocar pasta | `folderField.btnChoose`, `folderField.btnChange` | — | FIXED |
+| escolher/trocar pasta | reutilizar `projectStorage.btnChoose`, `projectStorage.btnChange` | — | FIXED |
 | helper de criação | `folderField.hint` | — | FIXED; preservar confirmação manual |
-| permissão recusada | `folderField.errorPermissionDenied` | — | FIXED; `role=alert`/boundary visível |
-| operação ocupada | `folderField.btnChoose`/`btnChange` + `folderField.busyAria` | — | `aria-busy` e nome acessível; não criar estado persistido |
+| permissão recusada | reutilizar `projectStorage.noticePermissionDenied` | — | FIXED; `role=alert`/boundary visível |
+| operação ocupada | reutilizar botão escolhido + `folderField.busyAria` | — | `aria-busy` e nome acessível; não criar estado persistido |
 
 O nome da pasta pode conter espaços, unicode e caracteres especiais; deve ser
 interpolado, não concatenado em copy localizada. Cancelar o picker mantém o
@@ -186,3 +186,222 @@ Orchestrator fará o commit atômico da Fase 1. Em seguida, o Oracle 2/4 deverá
 responder se este contrato evita conflito de namespace, drift de placeholders,
 fallback silencioso e tradução de dado canônico. Só uma decisão **GO** libera
 as lanes de implementação da Fase 2.
+
+## Remediation Oracle 2/4 — regras normativas corrigidas
+
+> Esta seção substitui qualquer tabela anterior que agregue placeholders por
+> família ou deixe ownership implícito. O contrato abaixo é a fonte normativa
+> para os writers e foi acrescentado após o Oracle 2/4 retornar NO-GO em
+> `8ca0529`.
+
+### 1. Editor: todos os produtores visíveis pertencem à Lane C
+
+Lane C não se limita ao JSX do toolbar e ao banner de post-adoption. Ela também
+é dona dos produtores em `ChapterEditor.tsx` que alimentam `impactInfo`,
+`impactRemediationError`, `impactReviewError`, `impactPatchError`,
+`impactOutlineRegenerationError` e `impactStoryTimelineRegenerationError`, nos
+trechos de recuperação (`503`, `527–553`), análise (`1947–1961`), dismiss e
+operações H57 (`1969–2357`), além dos banners de qualidade e revisão explícita
+(`3328–3338`). Nenhum desses textos pode permanecer como literal de UI.
+
+| Fonte/estado | Chave normativa em `editor.chapterEditor.*` | Placeholder exato | Regra |
+|---|---|---|---|
+| H57 schedule indisponível | `impactRecoveryScheduleUnavailable` | nenhum | mensagem estável; raw detail só console |
+| candidato de timeline recuperado | `impactRecoveryTimelineCandidate` | nenhum | FIXED |
+| candidato de outline recuperado | `impactRecoveryOutlineCandidate` | nenhum | FIXED |
+| dependência aguardando revisão | `impactRecoveryWaitingDependency` | `reason` | `reason` é diagnóstico/dado da revisão, não ID traduzido |
+| plano corrigido recuperado | `impactRecoveryPlanSummary` | `resolved`, `remaining`, `new` | contagens numéricas |
+| revisões restauradas | `impactRecoveryReviewsRestored` | `count` | contagem numérica |
+| candidato de patch encontrado | `impactRecoveryPatchCandidate` | nenhum | FIXED |
+| resumo da análise de impacto | `impactGraphSummary` | `facts`, `demoted`, `downstream`, `nodes`, `edges`, `stale`, `summaries`, `deterministic`, `authorConfirmed`, `hash` | cada segmento tem chave própria ou assinatura documentada; não montar literal misto |
+| facts/estado/evidência do resumo | `impactFactsFromChapter`, `impactDemoted`, `impactEvidenceValid`, `impactDownstream`, `impactGraphGenerated`, `impactStaleEvidence`, `impactSummaryNodes`, `impactDeterministicPlan`, `impactAuthorPlan`, `impactGraphHash` | respectivamente `count`; `count`; nenhum; `count`; `nodes`,`edges`; `count`; `count`; `count`; `count`; `hash` | valores canônicos/contagens não são traduzidos |
+| análise falhou | `impactAnalysisFailed` | nenhum | substitui raw exception |
+| candidate já pendente impede dismiss | `impactPatchPendingDismiss`, `impactOutlinePendingDismiss`, `impactTimelinePendingDismiss` | nenhum | mensagem estável |
+| patch criado | `impactPatchCreated` | nenhum | FIXED; receipt separado |
+| outline criado | `impactOutlineCreated` | `hash` | receipt/hash literal |
+| outline confirmado | `impactOutlineConfirmed` | `hash` | receipt/hash literal |
+| outline rejeitado | `impactOutlineRejected` | nenhum | FIXED |
+| timeline criado | `impactTimelineCreated` | nenhum | FIXED |
+| timeline confirmado | `impactTimelineConfirmed` | `hash` | receipt/hash literal |
+| timeline rejeitado | `impactTimelineRejected` | nenhum | FIXED |
+| remediation concluída/reutilizada | `impactRemediationReused`, `impactRemediationCompleted` | `hash`, `retrievalCount` (apenas completed) | receipt e contagem permanecem literais/dinâmicos |
+| plano atualizado | `impactPlanChanged`, `impactPlanUnchanged` | `previousHash`, `newHash` ou `hash` | hashes canônicos |
+| revisão registrada/reutilizada | `impactReviewReused`, `impactReviewRecorded` | `hash` | receipt/hash canônico |
+| manual entry inválida/erro de handoff | `impactManualEntryUnavailable`, `impactManualHandoffFailed` | nenhum | mensagem estável |
+| erro operacional de cada campo | `impactReviewErrorGeneric`, `impactPatchErrorGeneric`, `impactOutlineRegenerationErrorGeneric`, `impactStoryTimelineRegenerationErrorGeneric`, `impactRemediationErrorGeneric` | nenhum | raw `Error.message` não é renderizado |
+| quality gate do candidato de texto | `proseGenerationQualityGate` | nenhum | substitui `proseGenerationError` cru |
+| aviso de revisão explícita | `proseCandidateExplicitReviewNotice` | nenhum | FIXED; preserva autorização explícita e custo |
+
+Os nomes acima são presentation codes/chaves de renderização; não devem ser
+persistidos nos contratos durable. O estado React pode guardar um union finito
+de código + payload, traduzido no render, para que trocar o idioma após um
+alerta não deixe texto no idioma anterior. O payload nunca inclui exception
+raw em texto visível.
+
+### 2. Assinaturas exatas de Simulation
+
+Além das chaves já existentes, as seguintes assinaturas são obrigatórias e
+substituem a tabela agregada anterior:
+
+| Chave | Assinatura de interpolação |
+|---|---|
+| `chatGame.releaseMetaLine` | `version`, `profiles`, `scenes` |
+| `chatGame.legacySceneEventMetaLine` | `scene`, `seq` |
+| `chatGame.sceneMetaLine` | `title`, `location`, `time`, `seq` |
+| `chatGame.activeParticipantsLine` | `participants` |
+| `chatGame.messagePlaceholder` (existente) | `character` |
+| `chatGame.messageMetaLine` | `speaker`, `seq` |
+| `chatGame.relationshipEvidenceLine` | `before`, `after`, `reason`, `seq` |
+| `chatGame.memorySourcesLine` | `sources` |
+| `chatGame.checkpointForkLine` | `name`, `seq` |
+| `chatGame.resumeRunAction` | `runId` |
+| `chatGame.rolePlayer` | nenhum |
+| todas as headings, badges, empty states, buttons e hints restantes de `chatGame` | nenhum |
+
+`participants` e `sources` já chegam formatados por `Intl.ListFormat`/helper de
+locale; não são separados por `join('、')`. `sceneMetaLine` inclui título,
+local, hora e sequência do release ativo; `legacySceneEventMetaLine` fica
+exclusivo do replay legacy. `item.manifest.definition.title`, labels de
+release/sessão, rules, choices, reasons e conteúdo de memória continuam raw
+author/runtime data.
+
+### 3. Assinaturas exatas de Editor toolbar
+
+Para cada chave sem placeholder da tabela original, a cardinalidade é zero.
+As exceções e chaves que antes estavam agregadas são:
+
+| Chave | Assinatura |
+|---|---|
+| `planTotalCount`, `planDeterministicCount` | `count` |
+| `planAuthorReviewCount` | `current`, `total` |
+| `planHashLabel`, `h57ScheduleHash`, `authorReviewReceiptHash`, `authorReviewReceiptBanner`, `h57OutlineRegenChildHash`, `h57OutlineRegenReceiptBanner`, `h57TimelineRegenChildHash`, `h57TimelineRegenReceiptBanner`, `impactPatchEvidenceHash`, `impactRemediationReceiptBanner` | `hash` |
+| `h57DownstreamProgress` | `completed`, `total` |
+| `h57StatusReady`, `h57StatusAwaitingConfirmation`, `h57StatusBlocked`, `h57StatusNeedsManualAction` | `count` |
+| `h57ScheduleSettled` | nenhum |
+| `h57ScheduleHash` | `hash` |
+| `h57PolicyManualModule` | `module` |
+| `authorReviewLatestDecision` | `decision` |
+| `h57OutlineRegenCandidateReason`, `h57OutlineRegenCandidateEvidence` | `reason` / `refs` |
+| `h57OutlineRegenTargetOption` | `title`, `summary` |
+| `h57TimelineRegenEventItem` | `title`, `id` |
+| `h57TimelineRegenCandidateNotice` | `title` |
+| `h57TimelineRegenTimeLabel`, `h57TimelineRegenImportanceLabel` | `time` / `importance` |
+| `h57TimelineRegenCandidateReason`, `h57TimelineRegenCandidateEvidence` | `reason` / `refs` |
+| `impactPatchCandidateNotice` | nenhum |
+| `impactPatchEvidenceHash` | `hash` |
+| `authorReviewItemOption` | `action`, `table`, `recordId`, `reviewed` |
+| `h57TimelineRegenTargetOption` | `title`, `id` |
+| `h57PolicySummary` | `policyId`, `policyReason` |
+
+`refs` é uma lista já formatada; `recordId`, `id`, `policyId`, `table`, hashes,
+decision codes, status codes e module IDs não são traduzidos. Labels em torno
+deles são. `reason`, `summary`, `title`, `note`, `time` e `importance` são
+dados de candidato/autor e só recebem interpolação controlada, sem alterar o
+valor.
+
+### 4. Erros, troca de idioma e teste de apresentação
+
+Todos os campos de erro visíveis têm owner explícito:
+
+| Campo atual | Presentation key | Raw detail |
+|---|---|---|
+| `store.error`/`run` em `ChatGamePanel` | `chatGame.operationError` | console/diagnóstico; nunca texto raw |
+| `item.error` ao carregar release | `chatGame.releaseUnavailable` | console/diagnóstico |
+| `impactReviewError` | `chapterEditor.impactReviewErrorGeneric` | console/diagnóstico |
+| `impactPatchError` | `chapterEditor.impactPatchErrorGeneric` | console/diagnóstico |
+| `impactOutlineRegenerationError` | `chapterEditor.impactOutlineRegenerationErrorGeneric` | console/diagnóstico |
+| `impactStoryTimelineRegenerationError` | `chapterEditor.impactStoryTimelineRegenerationErrorGeneric` | console/diagnóstico |
+| `impactRemediationError` | `chapterEditor.impactRemediationErrorGeneric` | console/diagnóstico |
+| `transitionError` | `chapterEditor.postAdoptionError` | console/diagnóstico |
+| `proseGenerationError` | `chapterEditor.proseGenerationQualityGate` | console/diagnóstico |
+
+Os regressions precisam criar um erro/status, mudar `en → pt-BR` (ou
+`pt-BR → zh-CN`) sem remontar o componente e provar que a mensagem visível
+acompanha o idioma, que a exceção raw não aparece e que o recovery callback
+continua disponível. A mesma bateria cobre `impactInfo`, banners e listas.
+
+### 5. Storage: decisão folha a folha
+
+Não há fallback para decisão do writer:
+
+| Necessidade do field | Decisão vinculante |
+|---|---|
+| choose button | reutilizar `settings.projectStorage.btnChoose` |
+| change button | reutilizar `settings.projectStorage.btnChange` |
+| permission error | reutilizar `settings.projectStorage.noticePermissionDenied` |
+| field label | criar `settings.projectStorage.folderField.label` |
+| selected | criar `settings.projectStorage.folderField.selected` com `name` |
+| supported empty | criar `settings.projectStorage.folderField.emptySupported` |
+| unsupported inline state | criar `settings.projectStorage.folderField.unsupported`; não reutilizar o texto longo do painel |
+| creation helper | criar `settings.projectStorage.folderField.hint` |
+| busy accessible name | criar `settings.projectStorage.folderField.busyAria` |
+
+O writer não pode criar `shared.json` para este campo nem duplicar as duas
+folhas de botão/permission. O Orchestrator é owner serial de
+`tests/registry/i18n-ns-usage.test.ts`: adicionará a exceção explícita para
+`components/shared/ProjectStorageFolderField.tsx` e seu motivo. Lane B não
+edita o guard. Depois, Lane B deve provar cold mount do field antes de abrir a
+página de settings; `PRELOAD_NS` não muda.
+
+### 6. Projection e post-adoption: união fechada
+
+O passo de projection de Lane A é **obrigatório e serial**, antes das outras
+lanes. O owner adicionará `INTERACTION_MEMORY_KIND_LABEL_KEYS` a
+`src/i18n/display-projection.ts` para exatamente:
+
+`scene-summary`, `key-memory`, `commitment`, `secret`, `conflict`, `gift`.
+
+O teste `R-i18n-display-projections.test.ts` deve verificar os seis valores em
+`pt-BR`, `en` e `zh-CN`, fallback canônico para valor desconhecido e ausência
+de alteração no storage.
+
+`chapterPostAdoptionChainStateV1()` tem a união fechada e as chaves abaixo:
+
+| Estado canônico | Chave `chapterEditor.postAdoptionChainState.*` |
+|---|---|
+| `downstream-processing` | `downstreamProcessing` |
+| `downstream-completed` | `downstreamCompleted` |
+| `downstream-awaiting-confirmation` | `downstreamAwaitingConfirmation` |
+| `downstream-failed` | `downstreamFailed` |
+| `upstream-invalid` | `upstreamInvalid` |
+| `prose-completed` | `proseCompleted` |
+| `legacy-unlinked` | `legacyUnlinked` |
+
+O banner usa `postAdoptionRunBanner(runId)`,
+`postAdoptionPendingConfirmation()`, `postAdoptionTransitionCandidates(count)`,
+`postAdoptionError()` e `postAdoptionResume()`. Run ID, state code, receipt,
+hash, policy, table, author content e candidate content permanecem canônicos.
+
+### 7. Test ownership corrigido e waiver do Designer
+
+- Orchestrator: editar serialmente `i18n-ns-usage.test.ts`, quando necessário,
+  e revisar o cold-mount harness da Lane B; manter a única autoridade da
+  projection-map/shared guard.
+- Lane A: `R-CHATGAME2BC-ui.test.tsx`, `R-i18n-display-projections.test.ts`;
+  incluir erro, troca de idioma, `messagePlaceholder`, scene metadata,
+  memory-kind e list formatting.
+- Lane B: criar `R-PROJECT-STORAGE-FOLDER-i18n.test.tsx`; incluir null,
+  selected, unsupported, permission denied, busy/disabled, callback e cold
+  mount da própria tela.
+- Lane C: atualizar `R-AUDIT6-chapter-editor-toolbar.test.tsx` e criar
+  `R-I18N-CHAPTER-POST-ADOPTION.test.tsx`; incluir todos os produtores H57,
+  quality-gate/explicit-review banners, erro raw suppression, troca de idioma
+  após status/alerta, placeholders, aria/title/sr-only e list formatting.
+- Os testes durable `R-HARNESS20`, `R-HARNESS41` e `R-HARNESS42` permanecem
+  sem alteração sem necessidade; continuam prova de lifecycle, não substituem
+  a regressão de presentation.
+- Waiver de uma onda: devido às duas falhas do provedor Designer, o
+  Orchestrator assume temporariamente ownership de copy e acessibilidade
+  percebida para esta onda. Fixers só podem fazer wiring mecânico que preserve
+  a hierarquia, spacing, wrapping, affordances e layout existentes. Se o
+  provedor voltar, uma revisão read-only é bem-vinda, mas não é prerequisite;
+  qualquer mudança visual substantiva exige nova decisão e não pode ser
+  introduzida silenciosamente.
+
+## Oracle 2/4 — remediation pending validation
+
+O NO-GO do Oracle 2/4 foi agrupado nesta única remediation documental. Ainda
+não houve alteração de componente, locale, guard, projection ou teste. Após
+esta atualização, executar somente os quatro guards selecionados e
+`git diff --check`, commitar os dois documentos em um checkpoint separado e
+solicitar a re-revisão 2/4. A Fase 2 continua bloqueada até **GO**.
