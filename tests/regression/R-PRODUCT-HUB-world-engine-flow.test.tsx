@@ -30,6 +30,8 @@ import enPages from '../../src/i18n/locales/en/pages.json'
 import ptPages from '../../src/i18n/locales/pt-BR/pages.json'
 import zhPages from '../../src/i18n/locales/zh-CN/pages.json'
 import zhWorldGroup from '../../src/i18n/locales/zh-CN/world-group.json'
+import enWorldview from '../../src/i18n/locales/en/worldview.json'
+import ptWorldview from '../../src/i18n/locales/pt-BR/worldview.json'
 
 // ── 外部 I/O 叶子面板 mock（页面装配与其余组件保持真实）──
 vi.mock('../../src/components/product/WorldSharingPanel', () => ({ default: () => null }))
@@ -210,6 +212,27 @@ describe.each(VARIANTS)('R-PRODUCT-HUB · 世界引擎公共流（enableMultiWor
     expect(groupOverviewMarkers.aiSuggestButton.length).toBeGreaterThan(0)
     expect(editor!.textContent).not.toContain(groupOverviewMarkers.aiSuggestButton)
     expect(editor!.textContent).not.toContain(groupOverviewMarkers.addWorldButton)
+  })
+
+  it('工作台标题与桥接文案随语言切换（非默认 locale 渲染证据）', async () => {
+    // 非默认语言下，工作台必须渲染对应 locale 的 worldEngine.* 文案，
+    // 且不得再出现 zh-CN 源文案——证明真实语言路由而非 key 回显或中文渗透。
+    const expectations: ReadonlyArray<[
+      'en' | 'pt-BR',
+      typeof enWorldview.worldEngine,
+      string,
+    ]> = [
+      ['en', enWorldview.worldEngine, '完整世界工作台'],
+      ['pt-BR', ptWorldview.worldEngine, '完整世界工作台'],
+    ]
+    for (const [lang, copy, zhTitle] of expectations) {
+      const { host } = await renderWorldsTab(enableMultiWorld, lang)
+      const workspace = await waitForWorkspace(host)
+      expect(workspace.textContent).toContain(copy.title)
+      expect(workspace.textContent).toContain(copy.bridge.narrativeTitle)
+      expect(workspace.textContent).toContain(copy.runtime.openRuntime)
+      expect(workspace.textContent).not.toContain(zhTitle)
+    }
   })
 
   it('管理设定 CTA 滚动定位到同一个 #world-engine-editor 元素', async () => {

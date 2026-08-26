@@ -79,9 +79,9 @@ export default function EmotionBeatCard({
         setCandidate(recovered.candidate)
         setExpanded(true)
       })
-      .catch(error => { if (active) setGenerationError(error instanceof Error ? error.message : '候选恢复失败') })
+      .catch(error => { if (active) setGenerationError(error instanceof Error ? error.message : t('emotionBeat.errorRecoverDefault')) })
     return () => { active = false }
-  }, [chapterId, projectId, worldGroupId])
+  }, [chapterId, projectId, worldGroupId, t])
 
   const handleGenerate = async () => {
     setExpanded(true)
@@ -96,7 +96,7 @@ export default function EmotionBeatCard({
       setCandidate(generated.candidate)
       setExpanded(true)
     } catch (err) {
-      setGenerationError(err instanceof Error ? err.message : '情感节拍生成失败')
+      setGenerationError(err instanceof Error ? err.message : t('emotionBeat.errorGenerateDefault'))
     } finally {
       setGenerating(false)
     }
@@ -113,7 +113,7 @@ export default function EmotionBeatCard({
       setCandidateRunId(null)
       setGenerationError('')
     } catch (error) {
-      setGenerationError(error instanceof Error ? error.message : '情感节拍采纳失败')
+      setGenerationError(error instanceof Error ? error.message : t('emotionBeat.errorAdoptDefault'))
     } finally {
       setCandidateAction(null)
     }
@@ -126,7 +126,7 @@ export default function EmotionBeatCard({
       try {
         await rejectEmotionBeatCandidateV1({ scope: await resolveScopeLike(projectId), runId: candidateRunId })
       } catch (error) {
-        setGenerationError(error instanceof Error ? error.message : '情感节拍拒绝失败')
+        setGenerationError(error instanceof Error ? error.message : t('emotionBeat.errorRejectDefault'))
         setCandidateAction(null)
         return
       }
@@ -295,6 +295,8 @@ export default function EmotionBeatCard({
             </button>
           )}
           <button onClick={() => setExpanded(false)}
+            title={t('emotionBeat.collapseAria')}
+            aria-label={t('emotionBeat.collapseAria')}
             className="p-1 text-text-muted hover:text-text-primary">
             <ChevronUp className="w-3.5 h-3.5" />
           </button>
@@ -307,15 +309,15 @@ export default function EmotionBeatCard({
         <div className="mb-3 rounded-lg border border-pink-500/30 bg-pink-500/5 p-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <div>
-              <div className="text-xs font-semibold text-pink-300">AI 候选 · 尚未写入正式节拍卡</div>
+              <div className="text-xs font-semibold text-pink-300">{t('emotionBeat.candidateBanner')}</div>
               <p className="mt-1 text-xs text-text-secondary">{candidate.overallArc}</p>
             </div>
             <div className="flex shrink-0 gap-2">
               <button disabled={candidateAction != null} onClick={() => { void handleRejectCandidate() }} className="px-2 py-1 text-xs text-text-muted hover:text-text-primary disabled:opacity-50">
-                {candidateAction === 'reject' ? '拒绝中…' : '拒绝'}
+                {candidateAction === 'reject' ? t('emotionBeat.btnRejecting') : t('emotionBeat.btnReject')}
               </button>
               <button disabled={candidateAction != null} onClick={() => { void handleAcceptCandidate() }} className="rounded bg-accent px-2 py-1 text-xs text-white hover:bg-accent-hover disabled:opacity-50">
-                {candidateAction === 'accept' ? '写入中…' : '确认写入'}
+                {candidateAction === 'accept' ? t('emotionBeat.btnAccepting') : t('emotionBeat.btnAccept')}
               </button>
             </div>
           </div>

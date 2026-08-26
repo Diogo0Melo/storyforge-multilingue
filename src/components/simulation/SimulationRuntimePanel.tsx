@@ -21,6 +21,7 @@ import {
   projectCanonicalLabel,
   SESSION_STATUS_LABEL_KEYS,
   QUEST_STATUS_LABEL_KEYS,
+  SIMULATION_SESSION_KIND_LABEL_KEYS,
 } from '../../i18n/display-projection'
 import {
   loadSimulationCanonCandidates,
@@ -56,29 +57,18 @@ import {
 } from '../../lib/simulation/ttrpg'
 import { isNpcRuntimeEntity } from '../../lib/simulation/runtime'
 
-type KindLabelKey = `kind.${'sandbox' | 'npcEvolution' | 'ttrpg' | 'chatgame'}`
 type SourceKindLabelKey = `sourceKind.${'world' | 'character' | 'location' | 'item' | 'rule'}`
 
-const KIND_LABEL_KEYS: Partial<Record<SimulationSessionKind, KindLabelKey>> = {
-  sandbox: 'kind.sandbox',
-  'npc-evolution': 'kind.npcEvolution',
-  ttrpg: 'kind.ttrpg',
-  chatgame: 'kind.chatgame',
-}
-
-// Keep newer product session kinds visible to the generic runtime until their
-// labels are added to the localized simulation domain bundle.
-const KIND_FALLBACK_LABELS: Record<SimulationSessionKind, string> = {
-  sandbox: 'Sandbox',
-  'npc-evolution': 'NPC Evolution',
-  ttrpg: 'TTRPG Session',
-  chatgame: 'Character Chat',
-  storygame: 'Story Game',
-  textadventure: 'Text Adventure',
-  avg: 'Visual Novel',
-  textsimulation: 'Narrative Simulation',
-  textworld: 'Open World',
-}
+/**
+ * Locale-independent canonical reason codes persisted into simulation events.
+ * UI-locale translated text must never enter persisted event payloads; the
+ * timeline projects these stable codes back to localized summaries at render
+ * time (see formatEventSummary). Legacy persisted prose reasons are never
+ * rewritten — they stay visible verbatim as authored data.
+ */
+export const NPC_REJECTION_REASON_AUTHOR = 'author-rejected'
+export const ENCOUNTER_END_REASON_AUTHOR = 'author-ended-encounter'
+export const MANUAL_RESOURCE_ADJUSTMENT_REASON = 'manual-resource-adjustment'
 
 const SOURCE_KIND_LABEL_KEYS: Record<SimulationCanonSourceKind, SourceKindLabelKey> = {
   world: 'sourceKind.world',
@@ -96,7 +86,7 @@ const SOURCE_KIND_ORDER: SimulationCanonSourceKind[] = [
   'rule',
 ]
 
-function formatEventSummary(
+export function formatEventSummary(
   t: ReturnType<typeof useDomainT>['t'],
   type: string,
   payloadJson: string,
@@ -135,7 +125,18 @@ function formatEventSummary(
         title: (payload.encounter as Record<string, unknown>)?.title ?? '',
       })
     }
-    if (type === 'ttrpg.encounter.resolved') return t('eventSummary.encounterResolved', { reason: payload.reason ?? '' })
+    if (type === 'ttrpg.encounter.resolved') {
+      // Stable canonical reason code → localized summary. Legacy persisted
+      // prose reasons (authored data) are shown verbatim via interpolation.
+      const reason = typeof payload.reason === 'string' ? payload.reason : ''
+      if (reason === ENCOUNTER_END_REASON_AUTHOR) return t('eventSummary.encounterResolvedAuthorEnded')
+      return t('eventSummary.encounterResolved', { reason })
+    }
+    if (type === 'npc.evolution.rejected') {
+      const reason = typeof payload.reason === 'string' ? payload.reason : ''
+      if (reason === '' || reason === NPC_REJECTION_REASON_AUTHOR) return t('eventSummary.npcEvolutionRejected')
+      return t('eventSummary.npcEvolutionRejectedWithReason', { reason })
+    }
     if (type === 'ttrpg.combat.attack.resolved') {
       const attack = payload.attack as Record<string, unknown> | undefined
       return attack?.hit
@@ -206,10 +207,11 @@ export default function SimulationRuntimePanel(props: {
   const { t, lang } = useDomainT('simulation')
   // 语言感知的列表连接（NPC 标签、日程摘要等）
   const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
-  const kindLabel = (kind: SimulationSessionKind) => {
-    const key = KIND_LABEL_KEYS[kind]
-    return key ? t(key) : KIND_FALLBACK_LABELS[kind]
-  }
+  // Canonical projection ownership: session-kind labels resolve through the
+  // shared display-projection map; unknown/legacy kinds fall back to the raw
+  // canonical value (never a raw i18n key, never a local fallback dictionary).
+  const kindLabel = (kind: SimulationSessionKind) =>
+    projectCanonicalLabel(t, SIMULATION_SESSION_KIND_LABEL_KEYS, kind)
   const sourceKindLabel = (kind: SimulationCanonSourceKind) => {
     const key = SOURCE_KIND_LABEL_KEYS[kind]
     return t(key)
@@ -284,6 +286,12 @@ export default function SimulationRuntimePanel(props: {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [props.project.id, props.worldGroupId])
 
+  // Raw store errors are developer-only diagnostics; the UI alert renders a
+  // localized generic message (see detail error alert below).
+  useEffect(() => {
+    if (store.error) console.error('[SimulationRuntimePanel] simulation store error', store.error)
+  }, [store.error])
+
   useEffect(() => {
     let cancelled = false
     setCanonLoading(true)
@@ -300,12 +308,13 @@ export default function SimulationRuntimePanel(props: {
         setCanonWorldLabel(result.worldLabel)
       }
     }).catch(error => {
-      if (!cancelled) setActionError(error instanceof Error ? error.message : String(error))
+      console.error('[SimulationRuntimePanel] canon candidates load failed', error)
+      if (!cancelled) setActionError(t('textGame.common.errors.loadFailed'))
     }).finally(() => {
       if (!cancelled) setCanonLoading(false)
     })
     return () => { cancelled = true }
-  }, [props.project.id, props.worldGroupId, scopeProjectId, scopeWorldId, scopeWorkId])
+  }, [props.project.id, props.worldGroupId, scopeProjectId, scopeWorldId, scopeWorkId, t])
 
   const visibleSessions = useMemo(
     () => store.sessions.filter(session => (
@@ -351,6 +360,19 @@ export default function SimulationRuntimePanel(props: {
     'simulation.ttrpg-encounter',
     selected?.id ?? 'none',
   ))
+  // Raw AI stream errors follow the same contract as store.error: they are
+  // developer-only diagnostics logged under the stable [SimulationRuntimePanel]
+  // prefix, while the inline alerts next to each generate action render the
+  // localized generic message instead of provider/model/error text.
+  useEffect(() => {
+    if (npcAI.error) console.error('[SimulationRuntimePanel] npc evolution ai error', npcAI.error)
+  }, [npcAI.error])
+  useEffect(() => {
+    if (encounterAI.error) console.error('[SimulationRuntimePanel] ttrpg encounter ai error', encounterAI.error)
+  }, [encounterAI.error])
+  useEffect(() => {
+    if (ttrpgAI.error) console.error('[SimulationRuntimePanel] ttrpg gm ai error', ttrpgAI.error)
+  }, [ttrpgAI.error])
   const npcEntities = useMemo(
     () => Object.values(store.runtimeState.entities).filter(isNpcRuntimeEntity),
     [store.runtimeState.entities],
@@ -478,7 +500,8 @@ export default function SimulationRuntimePanel(props: {
     try {
       await action()
     } catch (error) {
-      setActionError(error instanceof Error ? error.message : String(error))
+      console.error('[SimulationRuntimePanel] operation failed', error)
+      setActionError(t('textGame.common.errors.operationFailed'))
     } finally {
       setBusy(false)
     }
@@ -754,7 +777,7 @@ export default function SimulationRuntimePanel(props: {
 
             {(store.error || actionError) && (
               <div className="rounded border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger">
-                {actionError || store.error}
+                {actionError || (store.error ? t('textGame.common.errors.operationFailed') : '')}
               </div>
             )}
 
@@ -874,7 +897,7 @@ export default function SimulationRuntimePanel(props: {
                   </div>
                   {npcAI.tokenUsage && (
                     <span className="text-[10px] text-text-muted">
-                      {npcAI.tokenUsage.inputTokens + npcAI.tokenUsage.outputTokens} tokens
+                      {t('ai.tokenUsage', { total: npcAI.tokenUsage.inputTokens + npcAI.tokenUsage.outputTokens })}
                     </span>
                   )}
                 </div>
@@ -908,7 +931,7 @@ export default function SimulationRuntimePanel(props: {
                       {npcAI.isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                       {npcAI.isStreaming ? t('npcEvolution.generating') : t('npcEvolution.generateButton')}
                     </button>
-                    {npcAI.error && <span className="text-xs text-danger">{npcAI.error}</span>}
+                    {npcAI.error && <span className="text-xs text-danger">{t('textGame.common.errors.operationFailed')}</span>}
                   </div>
                   {npcAI.output && (
                     <details className="rounded border border-border bg-bg-base px-3 py-2 text-xs">
@@ -944,7 +967,7 @@ export default function SimulationRuntimePanel(props: {
                             </button>
                             <button
                               disabled={busy}
-                              onClick={() => void run(() => store.rejectNpcEvolution(proposal.proposalSequence, t('npcEvolution.rejectReason')))}
+                              onClick={() => void run(() => store.rejectNpcEvolution(proposal.proposalSequence, NPC_REJECTION_REASON_AUTHOR))}
                               className="rounded border border-border px-3 py-1 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                             >
                               {t('npcEvolution.rejectButton')}
@@ -975,7 +998,7 @@ export default function SimulationRuntimePanel(props: {
                   </div>
                   {ttrpgAI.tokenUsage && (
                     <span className="text-[10px] text-text-muted">
-                      {ttrpgAI.tokenUsage.inputTokens + ttrpgAI.tokenUsage.outputTokens} tokens
+                      {t('ai.tokenUsage', { total: ttrpgAI.tokenUsage.inputTokens + ttrpgAI.tokenUsage.outputTokens })}
                     </span>
                   )}
                 </div>
@@ -1058,7 +1081,7 @@ export default function SimulationRuntimePanel(props: {
                       </div>
                       {encounterAI.tokenUsage && (
                         <span className="text-[10px] text-text-muted">
-                          AI {encounterAI.tokenUsage.inputTokens + encounterAI.tokenUsage.outputTokens} tokens
+                          {t('ai.tokenUsageAiPrefix', { total: encounterAI.tokenUsage.inputTokens + encounterAI.tokenUsage.outputTokens })}
                         </span>
                       )}
                     </div>
@@ -1121,7 +1144,7 @@ export default function SimulationRuntimePanel(props: {
                             {encounterAI.isStreaming ? t('ttrpg.encounterGenerating') : t('ttrpg.generateEncounterCandidate')}
                           </button>
                         </div>
-                        {encounterAI.error && <span className="text-xs text-danger">{encounterAI.error}</span>}
+                        {encounterAI.error && <span className="text-xs text-danger">{t('textGame.common.errors.operationFailed')}</span>}
                         {ttrpgEncounterCandidate && (
                           <div className="rounded border border-accent/30 bg-bg-surface p-3 text-sm">
                             <div className="font-medium text-text-primary">{ttrpgEncounterCandidate.title}</div>
@@ -1154,7 +1177,7 @@ export default function SimulationRuntimePanel(props: {
                           <p className="mt-1 whitespace-pre-wrap">{combatEncounter.description}</p>
                           <button
                             disabled={busy}
-                            onClick={() => void run(() => store.resolveTtrpgEncounter(t('ttrpg.endEncounterReason')))}
+                            onClick={() => void run(() => store.resolveTtrpgEncounter(ENCOUNTER_END_REASON_AUTHOR))}
                             className="mt-2 rounded border border-border px-2 py-1 text-[11px] text-text-secondary hover:bg-bg-hover disabled:opacity-40"
                           >
                             {t('ttrpg.endEncounter')}
@@ -1194,7 +1217,7 @@ export default function SimulationRuntimePanel(props: {
                           <input value={ttrpgResourceName} onChange={event => setTtrpgResourceName(event.target.value)} aria-label={t('ttrpg.resourceNameAria')} placeholder={t('ttrpg.resourceNamePlaceholder')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
                           <input value={ttrpgResourceDelta} onChange={event => setTtrpgResourceDelta(event.target.value)} aria-label={t('ttrpg.resourceDeltaAria')} placeholder={t('ttrpg.resourceDeltaPlaceholder')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary" />
                           <span className="self-center text-[10px] text-text-muted">{t('ttrpg.manualResourceHint')}</span>
-                          <button disabled={busy || !ttrpgResourceEntityKey || !ttrpgResourceName.trim()} onClick={() => void run(() => store.changeTtrpgResource({ entityKey: ttrpgResourceEntityKey, resourceKey: ttrpgResourceName, delta: Number(ttrpgResourceDelta), reason: t('ttrpg.manualResourceReason') }))} className="rounded border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40">{t('ttrpg.adjustResource')}</button>
+                          <button disabled={busy || !ttrpgResourceEntityKey || !ttrpgResourceName.trim()} onClick={() => void run(() => store.changeTtrpgResource({ entityKey: ttrpgResourceEntityKey, resourceKey: ttrpgResourceName, delta: Number(ttrpgResourceDelta), reason: MANUAL_RESOURCE_ADJUSTMENT_REASON }))} className="rounded border border-border px-3 py-1.5 text-xs text-text-secondary hover:bg-bg-hover disabled:opacity-40">{t('ttrpg.adjustResource')}</button>
                         </div>
                         <div className="grid gap-2 md:grid-cols-[8rem_7rem_6rem_1fr_auto]">
                           <select value={ttrpgConditionEntityKey} onChange={event => setTtrpgConditionEntityKey(event.target.value)} aria-label={t('ttrpg.conditionTargetAria')} className="rounded border border-border bg-bg-surface px-2 py-1.5 text-xs text-text-primary">
@@ -1247,7 +1270,7 @@ export default function SimulationRuntimePanel(props: {
                       {ttrpgAI.isStreaming ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                       {ttrpgAI.isStreaming ? t('ttrpg.gmGenerating') : t('ttrpg.requestGm')}
                     </button>
-                    {ttrpgAI.error && <span className="text-xs text-danger">{ttrpgAI.error}</span>}
+                    {ttrpgAI.error && <span className="text-xs text-danger">{t('textGame.common.errors.operationFailed')}</span>}
                   </div>
                   {ttrpgAI.output && (
                     <details className="rounded border border-border bg-bg-base px-3 py-2 text-xs">

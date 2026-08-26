@@ -337,7 +337,19 @@
     "titleRegenerate": "重新生成",
     "deleteConfirmTitle": "删除本章的情感节拍卡？",
     "deleteConfirmMessage": "此操作不可恢复。",
-    "streamingHint": "正在生成情感节拍..."
+    "streamingHint": "正在生成情感节拍...",
+    "collapseAria": "收起情感节拍卡",
+    "tokenEstimate": "≈ ~{{count}} tokens",
+    "tokenUsage": "Token：输入 {{input}} · 输出 {{output}}",
+    "candidateBanner": "AI 候选 · 尚未写入正式节拍卡",
+    "btnReject": "拒绝",
+    "btnRejecting": "拒绝中…",
+    "btnAccept": "确认写入",
+    "btnAccepting": "写入中…",
+    "errorRecoverDefault": "候选恢复失败",
+    "errorGenerateDefault": "情感节拍生成失败",
+    "errorAdoptDefault": "情感节拍采纳失败",
+    "errorRejectDefault": "情感节拍拒绝失败"
   },
   "chapterEditor": {
     "lazyPanelLoading": "面板加载中...",

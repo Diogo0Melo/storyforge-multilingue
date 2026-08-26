@@ -291,7 +291,7 @@ export async function validateTextOpenWorldGame(inputScope: WorkspaceScope, game
   const adventure = adventureRow ? validateAdventureContent(parseAdventureContent(adventureRow.contentJson))
     : { valid: false, errors: ['冒险内容模块不存在'], warnings: [], unreachableLocationKeys: [], unavailableQuestKeys: [], sourceLessItemKeys: [] }
   const simulation = simulationRow ? validateNarrativeSimulationContent({ content: simulationRow.contentJson, narrativeNodeKeys: nodes.map(node => node.key) })
-    : { valid: false, errors: ['模拟内容模块不存在'], warnings: [], duplicateKeys: [], missingReferences: [], dominatedActionKeys: [], unboundedGrowthKeys: [], conservedMutationKeys: [], unsolvedCrisisKeys: [], unreachableEndingKeys: [] }
+    : { valid: false, errors: ['模拟内容模块不存在'], warnings: [], duplicateKeys: [], missingReferences: [], dominatedActionKeys: [], unboundedGrowthKeys: [], conservedMutationKeys: [], unsolvedCrisisKeys: [], unreachableEndingKeys: [], issueStageCoverageKeys: [], emptySectionKeys: [] }
   let openWorld: OpenWorldValidationReport = { valid: false, errors: ['开放世界内容模块不存在'], warnings: [], duplicateKeys: [], missingReferences: [], unreachableRegionKeys: [], unreachableMainlineQuestKeys: [], taskFloodRegionKeys: [], unboundedPropagationRuleKeys: [], invalidProtectedReferenceKeys: [], duplicateFingerprintKeys: [] }
   if (openWorldRow && adventureRow && simulationRow) {
     openWorld = validateOpenWorldContent({ content: openWorldRow.contentJson, adventure: parseAdventureContent(adventureRow.contentJson), interactionProfiles: freezeProfiles(profiles, characters), interactionScenes: freezeScenes(scenes), simulation: parseNarrativeSimulationContent(simulationRow.contentJson), narrativeNodeKeys: nodes.map(node => node.key) })

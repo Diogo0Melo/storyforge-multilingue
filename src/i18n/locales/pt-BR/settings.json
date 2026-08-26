@@ -1993,5 +1993,28 @@
       "label": "Games",
       "description": "Mundos de jogos, desafios de masmorra, competição."
     }
+  },
+  "projectStorage": {
+    "title": "Workspace de armazenamento do projeto",
+    "description": "O conteúdo legível do projeto, a memória e as evidências de recuperação acompanham esta pasta. Você pode colocá-la no disco D ou em qualquer local de disco local.",
+    "noProject": "Entre em um projeto primeiro e depois defina o local de armazenamento dele.",
+    "unsupported": "Este navegador não suporta vincular uma pasta local diretamente. Ainda é possível exportar e importar pacotes de workspace autoverificados no Gerenciamento de Dados.",
+    "folderIdle": "Nenhuma pasta de projeto definida ainda",
+    "statusLinked": "Vinculada; por privacidade, o navegador não mostra o caminho completo do disco",
+    "statusNeedsAuth": "Local memorizado; é necessário reautorizar",
+    "statusBrowserOnly": "O projeto atualmente existe apenas neste navegador",
+    "btnReauthorize": "Reautorizar",
+    "btnChoose": "Escolher pasta do projeto",
+    "btnChange": "Alterar local",
+    "hintSafety": "Escolher ou alterar o local apenas salva a permissão da pasta; nenhum arquivo é sobrescrito automaticamente. Verifique as diferenças manualmente no Gerenciamento de Dados antes de confirmar a sincronização.",
+    "btnOpenDataManagement": "Conferir e sincronizar",
+    "btnDisconnect": "Desvincular",
+    "noticePermissionDenied": "A permissão de leitura e escrita dessa pasta não foi concedida.",
+    "noticeBound": "\"{{name}}\" agora é o workspace de armazenamento do projeto. Nenhum arquivo foi gravado ainda.",
+    "noticeReplaced": "O local de armazenamento mudou para \"{{name}}\". A pasta original não foi excluída; nada foi gravado no novo local ainda — confira e confirme no Gerenciamento de Dados.",
+    "noticeChooseFailed": "Falha ao salvar o local: {{message}}",
+    "noticeReauthorized": "Permissão da pasta restaurada; nenhum arquivo foi lido ou gravado automaticamente.",
+    "noticeDisconnected": "Desvinculado; os arquivos originais no disco não são excluídos.",
+    "noticeDisconnectFailed": "Falha ao desvincular: {{message}}"
   }
 }

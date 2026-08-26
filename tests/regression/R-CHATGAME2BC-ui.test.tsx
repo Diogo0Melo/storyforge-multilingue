@@ -13,6 +13,7 @@ import { db } from '../../src/lib/db/schema'
 import { readSimulationState } from '../../src/lib/simulation/runtime'
 import type { Project } from '../../src/lib/types'
 import { ensureWorkspaceOwnership } from '../../src/lib/world-engine/ownership'
+import i18n from '../../src/i18n'
 
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
@@ -80,7 +81,7 @@ describe('CHATGAME-2B/2C · author and player UI', () => {
     await click(host, '用所选角色创建')
     await waitFor(() => expect(host.textContent).toContain('3 角色 · 1 场景'))
     await click(host, '上下文检查')
-    const inspect = Array.from(host.querySelectorAll('button')).find(item => item.textContent?.includes('检查 汀兰'))
+    const inspect = host.querySelector<HTMLButtonElement>('button[aria-label="检查 汀兰"]')
     expect(inspect).toBeTruthy()
     await act(async () => { inspect!.click(); await new Promise(resolve => setTimeout(resolve, 0)) })
     await waitFor(() => expect(host.textContent).toContain('统一上下文源：interactionRuntime'))
@@ -90,6 +91,97 @@ describe('CHATGAME-2B/2C · author and player UI', () => {
     await click(host, '发布新版本')
     await waitFor(() => expect(host.textContent).toContain('已发布 GameRelease v1'))
     expect(await db.gameReleases.count()).toBe(1)
+  }, 20_000)
+
+  it('作者工作台界面标签由 simulation 命名空间 locale 驱动（pt-BR）', async () => {
+    const seeded = await fixture()
+    await act(async () => {
+      root.render(createElement(DialogProvider, null, createElement(InteractionGameWorkbench, { scope: seeded.scope })))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    try {
+      await act(async () => { await i18n.changeLanguage('pt-BR'); await new Promise(resolve => setTimeout(resolve, 0)) })
+      await waitFor(() => expect(host.textContent).toContain('Jogos de interação'))
+      expect(host.querySelector('input[placeholder="Título do novo jogo"]')).toBeTruthy()
+      expect(host.textContent).toContain('Criar amostra de aceitação de cinco cenas')
+      expect(host.textContent).toContain('fichas mestras dos personagens servem apenas como fonte de publicação')
+      await click(host, 'Criar com os personagens selecionados')
+      await waitFor(() => expect(host.textContent).toContain('3 personagens · 1 cenas · 0 publicações'))
+      expect(host.textContent).toContain('Conhecimento, segredos e dimensões de relação dos personagens')
+      expect(host.textContent).toContain('Limite de memória')
+      await click(host, 'Inspeção de contexto')
+      const inspect = host.querySelector<HTMLButtonElement>('button[aria-label="Inspecionar 汀兰"]')
+      expect(inspect).toBeTruthy()
+      await act(async () => { inspect!.click(); await new Promise(resolve => setTimeout(resolve, 0)) })
+      await waitFor(() => expect(host.textContent).toContain('Fontes de contexto unificadas: interactionRuntime'))
+      expect(host.textContent).not.toContain('统一上下文源：')
+      await click(host, 'Validação e publicação')
+      await click(host, 'Executar verificações')
+      await waitFor(() => expect(host.textContent).toContain('Pronto para publicar'))
+      await click(host, 'Publicar nova versão')
+      await waitFor(() => expect(host.textContent).toContain('GameRelease v1 publicado'))
+      expect(await db.gameReleases.count()).toBe(1)
+    } finally {
+      await act(async () => { await i18n.changeLanguage('zh-CN'); await new Promise(resolve => setTimeout(resolve, 0)) })
+    }
+  }, 20_000)
+
+  it('新游戏标题输入保持作者主导：初始为空、locale 切换不注入或改写持久化标题', async () => {
+    const seeded = await fixture()
+    await act(async () => {
+      root.render(createElement(DialogProvider, null, createElement(InteractionGameWorkbench, { scope: seeded.scope })))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    await waitFor(() => expect(host.textContent).toContain('用所选角色创建'))
+    const titleInput = () => host.querySelector('.storygame-author-sidebar input') as HTMLInputElement
+    // 回归：初始标题输入必须为空，不得由 t()（locale 文案）预置。
+    expect(titleInput().value).toBe('')
+    // 作者输入后切换 UI locale：作者状态不得被 locale 改写。
+    const setValue = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!
+    await act(async () => {
+      setValue.call(titleInput(), '我的互动剧本')
+      titleInput().dispatchEvent(new Event('input', { bubbles: true }))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    await act(async () => { await i18n.changeLanguage('en'); await new Promise(resolve => setTimeout(resolve, 0)) })
+    expect(titleInput().value).toBe('我的互动剧本')
+    await click(host, 'Create from selected characters')
+    await waitFor(() => expect(host.textContent).toContain('Created a minimal publishable character interaction.'))
+    const definitions = await db.gameDefinitions.toArray()
+    const created = definitions.find(item => item.title === '我的互动剧本')
+    expect(created?.title).toBe('我的互动剧本')
+    await act(async () => { await i18n.changeLanguage('zh-CN'); await new Promise(resolve => setTimeout(resolve, 0)) })
+  }, 20_000)
+
+  it('校验诊断按稳定 code 渲染本地化文案并携带 recordKey，不透出引擎原始 message', async () => {
+    const seeded = await fixture()
+    const definition = await createStarterInteractionGame({ scope: seeded.scope, characterIds: seeded.characterIds })
+    // 直接改库制造 profile.incomplete 诊断（稳定 code，recordKey = participantKey）。
+    const profile = await db.interactionCharacterProfiles
+      .where('gameDefinitionId').equals(definition.id!).first()
+    await db.interactionCharacterProfiles.update(profile!.id!, { roleLabel: '', voiceRules: '' })
+    await act(async () => {
+      root.render(createElement(DialogProvider, null, createElement(InteractionGameWorkbench, { scope: seeded.scope })))
+      await new Promise(resolve => setTimeout(resolve, 0))
+    })
+    try {
+      await act(async () => { await i18n.changeLanguage('en'); await new Promise(resolve => setTimeout(resolve, 0)) })
+      // 等工作台加载出真实 definition 与校验页签后再进入发布检查。
+      await waitFor(() => expect(host.textContent).toContain('Validate & release'))
+      await click(host, 'Validate & release')
+      await waitFor(() => expect(host.textContent).toContain('Run checks'))
+      await click(host, 'Run checks')
+      await waitFor(() => expect(host.textContent).toContain('Blocking issues found'))
+      const issueLine = Array.from(host.querySelectorAll('.storygame-graph-issues li'))
+        .map(item => item.textContent ?? '')
+        .find(text => text.includes(profile!.participantKey))
+      expect(issueLine).toContain('Blocking · Character role and voice rules must not be empty:')
+      expect(issueLine).toContain(profile!.participantKey)
+      // 引擎语言原始 message 与 zh 文案在 en 下都不得出现。
+      expect(host.textContent).not.toContain('角色定位和口吻规则不能为空')
+    } finally {
+      await act(async () => { await i18n.changeLanguage('zh-CN'); await new Promise(resolve => setTimeout(resolve, 0)) })
+    }
   }, 20_000)
 
   it('玩家可从 GameRelease 建档并用无 AI 固定行动产生可解释关系变化', async () => {

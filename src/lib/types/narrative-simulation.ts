@@ -268,6 +268,17 @@ export interface NarrativeSimulationValidationReport {
   conservedMutationKeys: string[]
   unsolvedCrisisKeys: string[]
   unreachableEndingKeys: string[]
+  /**
+   * Issues whose stage ladder does not start at the issue's minimum pressure
+   * (stable issue keys; mirrors the matching entry in `errors`).
+   */
+  issueStageCoverageKeys: string[]
+  /**
+   * Required content sections that are empty, as stable canonical section
+   * tokens ('resources' | 'metrics' | 'actions' | 'actors' | 'issues' |
+   * 'endings' | 'themes'); render sites localize the token.
+   */
+  emptySectionKeys: string[]
 }
 
 export interface NarrativeSimulationPresentationCandidateV1 {

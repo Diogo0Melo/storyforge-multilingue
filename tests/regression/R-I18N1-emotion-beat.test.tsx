@@ -24,6 +24,24 @@ import {
 import { db } from '../../src/lib/db/schema'
 import { useEmotionBeatStore } from '../../src/stores/emotion-beat'
 
+/**
+ * 恢复路径只读 mock：默认无待确认候选（与真实空库行为一致）；
+ * 候选横幅用例注入可恢复的 durable 候选以证明 UI 文案走 locale、生成内容保持原样。
+ */
+const durableMocks = vi.hoisted(() => ({
+  readPendingEmotionBeatCandidateV1: vi.fn(async () => null),
+}))
+
+vi.mock('../../src/lib/agent/run/emotion-beat-durable', async () => {
+  const actual = await vi.importActual<typeof import('../../src/lib/agent/run/emotion-beat-durable')>(
+    '../../src/lib/agent/run/emotion-beat-durable',
+  )
+  return {
+    ...actual,
+    readPendingEmotionBeatCandidateV1: durableMocks.readPendingEmotionBeatCandidateV1,
+  }
+})
+
 globalThis.IS_REACT_ACT_ENVIRONMENT = true
 
 describe('I18N-1 · parseEmotionBeats fallbacks', () => {
@@ -225,6 +243,95 @@ describe('I18N-1 · EmotionBeatCard render fallbacks', () => {
       // 未知基调 → 中性样式，原文保留
       const unknown = badges.find(badge => badge.textContent === '神秘莫测')!
       expect(unknown.className).toContain('text-text-muted')
+    },
+  )
+
+  /** 可恢复的 durable 候选：内容字段是生成数据，断言其逐字保留。 */
+  function recoveredCandidate(projectId: number, chapterId: number) {
+    return {
+      snapshot: { run: { id: 901 } },
+      candidate: {
+        version: 1 as const,
+        kind: 'emotion-beat-candidate' as const,
+        portable: false as const,
+        projectId,
+        chapterId,
+        outlineNodeId: 0,
+        worldGroupId: null,
+        chapterTitle: '第一章',
+        contextManifestHash: 'a'.repeat(64),
+        contextInputHash: 'b'.repeat(64),
+        sourceBaselineHash: 'c'.repeat(64),
+        baselineHash: 'd'.repeat(64),
+        overallArc: '先抑后扬，结尾反转',
+        beats: [
+          { label: '开场', sceneGoal: '铺垫悬念', emotionTone: '紧张', readerFeeling: '不安', characterGrowth: '' },
+          { label: '高潮', sceneGoal: '', emotionTone: 'Tense', readerFeeling: '', characterGrowth: '' },
+        ],
+        candidateHash: 'e'.repeat(64),
+      },
+    }
+  }
+
+  it.each([
+    ['en', enEditor.emotionBeat],
+    ['pt-BR', ptEditor.emotionBeat],
+ ] as const)(
+    'renders a recovered AI candidate with localized chrome while generated content stays verbatim (%s)',
+    async (lng, bundle) => {
+      await i18n.changeLanguage(lng)
+      const now = Date.now()
+      const projectId = await db.projects.add({
+        name: `候选恢复-${lng}`, genre: '', genres: [], status: 'drafting',
+        description: '', targetWordCount: 0, enableMultiWorld: false,
+        worldCode: 'i18n1-world', worldVersion: 1,
+        createdAt: now, updatedAt: now,
+      } as any) as number
+      // 恢复链路先解析世界作用域：补齐 world/work 绑定，避免 resolveScopeLike 失败。
+      const worldId = await db.worlds.add({
+        projectId, code: 'i18n1-world', name: '镜海世界', description: '',
+        currentVersion: 1, createdAt: now, updatedAt: now,
+      }) as number
+      const workId = await db.works.add({
+        projectId, worldId, title: '镜城纪事', description: '', genres: [],
+        status: 'drafting', targetWordCount: 0, createdAt: now, updatedAt: now,
+      }) as number
+      await db.projects.update(projectId, {
+        activeWorldId: worldId, activeWorkId: workId, ownershipSchemaVersion: 1,
+      })
+      const chapterId = await db.chapters.add({
+        projectId, outlineNodeId: 0, title: '第一章', content: '',
+        wordCount: 0, status: 'draft', order: 0, notes: '',
+        createdAt: now, updatedAt: now,
+      } as any) as number
+
+      durableMocks.readPendingEmotionBeatCandidateV1.mockResolvedValueOnce(
+        recoveredCandidate(projectId, chapterId) as any,
+      )
+
+      await act(async () => {
+        root.render(createElement(DialogProvider, null,
+          createElement(EmotionBeatCard, { projectId, chapterId, chapterTitle: '第一章', worldGroupId: null })))
+        await new Promise(resolve => setTimeout(resolve, 0))
+      })
+      // 恢复链路（resolveScopeLike → readPending）跨多个微任务；轮询等待展开完成。
+      await vi.waitFor(() => {
+        expect(host.textContent).toContain(bundle.candidateBanner)
+      })
+
+      // 横幅/按钮/折叠控件全部来自 locale，而非硬编码中文。
+      expect(host.textContent).toContain(bundle.candidateBanner)
+      const buttons = Array.from(host.querySelectorAll('button'))
+      expect(buttons.find(button => button.textContent === bundle.btnReject)).toBeTruthy()
+      expect(buttons.find(button => button.textContent === bundle.btnAccept)).toBeTruthy()
+      const collapse = host.querySelector<HTMLButtonElement>(`button[aria-label="${bundle.collapseAria}"]`)
+      expect(collapse).not.toBeNull()
+
+      // 生成的候选内容保持原样（含自由文本基调），不被 UI 语言改写。
+      expect(host.textContent).toContain('先抑后扬，结尾反转')
+      expect(host.textContent).toContain('开场')
+      expect(host.textContent).toContain('铺垫悬念')
+      expect(host.textContent).toContain('Tense')
     },
   )
 })

@@ -337,7 +337,19 @@
     "titleRegenerate": "Regenerar",
     "deleteConfirmTitle": "Excluir cartão de batidas emocionais deste capítulo?",
     "deleteConfirmMessage": "Esta ação não pode ser desfeita.",
-    "streamingHint": "Gerando batidas emocionais..."
+    "streamingHint": "Gerando batidas emocionais...",
+    "collapseAria": "Recolher cartão de batidas emocionais",
+    "tokenEstimate": "≈ ~{{count}} tokens",
+    "tokenUsage": "Tokens: entrada {{input}} · saída {{output}}",
+    "candidateBanner": "Candidato de IA · ainda não gravado no cartão de batidas",
+    "btnReject": "Rejeitar",
+    "btnRejecting": "Rejeitando…",
+    "btnAccept": "Confirmar gravação",
+    "btnAccepting": "Gravando…",
+    "errorRecoverDefault": "Falha ao recuperar o candidato",
+    "errorGenerateDefault": "Falha ao gerar batidas emocionais",
+    "errorAdoptDefault": "Falha ao adotar as batidas emocionais",
+    "errorRejectDefault": "Falha ao rejeitar as batidas emocionais"
   },
   "chapterEditor": {
     "lazyPanelLoading": "Carregando painel...",

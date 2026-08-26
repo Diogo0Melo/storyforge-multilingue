@@ -1,10 +1,11 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Check, Loader2, Sparkles, Trash2 } from 'lucide-react'
 import type { PendingMasterCandidate } from '../agent/useMasterCopilot'
 import { useMasterCopilot } from '../agent/useMasterCopilot'
 import AIFieldModeTabs from '../shared/AIFieldModeTabs'
 import { CTextarea } from '../shared/CompositionInput'
 import PromptRunPanel from '../shared/PromptRunPanel'
+import { useDomainT } from '../../i18n'
 import {
   formatWorldviewFieldGenerationRequestV1,
   type WorldviewAgentField,
@@ -22,7 +23,7 @@ export default function WorldviewAgentControls({
   hasOtherPendingCandidates,
   onRunningChange,
   onAdopted,
-  buttonLabel = 'AI 生成',
+  buttonLabel,
 }: {
   field: WorldviewAgentField
   project: Project
@@ -35,11 +36,14 @@ export default function WorldviewAgentControls({
   onAdopted: (candidate: PendingMasterCandidate) => Promise<void>
   buttonLabel?: string
 }) {
+  const { t, lang } = useDomainT('worldview')
   const [hint, setHint] = useState('')
   const [parameterValues, setParameterValues] = useState<Record<string, unknown>>({})
   const [systemOverride, setSystemOverride] = useState<string | null>(null)
   const [userOverride, setUserOverride] = useState<string | null>(null)
   const [mode, setMode] = useState<FieldGenerationMode>('expand')
+  // 输入来源列表是登记表数据键（如 worldview、storyCore），只做本地化连接格式化，不做翻译。
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
 
   const handleGenerate = async () => {
     onRunningChange(true)
@@ -69,7 +73,7 @@ export default function WorldviewAgentControls({
         <input
           value={hint}
           onChange={event => setHint(event.target.value)}
-          placeholder="给 AI 的补充说明（可选）"
+          placeholder={t('agentControls.hintPlaceholder')}
           className="flex-1 px-2 py-1.5 bg-bg-base border border-border rounded text-xs text-text-primary focus:outline-none focus:border-accent"
         />
         <button
@@ -81,7 +85,7 @@ export default function WorldviewAgentControls({
           {copilot.busy
             ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
             : <Sparkles className="w-3.5 h-3.5" />}
-          {buttonLabel}
+          {buttonLabel ?? t('agentControls.generateDefault')}
         </button>
       </div>
 
@@ -103,28 +107,28 @@ export default function WorldviewAgentControls({
 
       {hasOtherPendingCandidates && (
         <p className="rounded border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-text-secondary">
-          主 Agent 还有其他待确认候选，请先在右侧副驾中处理。
+          {t('agentControls.otherPendingNotice')}
         </p>
       )}
 
       {!candidate && otherPendingWorldviewLabel && (
         <p className="rounded border border-warning/30 bg-warning/5 px-3 py-2 text-xs text-text-secondary">
-          “{otherPendingWorldviewLabel}”还有待确认候选，请先处理后再生成其他字段。
+          {t('agentControls.fieldPendingNotice', { label: otherPendingWorldviewLabel })}
         </p>
       )}
 
       {candidate && (
         <section className="border border-accent/30 bg-bg-surface p-4 rounded-lg">
           <div className="mb-2 flex items-center justify-between gap-3">
-            <h3 className="text-sm font-semibold text-text-primary">待确认 · {candidate.payload.label}</h3>
+            <h3 className="text-sm font-semibold text-text-primary">{t('agentControls.pendingTitle', { label: candidate.payload.label })}</h3>
             <span className="text-[11px] text-text-muted">
               {candidate.payload.contextEvidence
-                ? `约 ${candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString()} tokens`
-                : `${candidate.payload.contextSources.length} 个输入来源`}
+                ? t('agentControls.evidenceTokens', { count: candidate.payload.contextEvidence.estimatedInputTokens.toLocaleString() })
+                : t('agentControls.evidenceSources', { count: candidate.payload.contextSources.length })}
             </span>
           </div>
           <CTextarea
-            aria-label={`${candidate.payload.label}候选内容`}
+            aria-label={t('agentControls.candidateContentAria', { label: candidate.payload.label })}
             value={candidate.event.content}
             disabled={copilot.busy}
             onChange={event => {
@@ -134,13 +138,17 @@ export default function WorldviewAgentControls({
           />
           {candidate.payload.contextEvidence && (
             <details className="mt-2 border border-border/60 bg-bg-base px-3 py-2 text-[11px] text-text-muted rounded">
-              <summary className="cursor-pointer text-text-secondary">本次实际输入证据</summary>
+              <summary className="cursor-pointer text-text-secondary">{t('agentControls.evidenceSummary')}</summary>
               <p className="mt-2 break-words">
-                已纳入：{candidate.payload.contextEvidence.included.join('、') || '无'}
+                {t('agentControls.evidenceIncluded', {
+                  list: candidate.payload.contextEvidence.included.length > 0
+                    ? listFormat.format(candidate.payload.contextEvidence.included)
+                    : t('agentControls.evidenceIncludedEmpty'),
+                })}
               </p>
               {candidate.payload.contextEvidence.trimmed.length > 0 && (
                 <p className="mt-1 text-warning">
-                  因预算移除：{candidate.payload.contextEvidence.trimmed.join('、')}
+                  {t('agentControls.evidenceTrimmed', { list: listFormat.format(candidate.payload.contextEvidence.trimmed) })}
                 </p>
               )}
             </details>
@@ -153,7 +161,7 @@ export default function WorldviewAgentControls({
               className="flex items-center gap-1 px-2.5 py-1.5 text-xs text-text-muted hover:bg-bg-hover hover:text-text-primary rounded disabled:opacity-50"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              拒绝
+              {t('agentControls.btnReject')}
             </button>
             <button
               type="button"
@@ -164,7 +172,7 @@ export default function WorldviewAgentControls({
               {copilot.busy
                 ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 : <Check className="h-3.5 w-3.5" />}
-              采纳
+              {t('agentControls.btnAdopt')}
             </button>
           </div>
         </section>

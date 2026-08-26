@@ -17,6 +17,13 @@
  *    action/quest/outcome kinds and simulation session kinds map every
  *    supported canonical value to a NON-EMPTY localized label in all UI
  *    locales; expected values are derived from source constant arrays.
+ * ⑥ TEXTSIM/TEXTWORLD locale wave: narrative simulation turn phases, issue
+ *    kind (issue/crisis), issue evolution status (resolved/evolving) and all
+ *    Open World region attention levels, region knowledge stages, discovery
+ *    triggers and quest categories map every supported canonical value
+ *    to a NON-EMPTY localized label in all UI locales; expected values are
+ *    transcribed from the SOURCE unions, and the same ora-2 fallback +
+ *    missing-key safety contract applies.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -50,7 +57,17 @@ import {
   ADVENTURE_ACTION_KIND_LABEL_KEYS,
   ADVENTURE_QUEST_STATUS_LABEL_KEYS,
   ADVENTURE_CHECK_OUTCOME_LABEL_KEYS,
+  NARRATIVE_SIMULATION_PHASE_LABEL_KEYS,
+  NARRATIVE_SIMULATION_ISSUE_KIND_LABEL_KEYS,
+  NARRATIVE_SIMULATION_ISSUE_STATUS_LABEL_KEYS,
+  OPEN_WORLD_ATTENTION_LEVEL_LABEL_KEYS,
+  OPEN_WORLD_DISCOVERY_TRIGGER_LABEL_KEYS,
+  OPEN_WORLD_QUEST_CATEGORY_LABEL_KEYS,
+  OPEN_WORLD_REGION_KNOWLEDGE_LABEL_KEYS,
   type DisplayT,
+  type NarrativeSimulationIssueKind,
+  type NarrativeSimulationIssueStatus,
+  type NarrativeSimulationPhase,
 } from '../../src/i18n/display-projection'
 import { OUTLINE_BATCH_STAGES } from '../../src/lib/ai/batch-outline-runner'
 import { BATCH_RUN_STAGES } from '../../src/lib/ai/batch-detail-runner'
@@ -76,6 +93,13 @@ import type {
   AdventureCheckOutcome,
   AdventureQuestStatus,
 } from '../../src/lib/types/adventure'
+// TEXTSIM/TEXTWORLD locale wave canonical sets.
+import type {
+  OpenWorldAttentionLevel,
+  OpenWorldDiscoveryTrigger,
+  OpenWorldQuestCategory,
+  OpenWorldRegionKnowledge,
+} from '../../src/lib/types/open-world'
 
 const LANGS = ['pt-BR', 'en', 'zh-CN'] as const
 
@@ -717,5 +741,209 @@ describe('phase 3 invalid-value fallback (ora-2)', () => {
     expect(resolveKey('simulation', 'beatKind.narration', 'zh-CN')).toBe('旁白')
     expect(resolveKey('simulation', 'adventure.questStatus.locked', 'zh-CN')).toBe('未解锁')
     expect(resolveKey('pages', 'home.statusDrafting', 'zh-CN')).toBe('构思中')
+  })
+})
+
+// ── ⑨ TEXTSIM/TEXTWORLD locale wave: narrative simulation + open world ────
+//
+// Canonical sets rendered by NarrativeSimulationPlayer (TEXTSIM-1) and
+// TextOpenWorldPlayer (TEXTWORLD-1). Expected values are transcribed from
+// the SOURCE unions — `SimulationNarrativeSimulationState['phase']` and
+// `NarrativeSimulationIssueDefinition.crisis` /
+// `NarrativeSimulationIssueState.resolved`
+// (src/lib/types/narrative-simulation.ts) plus `OpenWorldAttentionLevel`,
+// `OpenWorldRegionKnowledge`, `OpenWorldDiscoveryTrigger` and
+// `OpenWorldQuestCategory` (src/lib/types/open-world.ts) — never from
+// locale prose, so an upstream rename/spelling change fails loudly here.
+
+/** All TEXTSIM/TEXTWORLD shared maps, with the single ns each is bound to. */
+const TEXTSIM_TEXTWORLD_PROJECTIONS: Array<{ ns: string; map: Record<string, string>; name: string }> = [
+  { ns: 'simulation', map: NARRATIVE_SIMULATION_PHASE_LABEL_KEYS, name: 'phase' },
+  { ns: 'simulation', map: NARRATIVE_SIMULATION_ISSUE_KIND_LABEL_KEYS, name: 'issueKind' },
+  { ns: 'simulation', map: NARRATIVE_SIMULATION_ISSUE_STATUS_LABEL_KEYS, name: 'issueStatus' },
+  { ns: 'simulation', map: OPEN_WORLD_ATTENTION_LEVEL_LABEL_KEYS, name: 'openWorld.attentionLevel' },
+  { ns: 'simulation', map: OPEN_WORLD_REGION_KNOWLEDGE_LABEL_KEYS, name: 'openWorld.regionKnowledge' },
+  { ns: 'simulation', map: OPEN_WORLD_DISCOVERY_TRIGGER_LABEL_KEYS, name: 'openWorld.trigger' },
+  { ns: 'simulation', map: OPEN_WORLD_QUEST_CATEGORY_LABEL_KEYS, name: 'openWorld.questCategory' },
+]
+
+describe('textsim/textworld projection label coverage', () => {
+  for (const { ns, map, name } of TEXTSIM_TEXTWORLD_PROJECTIONS) {
+    it(`${ns}: ${name} maps every supported canonical value to a non-empty localized label in all UI locales`, () => {
+      assertAllKeysPresent(ns, map, `textsim-textworld.${name}`)
+      assertAllLabelsNonEmpty(ns, map, `textsim-textworld.${name}`)
+    })
+  }
+})
+
+describe('textsim/textworld map completeness vs canonical sources', () => {
+  it('NARRATIVE_SIMULATION_PHASE_LABEL_KEYS covers all SimulationNarrativeSimulationState phase values', () => {
+    const expected: NarrativeSimulationPhase[] = ['planning', 'resolving', 'ended']
+    expect(Object.keys(NARRATIVE_SIMULATION_PHASE_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+
+  it('NARRATIVE_SIMULATION_ISSUE_KIND_LABEL_KEYS covers issue/crisis', () => {
+    const expected: NarrativeSimulationIssueKind[] = ['issue', 'crisis']
+    expect(Object.keys(NARRATIVE_SIMULATION_ISSUE_KIND_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+
+  it('NARRATIVE_SIMULATION_ISSUE_STATUS_LABEL_KEYS covers resolved/evolving', () => {
+    const expected: NarrativeSimulationIssueStatus[] = ['resolved', 'evolving']
+    expect(Object.keys(NARRATIVE_SIMULATION_ISSUE_STATUS_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+
+  it('OPEN_WORLD_ATTENTION_LEVEL_LABEL_KEYS covers all OpenWorldAttentionLevel values', () => {
+    const expected: OpenWorldAttentionLevel[] = ['focus', 'active', 'background']
+    expect(Object.keys(OPEN_WORLD_ATTENTION_LEVEL_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+
+  it('OPEN_WORLD_REGION_KNOWLEDGE_LABEL_KEYS covers all OpenWorldRegionKnowledge values', () => {
+    const expected: OpenWorldRegionKnowledge[] = ['unknown', 'heard', 'visited', 'familiar']
+    expect(Object.keys(OPEN_WORLD_REGION_KNOWLEDGE_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+
+  it('OPEN_WORLD_DISCOVERY_TRIGGER_LABEL_KEYS covers all OpenWorldDiscoveryTrigger values', () => {
+    const expected: OpenWorldDiscoveryTrigger[] = ['observe', 'social', 'explore', 'rest', 'travel', 'combat']
+    expect(Object.keys(OPEN_WORLD_DISCOVERY_TRIGGER_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+
+  it('OPEN_WORLD_QUEST_CATEGORY_LABEL_KEYS covers all OpenWorldQuestCategory values', () => {
+    const expected: OpenWorldQuestCategory[] = [
+      'mainline', 'issue', 'character', 'exploration', 'growth', 'resource', 'crisis', 'consequence',
+    ]
+    expect(Object.keys(OPEN_WORLD_QUEST_CATEGORY_LABEL_KEYS).sort()).toEqual(expected.sort())
+  })
+})
+
+describe('textsim/textworld invalid-value fallback (ora-2)', () => {
+  const keyEchoT = (...args: any[]): string => (typeof args[0] === 'string' ? args[0] : '')
+
+  it('unknown/corrupted canonical values fall back to the raw persisted value', () => {
+    expect(projectCanonicalLabel(keyEchoT, NARRATIVE_SIMULATION_PHASE_LABEL_KEYS, 'paused')).toBe('paused')
+    expect(projectCanonicalLabel(keyEchoT, NARRATIVE_SIMULATION_ISSUE_KIND_LABEL_KEYS, 'incident')).toBe('incident')
+    expect(projectCanonicalLabel(keyEchoT, NARRATIVE_SIMULATION_ISSUE_STATUS_LABEL_KEYS, '')).toBe('')
+    expect(projectCanonicalLabel(keyEchoT, OPEN_WORLD_ATTENTION_LEVEL_LABEL_KEYS, 'dormant')).toBe('dormant')
+    expect(projectCanonicalLabel(keyEchoT, OPEN_WORLD_REGION_KNOWLEDGE_LABEL_KEYS, 'mapped')).toBe('mapped')
+    expect(projectCanonicalLabel(keyEchoT, OPEN_WORLD_DISCOVERY_TRIGGER_LABEL_KEYS, 'legacy-trigger')).toBe('legacy-trigger')
+    expect(projectCanonicalLabel(keyEchoT, OPEN_WORLD_QUEST_CATEGORY_LABEL_KEYS, 'side')).toBe('side')
+  })
+
+  it('a known canonical value NEVER surfaces a raw i18n key when its mapped key is missing', () => {
+    // Worst case: t() echoes the mapped dotted key back. The projection must
+    // return the canonical persisted value instead — never the dotted key.
+    for (const { map, name } of TEXTSIM_TEXTWORLD_PROJECTIONS) {
+      for (const value of Object.keys(map)) {
+        const result = projectCanonicalLabel(keyEchoT, map, value)
+        expect(result, `${name}:${value}`).toBe(value)
+        expect(result, `${name}:${value}`).not.toContain('.')
+      }
+    }
+  })
+
+  it('empty/null missing-key results also fall back to the canonical value', () => {
+    const emptyT = (..._args: any[]): string => ''
+    const nullT = (() => null) as unknown as DisplayT
+    for (const { map } of TEXTSIM_TEXTWORLD_PROJECTIONS) {
+      for (const value of Object.keys(map)) {
+        expect(projectCanonicalLabel(emptyT, map, value)).toBe(value)
+        expect(projectCanonicalLabel(nullT, map, value)).toBe(value)
+      }
+    }
+  })
+
+  it('known values still project through t() when the key resolves', () => {
+    const localizedT = (...args: any[]): string => `<${typeof args[0] === 'string' ? args[0] : ''}>`
+    expect(projectCanonicalLabel(localizedT, NARRATIVE_SIMULATION_PHASE_LABEL_KEYS, 'planning'))
+      .toBe(`<${NARRATIVE_SIMULATION_PHASE_LABEL_KEYS.planning}>`)
+    expect(projectCanonicalLabel(localizedT, NARRATIVE_SIMULATION_ISSUE_KIND_LABEL_KEYS, 'crisis'))
+      .toBe(`<${NARRATIVE_SIMULATION_ISSUE_KIND_LABEL_KEYS.crisis}>`)
+    expect(projectCanonicalLabel(localizedT, NARRATIVE_SIMULATION_ISSUE_STATUS_LABEL_KEYS, 'evolving'))
+      .toBe(`<${NARRATIVE_SIMULATION_ISSUE_STATUS_LABEL_KEYS.evolving}>`)
+    expect(projectCanonicalLabel(localizedT, OPEN_WORLD_ATTENTION_LEVEL_LABEL_KEYS, 'focus'))
+      .toBe(`<${OPEN_WORLD_ATTENTION_LEVEL_LABEL_KEYS.focus}>`)
+    expect(projectCanonicalLabel(localizedT, OPEN_WORLD_REGION_KNOWLEDGE_LABEL_KEYS, 'familiar'))
+      .toBe(`<${OPEN_WORLD_REGION_KNOWLEDGE_LABEL_KEYS.familiar}>`)
+    expect(projectCanonicalLabel(localizedT, OPEN_WORLD_DISCOVERY_TRIGGER_LABEL_KEYS, 'combat'))
+      .toBe(`<${OPEN_WORLD_DISCOVERY_TRIGGER_LABEL_KEYS.combat}>`)
+    expect(projectCanonicalLabel(localizedT, OPEN_WORLD_QUEST_CATEGORY_LABEL_KEYS, 'mainline'))
+      .toBe(`<${OPEN_WORLD_QUEST_CATEGORY_LABEL_KEYS.mainline}>`)
+  })
+
+  it('zh-CN textsim/textworld labels resolve to Chinese text (legitimacy spot check)', () => {
+    expect(resolveKey('simulation', 'phase.planning', 'zh-CN')).toBe('规划')
+    expect(resolveKey('simulation', 'phase.resolving', 'zh-CN')).toBe('结算中')
+    expect(resolveKey('simulation', 'phase.ended', 'zh-CN')).toBe('已结束')
+    expect(resolveKey('simulation', 'issueKind.issue', 'zh-CN')).toBe('问题')
+    expect(resolveKey('simulation', 'issueKind.crisis', 'zh-CN')).toBe('危机')
+    expect(resolveKey('simulation', 'issueStatus.resolved', 'zh-CN')).toBe('已解决')
+    expect(resolveKey('simulation', 'issueStatus.evolving', 'zh-CN')).toBe('演化中')
+    expect(resolveKey('simulation', 'openWorld.attentionLevel.focus', 'zh-CN')).toBe('聚焦')
+    expect(resolveKey('simulation', 'openWorld.regionKnowledge.unknown', 'zh-CN')).toBe('未知')
+    expect(resolveKey('simulation', 'openWorld.trigger.combat', 'zh-CN')).toBe('战斗')
+    expect(resolveKey('simulation', 'openWorld.questCategory.mainline', 'zh-CN')).toBe('主线')
+  })
+})
+
+// ── ⑩ Canonical projection ownership guard (Oracle NO-GO remediation) ──────
+//
+// WorldNarrativeReleasePanel must CONSUME the simulation-owned shared
+// projections (NARRATIVE_MODULE_KIND_LABEL_KEYS / SIMULATION_SESSION_KIND_LABEL_KEYS)
+// and must not re-create a parallel worldview-owned label dictionary. It also
+// must not interpolate t() into persisted titles/labels (locale never enters
+// user data), and InteractionGameWorkbench diagnostics must render localized
+// text derived from stable codes, never the raw engine-language item.message.
+describe('canonical projection ownership guard (panel + workbench sources)', () => {
+  const readSource = (rel: string): string => readFileSync(resolve(process.cwd(), rel), 'utf8')
+
+  it('WorldNarrativeReleasePanel imports both canonical maps from display-projection and defines no local kind dictionary', () => {
+    const source = readSource('src/components/world-engine/WorldNarrativeReleasePanel.tsx')
+    expect(source).toContain("from '../../i18n/display-projection'")
+    expect(source).toContain('NARRATIVE_MODULE_KIND_LABEL_KEYS')
+    expect(source).toContain('SIMULATION_SESSION_KIND_LABEL_KEYS')
+    // No parallel label dictionary: no worldNarrative.kind.* / instanceKind.*
+    // key literals and no local Record<...kind..., string> label tables.
+    expect(source).not.toMatch(/worldNarrative\.kind\./)
+    expect(source).not.toMatch(/worldNarrative\.instanceKind\./)
+    expect(source).not.toMatch(/Record<NarrativeModule\['kind'\], string>/)
+  })
+
+  it('WorldNarrativeReleasePanel never interpolates t() into persisted titles/labels', () => {
+    const source = readSource('src/components/world-engine/WorldNarrativeReleasePanel.tsx')
+    // Persisted instance title falls back to the authored module title only.
+    expect(source).toContain('instanceTitle.trim() || selectedReleaseModule.title')
+    // Persisted release labels reuse the authored/generated definition title
+    // verbatim: no UI-locale-derived suffixes and no canonical Chinese tokens.
+    expect(source).toContain('label: generated.definition.title')
+    expect(source).toContain('label: definition.title')
+    expect(source).not.toContain('WORLD_PROJECTION_LABEL_TOKEN')
+    expect(source).not.toContain('AI_EVOLUTION_RELEASE_TOKEN')
+    expect(source).not.toContain('世界投影')
+    expect(source).not.toContain('AI 演化发布')
+    expect(source).not.toContain("t('worldNarrative.worldProjectionSuffix')")
+    expect(source).not.toContain("t('worldNarrative.aiEvolutionSuffix')")
+    // The creative brief is author input and starts empty — never seeded from
+    // a fixed locale-authored prompt.
+    expect(source).toContain("useState('')")
+  })
+
+  it('InteractionGameWorkbench renders diagnostics via code→locale mapping, never raw item.message', () => {
+    const source = readSource('src/components/character-interaction/InteractionGameWorkbench.tsx')
+    expect(source).toContain('INTERACTION_DIAGNOSTIC_KEYS')
+    expect(source).toContain('interactionDiagnosticLine(t, item)')
+    expect(source).not.toContain('{item.message}')
+    // The new-game title input is author input: empty initial state, no t() seed.
+    expect(source).toContain("const [title, setTitle] = useState('')")
+    expect(source).not.toContain('untitledGameDefault')
+  })
+
+  it('removed worldview label keys stay absent from all three worldview bundles', () => {
+    for (const lang of LANGS) {
+      expect(resolveKey('worldview', 'worldNarrative.kind.main', lang)).toBeUndefined()
+      expect(resolveKey('worldview', 'worldNarrative.instanceKind.ttrpg', lang)).toBeUndefined()
+      expect(resolveKey('worldview', 'worldNarrative.interactionFallback', lang)).toBeUndefined()
+      expect(resolveKey('worldview', 'worldNarrative.worldProjectionSuffix', lang)).toBeUndefined()
+      expect(resolveKey('worldview', 'worldNarrative.aiEvolutionSuffix', lang)).toBeUndefined()
+      expect(resolveKey('simulation', 'interactionAuthor.untitledGameDefault', lang)).toBeUndefined()
+    }
   })
 })

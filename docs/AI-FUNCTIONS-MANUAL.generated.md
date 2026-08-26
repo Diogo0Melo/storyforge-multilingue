@@ -270,9 +270,9 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `review.readability` | `src/components/editor/ReviewPanel.tsx:122` |
 | `review.revise` | `src/components/editor/ChapterEditor.tsx:1630` |
 | `scene.verify` | `src/components/scene/SceneVerifyPanel.tsx:84` |
-| `simulation.npc-evolution` | `src/components/simulation/SimulationRuntimePanel.tsx:498` |
-| `simulation.ttrpg-encounter` | `src/components/simulation/SimulationRuntimePanel.tsx:567` |
-| `simulation.ttrpg-gm` | `src/components/simulation/SimulationRuntimePanel.tsx:533` |
+| `simulation.npc-evolution` | `src/components/simulation/SimulationRuntimePanel.tsx:521` |
+| `simulation.ttrpg-encounter` | `src/components/simulation/SimulationRuntimePanel.tsx:590` |
+| `simulation.ttrpg-gm` | `src/components/simulation/SimulationRuntimePanel.tsx:556` |
 | `story.timeline` | `src/lib/agent/run/impact-story-timeline-regeneration-durable.ts:670`<br/>`src/lib/agent/run/story-timeline-extraction-durable.ts:758` |
 | `style.calibrate` | `src/components/style/StyleCalibrationPanel.tsx:65` |
 | `style.learn` | `src/lib/agent/run/style-learning-durable.ts:493` |
@@ -315,4 +315,4 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ---
 
-生成时间基准:commit `d351bb7`
+生成时间基准:commit `3ccd5de`

@@ -44,6 +44,14 @@ import type {
   AdventureQuestStatus,
 } from '../lib/types/adventure'
 import type { SimulationSessionKind } from '../lib/types/simulation-runtime'
+// TEXTSIM/TEXTWORLD locale wave canonical sets.
+import type { SimulationNarrativeSimulationState } from '../lib/types/narrative-simulation'
+import type {
+  OpenWorldAttentionLevel,
+  OpenWorldDiscoveryTrigger,
+  OpenWorldQuestCategory,
+  OpenWorldRegionKnowledge,
+} from '../lib/types/open-world'
 
 /**
  * Minimal translation function shape accepted by the projection helpers.
@@ -484,4 +492,111 @@ export const ADVENTURE_CHECK_OUTCOME_LABEL_KEYS: Record<AdventureCheckOutcome, s
   'costly-success': 'adventure.checkOutcome.costlySuccess',
   failure: 'adventure.checkOutcome.failure',
   'not-attempted': 'adventure.checkOutcome.notAttempted',
+}
+
+// ── TEXTSIM/TEXTWORLD locale wave · narrative simulation + open world ──────
+//
+// Canonical sets rendered by NarrativeSimulationPlayer (TEXTSIM-1: turn
+// phase, issue kind, issue evolution status) and TextOpenWorldPlayer
+// (TEXTWORLD-1: region attention levels, region knowledge stages, discovery
+// triggers and quest categories). Persisted values stay canonical; only
+// display is projected through the shared `projectCanonicalLabel` helper
+// (same ora-2 fallback contract as above). Locale presence + non-empty
+// labels in all 3 UI locales are enforced by
+// tests/regression/R-i18n-display-projections.test.ts (TEXTSIM/TEXTWORLD
+// section).
+
+/**
+ * Narrative simulation turn phase — derived via indexed access from
+ * `SimulationNarrativeSimulationState['phase']`
+ * (src/lib/types/narrative-simulation.ts) so this projection can never drift
+ * from the persisted state schema.
+ */
+export type NarrativeSimulationPhase = SimulationNarrativeSimulationState['phase']
+
+/**
+ * Issue presentation kind. The persisted model stores a boolean
+ * (`NarrativeSimulationIssueDefinition.crisis`); players see either a plain
+ * issue or a crisis, so the canonical display values are 'issue' | 'crisis'.
+ */
+export type NarrativeSimulationIssueKind = 'issue' | 'crisis'
+
+/**
+ * Issue evolution status. The persisted model stores a boolean
+ * (`NarrativeSimulationIssueState.resolved`); players see either a resolved
+ * or an evolving issue, so the canonical display values are
+ * 'resolved' | 'evolving'.
+ */
+export type NarrativeSimulationIssueStatus = 'resolved' | 'evolving'
+
+/** Narrative simulation turn phases (simulation ns → phase.*). */
+export const NARRATIVE_SIMULATION_PHASE_LABEL_KEYS: Record<NarrativeSimulationPhase, string> = {
+  planning: 'phase.planning',
+  resolving: 'phase.resolving',
+  ended: 'phase.ended',
+}
+
+/** Issue vs crisis presentation kind (simulation ns → issueKind.*). */
+export const NARRATIVE_SIMULATION_ISSUE_KIND_LABEL_KEYS: Record<NarrativeSimulationIssueKind, string> = {
+  issue: 'issueKind.issue',
+  crisis: 'issueKind.crisis',
+}
+
+/** Issue evolution status (simulation ns → issueStatus.*). */
+export const NARRATIVE_SIMULATION_ISSUE_STATUS_LABEL_KEYS: Record<NarrativeSimulationIssueStatus, string> = {
+  resolved: 'issueStatus.resolved',
+  evolving: 'issueStatus.evolving',
+}
+
+/**
+ * Open World region attention levels (simulation ns →
+ * openWorld.attentionLevel.*). Values are exactly
+ * `OpenWorldAttentionLevel` (src/lib/types/open-world.ts).
+ */
+export const OPEN_WORLD_ATTENTION_LEVEL_LABEL_KEYS: Record<OpenWorldAttentionLevel, string> = {
+  focus: 'openWorld.attentionLevel.focus',
+  active: 'openWorld.attentionLevel.active',
+  background: 'openWorld.attentionLevel.background',
+}
+
+/**
+ * Open World region knowledge stages (simulation ns →
+ * openWorld.regionKnowledge.*). Values are exactly
+ * `OpenWorldRegionKnowledge` (src/lib/types/open-world.ts).
+ */
+export const OPEN_WORLD_REGION_KNOWLEDGE_LABEL_KEYS: Record<OpenWorldRegionKnowledge, string> = {
+  unknown: 'openWorld.regionKnowledge.unknown',
+  heard: 'openWorld.regionKnowledge.heard',
+  visited: 'openWorld.regionKnowledge.visited',
+  familiar: 'openWorld.regionKnowledge.familiar',
+}
+
+/**
+ * Open World discovery triggers (simulation ns → openWorld.trigger.*).
+ * Values are exactly `OpenWorldDiscoveryTrigger`
+ * (src/lib/types/open-world.ts).
+ */
+export const OPEN_WORLD_DISCOVERY_TRIGGER_LABEL_KEYS: Record<OpenWorldDiscoveryTrigger, string> = {
+  observe: 'openWorld.trigger.observe',
+  social: 'openWorld.trigger.social',
+  explore: 'openWorld.trigger.explore',
+  rest: 'openWorld.trigger.rest',
+  travel: 'openWorld.trigger.travel',
+  combat: 'openWorld.trigger.combat',
+}
+
+/**
+ * Open World quest categories (simulation ns → openWorld.questCategory.*).
+ * Values are exactly `OpenWorldQuestCategory`
+ * (src/lib/types/open-world.ts).
+ */
+export const OPEN_WORLD_QUEST_CATEGORY_LABEL_KEYS: Record<OpenWorldQuestCategory, string> = {
+  mainline: 'openWorld.questCategory.mainline',
+  issue: 'openWorld.questCategory.issue',
+  character: 'openWorld.questCategory.character',
+  exploration: 'openWorld.questCategory.exploration',
+  growth: 'openWorld.questCategory.growth',
+  resource: 'openWorld.questCategory.resource',
+  crisis: 'openWorld.questCategory.crisis',
+  consequence: 'openWorld.questCategory.consequence',
 }

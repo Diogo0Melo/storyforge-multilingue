@@ -337,7 +337,19 @@
     "titleRegenerate": "Regenerate",
     "deleteConfirmTitle": "Delete this chapter's emotion beat card?",
     "deleteConfirmMessage": "This cannot be undone.",
-    "streamingHint": "Generating emotion beats..."
+    "streamingHint": "Generating emotion beats...",
+    "collapseAria": "Collapse emotion beats card",
+    "tokenEstimate": "≈ ~{{count}} tokens",
+    "tokenUsage": "Tokens: input {{input}} · output {{output}}",
+    "candidateBanner": "AI candidate · not yet written to the beat card",
+    "btnReject": "Reject",
+    "btnRejecting": "Rejecting…",
+    "btnAccept": "Confirm write",
+    "btnAccepting": "Writing…",
+    "errorRecoverDefault": "Failed to recover the candidate",
+    "errorGenerateDefault": "Emotion beat generation failed",
+    "errorAdoptDefault": "Emotion beat adoption failed",
+    "errorRejectDefault": "Emotion beat rejection failed"
   },
   "chapterEditor": {
     "lazyPanelLoading": "Loading panel...",

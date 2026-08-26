@@ -1993,5 +1993,28 @@
       "label": "Gaming",
       "description": "Game worlds, dungeon challenges, competitive play."
     }
+  },
+  "projectStorage": {
+    "title": "Project storage workspace",
+    "description": "The project's readable content, memory, and recovery evidence all follow this folder. You can keep it on drive D or any local disk location.",
+    "noProject": "Enter a project first, then set up its storage location.",
+    "unsupported": "This browser does not support binding a local folder directly. You can still export and import self-verifying workspace packages in Data Management.",
+    "folderIdle": "No project folder set yet",
+    "statusLinked": "Linked; for privacy the browser does not show the full drive path",
+    "statusNeedsAuth": "Location remembered; re-authorization required",
+    "statusBrowserOnly": "The project currently lives only in this browser",
+    "btnReauthorize": "Re-authorize",
+    "btnChoose": "Choose project folder",
+    "btnChange": "Change location",
+    "hintSafety": "Choosing or changing a location only saves the folder permission; no files are overwritten automatically. Review differences manually in Data Management before confirming a sync.",
+    "btnOpenDataManagement": "Review & sync",
+    "btnDisconnect": "Unlink",
+    "noticePermissionDenied": "Read/write permission for that folder was not granted.",
+    "noticeBound": "\"{{name}}\" is now the project storage workspace. No files have been written yet.",
+    "noticeReplaced": "Storage location changed to \"{{name}}\". The original folder was not deleted; nothing has been written to the new location yet — review and confirm in Data Management.",
+    "noticeChooseFailed": "Failed to save location: {{message}}",
+    "noticeReauthorized": "Folder permission restored; no files were read or written automatically.",
+    "noticeDisconnected": "Unlinked; the original files on disk are not deleted.",
+    "noticeDisconnectFailed": "Failed to unlink: {{message}}"
   }
 }

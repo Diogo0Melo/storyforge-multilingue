@@ -261,6 +261,8 @@ export function validateNarrativeSimulationContent(input: {
 }): NarrativeSimulationValidationReport {
   const content = parseNarrativeSimulationContent(input.content)
   const errors: string[] = []; const warnings: string[] = []; const missing = new Set<string>()
+  const issueStageCoverageKeys: string[] = []
+  const emptySectionKeys: string[] = []
   const duplicateKeys = [
     ...duplicates(content.resources.map(item => item.key)).map(key => `resource:${key}`),
     ...duplicates(content.metrics.map(item => item.key)).map(key => `metric:${key}`),
@@ -311,7 +313,11 @@ export function validateNarrativeSimulationContent(input: {
     for (const action of actor.strategyActions) { action.requirements.forEach(checkCondition); action.effects.forEach(checkEffect) }
   }
   for (const issue of content.issues) {
-    if (!issue.stages.length || issue.stages[0]?.minimumPressure !== issue.minimumPressure) errors.push(`问题阶段未覆盖最小压力:${issue.key}`)
+    if (!issue.stages.length || issue.stages[0]?.minimumPressure !== issue.minimumPressure) {
+      // 结构化字段供 UI 经 locale 键渲染；errors 字符串保留既有语义与消费方。
+      issueStageCoverageKeys.push(issue.key)
+      errors.push(`问题阶段未覆盖最小压力:${issue.key}`)
+    }
     issue.affectedActorKeys.forEach(actor => { if (!actorKeys.has(actor)) missing.add(`actor:${actor}`) })
   }
   const nodeKeys = input.narrativeNodeKeys ? new Set(input.narrativeNodeKeys) : null
@@ -321,6 +327,13 @@ export function validateNarrativeSimulationContent(input: {
   }
   if (!content.resources.length || !content.metrics.length || !content.actions.length || !content.actors.length || !content.issues.length || !content.endings.length) errors.push('模拟至少需要资源、指标、主体、行动、问题和结局')
   if (!content.themes.length) errors.push('至少需要一套题材映射')
+  // 结构化空分区清单（canonical section token），供 UI 经 locale 键渲染。
+  for (const [sectionKey, section] of Object.entries({
+    resources: content.resources, metrics: content.metrics, actions: content.actions,
+    actors: content.actors, issues: content.issues, endings: content.endings, themes: content.themes,
+  })) {
+    if (!section.length) emptySectionKeys.push(sectionKey)
+  }
   const unboundedGrowthKeys = new Set<string>()
   for (const action of content.actions.filter(item => item.cooldownTurns === 0 && item.costs.length === 0)) {
     for (const effect of action.immediateEffects) if (effect.op === 'change-value' && effect.delta > 0) unboundedGrowthKeys.add(`${effect.target}:${effect.key}`)
@@ -352,7 +365,7 @@ export function validateNarrativeSimulationContent(input: {
   if (unreachableEndingKeys.length) errors.push(`结局条件不可达:${unreachableEndingKeys.join(',')}`)
   if (dominatedActionKeys.length) warnings.push(`行动被严格支配:${dominatedActionKeys.join(',')}`)
   if (unboundedGrowthKeys.size) warnings.push(`零成本无限增长风险:${[...unboundedGrowthKeys].join(',')}`)
-  return { valid: errors.length === 0, errors, warnings, duplicateKeys, missingReferences: [...missing].sort(), dominatedActionKeys, unboundedGrowthKeys: [...unboundedGrowthKeys].sort(), conservedMutationKeys: [...conservedMutationKeys].sort(), unsolvedCrisisKeys, unreachableEndingKeys }
+  return { valid: errors.length === 0, errors, warnings, duplicateKeys, missingReferences: [...missing].sort(), dominatedActionKeys, unboundedGrowthKeys: [...unboundedGrowthKeys].sort(), conservedMutationKeys: [...conservedMutationKeys].sort(), unsolvedCrisisKeys, unreachableEndingKeys, issueStageCoverageKeys, emptySectionKeys }
 }
 
 function issueStage(issue: NarrativeSimulationIssueDefinition, pressure: number) {

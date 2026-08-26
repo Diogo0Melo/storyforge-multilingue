@@ -1,6 +1,8 @@
 import { act, createElement } from 'react'
 import { createRoot } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import i18n from '../../src/i18n'
+import ptWorldview from '../../src/i18n/locales/pt-BR/worldview.json'
 import type { Project } from '../../src/lib/types'
 
 const mocks = vi.hoisted(() => ({
@@ -164,6 +166,7 @@ afterEach(async () => {
     await act(async () => item.root.unmount())
     item.host.remove()
   }
+  await i18n.changeLanguage('zh-CN')
 })
 
 describe('R-HARNESS32 · 三个世界基座面板统一进入主 Agent Harness', () => {
@@ -248,5 +251,38 @@ describe('R-HARNESS32 · 三个世界基座面板统一进入主 Agent Harness',
       projectId: project.id,
       climateByRegion: '盐雾季会让北岸连续失温七日。',
     })
+  })
+
+  it('候选区 UI 文案跟随 locale（pt-BR），字段标签与来源列表保持数据原样', async () => {
+    await i18n.changeLanguage('pt-BR')
+    mocks.copilot.pendingCandidates = [candidate('divineDesign', '神明与信仰')]
+    const host = await renderPanel(WorldviewOriginPanel)
+
+    const agentControlsBundle = ptWorldview.agentControls
+    const expectedTitle = agentControlsBundle.pendingTitle.replace('{{label}}', '神明与信仰')
+    await vi.waitFor(() => {
+      expect(host.textContent).toContain(expectedTitle)
+    })
+    // 字段标签是数据，不随 UI 语言翻译。
+    expect(host.textContent).toContain('神明与信仰')
+    // 证据摘要：估算 tokens 来自 payload 数据；来源键保持登记表原文。
+    expect(host.textContent).toContain(agentControlsBundle.evidenceTokens.replace('{{count}}', '712'))
+    expect(host.querySelector(`textarea[aria-label="${agentControlsBundle.candidateContentAria.replace('{{label}}', '神明与信仰')}"]`)).not.toBeNull()
+    expect(host.textContent).toContain(agentControlsBundle.evidenceSummary)
+    const listFormat = new Intl.ListFormat('pt-BR', { type: 'conjunction', style: 'short' })
+    expect(host.textContent).toContain(
+      agentControlsBundle.evidenceIncluded.replace('{{list}}', listFormat.format(['worldview', 'storyCore'])),
+    )
+    expect(host.textContent).toContain(agentControlsBundle.evidenceTrimmed.replace('{{list}}', listFormat.format(['references'])))
+
+    // 默认生成按钮与提示输入框走 locale 默认文案。
+    expect(Array.from(host.querySelectorAll('button')).some(button => button.textContent?.includes(agentControlsBundle.generateDefault))).toBe(true)
+    expect(host.querySelector<HTMLInputElement>(`input[placeholder="${agentControlsBundle.hintPlaceholder}"]`)).not.toBeNull()
+
+    const buttons = Array.from(host.querySelectorAll('button'))
+    await act(async () => buttons.find(button => button.textContent?.includes(agentControlsBundle.btnReject))!.click())
+    expect(mocks.copilot.rejectCandidate).toHaveBeenCalledWith(mocks.copilot.pendingCandidates[0])
+    await act(async () => buttons.find(button => button.textContent?.includes(agentControlsBundle.btnAdopt))!.click())
+    expect(mocks.copilot.adoptCandidate).toHaveBeenCalledWith(mocks.copilot.pendingCandidates[0])
   })
 })

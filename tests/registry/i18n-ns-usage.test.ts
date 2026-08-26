@@ -55,6 +55,27 @@ const CROSS_NS_ALLOWLIST: Record<string, ReadonlySet<string>> = {
   'components/text-game/AdventureGameWorkbench.tsx': new Set(['simulation']),
   'components/text-game/AvgGamePlayer.tsx': new Set(['simulation']),
   'components/text-game/AvgGameWorkbench.tsx': new Set(['simulation']),
+  'components/text-game/NarrativeSimulationPlayer.tsx': new Set(['simulation']),
+  'components/text-game/NarrativeSimulationWorkbench.tsx': new Set(['simulation']),
+  'components/text-game/TextOpenWorldPlayer.tsx': new Set(['simulation']),
+  'components/text-game/TextOpenWorldWorkbench.tsx': new Set(['simulation']),
+  // World Engine hub surfaces live under components/world-engine/, but their
+  // copy is owned by the worldview domain ns (worldEngine.* / worldNarrative.*
+  // / worldWork.*). The workspace renders worldview panels' sibling surface,
+  // not a world-engine-local namespace; no local label copies are permitted.
+  'components/world-engine/WorldEngineWorkspace.tsx': new Set(['worldview']),
+  // WorldNarrativeReleasePanel additionally reads the simulation ns for the
+  // SHARED canonical kind projections (NARRATIVE_MODULE_KIND_LABEL_KEYS /
+  // SIMULATION_SESSION_KIND_LABEL_KEYS in src/i18n/display-projection.ts).
+  // Those label keys are simulation-owned so every product surface renders
+  // identical labels; the panel must consume them, never copy a parallel
+  // worldview-owned dictionary. Panel-local copy stays on worldview.
+  'components/world-engine/WorldNarrativeReleasePanel.tsx': new Set(['worldview', 'simulation']),
+  'components/world-engine/WorldWorkManager.tsx': new Set(['worldview']),
+  // CHATGAME-2B authoring workbench lives under character-interaction but reads
+  // the simulation ns bundles (interactionAuthor.* / ai.*) by design; the domain
+  // owns no parallel label copy and shares the simulation runtime projections.
+  'components/character-interaction/InteractionGameWorkbench.tsx': new Set(['simulation']),
 }
 
 function slashRelative(absPath: string): string {

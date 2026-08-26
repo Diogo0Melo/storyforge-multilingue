@@ -1993,5 +1993,28 @@
       "label": "游戏",
       "description": "游戏世界、副本挑战、竞技对抗。"
     }
+  },
+  "projectStorage": {
+    "title": "项目存储工作区",
+    "description": "项目的可读内容、记忆和恢复证据都跟随这个文件夹。你可以把它放在 D 盘或任意本地硬盘位置。",
+    "noProject": "请先进入一个项目，再为它设置存储位置。",
+    "unsupported": "当前浏览器不支持直接绑定本地文件夹。仍可在数据管理中导出、导入自校验工作区包。",
+    "folderIdle": "尚未设置项目文件夹",
+    "statusLinked": "已关联；浏览器出于隐私不会显示完整盘符路径",
+    "statusNeedsAuth": "已记住位置，需要重新授权",
+    "statusBrowserOnly": "项目目前只保存在此浏览器中",
+    "btnReauthorize": "重新授权",
+    "btnChoose": "选择项目文件夹",
+    "btnChange": "更换位置",
+    "hintSafety": "选择或更换位置只保存文件夹授权，不会自动覆盖任何文件。请在数据管理中人工检查差异后再确认同步。",
+    "btnOpenDataManagement": "核对与同步",
+    "btnDisconnect": "解除关联",
+    "noticePermissionDenied": "没有获得该文件夹的读写权限。",
+    "noticeBound": "已将“{{name}}”设为项目存储工作区。尚未写入任何文件。",
+    "noticeReplaced": "存储位置已改为“{{name}}”。原文件夹没有被删除；新位置尚未写入，请前往数据管理核对并确认。",
+    "noticeChooseFailed": "保存位置失败：{{message}}",
+    "noticeReauthorized": "文件夹权限已恢复；没有自动读取或写入文件。",
+    "noticeDisconnected": "已解除关联；硬盘上的原文件不会被删除。",
+    "noticeDisconnectFailed": "解除关联失败：{{message}}"
   }
 }

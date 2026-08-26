@@ -208,8 +208,31 @@ export async function createBackendInstance(opts?: { lng?: string }) {
   return inst
 }
 
-/** 领域翻译函数类型，用于在辅助函数签名中引用。 */
-export type DomainTFunction = ReturnType<typeof useDomainT>['t']
+/**
+ * 领域翻译函数类型，用于在辅助函数签名中引用。
+ *
+ * TODO(i18n-type-scale) · 临时回退桥，不是长期契约：
+ * - 此前本类型直接派生 `ReturnType<typeof useDomainT>['t']`（即 i18next 完整
+ *   TFunction），在当前 locale 规模下触发 tsc 类型规模爆炸（递归展开）。
+ * - 官方 `enableSelector: 'optimize'` 方案已调查并试证：产生 47 个 tsc 错误，
+ *   其中 16 处 react-i18next `<Trans>` 调用点与 selector 模式不兼容（超出最小
+ *   修复范围）而被回退；`<Trans>` 迁移完成前不得重试 selector 模式。
+ * - 故此处改为轻量可调用契约，仅覆盖仓库现有调用形态：字符串 key（含
+ *   `common:` 前缀）、插值 options 对象、i18next defaultValue 第二参。并在
+ *   useDomainT 返回边界做一次显式收窄——运行时仍是 i18next/react-i18next
+ *   提供的真实翻译函数，行为完全不变。无需 `any`：该签名已覆盖全部现存调用点。
+ * - key 安全不依赖此静态类型：三语 locale 对齐（tests/registry/i18n.test.ts）、
+ *   value 翻译守卫（tests/registry/i18n-values.test.ts）、namespace 用法与
+ *   display-projection 注册表测试（tests/regression/R-i18n-display-projections.test.ts）
+ *   仍是实际守卫。
+ * - 退出条件：`<Trans>`/selector 调用点全部迁移完成后，删除本桥并恢复从
+ *   useDomainT 派生精确类型。
+ */
+export type DomainTFunction = (
+  key: string,
+  optionsOrDefaultValue?: Record<string, unknown> | string,
+  options?: Record<string, unknown>,
+) => string
 
 /**
  * 领域翻译钩子。组件只传自己的 ns,common 自动叠加。
@@ -218,7 +241,9 @@ export type DomainTFunction = ReturnType<typeof useDomainT>['t']
 export function useDomainT(ns: keyof I18nResources) {
   const { t, ready, i18n: instance } = useTranslation([ns, 'common'])
   return {
-    t,
+    // 临时回退桥：仅在类型层收窄为 DomainTFunction（见其 TODO(i18n-type-scale)），
+    // 运行时仍是 react-i18next 提供的真实 t 函数。
+    t: t as unknown as DomainTFunction,
     ready,
     lang: instance.language,
     changeLanguage: instance.changeLanguage.bind(instance),
