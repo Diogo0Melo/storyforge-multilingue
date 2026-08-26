@@ -2,7 +2,7 @@
 
 ## Status e objetivo
 
-- **Estado:** plano aprovado para revisão Oracle; implementação desta retomada ainda não começou.
+- **Estado:** Fase 1 de contrato concluída; aguardando Oracle 2/4 antes da implementação dos writers.
 - **Branch/worktree:** `sync/upstream/2026-08-23` em `.slim/worktrees/upstream-integration`.
 - **Checkpoint preservado:** `97078f7` — `feat(i18n-upstream): checkpoint phase 3 UI migration (198 tests)`.
 - **Objetivo:** eliminar toda UI hard-coded introduzida ou alcançada pelo upstream que ainda esteja fora da arquitetura i18n, sem traduzir dados canônicos, sem alterar contratos persistidos e sem reabrir a migração já validada fora dos quatro grupos atualmente conhecidos. A segunda auditoria pode ampliar esse escopo se encontrar outro defeito upstream-visível.
@@ -13,8 +13,9 @@
 1. `AGENTS.md`: autoridade do repositório para registries, segurança de dados, commits e gates.
 2. `.slim/deepwork/Migração i18n completa após merge upstream — StoryForge Multilíngue.md`: brief original copiado para referência local; suas regras de investigação, testes progressivos, auditoria final e critérios de conclusão são obrigatórias.
 3. `.slim/deepwork/i18n-post-upstream-merge.md`: estado persistente, decisões Oracle anteriores, inventário upstream, evidências e este plano resumido.
-4. `docs/CONTEXT-ROUTING.md`: somente os trechos incidentes sobre i18n, UI, AI e testes devem ser consultados durante execução.
-5. `package.json`: scripts canônicos (`ci`, `ci:e2e`, `check:*`, `lint`, `build`, Vitest e Playwright).
+4. `docs/I18N-UPSTREAM-MERGE-CONTRACT.md`: manifesto de ocorrências, ownership, placeholders, limites canônicos e evidência da Fase 1.
+5. `docs/CONTEXT-ROUTING.md`: somente os trechos incidentes sobre i18n, UI, AI e testes devem ser consultados durante execução.
+6. `package.json`: scripts canônicos (`ci`, `ci:e2e`, `check:*`, `lint`, `build`, Vitest e Playwright).
 
 Não há necessidade de introduzir nova biblioteca ou buscar uma API externa: o risco é de integração com a arquitetura i18n local. A pesquisa foi feita sobre o brief, histórico Git, componentes, namespaces, call sites e testes do próprio projeto.
 
@@ -108,6 +109,8 @@ Cada ocorrência mantida precisa aparecer na auditoria final como `INTENTIONAL +
 **Commit planejado:** `docs(i18n-upstream): define residual hardcode contract`; somente usar `test(...)` nesta fase se houver guards executáveis novos, passando e staged no mesmo escopo.
 
 **Revisão Oracle 2/4:** aprovar contrato, semântica de copy e limites de dados antes da implementação. Razão: confirmar que os três writers não disputarão JSON/registry e que nenhum canonical foi classificado como UI.
+
+**Entrega da Fase 1:** `docs/I18N-UPSTREAM-MERGE-CONTRACT.md` fecha o manifesto por ocorrência, os owners `simulation`/`settings`/`editor`, os placeholders, os limites de conteúdo canônico, a projeção de `InteractionMemoryKind`, os erros/separadores e os testes de cada writer. O Designer não pôde executar a revisão read-only após duas tentativas por indisponibilidade do provedor; o Orchestrator registrou a revisão conservadora e não alterou layout ou interação. Os guards existentes permanecem como baseline; nenhuma alteração de componente/locale foi feita nesta fase.
 
 ### Fase 2 — Implementação por domínio, em paralelo seguro
 
@@ -306,4 +309,6 @@ Só marcar o Deepwork como concluído quando todos os itens forem verdadeiros:
 
 - **Concluído:** recon, auditoria residual, matriz de testes, checkpoint de código e plano inicial.
 - **Concluído nesta etapa:** remediation documental aplicada, Oracle 1/4 re-review retornou GO e este plano foi commitado em `ca05503`. Próximo passo é iniciar a Fase 1 de contratos e, somente após seus gates, os writers da Fase 2.
-- **Não fazer ainda:** traduzir componentes, editar locales ou rodar gates RELEASE antes da aprovação do contrato e do Oracle.
+- **Concluído agora:** Fase 1 contratual documentada em `docs/I18N-UPSTREAM-MERGE-CONTRACT.md`, com baseline de guards selecionados pendente de execução/registro e commit atômico do Orchestrator.
+- **Próximo passo:** executar o gate DOMAIN da Fase 1, commitar somente os documentos reconciliados e solicitar Oracle 2/4.
+- **Não fazer ainda:** traduzir componentes, editar locales ou rodar gates RELEASE antes da aprovação do contrato e do Oracle 2/4.
