@@ -392,8 +392,9 @@ hash, policy, table, author content e candidate content permanecem canônicos.
 ### 7. Test ownership corrigido e waiver do Designer
 
 - Orchestrator: conforme a matriz normativa, editar serialmente
-  `i18n-ns-usage.test.ts` e executar/aceitar a prova de cold mount; manter a
-  única autoridade da projection-map/shared guard.
+  `i18n-ns-usage.test.ts` e executar/aceitar a prova de cold mount. A
+  autoridade de `display-projection.ts` e seu regression permanece na Lane A;
+  a autoridade do namespace guard permanece no Orchestrator.
 - Lane A: `R-CHATGAME2BC-ui.test.tsx`, `R-i18n-display-projections.test.ts`;
   incluir erro, troca de idioma, `messagePlaceholder`, scene metadata,
   memory-kind e list formatting.
@@ -422,8 +423,7 @@ O segundo NO-GO do Oracle 2/4 foi agrupado nesta única remediation documental.
 Ela inclui o produtor local de `ChapterEditor.tsx:3505–3507` e torna o
 Orchestrator o único owner da execução/aceitação de cold mount, enquanto Lane B
 somente escreve o caso de teste e fornece evidência. A matriz normativa única
-reduz a duplicidade de ownership. Ainda não houve alteração de componente, locale, guard,
-projection ou teste. Após esta atualização, executar somente os quatro guards
-selecionados e `git diff --check`, commitar os dois documentos em um checkpoint
-separado e solicitar a re-revisão 2/4. A Fase 2 continua bloqueada até
-**GO**.
+reduz a duplicidade de ownership. Não há alteração de componente, locale,
+guard, projection ou teste nesta remediation. O gate consiste nos quatro
+guards selecionados e `git diff --check`; o checkpoint separado deve ser
+commitado antes da re-revisão 2/4. A Fase 2 continua bloqueada até **GO**.
