@@ -133,7 +133,7 @@ Cada ocorrência mantida precisa aparecer na auditoria final como `INTENTIONAL +
 
 #### Lane B — Project storage
 
-- **Owner:** Fixer B, após o guard/cold-mount serial do Orchestrator; o waiver do Designer está registrado no contrato.
+- **Owner:** Fixer B, após o preflight serial do namespace guard do Orchestrator; o waiver do Designer está registrado no contrato. O Orchestrator executa/aceita o cold mount somente depois que Lane B fornecer o caso e a evidência.
 - **Arquivos permitidos:** `ProjectStorageFolderField.tsx`, os três `settings.json` em `projectStorage` e `tests/regression/R-PROJECT-STORAGE-FOLDER-i18n.test.tsx` (owner definido; criar se ainda não existir). O guard `tests/registry/i18n-ns-usage.test.ts` pertence somente ao Orchestrator.
 - **Não tocar:** `folder-backup`, persistência, `ProjectStorageWorkspacePanel`, callers ou lifecycle de storage.
 - **Implementação:** adicionar `useDomainT('settings')`; reutilizar a semântica já usada por `ProjectStorageWorkspacePanel`; traduzir erro, estados supported/unsupported, choose/change, helper e qualquer `aria-label`/tooltip necessário; preservar `FileSystemDirectoryHandle.name` como dado dinâmico.
@@ -147,7 +147,7 @@ Cada ocorrência mantida precisa aparecer na auditoria final como `INTENTIONAL +
 - **Implementação:** converter action map, contadores, status H57, labels de grupos, selects, placeholders, `aria-label`, `sr-only`, titles, buttons, candidate diff e receipts; localizar labels em torno de `impactInfo`, `policyId`, `policyReason`, hashes e conteúdos de candidato; classificar `transitionError`/`impact*Error` como mensagens estáveis ou diagnóstico, e substituir separadores culturais.
 - **Regressão:** atualizar `R-AUDIT6-chapter-editor-toolbar.test.tsx` para inicializar locale e consultar chave traduzida/role quando apropriado, sem relaxar assertions; criar `R-I18N-CHAPTER-POST-ADOPTION.test.tsx` para `ChapterEditor` lifecycle; cobrir `busy`, settled/blocked, review decisions, candidate confirm/reject, receipt, banners e erros.
 
-**Paralelismo:** após o passo serial obrigatório de projection de Lane A e o guard/cold-mount serial do Orchestrator para Lane B, A, B e C podem rodar simultaneamente porque seus componentes e locale files são distintos. O registry compartilhado e qualquer geração de documentação ficam bloqueados para o Orchestrator até todas as lanes terminarem. O waiver de uma onda substitui a revisão Designer indisponível; não há edição simultânea Designer/Fixer.
+**Paralelismo:** após o passo serial obrigatório de projection de Lane A e o preflight serial do namespace guard do Orchestrator, A, B e C podem rodar simultaneamente porque seus componentes e locale files são distintos. Lane B primeiro escreve o caso de cold mount; depois o Orchestrator executa/aceita a prova antes de fechar a integração. O registry compartilhado e qualquer geração de documentação ficam bloqueados para o Orchestrator até todas as lanes terminarem. O waiver de uma onda substitui a revisão Designer indisponível; não há edição simultânea Designer/Fixer.
 
 **Gate FAST por lane:** Vitest da lane, `git diff --check` e locale key/placeholder check da área.
 
