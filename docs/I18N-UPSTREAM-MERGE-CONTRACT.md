@@ -15,14 +15,28 @@
   conservadora de copy/acessibilidade abaixo; nenhuma decisão visual muda o
   layout ou a interação existentes.
 
-## Owners e regras de namespace
+### Matriz normativa única de ownership e validação
 
-| Área | Componentes | Owner de tradução | Namespace | Arquivos de locale | Guard/test owner |
-|---|---|---|---|---|---|
-| Simulation | `ChatGamePanel.tsx` | Lane A | `simulation.chatGame.*` | `simulation.json` (3 locales) | `R-CHATGAME2BC-ui.test.tsx` + projection guard |
-| Storage | `ProjectStorageFolderField.tsx` | Lane B | `settings.projectStorage.*` | `settings.json` (3 locales) | `R-PROJECT-STORAGE-FOLDER-i18n.test.tsx` |
-| Editor | `ChapterEditorToolbar.tsx` | Lane C | `editor.chapterEditorToolbar.*` | `editor.json` (3 locales) | `R-AUDIT6-chapter-editor-toolbar.test.tsx` |
-| Editor lifecycle | trecho de `ChapterEditor.tsx` | Lane C | `editor.chapterEditor.*` | `editor.json` (3 locales) | `R-I18N-CHAPTER-POST-ADOPTION.test.tsx` |
+Esta é a única matriz de ownership da Fase 1/2; as tabelas de chaves abaixo
+detalham somente o conteúdo de cada owner.
+
+| Owner | Escrita permitida | Validação sob sua responsabilidade |
+|---|---|---|
+| Orchestrator | `docs/*`, a entrada explícita de `components/shared/ProjectStorageFolderField.tsx` em `tests/registry/i18n-ns-usage.test.ts` e nenhuma locale/component concorrente | executar/aceitar a prova de cold mount (`R-PROJECT-STORAGE-FOLDER-i18n.test.tsx` + `tests/e2e/workspace-cold-i18n.spec.ts`) e integrar todos os gates |
+| Lane A | `ChatGamePanel.tsx`, três `simulation.json`, `R-CHATGAME2BC-ui.test.tsx`; antes disso, serialmente `display-projection.ts` e `R-i18n-display-projections.test.ts` | projection exaustiva dos seis memory kinds, Simulation UI e listas |
+| Lane B | `ProjectStorageFolderField.tsx`, três `settings.json`, `R-PROJECT-STORAGE-FOLDER-i18n.test.tsx` | cenários do field e evidência de cold mount para o Orchestrator; não edita o namespace guard |
+| Lane C | `ChapterEditorToolbar.tsx`, todos os produtores/lifecycle visíveis de `ChapterEditor.tsx`, três `editor.json`, `R-AUDIT6-chapter-editor-toolbar.test.tsx`, `R-I18N-CHAPTER-POST-ADOPTION.test.tsx` | todos os banners/H57/erros, troca de idioma após alertas, placeholders, aria/title/sr-only e listas |
+
+O Orchestrator é, portanto, o único owner da **prova/aceitação** de cold
+mount; Lane B é apenas o owner da implementação do caso de teste e fornece a
+evidência. Não existe decisão condicional ou ownership concorrente.
+
+## Regras de namespace (resumo)
+
+O ownership normativo está exclusivamente na matriz acima. Tecnicamente,
+`ChatGamePanel` usa `simulation`, `ProjectStorageFolderField` usa
+`settings` por exceção explícita, e toolbar/lifecycle usam `editor`; nenhum
+resolver cross-namespace oculto será introduzido.
 
 `ProjectStorageFolderField` é um componente em `components/shared`, mas o
 contrato aprovado reutiliza a semântica e o bundle já usado pelo painel de
@@ -231,6 +245,8 @@ operações H57 (`1969–2357`), além dos banners de qualidade e revisão expl�
 | erro operacional de cada campo | `impactReviewErrorGeneric`, `impactPatchErrorGeneric`, `impactOutlineRegenerationErrorGeneric`, `impactStoryTimelineRegenerationErrorGeneric`, `impactRemediationErrorGeneric` | nenhum | raw `Error.message` não é renderizado |
 | quality gate do candidato de texto | `proseGenerationQualityGate` | nenhum | substitui `proseGenerationError` cru |
 | aviso de revisão explícita | `proseCandidateExplicitReviewNotice` | nenhum | FIXED; preserva autorização explícita e custo |
+| edição local adotada com fatos rebaixados | `localEditCommittedWithDemotions` | `count` | `ChapterEditor.tsx:3505–3507`; `count` numérico |
+| edição local adotada sem fatos rebaixados | `localEditCommitted` | nenhum | `ChapterEditor.tsx:3505–3507`; mensagem estável |
 
 Os nomes acima são presentation codes/chaves de renderização; não devem ser
 persistidos nos contratos durable. O estado React pode guardar um union finito
@@ -340,8 +356,9 @@ O writer não pode criar `shared.json` para este campo nem duplicar as duas
 folhas de botão/permission. O Orchestrator é owner serial de
 `tests/registry/i18n-ns-usage.test.ts`: adicionará a exceção explícita para
 `components/shared/ProjectStorageFolderField.tsx` e seu motivo. Lane B não
-edita o guard. Depois, Lane B deve provar cold mount do field antes de abrir a
-página de settings; `PRELOAD_NS` não muda.
+edita o guard. Lane B adiciona o caso de teste de cold mount; o Orchestrator
+executa e aceita a prova antes de abrir a página de settings. `PRELOAD_NS` não
+muda.
 
 ### 6. Projection e post-adoption: união fechada
 
@@ -381,8 +398,9 @@ hash, policy, table, author content e candidate content permanecem canônicos.
   incluir erro, troca de idioma, `messagePlaceholder`, scene metadata,
   memory-kind e list formatting.
 - Lane B: criar `R-PROJECT-STORAGE-FOLDER-i18n.test.tsx`; incluir null,
-  selected, unsupported, permission denied, busy/disabled, callback e cold
-  mount da própria tela.
+  selected, unsupported, permission denied, busy/disabled, callback e o caso
+  de cold mount da própria tela. O Orchestrator executa/aceita essa evidência
+  e a prova E2E `workspace-cold-i18n.spec.ts`.
 - Lane C: atualizar `R-AUDIT6-chapter-editor-toolbar.test.tsx` e criar
   `R-I18N-CHAPTER-POST-ADOPTION.test.tsx`; incluir todos os produtores H57,
   quality-gate/explicit-review banners, erro raw suppression, troca de idioma
@@ -398,10 +416,14 @@ hash, policy, table, author content e candidate content permanecem canônicos.
   qualquer mudança visual substantiva exige nova decisão e não pode ser
   introduzida silenciosamente.
 
-## Oracle 2/4 — remediation pending validation
+## Oracle 2/4 — second remediation pending validation
 
-O NO-GO do Oracle 2/4 foi agrupado nesta única remediation documental. Ainda
-não houve alteração de componente, locale, guard, projection ou teste. Após
-esta atualização, executar somente os quatro guards selecionados e
-`git diff --check`, commitar os dois documentos em um checkpoint separado e
-solicitar a re-revisão 2/4. A Fase 2 continua bloqueada até **GO**.
+O segundo NO-GO do Oracle 2/4 foi agrupado nesta única remediation documental.
+Ela inclui o produtor local de `ChapterEditor.tsx:3505–3507` e torna o
+Orchestrator o único owner da prova/aceitação de cold mount, enquanto Lane B
+somente escreve o caso de teste. A matriz normativa única reduz a duplicidade
+de ownership. Ainda não houve alteração de componente, locale, guard,
+projection ou teste. Após esta atualização, executar somente os quatro guards
+selecionados e `git diff --check`, commitar os dois documentos em um checkpoint
+separado e solicitar a re-revisão 2/4. A Fase 2 continua bloqueada até
+**GO**.

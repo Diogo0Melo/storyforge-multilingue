@@ -117,6 +117,8 @@ Cada ocorrência mantida precisa aparecer na auditoria final como `INTENTIONAL +
 
 **Remediation em curso:** o contrato foi ampliado para incluir todos os produtores visíveis de `ChapterEditor`, códigos de apresentação de erro traduzidos no render, assinaturas individuais, cold mount, guard serial do Orchestrator, seis valores de `InteractionMemoryKind`, `downstream-processing` e o waiver explícito do Designer para esta onda.
 
+**Oracle 2/4 — segunda revisão NO-GO:** o cold mount ainda tinha ownership divergente entre o plano e o contrato, e o produtor de `ChapterEditor.tsx:3505–3507` não estava no inventário. A remediation atual torna o Orchestrator o único owner da prova/aceitação de cold mount (Lane B apenas escreve o caso de teste) e inclui as duas chaves de edição local adotada (`count` quando fatos são rebaixados, sem placeholder quando não são).
+
 ### Fase 2 — Implementação por domínio, em paralelo seguro
 
 **Dependência:** começa após o gate e Oracle 2/4. Os lanes abaixo não compartilham write targets.
