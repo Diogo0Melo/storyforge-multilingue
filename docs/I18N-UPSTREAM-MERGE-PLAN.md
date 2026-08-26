@@ -305,5 +305,5 @@ Só marcar o Deepwork como concluído quando todos os itens forem verdadeiros:
 ## Estado atual e próximo passo
 
 - **Concluído:** recon, auditoria residual, matriz de testes, checkpoint de código e plano inicial.
-- **Concluído nesta etapa:** remediation documental aplicada e Oracle 1/4 re-review retornou GO. Próximo passo é commitar este plano e só então iniciar a Fase 1 de contratos e os writers da Fase 2.
+- **Concluído nesta etapa:** remediation documental aplicada, Oracle 1/4 re-review retornou GO e este plano foi commitado em `ca05503`. Próximo passo é iniciar a Fase 1 de contratos e, somente após seus gates, os writers da Fase 2.
 - **Não fazer ainda:** traduzir componentes, editar locales ou rodar gates RELEASE antes da aprovação do contrato e do Oracle.
