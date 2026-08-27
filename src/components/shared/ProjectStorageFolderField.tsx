@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { FolderOpen, Loader2 } from 'lucide-react'
+import { useDomainT } from '../../i18n'
 import {
   ensureFolderPermission,
   isFSASupported,
@@ -14,6 +15,7 @@ interface Props {
 
 /** Optional project-location field shared by every project creation entry. */
 export default function ProjectStorageFolderField({ value, onChange, disabled = false }: Props) {
+  const { t } = useDomainT('settings')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const supported = isFSASupported()
@@ -28,7 +30,7 @@ export default function ProjectStorageFolderField({ value, onChange, disabled = 
       })
       if (!handle) return
       if (!(await ensureFolderPermission(handle))) {
-        setError('没有获得该文件夹的读写权限')
+        setError(t('projectStorage.noticePermissionDenied'))
         return
       }
       onChange(handle)
@@ -41,9 +43,9 @@ export default function ProjectStorageFolderField({ value, onChange, disabled = 
     <div className="space-y-1.5" data-testid="project-storage-folder-field">
       <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-bg-base px-3 py-2">
         <div className="min-w-0">
-          <p className="text-xs text-text-secondary">项目存储位置</p>
+          <p className="text-xs text-text-secondary">{t('projectStorage.title')}</p>
           <p className="truncate text-xs text-text-muted">
-            {value ? `已选择：${value.name}` : supported ? '尚未选择，可稍后在设置中指定' : '当前浏览器不支持直接选择硬盘文件夹'}
+            {value ? t('projectStorage.folderSelected', { name: value.name }) : supported ? t('projectStorage.folderIdle') : t('projectStorage.unsupported')}
           </p>
         </div>
         <button
@@ -53,13 +55,12 @@ export default function ProjectStorageFolderField({ value, onChange, disabled = 
           className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs text-text-secondary transition-colors hover:border-accent hover:text-accent disabled:cursor-not-allowed disabled:opacity-40"
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FolderOpen className="h-3.5 w-3.5" />}
-          {value ? '更换文件夹' : '选择项目文件夹'}
+          {value ? t('projectStorage.btnChange') : t('projectStorage.btnChoose')}
         </button>
       </div>
-      <p className="text-[11px] leading-relaxed text-text-muted">
-        可选择任意硬盘位置。创建后它就是本项目的存储工作区；首次写入仍需你核对并确认。
-      </p>
-      {error && <p className="text-xs text-error">{error}</p>}
+      <p className="text-[11px] leading-relaxed text-text-muted">{t('projectStorage.hintSafety')}</p>
+      {/* Oracle remediation:动态权限错误以 role="alert"(隐含 aria-live=assertive)播报,视觉不变。 */}
+      {error && <p role="alert" className="text-xs text-error">{error}</p>}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { useMemo } from 'react'
 import { BookOpenCheck, Check, ClipboardList, Eye, GitBranch, Loader2, RefreshCw, ShieldCheck, StickyNote, X } from 'lucide-react'
 import { CInput } from '../shared/CompositionInput'
 import { useDomainT } from '../../i18n'
@@ -27,13 +28,13 @@ interface ImpactStoryTimelineRegenerationTarget {
   title: string
 }
 
-const IMPACT_REVIEW_ACTION_LABELS: Record<string, string> = {
-  'review-source': '复核当前正文',
-  'review-fact': '复核事实',
-  'review-source-record': '复核来源设定',
-  'review-derived-state': '复核状态与进度',
-  'review-outline': '复核大纲',
-  'review-downstream-chapter': '复核后续正文',
+const IMPACT_REVIEW_ACTION_KEY_MAP: Record<string, string> = {
+  'review-source': 'chapterEditorToolbar.actionReviewSource',
+  'review-fact': 'chapterEditorToolbar.actionReviewFact',
+  'review-source-record': 'chapterEditorToolbar.actionReviewSourceRecord',
+  'review-derived-state': 'chapterEditorToolbar.actionReviewDerivedState',
+  'review-outline': 'chapterEditorToolbar.actionReviewOutline',
+  'review-downstream-chapter': 'chapterEditorToolbar.actionReviewDownstreamChapter',
 }
 
 interface Props {
@@ -199,7 +200,8 @@ export default function ChapterEditorToolbar({
   onCustomInstructionChange,
   onPerspectiveCharacterChange,
 }: Props) {
-  const { t } = useDomainT('editor')
+  const { t, lang } = useDomainT('editor')
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const reviewedImpactItemIds = new Set(impactReviewRecords.map(record => record.output.itemId))
   const selectedImpactReview = impactReviewRecords.find(record => record.output.itemId === impactReviewItemId)
   const impactDownstreamFocus = impactDownstreamSchedule?.items.find(item => item.status === 'awaiting-confirmation')
@@ -246,84 +248,84 @@ export default function ChapterEditorToolbar({
         <div className="basis-full space-y-2 rounded-md border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-300/90">
           <div className="flex items-start gap-2">
             <span className="flex-1">{impactInfo}</span>
-            <button onClick={onDismissImpact} aria-label="关闭影响分析结果" className="text-text-muted hover:text-text-primary"><X className="h-3.5 w-3.5" /><span className="sr-only">×</span></button>
+            <button onClick={onDismissImpact} aria-label={t('chapterEditorToolbar.ariaDismissImpact')} className="text-text-muted hover:text-text-primary"><X className="h-3.5 w-3.5" /><span className="sr-only">×</span></button>
           </div>
           {impactRemediationPlan && (
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-border/70 bg-bg-elevated/60 px-2 py-1.5 text-[11px] text-text-secondary">
-              <span>处理计划 {impactRemediationPlan.counts.total} 项</span>
-              <span>系统重建 {impactRemediationPlan.counts.deterministic}</span>
-              <span>作者复核 {impactReviewRecords.length}/{impactRemediationPlan.counts.authorConfirmed}</span>
-              <span className="ml-auto text-text-muted">计划 {impactRemediationPlan.planHash.slice(0, 12)}</span>
+              <span>{t('chapterEditorToolbar.remediationPlanTotal', { total: impactRemediationPlan.counts.total })}</span>
+              <span>{t('chapterEditorToolbar.remediationPlanDeterministic', { count: impactRemediationPlan.counts.deterministic })}</span>
+              <span>{t('chapterEditorToolbar.remediationPlanAuthorConfirmed', { reviewed: impactReviewRecords.length, total: impactRemediationPlan.counts.authorConfirmed })}</span>
+              <span className="ml-auto text-text-muted">{t('chapterEditorToolbar.remediationPlanHash', { hash: impactRemediationPlan.planHash.slice(0, 12) })}</span>
               {impactRemediationPlan.counts.deterministic > 0 && (
                 <button
                   onClick={onRunImpactRemediation}
                   disabled={impactRemediationBusy}
-                  title="只重建受影响的检索块和层级摘要，不改正文、事实或大纲"
+                  title={t('chapterEditorToolbar.remediationRunTitle')}
                   className="flex items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-2 py-1 text-[11px] text-amber-200 hover:bg-amber-400/20 disabled:opacity-50"
                 >
                   <RefreshCw className={`h-3 w-3 ${impactRemediationBusy ? 'animate-spin' : ''}`} />
-                  {impactRemediationBusy ? '重建中...' : '执行系统重建'}
+                  {impactRemediationBusy ? t('chapterEditorToolbar.remediationRunBusy') : t('chapterEditorToolbar.remediationRunIdle')}
                 </button>
               )}
               <button
                 onClick={onReplanImpactRemediation}
                 disabled={impactRemediationBusy}
-                title="重新读取当前正文和影响图，生成新的处理计划；不改正文或正式设定"
+                title={t('chapterEditorToolbar.remediationReplanTitle')}
                 className="flex items-center gap-1 rounded border border-sky-400/30 bg-sky-400/10 px-2 py-1 text-[11px] text-sky-200 hover:bg-sky-400/20 disabled:opacity-50"
               >
                 <RefreshCw className={`h-3 w-3 ${impactRemediationBusy ? 'animate-spin' : ''}`} />
-                刷新计划
+                {t('chapterEditorToolbar.remediationReplan')}
               </button>
             </div>
           )}
           {impactDownstreamSchedule && (
             <div
-              aria-label="H57 下游调度进度"
+              aria-label={t('chapterEditorToolbar.scheduleAriaLabel')}
               className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded border border-indigo-400/20 bg-indigo-400/5 px-2 py-1.5 text-[11px] text-text-secondary"
             >
               <span className="text-indigo-200">
-                H57 下游 {impactDownstreamSchedule.counts.completed}/{impactDownstreamSchedule.items.length}
+                {t('chapterEditorToolbar.scheduleDownstream', { completed: impactDownstreamSchedule.counts.completed, total: impactDownstreamSchedule.items.length })}
               </span>
-              <span>可继续 {impactDownstreamSchedule.counts.ready}</span>
-              <span>待确认 {impactDownstreamSchedule.counts['awaiting-confirmation']}</span>
-              <span>依赖阻断 {impactDownstreamSchedule.counts.blocked}</span>
-              <span>需人工 {impactDownstreamSchedule.counts['needs-manual-action']}</span>
+              <span>{t('chapterEditorToolbar.scheduleReady', { count: impactDownstreamSchedule.counts.ready })}</span>
+              <span>{t('chapterEditorToolbar.scheduleAwaitingConfirmation', { count: impactDownstreamSchedule.counts['awaiting-confirmation'] })}</span>
+              <span>{t('chapterEditorToolbar.scheduleBlocked', { count: impactDownstreamSchedule.counts.blocked })}</span>
+              <span>{t('chapterEditorToolbar.scheduleNeedsManual', { count: impactDownstreamSchedule.counts['needs-manual-action'] })}</span>
               <span className={`ml-auto ${impactDownstreamSchedule.settled ? 'text-success' : 'text-text-muted'}`}>
-                {impactDownstreamSchedule.settled ? '已全部完成' : `调度 ${impactDownstreamSchedule.scheduleHash.slice(0, 12)}`}
+                {impactDownstreamSchedule.settled ? t('chapterEditorToolbar.scheduleAllCompleted') : t('chapterEditorToolbar.scheduleHash', { hash: impactDownstreamSchedule.scheduleHash.slice(0, 12) })}
               </span>
               {impactDownstreamFocus && (
-                <span aria-label="H57 当前执行器策略" className="basis-full text-indigo-100/80">
-                  策略 {impactDownstreamFocus.policyId}：{impactDownstreamFocus.policyReason}
-                  {impactDownstreamFocus.manualModule ? ` · 人工入口 ${impactDownstreamFocus.manualModule}` : ''}
+                <span aria-label={t('chapterEditorToolbar.schedulePolicyAriaLabel')} className="basis-full text-indigo-100/80">
+                  {t('chapterEditorToolbar.schedulePolicy', { policyId: impactDownstreamFocus.policyId, policyReason: impactDownstreamFocus.policyReason })}
+                  {impactDownstreamFocus.manualModule ? t('chapterEditorToolbar.scheduleManualModule', { module: impactDownstreamFocus.manualModule }) : ''}
                 </span>
               )}
             </div>
           )}
           {impactRemediationPlan && impactRemediationPlan.counts.authorConfirmed > 0 && (
             <div className="space-y-2 rounded border border-sky-400/20 bg-sky-400/5 px-2 py-2 text-[11px] text-text-secondary">
-              <div className="text-sky-200">作者复核只记录决定和理由，不修改正文、事实、状态或大纲。</div>
+              <div className="text-sky-200">{t('chapterEditorToolbar.reviewSectionNote')}</div>
               <div className="grid gap-2 md:grid-cols-[minmax(180px,1.2fr)_auto_minmax(180px,1fr)_auto]">
                 <label className="flex min-w-0 items-center gap-2 rounded border border-border bg-bg-elevated px-2 text-text-secondary">
-                  <span className="sr-only">作者复核项</span>
+                  <span className="sr-only">{t('chapterEditorToolbar.reviewItemAriaLabel')}</span>
                   <select
-                    aria-label="作者复核项"
+                    aria-label={t('chapterEditorToolbar.reviewItemAriaLabel')}
                     value={impactReviewItemId ?? ''}
                     onChange={event => onImpactReviewItemChange(event.target.value || null)}
                     className="min-w-0 flex-1 bg-transparent py-1.5 text-xs text-text-primary outline-none"
                     disabled={impactReviewBusy}
                   >
-                    <option value="">选择复核项</option>
+                    <option value="">{t('chapterEditorToolbar.reviewItemPlaceholder')}</option>
                     {impactRemediationPlan.items
                       .filter(item => item.mode === 'author-confirmed')
                       .map(item => (
                         <option key={item.id} value={item.id}>
-                          {IMPACT_REVIEW_ACTION_LABELS[item.action] ?? '复核影响项'} · {item.table}#{item.recordId ?? '待定'}
-                          {reviewedImpactItemIds.has(item.id) ? '（已复核）' : ''}
+                          {(IMPACT_REVIEW_ACTION_KEY_MAP[item.action] ? t(IMPACT_REVIEW_ACTION_KEY_MAP[item.action]) : t('chapterEditorToolbar.actionReviewFallback'))} · {item.table}#{item.recordId ?? t('chapterEditorToolbar.reviewItemPending')}
+                          {reviewedImpactItemIds.has(item.id) ? t('chapterEditorToolbar.reviewItemReviewed') : ''}
                         </option>
                       ))}
                   </select>
                 </label>
-                <div className="flex items-center rounded border border-border bg-bg-elevated p-0.5" role="group" aria-label="作者复核决定">
+                <div className="flex items-center rounded border border-border bg-bg-elevated p-0.5" role="group" aria-label={t('chapterEditorToolbar.reviewDecisionAriaLabel')}>
                   <button
                     type="button"
                     onClick={() => onImpactReviewDecisionChange('acknowledged')}
@@ -331,7 +333,7 @@ export default function ChapterEditorToolbar({
                     className={`rounded px-2 py-1 text-[11px] transition-colors ${impactReviewDecision === 'acknowledged' ? 'bg-emerald-500/15 text-emerald-200' : 'text-text-muted hover:text-text-primary'}`}
                     disabled={impactReviewBusy}
                   >
-                    已确认
+                    {t('chapterEditorToolbar.reviewDecisionAcknowledged')}
                   </button>
                   <button
                     type="button"
@@ -340,14 +342,14 @@ export default function ChapterEditorToolbar({
                     className={`rounded px-2 py-1 text-[11px] transition-colors ${impactReviewDecision === 'needs-manual-action' ? 'bg-amber-500/15 text-amber-200' : 'text-text-muted hover:text-text-primary'}`}
                     disabled={impactReviewBusy}
                   >
-                    需人工处理
+                    {t('chapterEditorToolbar.reviewDecisionNeedsManual')}
                   </button>
                 </div>
                 <CInput
-                  aria-label="作者复核理由"
+                  aria-label={t('chapterEditorToolbar.reviewNoteAriaLabel')}
                   value={impactReviewNote}
                   onChange={event => onImpactReviewNoteChange(event.target.value)}
-                  placeholder="填写复核理由（至少 2 个字符）"
+                  placeholder={t('chapterEditorToolbar.reviewNotePlaceholder')}
                   className="rounded border border-border bg-bg-elevated px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
                   disabled={impactReviewBusy}
                 />
@@ -355,33 +357,33 @@ export default function ChapterEditorToolbar({
                   type="button"
                   onClick={onExecuteImpactReview}
                   disabled={impactReviewBusy || !impactReviewItemId || impactReviewNote.trim().length < 2}
-                  title="记录作者复核 durable Run，不写入正式数据"
+                  title={t('chapterEditorToolbar.reviewExecuteTitle')}
                   className="flex items-center justify-center gap-1 rounded border border-sky-400/30 bg-sky-400/10 px-3 py-1.5 text-xs text-sky-200 hover:bg-sky-400/20 disabled:opacity-50"
                 >
                   {impactReviewBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                  {impactReviewBusy ? '记录中...' : '记录复核'}
+                  {impactReviewBusy ? t('chapterEditorToolbar.reviewExecuteBusy') : t('chapterEditorToolbar.reviewExecuteIdle')}
                 </button>
               </div>
               {selectedImpactReview && (
                 <div className="flex flex-wrap gap-x-2 gap-y-1 text-[10px] text-text-muted">
                   <span className={selectedImpactReview.output.decision === 'needs-manual-action' ? 'text-amber-200' : 'text-emerald-200'}>
-                    最近决定：{selectedImpactReview.output.decision === 'needs-manual-action' ? '需人工处理' : '已确认'}
+                    {t('chapterEditorToolbar.reviewLatestDecision')}{selectedImpactReview.output.decision === 'needs-manual-action' ? t('chapterEditorToolbar.reviewDecisionNeedsManual') : t('chapterEditorToolbar.reviewDecisionAcknowledged')}
                   </span>
                   <span>{selectedImpactReview.output.note}</span>
-                  <span>回执 {selectedImpactReview.receiptHash.slice(0, 12)}</span>
+                  <span>{t('chapterEditorToolbar.reviewReceipt', { hash: selectedImpactReview.receiptHash.slice(0, 12) })}</span>
                   {selectedImpactReview.output.decision === 'needs-manual-action' && (
                     <button
                       type="button"
                       onClick={onOpenImpactManualEntry}
                       className="inline-flex items-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-2 py-0.5 text-[10px] text-amber-200 hover:bg-amber-400/20"
-                      title="打开对应的既有人工编辑入口；不会自动修改正式数据"
+                      title={t('chapterEditorToolbar.reviewManualEntryTitle')}
                     >
-                      <BookOpenCheck className="h-3 w-3" />打开人工入口
+                      <BookOpenCheck className="h-3 w-3" />{t('chapterEditorToolbar.reviewManualEntry')}
                     </button>
                   )}
                 </div>
               )}
-              {impactReviewReceipt && <div className="text-[10px] text-success">作者复核回执 {impactReviewReceipt.slice(0, 12)}</div>}
+              {impactReviewReceipt && <div className="text-[10px] text-success">{t('chapterEditorToolbar.reviewReceiptLabel', { hash: impactReviewReceipt.slice(0, 12) })}</div>}
               {impactReviewError && <div role="alert" className="text-xs text-error">{impactReviewError}</div>}
             </div>
           )}
@@ -391,22 +393,22 @@ export default function ChapterEditorToolbar({
             && !impactPatchCandidate && (
             <div className="space-y-2 rounded border border-violet-400/20 bg-violet-400/5 p-2">
               <div className="text-[11px] text-violet-200">
-                H57 生成式下游重建只处理一个后续章纲的 `summary`；模型重新装配当前 Context，确认前不会覆盖正式摘要。
+                {t('chapterEditorToolbar.outlineRegenHint')}
               </div>
               <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_auto]">
                 <label className="flex items-center gap-2 rounded border border-border bg-bg-elevated px-2 text-text-secondary">
                   <RefreshCw className="h-3.5 w-3.5 shrink-0" />
-                  <span className="sr-only">生成式后续章纲目标</span>
+                  <span className="sr-only">{t('chapterEditorToolbar.outlineRegenTargetAriaLabel')}</span>
                   <select
-                    aria-label="生成式后续章纲目标"
+                    aria-label={t('chapterEditorToolbar.outlineRegenTargetAriaLabel')}
                     value={impactOutlineRegenerationItemId ?? ''}
                     onChange={event => onImpactOutlineRegenerationItemChange(event.target.value || null)}
                     className="min-w-0 flex-1 bg-transparent py-1.5 text-xs text-text-primary outline-none"
                     disabled={impactOutlineRegenerationBusy}
                   >
-                    <option value="">选择 H57 当前影响项</option>
+                    <option value="">{t('chapterEditorToolbar.outlineRegenTargetPlaceholder')}</option>
                     {impactOutlineRegenerationTargets.map(target => (
-                      <option key={target.itemId} value={target.itemId}>{target.title} · {target.summary || '暂无摘要'}</option>
+                      <option key={target.itemId} value={target.itemId}>{target.title} · {target.summary || t('chapterEditorToolbar.outlineRegenNoSummary')}</option>
                     ))}
                   </select>
                 </label>
@@ -414,23 +416,23 @@ export default function ChapterEditorToolbar({
                   type="button"
                   onClick={onGenerateImpactOutlineRegeneration}
                   disabled={impactOutlineRegenerationBusy || !impactOutlineRegenerationItemId}
-                  title="创建绑定 H57 receipt 的生成式 child Run 与作者确认候选"
+                  title={t('chapterEditorToolbar.outlineRegenGenerateTitle')}
                   className="flex items-center justify-center gap-1 rounded border border-violet-400/30 bg-violet-400/10 px-3 py-1.5 text-xs text-violet-200 hover:bg-violet-400/20 disabled:opacity-50"
                 >
                   {impactOutlineRegenerationBusy
                     ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     : <RefreshCw className="h-3.5 w-3.5" />}
-                  {impactOutlineRegenerationBusy ? '重建中...' : 'AI 重建章纲候选'}
+                  {impactOutlineRegenerationBusy ? t('chapterEditorToolbar.outlineRegenGenerateBusy') : t('chapterEditorToolbar.outlineRegenGenerateIdle')}
                 </button>
               </div>
             </div>
           )}
           {impactOutlineRegenerationCandidate && !impactStoryTimelineRegenerationCandidate && (
             <div className="space-y-2 rounded border border-violet-400/25 bg-bg-elevated/70 p-2 text-text-secondary">
-              <div className="text-[11px] text-text-muted">H57 child 候选只允许写目标章纲摘要；作者确认前正式数据不变。</div>
+              <div className="text-[11px] text-text-muted">{t('chapterEditorToolbar.outlineRegenCandidateNote')}</div>
               <div className="whitespace-pre-wrap text-xs text-text-primary">{impactOutlineRegenerationCandidate.result.summary}</div>
-              <div className="text-[11px] text-text-secondary">理由：{impactOutlineRegenerationCandidate.result.reason}</div>
-              <div className="text-[10px] text-text-muted">证据：{impactOutlineRegenerationCandidate.result.evidenceRefs.join('、')}</div>
+              <div className="text-[11px] text-text-secondary">{t('chapterEditorToolbar.outlineRegenReason', { reason: impactOutlineRegenerationCandidate.result.reason })}</div>
+              <div className="text-[10px] text-text-muted">{t('chapterEditorToolbar.outlineRegenEvidence', { evidence: listFormat.format(impactOutlineRegenerationCandidate.result.evidenceRefs) })}</div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -439,7 +441,7 @@ export default function ChapterEditorToolbar({
                   className="flex items-center gap-1 rounded border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-200 hover:bg-emerald-400/20 disabled:opacity-50"
                 >
                   {impactOutlineRegenerationBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                  确认重建摘要
+                  {t('chapterEditorToolbar.outlineRegenConfirm')}
                 </button>
                 <button
                   type="button"
@@ -447,9 +449,9 @@ export default function ChapterEditorToolbar({
                   disabled={impactOutlineRegenerationBusy}
                   className="flex items-center gap-1 rounded border border-border bg-bg-surface px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50"
                 >
-                  <X className="h-3.5 w-3.5" />放弃候选
+                  <X className="h-3.5 w-3.5" />{t('chapterEditorToolbar.outlineRegenReject')}
                 </button>
-                <span className="text-[10px] text-text-muted">child {impactOutlineRegenerationCandidate.candidateHash.slice(0, 12)}</span>
+                <span className="text-[10px] text-text-muted">{t('chapterEditorToolbar.outlineRegenChildHash', { hash: impactOutlineRegenerationCandidate.candidateHash.slice(0, 12) })}</span>
               </div>
             </div>
           )}
@@ -459,22 +461,22 @@ export default function ChapterEditorToolbar({
             && !impactPatchCandidate && (
             <div className="space-y-2 rounded border border-cyan-400/20 bg-cyan-400/5 p-2">
               <div className="text-[11px] text-cyan-200">
-                H57 年表重建一次只修订一个既有事件的故事时间、重要度和描述；标题、章节绑定与顺序保持冻结。
+                {t('chapterEditorToolbar.timelineRegenHint')}
               </div>
               <div className="grid gap-2 md:grid-cols-[minmax(220px,1fr)_auto]">
                 <label className="flex items-center gap-2 rounded border border-border bg-bg-elevated px-2 text-text-secondary">
                   <RefreshCw className="h-3.5 w-3.5 shrink-0" />
-                  <span className="sr-only">生成式故事年表目标</span>
+                  <span className="sr-only">{t('chapterEditorToolbar.timelineRegenTargetAriaLabel')}</span>
                   <select
-                    aria-label="生成式故事年表目标"
+                    aria-label={t('chapterEditorToolbar.timelineRegenTargetAriaLabel')}
                     value={impactStoryTimelineRegenerationItemId ?? ''}
                     onChange={event => onImpactStoryTimelineRegenerationItemChange(event.target.value || null)}
                     className="min-w-0 flex-1 bg-transparent py-1.5 text-xs text-text-primary outline-none"
                     disabled={impactStoryTimelineRegenerationBusy}
                   >
-                    <option value="">选择 H57 当前年表影响项</option>
+                    <option value="">{t('chapterEditorToolbar.timelineRegenTargetPlaceholder')}</option>
                     {impactStoryTimelineRegenerationTargets.map(target => (
-                      <option key={target.itemId} value={target.itemId}>{target.title} · 事件 #{target.id}</option>
+                      <option key={target.itemId} value={target.itemId}>{t('chapterEditorToolbar.timelineRegenEventLabel', { title: target.title, id: target.id })}</option>
                     ))}
                   </select>
                 </label>
@@ -482,13 +484,13 @@ export default function ChapterEditorToolbar({
                   type="button"
                   onClick={onGenerateImpactStoryTimelineRegeneration}
                   disabled={impactStoryTimelineRegenerationBusy || !impactStoryTimelineRegenerationItemId}
-                  title="创建绑定 H57 receipt 的单事件年表 child Run 与作者确认候选"
+                  title={t('chapterEditorToolbar.timelineRegenGenerateTitle')}
                   className="flex items-center justify-center gap-1 rounded border border-cyan-400/30 bg-cyan-400/10 px-3 py-1.5 text-xs text-cyan-200 hover:bg-cyan-400/20 disabled:opacity-50"
                 >
                   {impactStoryTimelineRegenerationBusy
                     ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
                     : <RefreshCw className="h-3.5 w-3.5" />}
-                  {impactStoryTimelineRegenerationBusy ? '重建中...' : 'AI 重建年表候选'}
+                  {impactStoryTimelineRegenerationBusy ? t('chapterEditorToolbar.timelineRegenGenerateBusy') : t('chapterEditorToolbar.timelineRegenGenerateIdle')}
                 </button>
               </div>
             </div>
@@ -496,24 +498,24 @@ export default function ChapterEditorToolbar({
           {impactStoryTimelineRegenerationCandidate && !impactOutlineRegenerationCandidate && (
             <div className="space-y-2 rounded border border-cyan-400/25 bg-bg-elevated/70 p-2 text-text-secondary">
               <div className="text-[11px] text-text-muted">
-                H57 child 候选：{impactStoryTimelineRegenerationCandidate.targetBaseline.title}；确认前正式年表不变。
+                {t('chapterEditorToolbar.timelineRegenCandidateNote', { title: impactStoryTimelineRegenerationCandidate.targetBaseline.title })}
               </div>
               <div className="grid gap-1 text-[11px] md:grid-cols-2">
                 <div className="rounded border border-border/70 bg-bg-surface/60 p-2">
-                  <div className="text-text-muted">当前值</div>
-                  <div>时间：{impactStoryTimelineRegenerationCandidate.targetBaseline.storyTime || '未标注'}</div>
-                  <div>重要度：{impactStoryTimelineRegenerationCandidate.targetBaseline.importance}</div>
-                  <div className="whitespace-pre-wrap">{impactStoryTimelineRegenerationCandidate.targetBaseline.description || '暂无描述'}</div>
+                  <div className="text-text-muted">{t('chapterEditorToolbar.timelineRegenCurrentValue')}</div>
+                  <div>{t('chapterEditorToolbar.timelineRegenTime', { time: impactStoryTimelineRegenerationCandidate.targetBaseline.storyTime || t('chapterEditorToolbar.timelineRegenNoTime') })}</div>
+                  <div>{t('chapterEditorToolbar.timelineRegenImportance', { importance: impactStoryTimelineRegenerationCandidate.targetBaseline.importance })}</div>
+                  <div className="whitespace-pre-wrap">{impactStoryTimelineRegenerationCandidate.targetBaseline.description || t('chapterEditorToolbar.timelineRegenNoDescription')}</div>
                 </div>
                 <div className="rounded border border-cyan-400/20 bg-cyan-400/5 p-2">
-                  <div className="text-cyan-200">候选值</div>
-                  <div>时间：{impactStoryTimelineRegenerationCandidate.result.storyTime || '未标注'}</div>
-                  <div>重要度：{impactStoryTimelineRegenerationCandidate.result.importance}</div>
-                  <div className="whitespace-pre-wrap text-text-primary">{impactStoryTimelineRegenerationCandidate.result.description || '暂无描述'}</div>
+                  <div className="text-cyan-200">{t('chapterEditorToolbar.timelineRegenCandidateValue')}</div>
+                  <div>{t('chapterEditorToolbar.timelineRegenTime', { time: impactStoryTimelineRegenerationCandidate.result.storyTime || t('chapterEditorToolbar.timelineRegenNoTime') })}</div>
+                  <div>{t('chapterEditorToolbar.timelineRegenImportance', { importance: impactStoryTimelineRegenerationCandidate.result.importance })}</div>
+                  <div className="whitespace-pre-wrap text-text-primary">{impactStoryTimelineRegenerationCandidate.result.description || t('chapterEditorToolbar.timelineRegenNoDescription')}</div>
                 </div>
               </div>
-              <div className="text-[11px] text-text-secondary">理由：{impactStoryTimelineRegenerationCandidate.result.reason}</div>
-              <div className="text-[10px] text-text-muted">证据：{impactStoryTimelineRegenerationCandidate.result.evidenceRefs.join('、')}</div>
+              <div className="text-[11px] text-text-secondary">{t('chapterEditorToolbar.timelineRegenReason', { reason: impactStoryTimelineRegenerationCandidate.result.reason })}</div>
+              <div className="text-[10px] text-text-muted">{t('chapterEditorToolbar.timelineRegenEvidence', { evidence: listFormat.format(impactStoryTimelineRegenerationCandidate.result.evidenceRefs) })}</div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
@@ -522,7 +524,7 @@ export default function ChapterEditorToolbar({
                   className="flex items-center gap-1 rounded border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-200 hover:bg-emerald-400/20 disabled:opacity-50"
                 >
                   {impactStoryTimelineRegenerationBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                  确认重建年表事件
+                  {t('chapterEditorToolbar.timelineRegenConfirm')}
                 </button>
                 <button
                   type="button"
@@ -530,9 +532,9 @@ export default function ChapterEditorToolbar({
                   disabled={impactStoryTimelineRegenerationBusy}
                   className="flex items-center gap-1 rounded border border-border bg-bg-surface px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50"
                 >
-                  <X className="h-3.5 w-3.5" />放弃年表候选
+                  <X className="h-3.5 w-3.5" />{t('chapterEditorToolbar.timelineRegenReject')}
                 </button>
-                <span className="text-[10px] text-text-muted">child {impactStoryTimelineRegenerationCandidate.candidateHash.slice(0, 12)}</span>
+                <span className="text-[10px] text-text-muted">{t('chapterEditorToolbar.timelineRegenChildHash', { hash: impactStoryTimelineRegenerationCandidate.candidateHash.slice(0, 12) })}</span>
               </div>
             </div>
           )}
@@ -541,50 +543,50 @@ export default function ChapterEditorToolbar({
             <div className="grid gap-2 md:grid-cols-[minmax(150px,0.7fr)_minmax(200px,1.5fr)_minmax(160px,1fr)_auto]">
               <label className="flex items-center gap-2 rounded border border-border bg-bg-elevated px-2 text-text-secondary">
                 <GitBranch className="h-3.5 w-3.5 shrink-0" />
-                <span className="sr-only">影响修订目标</span>
+                <span className="sr-only">{t('chapterEditorToolbar.patchTargetAriaLabel')}</span>
                 <select
-                  aria-label="影响修订目标"
+                  aria-label={t('chapterEditorToolbar.patchTargetAriaLabel')}
                   value={impactPatchTargetId ?? ''}
                   onChange={event => onImpactPatchTargetChange(event.target.value ? Number(event.target.value) : null)}
                   className="min-w-0 flex-1 bg-transparent py-1.5 text-xs text-text-primary outline-none"
                   disabled={impactPatchBusy}
                 >
-                  <option value="">选择后续大纲</option>
+                  <option value="">{t('chapterEditorToolbar.patchTargetPlaceholder')}</option>
                   {impactPatchTargets.map(target => (
                     <option key={target.id} value={target.id}>{target.title}</option>
                   ))}
                 </select>
               </label>
               <textarea
-                aria-label="影响修订摘要"
+                aria-label={t('chapterEditorToolbar.patchSummaryAriaLabel')}
                 value={impactPatchSummary}
                 onChange={event => onImpactPatchSummaryChange(event.target.value)}
-                placeholder="只修改选定后续大纲的摘要，不改正文或事实"
+                placeholder={t('chapterEditorToolbar.patchSummaryPlaceholder')}
                 className="min-h-9 resize-y rounded border border-border bg-bg-elevated px-2 py-1.5 text-xs text-text-primary outline-none focus:border-accent"
                 disabled={impactPatchBusy}
               />
               <CInput
-                aria-label="影响修订理由"
+                aria-label={t('chapterEditorToolbar.patchReasonAriaLabel')}
                 value={impactPatchReason}
                 onChange={event => onImpactPatchReasonChange(event.target.value)}
-                placeholder="修改理由"
+                placeholder={t('chapterEditorToolbar.patchReasonPlaceholder')}
                 className="rounded border border-border bg-bg-elevated px-2 py-1.5 text-xs text-text-primary focus:outline-none focus:border-accent"
                 disabled={impactPatchBusy}
               />
               <button
                 onClick={onCreateImpactPatch}
                 disabled={impactPatchBusy || !impactPatchTargetId || !impactPatchSummary.trim() || !impactPatchReason.trim()}
-                title="创建作者确认式大纲摘要候选"
+                title={t('chapterEditorToolbar.patchCreateTitle')}
                 className="flex items-center justify-center gap-1 rounded border border-amber-400/30 bg-amber-400/10 px-3 py-1.5 text-xs text-amber-200 hover:bg-amber-400/20 disabled:opacity-50"
               >
                 {impactPatchBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <GitBranch className="h-3.5 w-3.5" />}
-                {impactPatchBusy ? '保存中...' : '生成修订候选'}
+                {impactPatchBusy ? t('chapterEditorToolbar.patchCreateBusy') : t('chapterEditorToolbar.patchCreateIdle')}
               </button>
             </div>
           )}
           {impactPatchCandidate && !impactOutlineRegenerationCandidate && !impactStoryTimelineRegenerationCandidate && (
             <div className="space-y-2 rounded border border-accent/20 bg-bg-elevated/70 p-2 text-text-secondary">
-              <div className="text-[11px] text-text-muted">候选仅允许写入选定大纲的 `summary`，确认前不会改动正式数据。</div>
+              <div className="text-[11px] text-text-muted">{t('chapterEditorToolbar.patchCandidateNote')}</div>
               <div className="whitespace-pre-wrap text-xs text-text-primary">{impactPatchCandidate.proposal.fields.summary}</div>
               <div className="flex flex-wrap items-center gap-2">
                 <button
@@ -593,7 +595,7 @@ export default function ChapterEditorToolbar({
                   className="flex items-center gap-1 rounded border border-emerald-400/30 bg-emerald-400/10 px-3 py-1.5 text-xs text-emerald-200 hover:bg-emerald-400/20 disabled:opacity-50"
                 >
                   {impactPatchBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Check className="h-3.5 w-3.5" />}
-                  确认修订
+                  {t('chapterEditorToolbar.patchConfirm')}
                 </button>
                 <button
                   onClick={onRejectImpactPatch}
@@ -601,18 +603,18 @@ export default function ChapterEditorToolbar({
                   className="flex items-center gap-1 rounded border border-border bg-bg-surface px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary disabled:opacity-50"
                 >
                   <X className="h-3.5 w-3.5" />
-                  放弃修订
+                  {t('chapterEditorToolbar.patchReject')}
                 </button>
-                <span className="text-[10px] text-text-muted">证据 {impactPatchCandidate.durable.candidateHash.slice(0, 12)}</span>
+                <span className="text-[10px] text-text-muted">{t('chapterEditorToolbar.patchEvidenceHash', { hash: impactPatchCandidate.durable.candidateHash.slice(0, 12) })}</span>
               </div>
             </div>
           )}
           {impactPatchError && <div role="alert" className="text-xs text-error">{impactPatchError}</div>}
-          {impactOutlineRegenerationReceipt && <div className="text-[10px] text-success">生成式章纲重建回执 {impactOutlineRegenerationReceipt.slice(0, 12)}</div>}
+          {impactOutlineRegenerationReceipt && <div className="text-[10px] text-success">{t('chapterEditorToolbar.outlineRegenReceiptLabel', { hash: impactOutlineRegenerationReceipt.slice(0, 12) })}</div>}
           {impactOutlineRegenerationError && <div role="alert" className="text-xs text-error">{impactOutlineRegenerationError}</div>}
-          {impactStoryTimelineRegenerationReceipt && <div className="text-[10px] text-success">故事年表重建回执 {impactStoryTimelineRegenerationReceipt.slice(0, 12)}</div>}
+          {impactStoryTimelineRegenerationReceipt && <div className="text-[10px] text-success">{t('chapterEditorToolbar.timelineRegenReceiptLabel', { hash: impactStoryTimelineRegenerationReceipt.slice(0, 12) })}</div>}
           {impactStoryTimelineRegenerationError && <div role="alert" className="text-xs text-error">{impactStoryTimelineRegenerationError}</div>}
-          {impactRemediationReceipt && <div className="text-[10px] text-success">确定性重建回执 {impactRemediationReceipt.slice(0, 12)}</div>}
+          {impactRemediationReceipt && <div className="text-[10px] text-success">{t('chapterEditorToolbar.remediationReceiptLabel', { hash: impactRemediationReceipt.slice(0, 12) })}</div>}
           {impactRemediationError && <div role="alert" className="text-xs text-error">{impactRemediationError}</div>}
         </div>
       )}
@@ -659,16 +661,16 @@ export default function ChapterEditorToolbar({
       </button>
       <label className="flex min-w-[180px] items-center gap-2 rounded-md border border-border bg-bg-elevated px-2 text-xs text-text-secondary">
         <Eye className="h-3.5 w-3.5 shrink-0" />
-        <span className="sr-only">叙事视角角色</span>
+        <span className="sr-only">{t('chapterEditorToolbar.perspectiveAriaLabel')}</span>
         <select
-          aria-label="叙事视角角色"
+          aria-label={t('chapterEditorToolbar.perspectiveAriaLabel')}
           value={perspectiveCharacterId ?? ''}
           onChange={event => onPerspectiveCharacterChange(
             event.target.value ? Number(event.target.value) : null,
           )}
           className="min-w-0 flex-1 bg-transparent py-1.5 text-xs text-text-primary outline-none"
         >
-          <option value="">不指定视角</option>
+          <option value="">{t('chapterEditorToolbar.perspectiveNone')}</option>
           {perspectiveCharacters.map(character => (
             <option key={character.id} value={character.id}>{character.name}</option>
           ))}

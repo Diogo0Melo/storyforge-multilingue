@@ -47,6 +47,9 @@ const CROSS_NS_ALLOWLIST: Record<string, ReadonlySet<string>> = {
   'components/node-flow/NodeInspector.tsx': new Set(['outline']),
   'components/node-authoring/NodeAuthoringWorkspace.tsx': new Set(['outline']),
   'components/shared/PromptRunPanel.tsx': new Set(['settings']),
+  // Project creation exposes the settings-owned storage copy before the
+  // settings page is mounted; keep this entry explicit for cold loading.
+  'components/shared/ProjectStorageFolderField.tsx': new Set(['settings']),
   // Phase-3 canonical product projections: the text-game players/workbenches
   // read the simulation ns by design; local label copies are not permitted.
   'components/text-game/StoryGamePlayer.tsx': new Set(['simulation']),

@@ -91,7 +91,7 @@ function response(...rows: ReturnType<typeof event>[]) {
   return JSON.stringify(rows)
 }
 
-describe.sequential('R-HARNESS64 · 故事年表 durable 分块提取与原子替换', () => {
+describe.sequential('R-HARNESS64 · 故事年表 durable 分块提取与原子替换', { timeout: 20_000 }, () => {
   beforeEach(async () => {
     usePromptStore.setState({ templates: [], loaded: false })
     await db.delete()

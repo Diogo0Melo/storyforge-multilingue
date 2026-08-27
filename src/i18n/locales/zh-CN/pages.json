@@ -11,7 +11,41 @@
     "propertiesToggleClose": "关闭属性面板",
     "copilotFallback": "AI 对话副驾加载中…",
     "defaultWorldName": "未选择世界",
-    "singleWorldLabel": "单世界"
+    "singleWorldLabel": "单世界",
+    "impactHandoff": {
+      "title": "影响项需要人工处理",
+      "openedTarget": "已打开：{{target}}",
+      "targetRef": "{{table}}#{{recordId}} · 计划 {{planHash}}",
+      "targetPending": "待定",
+      "statusCompleted": "修正已验证并重新规划",
+      "statusPending": "等待保存后验证",
+      "verifying": "正在验证…",
+      "verifyAction": "验证已保存修正",
+      "returnToSource": "返回来源章节",
+      "dismiss": "关闭交接提示",
+      "explanation": "这是受当前正文、影响计划和正式目标 pre-state 约束的人工交接。请先在现有模块按原流程保存，再验证修正；导航或仅打开记录不会被视为完成。",
+      "errorFallback": "人工修正完成验证失败。",
+      "targetModule": {
+        "chaptersList": "章节与正文",
+        "factLibrary": "事实库",
+        "stateTable": "状态表",
+        "inventory": "物品栏",
+        "storyArc": "故事线",
+        "storyTimeline": "故事年表",
+        "relations": "关系网",
+        "characters": "角色设计",
+        "worldRules": "真实与幻想",
+        "worldviewOrigin": "世界起源",
+        "worldviewNatural": "自然环境",
+        "worldviewHumanity": "人文环境",
+        "powerSystem": "力量体系",
+        "storyDesign": "故事设计",
+        "outline": "大纲",
+        "detailedOutline": "细纲",
+        "rules": "创作规则",
+        "references": "项目参考"
+      }
+    }
   },
   "settingsRoute": {
     "backTitle": "返回首页",

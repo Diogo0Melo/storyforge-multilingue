@@ -142,7 +142,7 @@ describe.sequential('R-HARNESS21 · 正文 Run 与章后处理 Run 的父子 lin
     const source = readFileSync(resolve(process.cwd(), 'src/components/editor/ChapterEditor.tsx'), 'utf8')
     expect(source).toContain('receiptHash: verification.receiptHash')
     expect(source).toContain('artifactHash: durableCandidate.expectedContentHash')
-    expect(source).toContain('全链状态：')
+    expect(source).toContain("t('chapterEditor.postAdoptionChainLabel')")
   })
 
   it('父回执失效或正文 hash 变化时拒绝启动，并把已完成子 Run 标记为 stale', async () => {

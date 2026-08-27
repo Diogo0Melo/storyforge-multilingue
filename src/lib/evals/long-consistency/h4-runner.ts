@@ -44,6 +44,7 @@ import type {
   LongConsistencyModelUsageV1,
 } from './report-types'
 import type { EvalSplit } from './types'
+import { isLongConsistencyIdentityMismatchError } from './identity-mismatch'
 
 export const H4_LONG_CONSISTENCY_RUNNER_VERSION_V1 = 'h4-verifier-runner-v1'
 export const H4_LONG_CONSISTENCY_CHECKPOINT_TYPE_V1 = 'storyforge-h4-verifier-checkpoint'
@@ -847,6 +848,7 @@ export async function runH4LongConsistencyVerifierV1(
           },
         })
       } catch (error) {
+        if (isLongConsistencyIdentityMismatchError(error)) throw error
         const failure = failureFrom(error, fixture.id, attempt, failedAttemptUsage)
         const failures = [...checkpoint.failures, failure]
         const usage = aggregateUsage({ attempts, completed: checkpoint.completed, failures })

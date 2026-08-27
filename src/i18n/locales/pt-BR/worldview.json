@@ -1013,6 +1013,28 @@
       "statEvents": "Registros de eventos",
       "statCheckpoints": "Checkpoints",
       "openRuntime": "Abrir máquinas de estado"
+    },
+    "domainDefinitions": {
+      "foundation": {
+        "label": "Canon da Base do Mundo",
+        "description": "Regras, origens, natureza, humanidade, espaço, história e sistemas de poder."
+      },
+      "assets": {
+        "label": "Ativos do Mundo",
+        "description": "Personagens, relações, locais, itens, verbetes e entidades reutilizáveis."
+      },
+      "narrative": {
+        "label": "Design Narrativo",
+        "description": "Núcleo da história, enredo principal e sub-enredos, arcos, estrutura, detalhamentos e prenúncios."
+      },
+      "structure": {
+        "label": "Estrutura do Mundo",
+        "description": "Regiões de mundo único, multi-planos, multi-mundos e relações de passagem."
+      },
+      "runtime": {
+        "label": "Estado e Instâncias",
+        "description": "Eventos, máquinas de estado, checkpoints e instâncias independentes."
+      }
     }
   },
   "worldWork": {
@@ -1053,6 +1075,24 @@
     "stage2Title": "Congelar e publicar",
     "stage2Description": "Revisões comparáveis uma a uma; versões publicadas são imutáveis",
     "sectionsLegend": "Escopo da publicação",
+    "releaseSections": {
+      "foundation": {
+        "label": "Base do Mundo",
+        "description": "Natureza, cultura, regras, locais, verbetes e estrutura do mundo"
+      },
+      "characters": {
+        "label": "Ativos de Personagens",
+        "description": "Fichas de personagens, relações e papéis dos personagens nesta obra"
+      },
+      "narrative": {
+        "label": "Design de História",
+        "description": "Núcleo da história, enredo principal e sub-enredos, e blueprints narrativos selecionados"
+      },
+      "outline": {
+        "label": "Estrutura e Detalhamento",
+        "description": "Estrutura de volumes, capítulos e detalhamentos por cena, sem o texto final"
+      }
+    },
     "revisionLabel": "Nome da revisão",
     "revisionPlaceholder": "ex.: Revisão do mundo {{total}}",
     "freezeRevision": "Congelar revisão",

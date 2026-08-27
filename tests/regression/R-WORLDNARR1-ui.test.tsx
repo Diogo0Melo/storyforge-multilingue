@@ -19,7 +19,11 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import WorldNarrativeReleasePanel from '../../src/components/world-engine/WorldNarrativeReleasePanel'
 import { DialogProvider } from '../../src/components/shared/Dialog'
 import { createStarterNarrativeModule } from '../../src/lib/narrative/blueprint'
-import { createWorldRevision, publishWorldRevision } from '../../src/lib/world-engine/releases'
+import {
+  WORLD_RELEASE_SECTIONS,
+  createWorldRevision,
+  publishWorldRevision,
+} from '../../src/lib/world-engine/releases'
 import { db } from '../../src/lib/db/schema'
 import type { Project, WorkspaceScope } from '../../src/lib/types'
 import { ensureWorkspaceOwnership } from '../../src/lib/world-engine/ownership'
@@ -166,6 +170,45 @@ describe('WORLDNARR-1 · release panel canonical projection & persisted-data loc
       const kinds = (simulationCopy[lang] as unknown as { kind: Record<string, string> }).kind
       expect(instanceLabels).toEqual([kinds.ttrpg, kinds.chatgame, kinds.npcEvolution])
     }
+    await changeLanguage('zh-CN')
+  }, 30_000)
+
+  it('i18n Unit A · 发布分区标签/描述经 worldview releaseSections 键渲染并跟随 locale；canonical key 不变', async () => {
+    const owned = await fixture('WORLDNARR sections')
+    await mountPanel(owned.project, owned.scope.projectId)
+    await waitFor(() => expect(host.querySelector('.sf-world-release-sections')).toBeTruthy())
+
+    const sectionRows = () => Array.from(
+      host.querySelectorAll('.sf-world-release-sections label'),
+    ) as HTMLLabelElement[]
+
+    for (const lang of ['zh-CN', 'en', 'pt-BR'] as UiLang[]) {
+      await changeLanguage(lang)
+      const sections = worldviewCopy[lang].releaseSections
+      const rows = sectionRows()
+      expect(rows).toHaveLength(WORLD_RELEASE_SECTIONS.length)
+      // 四个分区的可见标签与 title 描述都来自 locale JSON，不残留硬编码中文源串。
+      expect(rows.map(row => row.querySelector('span')?.textContent)).toEqual([
+        sections.foundation.label,
+        sections.characters.label,
+        sections.narrative.label,
+        sections.outline.label,
+      ])
+      expect(rows.map(row => row.getAttribute('title'))).toEqual([
+        sections.foundation.description,
+        sections.characters.description,
+        sections.narrative.description,
+        sections.outline.description,
+      ])
+    }
+    // canonical 契约：分区 key 与 legacy label/description 字段保持稳定，
+    // 表清单派生自注册表且不包含翻译文案。
+    expect(WORLD_RELEASE_SECTIONS.map(section => section.key)).toEqual([
+      'foundation', 'characters', 'narrative', 'outline',
+    ])
+    expect(WORLD_RELEASE_SECTIONS.map(section => section.label)).toEqual([
+      '世界基础', '角色资产', '故事设计', '大纲与细纲',
+    ])
     await changeLanguage('zh-CN')
   }, 30_000)
 

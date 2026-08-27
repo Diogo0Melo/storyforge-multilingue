@@ -15,6 +15,43 @@ export interface AgentRunFailureEvidenceV1 {
   fingerprint: string
 }
 
+export interface AgentRunFailureInitV1 {
+  /** Stable internal code; must be locale-independent. */
+  code: string
+  category: AgentRunFailureCategoryV1
+  action: AgentRunFailureActionV1
+  retryable: boolean
+  /** Localized message for user-facing display only; never drives classification. */
+  displayMessage: string
+}
+
+/**
+ * A failure whose classification and fingerprint identity are carried as stable,
+ * locale-independent fields. The `message` is localized purely for user-facing
+ * display; `classifyAgentRunFailureV1` derives code/category/action and the
+ * fingerprint from the stable fields, so the same logical failure hashes
+ * identically regardless of the UI locale active when it was thrown.
+ */
+export class AgentRunFailureError extends Error {
+  readonly failureCode: string
+  readonly failureCategory: AgentRunFailureCategoryV1
+  readonly failureAction: AgentRunFailureActionV1
+  readonly failureRetryable: boolean
+
+  constructor(init: AgentRunFailureInitV1) {
+    super(init.displayMessage)
+    this.name = 'AgentRunFailureError'
+    this.failureCode = init.code
+    this.failureCategory = init.category
+    this.failureAction = init.action
+    this.failureRetryable = init.retryable
+  }
+}
+
+export function isAgentRunFailureError(error: unknown): error is AgentRunFailureError {
+  return error instanceof AgentRunFailureError
+}
+
 function normalizedMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error)
   return message
@@ -25,6 +62,17 @@ function normalizedMessage(error: unknown): string {
 }
 
 function decision(error: unknown): Omit<AgentRunFailureEvidenceV1, 'fingerprint'> {
+  // Coded failures carry a stable, locale-independent classification. They are
+  // resolved before any message-based heuristic so the same logical failure
+  // classifies identically regardless of the UI locale of its display message.
+  if (isAgentRunFailureError(error)) {
+    return {
+      code: error.failureCode,
+      retryable: error.failureRetryable,
+      category: error.failureCategory,
+      action: error.failureAction,
+    }
+  }
   if (error instanceof AgentTeamBudgetExceededError) {
     return { code: 'team_budget_exhausted', retryable: false, category: 'budget', action: 'fail' }
   }
@@ -74,7 +122,11 @@ export async function classifyAgentRunFailureV1(error: unknown): Promise<AgentRu
       category: classified.category,
       code: classified.code,
       name: error instanceof Error ? error.name : typeof error,
-      message: normalizedMessage(error),
+      // Locale-stable identity: coded failures hash their stable internal code,
+      // never the localized display message, so the same logical failure yields an
+      // identical fingerprint across locales. Uncoded errors keep the historical
+      // normalized-message behavior (their messages are technical, not localized).
+      message: isAgentRunFailureError(error) ? error.failureCode : normalizedMessage(error),
       status: error instanceof AIError ? error.status : null,
     }),
   }

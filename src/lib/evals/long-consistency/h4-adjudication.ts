@@ -45,6 +45,7 @@ import {
   type LongConsistencySubtypeV1,
 } from './taxonomy'
 import type { EvalSplit } from './types'
+import { isLongConsistencyIdentityMismatchError } from './identity-mismatch'
 
 export const H4_SUBTYPE_ADJUDICATION_PROMPT_VERSION_V1 =
   'h4-long-consistency-subtype-adjudication-v1'
@@ -1518,6 +1519,7 @@ export async function runH4SubtypeAdjudicationV1(
         if (checkpoint.status !== 'running') return checkpoint
         break
       } catch (error) {
+        if (isLongConsistencyIdentityMismatchError(error)) throw error
         const detail = failureDetails(error, rawOutput != null)
         const outputHash = rawOutput == null ? null : await sha256Text(rawOutput)
         const callRecord: H4SubtypeAdjudicationCallRecordV1 = {

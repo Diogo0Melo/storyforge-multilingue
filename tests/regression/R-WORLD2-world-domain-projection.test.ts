@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { db } from '../../src/lib/db/schema'
-import { loadWorldProjection, loadWorldProjections } from '../../src/lib/world-engine/domain'
+import {
+  DOMAIN_DEFINITIONS,
+  loadWorldProjection,
+  loadWorldProjections,
+} from '../../src/lib/world-engine/domain'
 import type { Project } from '../../src/lib/types'
 
 function project(name: string, now: number): Project {
@@ -99,5 +103,42 @@ describe('WORLD-2 · 世界领域投影', () => {
     expect(projection.domains.foundation.status).toBe('partial')
     expect(projection.domains.narrative.status).toBe('partial')
     expect(projection.readiness).toBe('building')
+  })
+
+  it('i18n Unit A · 缺失编号/简介保留 canonical 空缺语义，不注入合成显示文案', async () => {
+    const now = Date.now()
+    // worldCode / description 故意缺省：投影必须保留空缺，不得写入翻译占位。
+    const base = { ...project('空缺世界', now), worldCode: undefined, description: '' }
+    const id = await db.projects.add(base) as number
+    const projection = await loadWorldProjection({ ...base, id })
+
+    expect(projection.code).toBe('')
+    expect(projection.description).toBe('')
+    expect(projection.code).not.toBe('待分配编号')
+    expect(projection.description).not.toBe('这个世界还没有写下简介。')
+
+    // 有编号时逐字保留，不做任何改写。
+    const withCode = await loadWorldProjection({ ...project('编号世界', now), id })
+    expect(withCode.code).toBe('W-TEST-01')
+  })
+
+  it('i18n Unit A · 领域摘要携带稳定 labelKey/descriptionKey，legacy 字段保留', async () => {
+    const now = Date.now()
+    const id = await db.projects.add(project('元数据世界', now)) as number
+    const projection = await loadWorldProjection({ ...project('元数据世界', now), id })
+
+    // 投影加载全程不依赖也不调用 i18n（本用例未初始化任何翻译即通过）。
+    for (const definition of DOMAIN_DEFINITIONS) {
+      const summary = projection.domains[definition.key]
+      expect(summary.labelKey).toBe(`worldEngine.domainDefinitions.${definition.key}.label`)
+      expect(summary.descriptionKey).toBe(`worldEngine.domainDefinitions.${definition.key}.description`)
+      // legacy canonical label/description 保留，兼容旧消费者并作为缺 key 回退。
+      expect(summary.label).toBe(definition.label)
+      expect(summary.description).toBe(definition.description)
+    }
+    // canonical key 集合稳定。
+    expect(Object.keys(projection.domains)).toEqual([
+      'foundation', 'assets', 'narrative', 'structure', 'runtime',
+    ])
   })
 })

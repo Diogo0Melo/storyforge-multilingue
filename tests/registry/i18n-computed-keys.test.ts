@@ -38,6 +38,10 @@ import { RAG_SOURCE_LABEL_KEYS } from '../../src/lib/retrieval/rag-library'
 import { SYSTEM_PROMPT_SEEDS } from '../../src/lib/ai/prompt-seeds'
 import { NOVEL_CONTENT_PROMPT_SEEDS } from '../../src/lib/ai/prompt-seeds-novel'
 import { SYSTEM_WORKFLOW_SEEDS } from '../../src/lib/ai/workflow-seeds'
+import { DOMAIN_DEFINITIONS } from '../../src/lib/world-engine/domain'
+import { WORLD_RELEASE_SECTIONS } from '../../src/lib/world-engine/releases'
+import { CONTEXT_COMPRESSION_EVAL_VARIANTS } from '../../src/lib/evals/context-compression/types'
+import { IMPACT_HANDOFF_TARGET_MODULE_KEY } from '../../src/pages/WorkspacePage'
 
 // ─── Locale helpers ────────────────────────────────────────────────────────
 
@@ -380,6 +384,60 @@ const groups: ComputedKeyGroup[] = [
         `${base}.description`,
       ]),
     )].map(k => k.replace('workflowSeeds.', '')),
+  },
+  // ── worldview: world-engine domain definitions (render site: WorldEngineWorkspace DomainCard,
+  //    resolved reactively via useDomainT('worldview'); keys derived from DOMAIN_DEFINITIONS) ──
+  {
+    name: 'worldview:worldEngine.domainDefinitions',
+    ns: 'worldview',
+    prefix: 'worldEngine.domainDefinitions',
+    keys: DOMAIN_DEFINITIONS.flatMap(definition => [
+      definition.labelKey.replace('worldEngine.domainDefinitions.', ''),
+      definition.descriptionKey.replace('worldEngine.domainDefinitions.', ''),
+    ]),
+  },
+  // ── worldview: world-release sections (render site: WorldNarrativeReleasePanel release-scope
+  //    checkboxes; keys derived from WORLD_RELEASE_SECTIONS) ──
+  {
+    name: 'worldview:worldNarrative.releaseSections',
+    ns: 'worldview',
+    prefix: 'worldNarrative.releaseSections',
+    keys: WORLD_RELEASE_SECTIONS.flatMap(section => [
+      section.labelKey.replace('worldNarrative.releaseSections.', ''),
+      section.descriptionKey.replace('worldNarrative.releaseSections.', ''),
+    ]),
+  },
+  // ── pages: workspace impact handoff target module labels (render site: WorkspacePage
+  //    handoffTargetLabel; keys derived from IMPACT_HANDOFF_TARGET_MODULE_KEY) ──
+  {
+    name: 'pages:workspace.impactHandoff.targetModule',
+    ns: 'pages',
+    prefix: 'workspace.impactHandoff.targetModule',
+    keys: Object.values(IMPACT_HANDOFF_TARGET_MODULE_KEY),
+  },
+  // ── settings: evalHarness.status.* (render site: H86StoryArcEvalPanel, CreativeReliabilityEvalPanel,
+  //    HarnessEvalPanel; keys derived from the checkpoint status union) ──
+  {
+    name: 'settings:evalHarness.status',
+    ns: 'settings',
+    prefix: 'evalHarness.status',
+    keys: ['running', 'completed', 'failed', 'budget-exhausted', 'provider-blocked'],
+  },
+  // ── settings: evalHarness.h17.variant.* (render site: HarnessEvalPanel H17 table;
+  //    keys derived from CONTEXT_COMPRESSION_EVAL_VARIANTS) ──
+  {
+    name: 'settings:evalHarness.h17.variant',
+    ns: 'settings',
+    prefix: 'evalHarness.h17.variant',
+    keys: [...CONTEXT_COMPRESSION_EVAL_VARIANTS],
+  },
+  // ── settings: evalHarness.h86Review.score.* (render site: H86HumanReviewPanel score fields;
+  //    keys derived from the score field union) ──
+  {
+    name: 'settings:evalHarness.h86Review.score',
+    ns: 'settings',
+    prefix: 'evalHarness.h86Review.score',
+    keys: ['constraintFaithfulness', 'causalCoherence', 'specificity', 'authorUsability'],
   },
 ]
 

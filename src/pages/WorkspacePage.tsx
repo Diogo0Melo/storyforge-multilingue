@@ -75,6 +75,7 @@ import { resolveScopeLike } from '../lib/world-engine/scope'
 import {
   isImpactHandoffRouteModuleV2,
   parseImpactHandoffV2,
+  type ImpactHandoffModuleV2,
   type ImpactHandoffV2,
 } from '../lib/consistency/impact-handoff'
 import {
@@ -85,6 +86,41 @@ import {
   completeImpactManualCorrectionV1,
 } from '../lib/agent/run/impact-manual-correction-durable'
 import { executeImpactPostCorrectionReplanV1 } from '../lib/agent/run/impact-post-correction-replan-durable'
+
+/**
+ * Stable i18n key suffixes for impact handoff target module display labels.
+ * Module IDs (keys) are serialization identifiers and must NOT be translated.
+ * Typed against ImpactHandoffModuleV2 so adding a module to the union
+ * produces a compile error until the map is updated (closed typed source).
+ */
+export const IMPACT_HANDOFF_TARGET_MODULE_KEY: Record<ImpactHandoffModuleV2, string> = {
+  'chapters-list': 'chaptersList',
+  'fact-library': 'factLibrary',
+  'state-table': 'stateTable',
+  inventory: 'inventory',
+  'story-arc': 'storyArc',
+  'story-timeline': 'storyTimeline',
+  relations: 'relations',
+  characters: 'characters',
+  'world-rules': 'worldRules',
+  'worldview-origin': 'worldviewOrigin',
+  'worldview-natural': 'worldviewNatural',
+  'worldview-humanity': 'worldviewHumanity',
+  'power-system': 'powerSystem',
+  'story-design': 'storyDesign',
+  outline: 'outline',
+  'detailed-outline': 'detailedOutline',
+  rules: 'rules',
+  references: 'references',
+}
+
+/**
+ * Typed impact-handoff message: either an i18n descriptor translated at render
+ * time (reactive to locale switches) or a raw engine/provider string kept verbatim.
+ */
+type ImpactCorrectionMessage =
+  | { kind: 'descriptor'; key: string }
+  | { kind: 'raw'; text: string }
 
 type MasterCopilotGuardReason = 'busy' | 'updating' | 'failed' | 'quarantined'
 
@@ -164,7 +200,7 @@ export default function WorkspacePage() {
   const [impactHandoff, setImpactHandoff] = useState<ImpactHandoffV2 | null>(null)
   const [impactHandoffTarget, setImpactHandoffTarget] = useState<CurrentImpactHandoffTargetV2 | null>(null)
   const [impactCorrectionStatus, setImpactCorrectionStatus] = useState<'idle' | 'pending' | 'verifying' | 'completed'>('idle')
-  const [impactCorrectionError, setImpactCorrectionError] = useState<string | null>(null)
+  const [impactCorrectionError, setImpactCorrectionError] = useState<ImpactCorrectionMessage | null>(null)
   const activeWorldGroupId = useWorldGroupStore(state => state.activeGroupId)
   const worldGroups = useWorldGroupStore(state => state.groups)
   const { t: agentT } = useDomainT('agent')
@@ -386,26 +422,9 @@ export default function WorkspacePage() {
   }
 
   const handoffTargetLabel = impactHandoff
-    ? ({
-      'chapters-list': '章节与正文',
-      'fact-library': '事实库',
-      'state-table': '状态表',
-      inventory: '物品栏',
-      'story-arc': '故事线',
-      'story-timeline': '故事年表',
-      relations: '关系网',
-      characters: '角色设计',
-      'world-rules': '真实与幻想',
-      'worldview-origin': '世界起源',
-      'worldview-natural': '自然环境',
-      'worldview-humanity': '人文环境',
-      'power-system': '力量体系',
-      'story-design': '故事设计',
-      outline: '大纲',
-      'detailed-outline': '细纲',
-      rules: '创作规则',
-      references: '项目参考',
-    } as Record<string, string>)[impactHandoff.targetModule]
+    ? (IMPACT_HANDOFF_TARGET_MODULE_KEY[impactHandoff.targetModule]
+      ? t(`workspace.impactHandoff.targetModule.${IMPACT_HANDOFF_TARGET_MODULE_KEY[impactHandoff.targetModule]}`)
+      : null)
     : null
 
   const dismissImpactHandoff = () => {
@@ -438,7 +457,12 @@ export default function WorkspacePage() {
       setImpactCorrectionStatus('completed')
     } catch (error) {
       setImpactCorrectionStatus('pending')
-      setImpactCorrectionError(error instanceof Error ? error.message : '人工修正完成验证失败。')
+      const rawMessage = error instanceof Error ? error.message : null
+      setImpactCorrectionError(
+        rawMessage !== null
+          ? { kind: 'raw', text: rawMessage }
+          : { kind: 'descriptor', key: 'workspace.impactHandoff.errorFallback' },
+      )
     }
   }
 
@@ -709,11 +733,11 @@ export default function WorkspacePage() {
         {impactHandoff && (
           <div className="shrink-0 border-b border-amber-400/25 bg-amber-400/5 px-4 py-2 text-xs text-text-secondary">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <span className="font-medium text-amber-200">影响项需要人工处理</span>
-              <span>已打开：{handoffTargetLabel ?? impactHandoff.targetModule}</span>
-              <span className="text-text-muted">{impactHandoff.table}#{impactHandoff.recordId ?? '待定'} · 计划 {impactHandoff.planHash.slice(0, 12)}</span>
+              <span className="font-medium text-amber-200">{t('workspace.impactHandoff.title')}</span>
+              <span>{t('workspace.impactHandoff.openedTarget', { target: handoffTargetLabel ?? impactHandoff.targetModule })}</span>
+              <span className="text-text-muted">{t('workspace.impactHandoff.targetRef', { table: impactHandoff.table, recordId: impactHandoff.recordId ?? t('workspace.impactHandoff.targetPending'), planHash: impactHandoff.planHash.slice(0, 12) })}</span>
               <span className={impactCorrectionStatus === 'completed' ? 'text-emerald-300' : 'text-amber-200'}>
-                {impactCorrectionStatus === 'completed' ? '修正已验证并重新规划' : '等待保存后验证'}
+                {impactCorrectionStatus === 'completed' ? t('workspace.impactHandoff.statusCompleted') : t('workspace.impactHandoff.statusPending')}
               </span>
               <span className="ml-auto flex items-center gap-2">
                 {impactCorrectionStatus !== 'completed' && (
@@ -723,7 +747,7 @@ export default function WorkspacePage() {
                     disabled={impactCorrectionStatus === 'verifying'}
                     className="rounded border border-amber-300/40 bg-amber-300/10 px-2 py-1 text-[11px] text-amber-100 hover:bg-amber-300/15 disabled:cursor-wait disabled:opacity-60"
                   >
-                    {impactCorrectionStatus === 'verifying' ? '正在验证…' : '验证已保存修正'}
+                    {impactCorrectionStatus === 'verifying' ? t('workspace.impactHandoff.verifying') : t('workspace.impactHandoff.verifyAction')}
                   </button>
                 )}
                 <button
@@ -731,22 +755,26 @@ export default function WorkspacePage() {
                   onClick={returnFromImpactHandoff}
                   className="rounded border border-border bg-bg-elevated px-2 py-1 text-[11px] text-text-secondary hover:text-text-primary"
                 >
-                  返回来源章节
+                  {t('workspace.impactHandoff.returnToSource')}
                 </button>
                 <button
                   type="button"
                   onClick={dismissImpactHandoff}
                   className="rounded border border-border bg-bg-elevated px-2 py-1 text-[11px] text-text-secondary hover:text-text-primary"
                 >
-                  关闭交接提示
+                  {t('workspace.impactHandoff.dismiss')}
                 </button>
               </span>
             </div>
             <p className="mt-1 text-[10px] text-text-muted">
-              这是受当前正文、影响计划和正式目标 pre-state 约束的人工交接。请先在现有模块按原流程保存，再验证修正；导航或仅打开记录不会被视为完成。
+              {t('workspace.impactHandoff.explanation')}
             </p>
             {impactCorrectionError && (
-              <p role="alert" className="mt-1 text-[10px] text-rose-300">{impactCorrectionError}</p>
+              <p role="alert" className="mt-1 text-[10px] text-rose-300">
+                {impactCorrectionError.kind === 'raw'
+                  ? impactCorrectionError.text
+                  : t(impactCorrectionError.key)}
+              </p>
             )}
           </div>
         )}

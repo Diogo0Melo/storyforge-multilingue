@@ -239,20 +239,20 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `chapter.content` | `src/lib/generation/chapter-generation-node.ts:24` |
 | `chapter.continue` | `src/lib/generation/chapter-generation-node.ts:25` |
 | `chapter.continuity` | `src/lib/node-authoring/domain-execution.ts:556`<br/>`src/lib/node-authoring/domain-execution.ts:623` |
-| `chapter.deai` | `src/components/editor/ChapterEditor.tsx:1614` |
-| `chapter.expand` | `src/components/editor/ChapterEditor.tsx:1594` |
-| `chapter.memory` | `src/components/editor/ChapterEditor.tsx:1081`<br/>`src/components/editor/ChapterEditor.tsx:2407` |
-| `chapter.organize` | `src/components/editor/ChapterEditor.tsx:1740`<br/>`src/components/editor/ChapterEditor.tsx:2632` |
-| `chapter.polish` | `src/components/editor/ChapterEditor.tsx:1586` |
+| `chapter.deai` | `src/components/editor/ChapterEditor.tsx:1686` |
+| `chapter.expand` | `src/components/editor/ChapterEditor.tsx:1666` |
+| `chapter.memory` | `src/components/editor/ChapterEditor.tsx:1135`<br/>`src/components/editor/ChapterEditor.tsx:2481` |
+| `chapter.organize` | `src/components/editor/ChapterEditor.tsx:1812`<br/>`src/components/editor/ChapterEditor.tsx:2726` |
+| `chapter.polish` | `src/components/editor/ChapterEditor.tsx:1658` |
 | `chapter.toolbar` | `src/lib/agent/run/selection-edit-durable.ts:567` |
 | `codex.extract` | `src/lib/agent/run/codex-extraction-durable.ts:627` |
 | `cultivation.progress` | `src/lib/agent/run/cultivation-progress-extraction-durable.ts:558` |
 | `detail.chapter-planning` | `src/lib/node-authoring/domain-execution.ts:372` |
 | `detail.scene` | `src/lib/ai/batch-detail-runner.ts:198` |
 | `emotion.beat` | `src/lib/agent/run/emotion-beat-durable.ts:396` |
-| `eval.h17.compression` | `src/components/settings/HarnessEvalPanel.tsx:120` |
-| `eval.h17.generation` | `src/components/settings/HarnessEvalPanel.tsx:121` |
-| `eval.h4.verifier` | `src/components/settings/HarnessEvalPanel.tsx:150`<br/>`src/components/settings/HarnessEvalPanel.tsx:189` |
+| `eval.h17.compression` | `src/components/settings/HarnessEvalPanel.tsx:111` |
+| `eval.h17.generation` | `src/components/settings/HarnessEvalPanel.tsx:112` |
+| `eval.h4.verifier` | `src/components/settings/HarnessEvalPanel.tsx:141`<br/>`src/components/settings/HarnessEvalPanel.tsx:180` |
 | `foreshadow.suggest` | `src/lib/agent/run/foreshadow-suggestions-durable.ts:569` |
 | `geography.concept-map` | `src/components/geography/GeographyPanel.tsx:136` |
 | `geography.world-map` | `src/lib/agent/run/world-map-config-durable.ts:362` |
@@ -268,7 +268,7 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 | `review.anti-ai` | `src/components/editor/ReviewPanel.tsx:113` |
 | `review.quality` | `src/components/editor/ReviewPanel.tsx:105` |
 | `review.readability` | `src/components/editor/ReviewPanel.tsx:122` |
-| `review.revise` | `src/components/editor/ChapterEditor.tsx:1630` |
+| `review.revise` | `src/components/editor/ChapterEditor.tsx:1702` |
 | `scene.verify` | `src/components/scene/SceneVerifyPanel.tsx:84` |
 | `simulation.npc-evolution` | `src/components/simulation/SimulationRuntimePanel.tsx:521` |
 | `simulation.ttrpg-encounter` | `src/components/simulation/SimulationRuntimePanel.tsx:590` |
@@ -315,4 +315,4 @@ AI 输出经 `adopt({ target, data })` 写回,只有这里登记的字段可写(
 
 ---
 
-生成时间基准:commit `3ccd5de`
+生成时间基准:commit `6452509`

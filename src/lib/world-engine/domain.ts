@@ -40,8 +40,14 @@ export interface RuntimeProjection {
 
 export interface WorldDomainSummary {
   key: WorldDomainArea
+  /** Legacy canonical label; kept for compatibility and as render-time missing-key fallback. */
   label: string
+  /** Legacy canonical description; kept for compatibility and as render-time missing-key fallback. */
   description: string
+  /** Stable worldview-ns key; resolved only at render time via useDomainT('worldview'). */
+  labelKey: string
+  /** Stable worldview-ns key; resolved only at render time via useDomainT('worldview'). */
+  descriptionKey: string
   tableCount: number
   activeTableCount: number
   rowCount: number
@@ -55,40 +61,60 @@ export interface WorldTableSummary {
   rowCount: number
 }
 
-const DOMAIN_DEFINITIONS: ReadonlyArray<{
+/**
+ * 世界五域显示元数据的单一事实源。
+ *
+ * label/description 是 legacy canonical 字段（兼容保留，兼作渲染时缺 key 回退）；
+ * labelKey/descriptionKey 是 worldview 命名空间的稳定键，只由组件在渲染时经
+ * useDomainT('worldview') 解析。投影加载阶段绝不解析翻译，翻译文案也绝不进入
+ * 投影数据或任何持久化内容。
+ */
+export const DOMAIN_DEFINITIONS: ReadonlyArray<{
   key: WorldDomainArea
   label: string
   description: string
+  labelKey: string
+  descriptionKey: string
   requiredTables: readonly string[]
 }> = [
   {
     key: 'foundation',
     label: '世界基础 Canon',
     description: '规则、起源、自然、人文、空间、历史与能力体系。',
+    labelKey: 'worldEngine.domainDefinitions.foundation.label',
+    descriptionKey: 'worldEngine.domainDefinitions.foundation.description',
     requiredTables: ['worldviews', 'worldRulesProfiles'],
   },
   {
     key: 'assets',
     label: '世界资产',
     description: '角色、关系、地点、物品、词条和可复用实体。',
+    labelKey: 'worldEngine.domainDefinitions.assets.label',
+    descriptionKey: 'worldEngine.domainDefinitions.assets.description',
     requiredTables: ['characters'],
   },
   {
     key: 'narrative',
     label: '叙事设计',
     description: '故事核心、主线、支线、故事弧、大纲、细纲和伏笔。',
+    labelKey: 'worldEngine.domainDefinitions.narrative.label',
+    descriptionKey: 'worldEngine.domainDefinitions.narrative.description',
     requiredTables: ['storyCores', 'outlineNodes'],
   },
   {
     key: 'structure',
     label: '世界结构',
     description: '单世界区域、多位面、多世界和通道关系。',
+    labelKey: 'worldEngine.domainDefinitions.structure.label',
+    descriptionKey: 'worldEngine.domainDefinitions.structure.description',
     requiredTables: ['worldGroups'],
   },
   {
     key: 'runtime',
     label: '状态与实例',
     description: '事件、状态机、检查点和独立运行实例。',
+    labelKey: 'worldEngine.domainDefinitions.runtime.label',
+    descriptionKey: 'worldEngine.domainDefinitions.runtime.description',
     requiredTables: ['simulationSessions'],
   },
 ]
@@ -130,6 +156,8 @@ function summarizeDomain(
     key: definition.key,
     label: definition.label,
     description: definition.description,
+    labelKey: definition.labelKey,
+    descriptionKey: definition.descriptionKey,
     tableCount: specs.length,
     activeTableCount,
     rowCount: tables.reduce((sum, table) => sum + table.rowCount, 0),
@@ -187,10 +215,13 @@ function createWorldProjection(
     kind: 'world',
     id: `project:${project.id}`,
     projectId: project.id,
-    code: project.worldCode ?? '待分配编号',
+    // 缺失的世界编号/简介只保留 canonical 空缺语义；显示用的占位文案由渲染位点经
+    // i18n 解析（ProductHubPage 的 productHub.worldUnassignedCode / worldDefaultDesc），
+    // 投影加载阶段绝不注入翻译值。
+    code: project.worldCode ?? '',
     version: project.worldVersion ?? 1,
     name: project.name,
-    description: project.description || '这个世界还没有写下简介。',
+    description: project.description ?? '',
     completeness: calculateCompleteness(domains),
     readiness: calculateReadiness(domains),
     domains,

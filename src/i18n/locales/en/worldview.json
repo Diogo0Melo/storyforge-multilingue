@@ -1013,6 +1013,28 @@
       "statEvents": "Event records",
       "statCheckpoints": "Checkpoints",
       "openRuntime": "Open state machines"
+    },
+    "domainDefinitions": {
+      "foundation": {
+        "label": "World Foundation Canon",
+        "description": "Rules, origins, nature, humanity, space, history and power systems."
+      },
+      "assets": {
+        "label": "World Assets",
+        "description": "Characters, relations, locations, items, codex entries and reusable entities."
+      },
+      "narrative": {
+        "label": "Narrative Design",
+        "description": "Story cores, main and side plots, story arcs, outlines, detailed outlines and foreshadowing."
+      },
+      "structure": {
+        "label": "World Structure",
+        "description": "Single-world regions, multiple planes, multiple worlds and passage relations."
+      },
+      "runtime": {
+        "label": "State & Instances",
+        "description": "Events, state machines, checkpoints and standalone runtime instances."
+      }
     }
   },
   "worldWork": {
@@ -1053,6 +1075,24 @@
     "stage2Title": "Freeze & publish",
     "stage2Description": "Revisions are comparable one by one; published versions are immutable",
     "sectionsLegend": "Release scope",
+    "releaseSections": {
+      "foundation": {
+        "label": "World Foundation",
+        "description": "Nature, culture, rules, locations, codex entries and world structure"
+      },
+      "characters": {
+        "label": "Character Assets",
+        "description": "Character profiles, relations and character roles in this work"
+      },
+      "narrative": {
+        "label": "Story Design",
+        "description": "Story cores, main and side plots, and selected narrative blueprints"
+      },
+      "outline": {
+        "label": "Outlines & Details",
+        "description": "Volume outlines, chapter outlines and scene-level details, excluding prose"
+      }
+    },
     "revisionLabel": "Revision name",
     "revisionPlaceholder": "e.g. World revision {{total}}",
     "freezeRevision": "Freeze revision",

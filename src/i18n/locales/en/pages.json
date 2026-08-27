@@ -11,7 +11,41 @@
     "propertiesToggleClose": "Close properties panel",
     "copilotFallback": "Loading AI chat copilot…",
     "defaultWorldName": "No world selected",
-    "singleWorldLabel": "Single world"
+    "singleWorldLabel": "Single world",
+    "impactHandoff": {
+      "title": "Impact items require manual handling",
+      "openedTarget": "Opened: {{target}}",
+      "targetRef": "{{table}}#{{recordId}} · Plan {{planHash}}",
+      "targetPending": "pending",
+      "statusCompleted": "Correction verified and replanned",
+      "statusPending": "Awaiting verification after save",
+      "verifying": "Verifying…",
+      "verifyAction": "Verify saved corrections",
+      "returnToSource": "Return to source chapter",
+      "dismiss": "Dismiss handoff notice",
+      "explanation": "This is a manual handoff bound to the current text, impact plan, and official target pre-state. Please save in the existing module through the original flow first, then verify the corrections; navigating or merely opening the record will not be considered complete.",
+      "errorFallback": "Failed to verify manual correction completion.",
+      "targetModule": {
+        "chaptersList": "Chapters & prose",
+        "factLibrary": "Fact library",
+        "stateTable": "State table",
+        "inventory": "Inventory",
+        "storyArc": "Story arc",
+        "storyTimeline": "Story timeline",
+        "relations": "Relations",
+        "characters": "Character design",
+        "worldRules": "Truth & fantasy",
+        "worldviewOrigin": "World origins",
+        "worldviewNatural": "Natural environment",
+        "worldviewHumanity": "Human environment",
+        "powerSystem": "Power system",
+        "storyDesign": "Story design",
+        "outline": "Outline",
+        "detailedOutline": "Detailed outline",
+        "rules": "Creative rules",
+        "references": "Project references"
+      }
+    }
   },
   "settingsRoute": {
     "backTitle": "Back to home",

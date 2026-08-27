@@ -1011,6 +1011,28 @@
       "statEvents": "事件记录",
       "statCheckpoints": "检查点",
       "openRuntime": "查看状态机"
+    },
+    "domainDefinitions": {
+      "foundation": {
+        "label": "世界基础 Canon",
+        "description": "规则、起源、自然、人文、空间、历史与能力体系。"
+      },
+      "assets": {
+        "label": "世界资产",
+        "description": "角色、关系、地点、物品、词条和可复用实体。"
+      },
+      "narrative": {
+        "label": "叙事设计",
+        "description": "故事核心、主线、支线、故事弧、大纲、细纲和伏笔。"
+      },
+      "structure": {
+        "label": "世界结构",
+        "description": "单世界区域、多位面、多世界和通道关系。"
+      },
+      "runtime": {
+        "label": "状态与实例",
+        "description": "事件、状态机、检查点和独立运行实例。"
+      }
     }
   },
   "worldWork": {
@@ -1051,6 +1073,24 @@
     "stage2Title": "冻结并发布",
     "stage2Description": "逐次修订可比较，发布版本不可变",
     "sectionsLegend": "发布范围",
+    "releaseSections": {
+      "foundation": {
+        "label": "世界基础",
+        "description": "自然、人文、规则、地点、词条与世界结构"
+      },
+      "characters": {
+        "label": "角色资产",
+        "description": "角色主档、关系与本作品角色作用"
+      },
+      "narrative": {
+        "label": "故事设计",
+        "description": "故事核心、主线支线与已选叙事蓝图"
+      },
+      "outline": {
+        "label": "大纲与细纲",
+        "description": "卷纲、章纲及场景级细纲，不包含正文"
+      }
+    },
     "revisionLabel": "修订名称",
     "revisionPlaceholder": "例如：世界修订 {{total}}",
     "freezeRevision": "冻结修订",

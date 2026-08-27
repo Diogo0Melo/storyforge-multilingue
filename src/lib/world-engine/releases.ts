@@ -14,15 +14,49 @@ import type { ProjectExportData } from '../export/json-export'
 import { deriveStrictExportProjectSnapshot } from '../export/registry-export'
 import { validateNarrativeModule } from '../narrative/blueprint'
 
+/**
+ * 发布分区显示元数据的单一事实源。
+ *
+ * label/description 是 legacy canonical 字段（兼容保留，兼作渲染时缺 key 回退）；
+ * labelKey/descriptionKey 是 worldview 命名空间 worldNarrative.releaseSections.*
+ * 下的稳定键，只由组件在渲染时经 useDomainT('worldview') 解析。发布清单、哈希与
+ * 表清单不依赖这些显示字段。
+ */
 export const WORLD_RELEASE_SECTIONS: ReadonlyArray<{
   key: WorldReleaseSection
   label: string
   description: string
+  labelKey: string
+  descriptionKey: string
 }> = [
-  { key: 'foundation', label: '世界基础', description: '自然、人文、规则、地点、词条与世界结构' },
-  { key: 'characters', label: '角色资产', description: '角色主档、关系与本作品角色作用' },
-  { key: 'narrative', label: '故事设计', description: '故事核心、主线支线与已选叙事蓝图' },
-  { key: 'outline', label: '大纲与细纲', description: '卷纲、章纲及场景级细纲，不包含正文' },
+  {
+    key: 'foundation',
+    label: '世界基础',
+    description: '自然、人文、规则、地点、词条与世界结构',
+    labelKey: 'worldNarrative.releaseSections.foundation.label',
+    descriptionKey: 'worldNarrative.releaseSections.foundation.description',
+  },
+  {
+    key: 'characters',
+    label: '角色资产',
+    description: '角色主档、关系与本作品角色作用',
+    labelKey: 'worldNarrative.releaseSections.characters.label',
+    descriptionKey: 'worldNarrative.releaseSections.characters.description',
+  },
+  {
+    key: 'narrative',
+    label: '故事设计',
+    description: '故事核心、主线支线与已选叙事蓝图',
+    labelKey: 'worldNarrative.releaseSections.narrative.label',
+    descriptionKey: 'worldNarrative.releaseSections.narrative.description',
+  },
+  {
+    key: 'outline',
+    label: '大纲与细纲',
+    description: '卷纲、章纲及场景级细纲，不包含正文',
+    labelKey: 'worldNarrative.releaseSections.outline.label',
+    descriptionKey: 'worldNarrative.releaseSections.outline.description',
+  },
 ]
 
 export function worldReleaseSectionTables(section: WorldReleaseSection): string[] {

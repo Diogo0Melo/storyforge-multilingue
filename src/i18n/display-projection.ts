@@ -43,7 +43,7 @@ import type {
   AdventureCheckOutcome,
   AdventureQuestStatus,
 } from '../lib/types/adventure'
-import type { SimulationSessionKind } from '../lib/types/simulation-runtime'
+import type { InteractionMemoryKind, SimulationSessionKind } from '../lib/types/simulation-runtime'
 // TEXTSIM/TEXTWORLD locale wave canonical sets.
 import type { SimulationNarrativeSimulationState } from '../lib/types/narrative-simulation'
 import type {
@@ -185,6 +185,16 @@ export const QUEST_STATUS_LABEL_KEYS: Record<SimulationTtrpgQuestStatus, string>
   paused: 'campaign.questStatusPaused',
   completed: 'campaign.questStatusCompleted',
   failed: 'campaign.questStatusFailed',
+}
+
+/** Character-interaction memory kinds (simulation ns → chatGame.memoryKind.*). */
+export const INTERACTION_MEMORY_KIND_LABEL_KEYS: Record<InteractionMemoryKind, string> = {
+  'scene-summary': 'chatGame.memoryKind.sceneSummary',
+  'key-memory': 'chatGame.memoryKind.keyMemory',
+  commitment: 'chatGame.memoryKind.commitment',
+  secret: 'chatGame.memoryKind.secret',
+  conflict: 'chatGame.memoryKind.conflict',
+  gift: 'chatGame.memoryKind.gift',
 }
 
 // ── node-authoring / node-flow ns · run history lines ─────────────────────

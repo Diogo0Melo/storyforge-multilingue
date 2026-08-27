@@ -11,7 +11,41 @@
     "propertiesToggleClose": "Fechar painel de propriedades",
     "copilotFallback": "Carregando copiloto de chat por IA…",
     "defaultWorldName": "Nenhum mundo selecionado",
-    "singleWorldLabel": "Mundo único"
+    "singleWorldLabel": "Mundo único",
+    "impactHandoff": {
+      "title": "Itens de impacto requerem tratamento manual",
+      "openedTarget": "Aberto: {{target}}",
+      "targetRef": "{{table}}#{{recordId}} · Plano {{planHash}}",
+      "targetPending": "pendente",
+      "statusCompleted": "Correção verificada e replanejada",
+      "statusPending": "Aguardando verificação após salvar",
+      "verifying": "Verificando…",
+      "verifyAction": "Verificar correções salvas",
+      "returnToSource": "Retornar ao capítulo de origem",
+      "dismiss": "Descartar aviso de handoff",
+      "explanation": "Este é um handoff manual vinculado ao texto atual, ao plano de impacto e ao pre-state oficial do alvo. Salve primeiro no módulo existente pelo fluxo original e depois verifique as correções; apenas navegar ou abrir o registro não será considerado como concluído.",
+      "errorFallback": "Falha ao verificar a conclusão da correção manual.",
+      "targetModule": {
+        "chaptersList": "Capítulos e prosa",
+        "factLibrary": "Biblioteca de fatos",
+        "stateTable": "Tabela de estados",
+        "inventory": "Inventário",
+        "storyArc": "Arco de história",
+        "storyTimeline": "Linha do tempo da história",
+        "relations": "Rede de relações",
+        "characters": "Design de personagens",
+        "worldRules": "Verdade e fantasia",
+        "worldviewOrigin": "Origens do mundo",
+        "worldviewNatural": "Ambiente natural",
+        "worldviewHumanity": "Ambiente humano",
+        "powerSystem": "Sistema de poder",
+        "storyDesign": "Design da história",
+        "outline": "Esboço",
+        "detailedOutline": "Esboço detalhado",
+        "rules": "Regras criativas",
+        "references": "Referências do projeto"
+      }
+    }
   },
   "settingsRoute": {
     "backTitle": "Voltar ao início",

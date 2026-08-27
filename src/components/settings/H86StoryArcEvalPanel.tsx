@@ -23,8 +23,37 @@ import {
   getAIConfigPresetSessionApiKey,
   useAIConfigStore,
 } from '../../stores/ai-config'
+import { useDomainT } from '../../i18n'
 import { useDialog } from '../shared/Dialog'
 import H86HumanReviewPanel from './H86HumanReviewPanel'
+
+/**
+ * Reactive localized error: stores the i18n key + params so the visible
+ * message re-translates on locale switch. Raw engine/provider errors stay raw.
+ */
+interface LocalizedMessage { key: string; params?: Record<string, unknown> }
+type PanelError = LocalizedMessage | { raw: string } | null
+
+class LocalizedEvalError extends Error {
+  readonly key: string
+  readonly params?: Record<string, unknown>
+  constructor(key: string, params?: Record<string, unknown>) {
+    super(key)
+    this.name = 'LocalizedEvalError'
+    this.key = key
+    this.params = params
+  }
+}
+
+function toPanelError(cause: unknown): PanelError {
+  if (cause instanceof LocalizedEvalError) return { key: cause.key, params: cause.params }
+  return { raw: cause instanceof Error ? cause.message : String(cause) }
+}
+
+function renderPanelError(t: (key: string, opts?: Record<string, unknown>) => string, error: PanelError): string {
+  if (!error) return ''
+  return 'raw' in error ? error.raw : t(error.key, error.params)
+}
 
 function downloadJson(raw: string, filename: string): void {
   const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }))
@@ -71,6 +100,8 @@ function defaultPresetId(presets: AIConfigPreset[], pattern: RegExp, exclude?: s
 }
 
 export default function H86StoryArcEvalPanel() {
+  const { t, lang } = useDomainT('settings')
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const currentConfig = useAIConfigStore(state => state.config)
   const presets = useAIConfigStore(state => state.presets)
   const dialog = useDialog()
@@ -78,7 +109,7 @@ export default function H86StoryArcEvalPanel() {
   const [verifierPresetId, setVerifierPresetId] = useState('')
   const [checkpoint, setCheckpoint] = useState<H86CheckpointV1 | null>(null)
   const [running, setRunning] = useState(false)
-  const [error, setError] = useState('')
+  const [error, setError] = useState<PanelError>(null)
   const [copied, setCopied] = useState(false)
   const [exportDraft, setExportDraft] = useState('')
   const fileInputRef = useRef<HTMLInputElement | null>(null)
@@ -93,7 +124,7 @@ export default function H86StoryArcEvalPanel() {
     void loadH86CheckpointV1().then(value => {
       if (active) setCheckpoint(value)
     }).catch(cause => {
-      if (active) setError(cause instanceof Error ? cause.message : String(cause))
+      if (active) setError(toPanelError(cause))
     })
     return () => { active = false }
   }, [])
@@ -112,22 +143,22 @@ export default function H86StoryArcEvalPanel() {
 
   const run = async () => {
     setRunning(true)
-    setError('')
+    setError(null)
     setCopied(false)
     try {
-      if (!generatorConfig || !verifierConfig) throw new Error('请先选择 generator 与独立 verifier 预设')
+      if (!generatorConfig || !verifierConfig) throw new LocalizedEvalError('evalHarness.selectPresets')
       if (!isAIConfigReady(generatorConfig) || !isAIConfigReady(verifierConfig)) {
-        throw new Error('所选预设缺少可用 API Key、Base URL 或模型')
+        throw new LocalizedEvalError('evalHarness.presetIncomplete')
       }
       if (generatorConfig.provider === verifierConfig.provider && generatorConfig.model === verifierConfig.model) {
-        throw new Error('generator 与 verifier 必须使用不同 provider/model 身份')
+        throw new LocalizedEvalError('evalHarness.distinctIdentityRequired')
       }
       if (checkpoint && (
         checkpoint.generator.provider !== generatorConfig.provider
         || checkpoint.generator.model !== generatorConfig.model
         || checkpoint.verifier.provider !== verifierConfig.provider
         || checkpoint.verifier.model !== verifierConfig.model
-      )) throw new Error(`请切回 checkpoint 冻结身份再继续：${frozenIdentity}`)
+      )) throw new LocalizedEvalError('evalHarness.h86.switchBackToFrozen', { identity: frozenIdentity ?? '' })
       await cleanupStrandedH86WorkspacesV1()
       const next = await runH86StoryArcMainPathEvalV1({
         runId: checkpoint?.runId ?? `h86-story-arc-${crypto.randomUUID()}`,
@@ -151,7 +182,7 @@ export default function H86StoryArcEvalPanel() {
       })
       setCheckpoint(next)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError(toPanelError(cause))
     } finally {
       setRunning(false)
     }
@@ -159,10 +190,10 @@ export default function H86StoryArcEvalPanel() {
 
   const reset = async () => {
     const confirmed = await dialog.confirm({
-      title: '清除 H86 checkpoint？',
-      message: '请先导出需要保留的真实调用证据。清除后不能恢复。',
-      confirmText: '清除',
-      cancelText: '保留',
+      title: t('evalHarness.h86.clearConfirmTitle'),
+      message: t('evalHarness.h86.clearConfirmMessage'),
+      confirmText: t('evalHarness.actions.clear'),
+      cancelText: t('evalHarness.actions.keep'),
       tone: 'danger',
     })
     if (!confirmed) return
@@ -171,7 +202,7 @@ export default function H86StoryArcEvalPanel() {
     await cleanupStrandedH86WorkspacesV1()
     setCheckpoint(null)
     setExportDraft('')
-    setError('')
+    setError(null)
   }
 
   const exportCheckpoint = async (mode: 'download' | 'copy' | 'readonly') => {
@@ -187,7 +218,7 @@ export default function H86StoryArcEvalPanel() {
         setExportDraft(raw)
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError(toPanelError(cause))
     }
   }
 
@@ -196,9 +227,9 @@ export default function H86StoryArcEvalPanel() {
       const imported = await importH86CheckpointV1(await file.text())
       await persistH86CheckpointV1(imported)
       setCheckpoint(imported)
-      setError('')
+      setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError(toPanelError(cause))
     }
   }
 
@@ -210,9 +241,9 @@ export default function H86StoryArcEvalPanel() {
     <section data-testid="h86-story-arc-eval" className="border-t border-border pt-3">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h4 className="text-xs font-medium text-text-primary">H86 真实故事线主路径 A/B</h4>
+          <h4 className="text-xs font-medium text-text-primary">{t('evalHarness.h86.title')}</h4>
           <p className="mt-1 text-[10px] text-text-muted">
-            6 组合成 development · 旧直连 vs outline.story-arcs durable · 同 generator / 独立 verifier
+            {t('evalHarness.h86.subtitle')}
           </p>
         </div>
         <button
@@ -223,13 +254,15 @@ export default function H86StoryArcEvalPanel() {
           className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1.5 text-xs text-emerald-400 hover:bg-emerald-500/20 disabled:opacity-40"
         >
           {running ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-          {running ? `已尝试 ${attemptedSteps(checkpoint)}/24` : checkpoint && checkpoint.status !== 'completed' ? '继续' : '运行'}
+          {running
+            ? t('evalHarness.h86.attemptedProgress', { steps: attemptedSteps(checkpoint) })
+            : checkpoint && checkpoint.status !== 'completed' ? t('evalHarness.actions.resume') : t('evalHarness.actions.run')}
         </button>
       </div>
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <label className="text-[10px] text-text-muted">
-          Generator 预设
+          {t('evalHarness.generatorPreset')}
           <select
             data-testid="h86-generator-preset"
             value={generatorPresetId}
@@ -237,12 +270,12 @@ export default function H86StoryArcEvalPanel() {
             onChange={event => setGeneratorPresetId(event.target.value)}
             className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-xs text-text-primary"
           >
-            <option value="">请选择</option>
+            <option value="">{t('evalHarness.actions.selectOption')}</option>
             {presets.map(item => <option key={item.id} value={item.id}>{item.name} · {item.config.model}</option>)}
           </select>
         </label>
         <label className="text-[10px] text-text-muted">
-          独立 Verifier 预设
+          {t('evalHarness.independentVerifierPreset')}
           <select
             data-testid="h86-verifier-preset"
             value={verifierPresetId}
@@ -250,7 +283,7 @@ export default function H86StoryArcEvalPanel() {
             onChange={event => setVerifierPresetId(event.target.value)}
             className="mt-1 w-full rounded border border-border bg-bg-base px-2 py-1.5 text-xs text-text-primary"
           >
-            <option value="">请选择</option>
+            <option value="">{t('evalHarness.actions.selectOption')}</option>
             {presets.map(item => <option key={item.id} value={item.id}>{item.name} · {item.config.model}</option>)}
           </select>
         </label>
@@ -259,20 +292,20 @@ export default function H86StoryArcEvalPanel() {
       {checkpoint && (
         <div className="mt-3 rounded-md border border-border bg-bg-base p-2 text-[11px] text-text-secondary">
           <div className="flex flex-wrap gap-x-3 gap-y-1">
-            <span>状态 {checkpoint.status}</span>
-            <span>已尝试 {attemptedSteps(checkpoint)}/24</span>
-            <span>成功阶段 {successfulSteps(checkpoint)}/24</span>
+            <span>{t('evalHarness.statusLabel', { value: t(`evalHarness.status.${checkpoint.status}`) })}</span>
+            <span>{t('evalHarness.h86.attempted', { steps: attemptedSteps(checkpoint) })}</span>
+            <span>{t('evalHarness.h86.successfulStages', { steps: successfulSteps(checkpoint) })}</span>
             <span>{frozenIdentity}</span>
           </div>
           {aggregate && (
             <div className="mt-2 overflow-x-auto">
               <table className="w-full text-left">
                 <thead className="text-text-muted">
-                  <tr><th>方案</th><th>完成</th><th>事实</th><th>语义</th><th>p95</th><th>tokens</th><th>成本</th></tr>
+                  <tr><th>{t('evalHarness.h86.colVariant')}</th><th>{t('evalHarness.h86.colCompletion')}</th><th>{t('evalHarness.h86.colFacts')}</th><th>{t('evalHarness.h86.colSemantic')}</th><th>p95</th><th>tokens</th><th>{t('evalHarness.h86.colCost')}</th></tr>
                 </thead>
                 <tbody>
                   <tr className="border-t border-border/50">
-                    <td>旧直连</td>
+                    <td>{t('evalHarness.legacyDirect')}</td>
                     <td>{(aggregate.legacyDirect.completionRate * 100).toFixed(0)}%</td>
                     <td>{(aggregate.legacyDirect.requiredFactCoverage * 100).toFixed(1)}%</td>
                     <td>{(aggregate.legacyDirect.semanticScore * 100).toFixed(1)}%</td>
@@ -295,8 +328,10 @@ export default function H86StoryArcEvalPanel() {
           )}
           {gate && (
             <p data-testid="h86-machine-gate" className={`mt-2 ${gate.passed ? 'text-success' : 'text-error'}`}>
-              机器门：{gate.passed ? 'PASS' : `FAIL · ${gate.failures.join(', ')}`}
-              {' '}· 始终还需独立人工盲评，不等于生产发布门
+              {t('evalHarness.machineGate', {
+                result: gate.passed ? 'PASS' : `FAIL · ${listFormat.format(gate.failures)}`,
+              })}
+              {' '}· {t('evalHarness.h86.machineGateNote')}
             </p>
           )}
           <p className="mt-2 break-all font-mono text-[10px] text-text-muted">
@@ -304,16 +339,16 @@ export default function H86StoryArcEvalPanel() {
           </p>
           <div className="mt-2 flex flex-wrap gap-2">
             <button type="button" onClick={() => { void exportCheckpoint('download') }} className="inline-flex items-center gap-1 text-accent">
-              <Download className="h-3 w-3" />下载
+              <Download className="h-3 w-3" />{t('evalHarness.actions.download')}
             </button>
             <button type="button" onClick={() => { void exportCheckpoint('copy') }} className="inline-flex items-center gap-1 text-accent">
-              <ClipboardCopy className="h-3 w-3" />{copied ? '已复制' : '复制'}
+              <ClipboardCopy className="h-3 w-3" />{copied ? t('evalHarness.actions.copied') : t('evalHarness.actions.copy')}
             </button>
             <button type="button" onClick={() => { void exportCheckpoint('readonly') }} className="inline-flex items-center gap-1 text-accent">
-              <FileJson className="h-3 w-3" />只读 JSON
+              <FileJson className="h-3 w-3" />{t('evalHarness.actions.readOnlyJson')}
             </button>
             <button type="button" onClick={() => { void reset() }} className="inline-flex items-center gap-1 text-error">
-              <RotateCcw className="h-3 w-3" />清除
+              <RotateCcw className="h-3 w-3" />{t('evalHarness.actions.clear')}
             </button>
           </div>
         </div>
@@ -336,18 +371,18 @@ export default function H86StoryArcEvalPanel() {
         disabled={running}
         className="mt-2 inline-flex items-center gap-1 text-[10px] text-text-muted hover:text-accent disabled:opacity-40"
       >
-        <Upload className="h-3 w-3" />导入 H86 checkpoint
+        <Upload className="h-3 w-3" />{t('evalHarness.h86.importCheckpoint')}
       </button>
       {exportDraft && (
         <textarea
           readOnly
-          aria-label="H86 checkpoint JSON"
+          aria-label={t('evalHarness.checkpointJsonAria', { label: 'H86' })}
           value={exportDraft}
           className="mt-2 h-28 w-full resize-y rounded border border-border bg-bg-base p-2 font-mono text-[10px] text-text-secondary"
         />
       )}
       <H86HumanReviewPanel checkpoint={checkpoint} />
-      {error && <p data-testid="h86-error" className="mt-2 text-[11px] text-error">{error}</p>}
+      {error && <p data-testid="h86-error" className="mt-2 text-[11px] text-error">{renderPanelError(t, error)}</p>}
     </section>
   )
 }

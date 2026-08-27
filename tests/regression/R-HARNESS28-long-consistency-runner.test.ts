@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { hashCanonicalValue } from '../../src/lib/agent/run/hash'
 import {
   H4_LONG_CONSISTENCY_FIXTURES_V1,
+  LongConsistencyIdentityMismatchError,
   compareH4ConsistencyErrorDensityV1,
   exportH4LongConsistencyRunCheckpointV1,
   exportH4LongConsistencySealedScoreV1,
@@ -88,6 +89,21 @@ function runnerInput(overrides: Partial<Parameters<typeof runH4LongConsistencyVe
 }
 
 describe('R-HARNESS28 · H4 verifier runner, recovery and sealed scoring', { timeout: 20_000 }, () => {
+  it('rethrows identity mismatch before recording a verifier failure or checkpoint', async () => {
+    const identityError = new LongConsistencyIdentityMismatchError('verifier')
+    const checkpoints: H4LongConsistencyRunCheckpointV1[] = []
+
+    await expect(runH4LongConsistencyVerifierV1(runnerInput({
+      fixtureIds: ['h4-held-01'],
+      call: async () => { throw identityError },
+      onCheckpoint: checkpoint => { checkpoints.push(checkpoint) },
+    }))).rejects.toBe(identityError)
+
+    expect(checkpoints).toHaveLength(1)
+    expect(checkpoints[0].failures).toEqual([])
+    expect(checkpoints[0].attempts[0].count).toBe(0)
+  })
+
   it('runs all held-out sources through an independent verifier and exposes only aggregate sealed scores', async () => {
     const visibleCalls: string[] = []
     const checkpoint = await runH4LongConsistencyVerifierV1(runnerInput({

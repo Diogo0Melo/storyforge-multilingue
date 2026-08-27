@@ -14,15 +14,32 @@ import {
 } from '../../lib/evals/agent-harness/story-arc-human-review'
 import type { H86CheckpointV1 } from '../../lib/evals/agent-harness/story-arc-main-path'
 import { H86_STORY_ARC_DEVELOPMENT_FIXTURES_V1 } from '../../lib/evals/agent-harness/story-arc-main-path-fixtures'
+import { useDomainT } from '../../i18n'
 import { useDialog } from '../shared/Dialog'
+
+/**
+ * Reactive localized error: stores the i18n key + params so the visible
+ * message re-translates on locale switch. Raw engine/provider errors stay raw.
+ */
+interface LocalizedMessage { key: string; params?: Record<string, unknown> }
+type PanelError = LocalizedMessage | { raw: string } | null
+
+function toPanelError(cause: unknown): PanelError {
+  return { raw: cause instanceof Error ? cause.message : String(cause) }
+}
+
+function renderPanelError(t: (key: string, opts?: Record<string, unknown>) => string, error: PanelError): string {
+  if (!error) return ''
+  return 'raw' in error ? error.raw : t(error.key, error.params)
+}
 
 type ScoreField = 'constraintFaithfulness' | 'causalCoherence' | 'specificity' | 'authorUsability'
 
-const SCORE_FIELDS: Array<{ key: ScoreField; label: string }> = [
-  { key: 'constraintFaithfulness', label: '约束遵守' },
-  { key: 'causalCoherence', label: '因果连贯' },
-  { key: 'specificity', label: '具体程度' },
-  { key: 'authorUsability', label: '作者可用性' },
+const SCORE_FIELDS: ScoreField[] = [
+  'constraintFaithfulness',
+  'causalCoherence',
+  'specificity',
+  'authorUsability',
 ]
 
 function downloadJson(raw: string, filename: string): void {
@@ -55,40 +72,44 @@ function CandidateEditor(props: {
   value: H86HumanCandidateReviewV1
   onChange: (value: H86HumanCandidateReviewV1) => void
 }) {
+  const { t } = useDomainT('settings')
   return (
     <div className="rounded-md border border-border bg-bg-base p-2">
-      <h6 className="text-xs font-medium text-text-primary">候选 {props.label}</h6>
+      <h6 className="text-xs font-medium text-text-primary">{t('evalHarness.candidateLabel', { label: props.label })}</h6>
       <pre className="mt-2 max-h-64 overflow-auto whitespace-pre-wrap rounded bg-bg-elevated p-2 text-[10px] text-text-secondary">
         {props.output}
       </pre>
       <div className="mt-2 grid grid-cols-2 gap-2">
-        {SCORE_FIELDS.map(field => (
-          <label key={field.key} className="text-[10px] text-text-muted">
-            {field.label}
-            <select
-              aria-label={`候选 ${props.label} ${field.label}`}
-              value={props.value[field.key]}
-              onChange={event => props.onChange({ ...props.value, [field.key]: Number(event.target.value) })}
-              className="mt-1 w-full rounded border border-border bg-bg-elevated px-2 py-1 text-xs text-text-primary"
-            >
-              {[1, 2, 3, 4, 5].map(score => <option key={score} value={score}>{score}</option>)}
-            </select>
-          </label>
-        ))}
+        {SCORE_FIELDS.map(field => {
+          const fieldLabel = t(`evalHarness.h86Review.score.${field}`)
+          return (
+            <label key={field} className="text-[10px] text-text-muted">
+              {fieldLabel}
+              <select
+                aria-label={t('evalHarness.h86Review.scoreAria', { candidate: props.label, field: fieldLabel })}
+                value={props.value[field]}
+                onChange={event => props.onChange({ ...props.value, [field]: Number(event.target.value) })}
+                className="mt-1 w-full rounded border border-border bg-bg-elevated px-2 py-1 text-xs text-text-primary"
+              >
+                {[1, 2, 3, 4, 5].map(score => <option key={score} value={score}>{score}</option>)}
+              </select>
+            </label>
+          )
+        })}
       </div>
       <label className="mt-2 block text-[10px] text-text-muted">
-        达到可采纳状态所需修订稿
+        {t('evalHarness.h86Review.editedOutputLabel')}
         <textarea
-          aria-label={`候选 ${props.label} 修订稿`}
+          aria-label={t('evalHarness.h86Review.editedOutputAria', { candidate: props.label })}
           value={props.value.editedOutput}
           onChange={event => props.onChange({ ...props.value, editedOutput: event.target.value })}
           className="mt-1 h-36 w-full resize-y rounded border border-border bg-bg-elevated p-2 font-mono text-[10px] text-text-secondary"
         />
       </label>
       <label className="mt-2 block text-[10px] text-text-muted">
-        备注（可空）
+        {t('evalHarness.h86Review.notesLabel')}
         <textarea
-          aria-label={`候选 ${props.label} 备注`}
+          aria-label={t('evalHarness.h86Review.notesAria', { candidate: props.label })}
           value={props.value.notes}
           maxLength={2_000}
           onChange={event => props.onChange({ ...props.value, notes: event.target.value })}
@@ -100,13 +121,15 @@ function CandidateEditor(props: {
 }
 
 export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86CheckpointV1 | null }) {
+  const { t, lang } = useDomainT('settings')
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const dialog = useDialog()
   const [record, setRecord] = useState<H86HumanReviewRecordV1 | null>(null)
   const [reviewer, setReviewer] = useState('')
   const [reviewA, setReviewA] = useState<H86HumanCandidateReviewV1>(() => initialReview('', null))
   const [reviewB, setReviewB] = useState<H86HumanCandidateReviewV1>(() => initialReview('', null))
   const [preference, setPreference] = useState<'A' | 'B' | 'tie'>('tie')
-  const [error, setError] = useState('')
+  const [error, setError] = useState<PanelError>(null)
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -118,13 +141,13 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
     void loadH86HumanReviewV1().then(value => {
       if (!active || !value) return
       if (value.checkpointHash !== checkpoint.checkpointHash) {
-        setError('本机盲评记录属于另一份 H86 checkpoint；请先导出或清除旧盲评。')
+        setError({ key: 'evalHarness.h86Review.checkpointMismatch' })
         return
       }
       setRecord(value)
       setReviewer(value.reviewer)
     }).catch(cause => {
-      if (active) setError(cause instanceof Error ? cause.message : String(cause))
+      if (active) setError(toPanelError(cause))
     })
     return () => { active = false }
   }, [checkpoint?.checkpointHash, checkpoint?.status])
@@ -146,13 +169,13 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
   const start = async () => {
     if (!checkpoint || checkpoint.status !== 'completed') return
     setSaving(true)
-    setError('')
+    setError(null)
     try {
       const next = await createH86HumanReviewV1({ checkpoint, reviewer })
       await persistH86HumanReviewV1(next)
       setRecord(next)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError(toPanelError(cause))
     } finally {
       setSaving(false)
     }
@@ -161,7 +184,7 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
   const saveCurrent = async () => {
     if (!record || !currentItem) return
     setSaving(true)
-    setError('')
+    setError(null)
     try {
       const next = await updateH86HumanReviewItemV1({
         record,
@@ -173,7 +196,7 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
       await persistH86HumanReviewV1(next)
       setRecord(next)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError(toPanelError(cause))
     } finally {
       setSaving(false)
     }
@@ -181,17 +204,17 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
 
   const clearReview = async () => {
     const confirmed = await dialog.confirm({
-      title: '清除 H86 人工盲评？',
-      message: '请先下载已完成的盲评证据。清除后不能恢复。',
-      confirmText: '清除',
-      cancelText: '保留',
+      title: t('evalHarness.h86Review.clearConfirmTitle'),
+      message: t('evalHarness.h86Review.clearConfirmMessage'),
+      confirmText: t('evalHarness.actions.clear'),
+      cancelText: t('evalHarness.actions.keep'),
       tone: 'danger',
     })
     if (!confirmed) return
     clearH86HumanReviewV1()
     setRecord(null)
     setReviewer('')
-    setError('')
+    setError(null)
   }
 
   const exportReview = async () => {
@@ -202,7 +225,7 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
         `storyforge-h86-human-review-${record.checkpointHash.slice(0, 12)}.json`,
       )
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError(toPanelError(cause))
     }
   }
 
@@ -213,35 +236,35 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
           <h5 className="flex items-center gap-1.5 text-xs font-medium text-text-primary">
-            <ShieldCheck className="h-3.5 w-3.5 text-accent" />独立人工 A/B 盲评
+            <ShieldCheck className="h-3.5 w-3.5 text-accent" />{t('evalHarness.h86Review.title')}
           </h5>
           <p className="mt-1 text-[10px] text-text-muted">
-            UI 仅显示候选 A/B；请由未参与实现的人类复核者评分和修订。完成前不揭示路径映射。
+            {t('evalHarness.h86Review.description')}
           </p>
         </div>
         {record && (
           <span data-testid="h86-human-progress" className="text-[10px] text-text-muted">
-            {record.status === 'completed' ? '已完成' : `${reviewedCount}/6`}
+            {record.status === 'completed' ? t('evalHarness.status.completed') : `${reviewedCount}/6`}
           </span>
         )}
       </div>
 
       {!record && !canStartReview && (
         <p data-testid="h86-human-unavailable" className="mt-3 text-[11px] text-warning">
-          本 checkpoint 没有 6 组成对成功输出，不能开始盲评；请先修复协议并完成新的配对运行。
+          {t('evalHarness.h86Review.unavailable')}
         </p>
       )}
 
       {!record && canStartReview && (
         <div className="mt-3 flex flex-wrap items-end gap-2">
           <label className="min-w-56 flex-1 text-[10px] text-text-muted">
-            复核者标识
+            {t('evalHarness.h86Review.reviewerLabel')}
             <input
               data-testid="h86-reviewer"
               value={reviewer}
               maxLength={80}
               onChange={event => setReviewer(event.target.value)}
-              placeholder="例如：OPC-reviewer-01"
+              placeholder={t('evalHarness.h86Review.reviewerPlaceholder')}
               className="mt-1 w-full rounded border border-border bg-bg-elevated px-2 py-1.5 text-xs text-text-primary"
             />
           </label>
@@ -252,11 +275,11 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
             onClick={() => { void start() }}
             className="rounded bg-accent/10 px-2.5 py-1.5 text-xs text-accent disabled:opacity-40"
           >
-            开始 6 例盲评
+            {t('evalHarness.h86Review.start')}
           </button>
           {error && (
             <button type="button" onClick={() => { void clearReview() }} className="inline-flex items-center gap-1 text-[10px] text-error">
-              <Trash2 className="h-3 w-3" />清除旧盲评
+              <Trash2 className="h-3 w-3" />{t('evalHarness.h86Review.clearOld')}
             </button>
           )}
         </div>
@@ -266,10 +289,14 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
         <div className="mt-3" data-testid="h86-human-current-case">
           <div className="rounded-md bg-bg-elevated p-2 text-[10px] text-text-secondary">
             <p className="font-medium text-text-primary">{fixture.projectName} · {fixture.id}</p>
-            <p className="mt-1">作者请求：{fixture.authorRequest}</p>
-            <p className="mt-1">世界硬规则：{fixture.worldRules}</p>
-            <p className="mt-1">必须满足：{fixture.requiredFacts.map(item => item.description).join('；')}</p>
-            <p className="mt-1">禁止：{fixture.forbiddenFacts.join('；')}</p>
+            <p className="mt-1">{t('evalHarness.h86Review.authorRequest', { value: fixture.authorRequest })}</p>
+            <p className="mt-1">{t('evalHarness.h86Review.worldRules', { value: fixture.worldRules })}</p>
+            <p className="mt-1">{t('evalHarness.requiredFactsPrefix', {
+              value: listFormat.format(fixture.requiredFacts.map(item => item.description)),
+            })}</p>
+            <p className="mt-1">{t('evalHarness.h86Review.forbiddenFacts', {
+              value: listFormat.format(fixture.forbiddenFacts),
+            })}</p>
           </div>
           <div className="mt-2 grid gap-2 lg:grid-cols-2">
             <CandidateEditor label="A" output={currentItem.candidateA} value={reviewA} onChange={setReviewA} />
@@ -277,16 +304,16 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
           </div>
           <div className="mt-2 flex flex-wrap items-end gap-2">
             <label className="text-[10px] text-text-muted">
-              本例偏好
+              {t('evalHarness.h86Review.casePreference')}
               <select
-                aria-label="本例偏好"
+                aria-label={t('evalHarness.h86Review.casePreference')}
                 value={preference}
                 onChange={event => setPreference(event.target.value as 'A' | 'B' | 'tie')}
                 className="ml-2 rounded border border-border bg-bg-elevated px-2 py-1 text-xs text-text-primary"
               >
-                <option value="A">候选 A</option>
-                <option value="B">候选 B</option>
-                <option value="tie">平局</option>
+                <option value="A">{t('evalHarness.candidateLabel', { label: 'A' })}</option>
+                <option value="B">{t('evalHarness.candidateLabel', { label: 'B' })}</option>
+                <option value="tie">{t('evalHarness.tie')}</option>
               </select>
             </label>
             <button
@@ -296,7 +323,7 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
               onClick={() => { void saveCurrent() }}
               className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-2.5 py-1.5 text-xs text-emerald-400 disabled:opacity-40"
             >
-              <Save className="h-3.5 w-3.5" />保存并进入下一例
+              <Save className="h-3.5 w-3.5" />{t('evalHarness.actions.saveAndNext')}
             </button>
           </div>
         </div>
@@ -305,15 +332,17 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
       {record?.status === 'completed' && record.aggregate && record.gate && (
         <div className="mt-3" data-testid="h86-human-result">
           <p className={record.gate.passed ? 'text-[11px] text-success' : 'text-[11px] text-error'}>
-            人工门：{record.gate.passed ? 'PASS' : `FAIL · ${record.gate.failures.join(', ')}`}
-            {' '}· 该 development 证据仍不授权生产发布
+            {t('evalHarness.h86Review.humanGate', {
+              result: record.gate.passed ? 'PASS' : `FAIL · ${listFormat.format(record.gate.failures)}`,
+            })}
+            {' '}· {t('evalHarness.h86Review.humanGateNote')}
           </p>
           <div className="mt-2 overflow-x-auto text-[10px] text-text-secondary">
             <table className="w-full text-left">
-              <thead className="text-text-muted"><tr><th>揭盲路径</th><th>均分</th><th>修订率</th><th>偏好</th></tr></thead>
+              <thead className="text-text-muted"><tr><th>{t('evalHarness.h86Review.colPath')}</th><th>{t('evalHarness.h86Review.colAverageScore')}</th><th>{t('evalHarness.h86Review.colEditRatio')}</th><th>{t('evalHarness.h86Review.colPreference')}</th></tr></thead>
               <tbody>
                 <tr className="border-t border-border/50">
-                  <td>旧直连</td>
+                  <td>{t('evalHarness.legacyDirect')}</td>
                   <td>{record.aggregate.legacyDirect.averageScore.toFixed(2)}</td>
                   <td>{(record.aggregate.legacyDirect.averageLineEditRatio * 100).toFixed(1)}%</td>
                   <td>{record.aggregate.legacyDirect.preferredCount}</td>
@@ -329,16 +358,16 @@ export default function H86HumanReviewPanel({ checkpoint }: { checkpoint: H86Che
           </div>
           <div className="mt-2 flex flex-wrap gap-3">
             <button type="button" onClick={() => { void exportReview() }} className="inline-flex items-center gap-1 text-[10px] text-accent">
-              <Download className="h-3 w-3" />下载盲评证据
+              <Download className="h-3 w-3" />{t('evalHarness.h86Review.exportEvidence')}
             </button>
             <button type="button" onClick={() => { void clearReview() }} className="inline-flex items-center gap-1 text-[10px] text-error">
-              <Trash2 className="h-3 w-3" />清除盲评
+              <Trash2 className="h-3 w-3" />{t('evalHarness.h86Review.clearReview')}
             </button>
           </div>
         </div>
       )}
 
-      {error && <p data-testid="h86-human-error" className="mt-2 text-[11px] text-error">{error}</p>}
+      {error && <p data-testid="h86-human-error" className="mt-2 text-[11px] text-error">{renderPanelError(t, error)}</p>}
     </div>
   )
 }

@@ -169,7 +169,7 @@ import {
   rejectImpactStoryTimelineRegenerationCandidateV1,
   type ImpactStoryTimelineRegenerationCandidateV1,
 } from '../../lib/agent/run/impact-story-timeline-regeneration-durable'
-import { classifyAgentRunFailureV1 } from '../../lib/agent/run/failure-policy'
+import { AgentRunFailureError, classifyAgentRunFailureV1 } from '../../lib/agent/run/failure-policy'
 import { resolveScopeLike } from '../../lib/world-engine/scope'
 import {
   beginProseGenerationStepV1,
@@ -221,6 +221,34 @@ function LazyPanelFallback({ t }: { t: (...args: any[]) => string }) {
   return <div className="rounded-lg border border-border bg-bg-surface p-4 text-sm text-text-muted">{t('chapterEditor.lazyPanelLoading')}</div>
 }
 
+/**
+ * Canonical non-localized fallback chapter identifier for generation/resume/
+ * adoption/consistency internals. Durable candidates, candidate hashes and AI
+ * prompts must never vary with the UI locale; localized rendering of an
+ * untitled chapter belongs to the display/projection layer only.
+ */
+const CANONICAL_UNTITLED_CHAPTER_TITLE = 'untitled-chapter'
+
+/**
+ * Typed editor notice: either an i18n descriptor translated at render time
+ * (reactive to locale switches), a raw provider/engine string kept verbatim,
+ * or a list of descriptors joined via Intl.ListFormat at render time.
+ * Application-owned messages use descriptors; provider/engine failures stay raw.
+ */
+/**
+ * A single list item: either an i18n descriptor translated at render time, or a
+ * raw provider/engine string kept verbatim. Only the presentation connector is
+ * locale-reactive; raw item text is never altered.
+ */
+type EditorMessageListItem =
+  | { key: string; params?: Record<string, unknown> }
+  | { text: string }
+
+type EditorMessage =
+  | { kind: 'descriptor'; key: string; params?: Record<string, unknown> }
+  | { kind: 'raw'; text: string }
+  | { kind: 'list'; items: EditorMessageListItem[] }
+
 /** 生成任务类型(原 memory-builder 三层记忆已被 assembleContext 取代,此类型仅用于调试日志标签) */
 type MemoryTaskType = 'write' | 'plan' | 'review'
 
@@ -240,8 +268,29 @@ interface Props {
 
 export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const { t, lang } = useDomainT('editor')
+  // Oracle remediation: recovery/background lifecycle effects must not depend on
+  // `t` — its identity changes on every locale switch, which previously cleared
+  // and re-ran durable patch/review/recovery state. Effects read the live
+  // translator through this ref instead; semantic locale updates are preserved
+  // because the ref always tracks the latest `t` without being a reactive dep.
+  const tRef = useRef(t)
+  useEffect(() => { tRef.current = t }, [t])
   // 语言感知的列表连接（zh-CN → "；"风格由 Intl 决定，en/pt-BR → "a, b and c"）
   const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
+  /**
+   * Translate an EditorMessage at render time so locale switches re-render stored
+   * notices. Raw provider/engine text passes through unchanged; null → ''.
+   */
+  const renderEditorMessage = (message: EditorMessage | null): string => {
+    if (!message) return ''
+    if (message.kind === 'raw') return message.text
+    if (message.kind === 'list') {
+      return listFormat.format(message.items.map(item => (
+        'text' in item ? item.text : item.params ? t(item.key, item.params) : t(item.key)
+      )))
+    }
+    return message.params ? t(message.key, message.params) : t(message.key)
+  }
   const navigate = useNavigate()
   const {
     chapters,
@@ -271,13 +320,13 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const [editorWorkspaceScope, setEditorWorkspaceScope] = useState<WorkspaceScope | null>(null)
   const [showContext, setShowContext] = useState(false)
   const [customInstruction, setCustomInstruction] = useState('')
-  const [impactInfo, setImpactInfo] = useState<string | null>(null)
+  const [impactInfo, setImpactInfo] = useState<EditorMessage | null>(null)
   const [analyzingImpact, setAnalyzingImpact] = useState(false)
   const [impactGraph, setImpactGraph] = useState<EditImpactGraphV1 | null>(null)
   const [impactRemediationPlan, setImpactRemediationPlan] = useState<ImpactRemediationPlanV1 | null>(null)
   const [impactRemediationBusy, setImpactRemediationBusy] = useState(false)
   const [impactRemediationReceipt, setImpactRemediationReceipt] = useState<string | null>(null)
-  const [impactRemediationError, setImpactRemediationError] = useState('')
+  const [impactRemediationError, setImpactRemediationError] = useState<EditorMessage | null>(null)
   const [impactPostCorrectionReplan, setImpactPostCorrectionReplan] = useState<ImpactPostCorrectionReplanResultV1 | null>(null)
   const [impactDownstreamSchedule, setImpactDownstreamSchedule] = useState<ImpactDownstreamScheduleV1 | null>(null)
   const [impactReviewItemId, setImpactReviewItemId] = useState<string | null>(null)
@@ -285,24 +334,24 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const [impactReviewNote, setImpactReviewNote] = useState('')
   const [impactReviewBusy, setImpactReviewBusy] = useState(false)
   const [impactReviewReceipt, setImpactReviewReceipt] = useState<string | null>(null)
-  const [impactReviewError, setImpactReviewError] = useState('')
+  const [impactReviewError, setImpactReviewError] = useState<EditorMessage | null>(null)
   const [impactReviewRecords, setImpactReviewRecords] = useState<ImpactAuthorReviewRecordV1[]>([])
   const [impactPatchTargetId, setImpactPatchTargetId] = useState<number | null>(null)
   const [impactPatchSummary, setImpactPatchSummary] = useState('')
   const [impactPatchReason, setImpactPatchReason] = useState('')
   const [impactPatchCandidate, setImpactPatchCandidate] = useState<ImpactPatchCandidateV1 | null>(null)
   const [impactPatchBusy, setImpactPatchBusy] = useState(false)
-  const [impactPatchError, setImpactPatchError] = useState('')
+  const [impactPatchError, setImpactPatchError] = useState<EditorMessage | null>(null)
   const [impactOutlineRegenerationItemId, setImpactOutlineRegenerationItemId] = useState<string | null>(null)
   const [impactOutlineRegenerationCandidate, setImpactOutlineRegenerationCandidate] = useState<ImpactOutlineRegenerationCandidateV1 | null>(null)
   const [impactOutlineRegenerationBusy, setImpactOutlineRegenerationBusy] = useState(false)
   const [impactOutlineRegenerationReceipt, setImpactOutlineRegenerationReceipt] = useState<string | null>(null)
-  const [impactOutlineRegenerationError, setImpactOutlineRegenerationError] = useState('')
+  const [impactOutlineRegenerationError, setImpactOutlineRegenerationError] = useState<EditorMessage | null>(null)
   const [impactStoryTimelineRegenerationItemId, setImpactStoryTimelineRegenerationItemId] = useState<string | null>(null)
   const [impactStoryTimelineRegenerationCandidate, setImpactStoryTimelineRegenerationCandidate] = useState<ImpactStoryTimelineRegenerationCandidateV1 | null>(null)
   const [impactStoryTimelineRegenerationBusy, setImpactStoryTimelineRegenerationBusy] = useState(false)
   const [impactStoryTimelineRegenerationReceipt, setImpactStoryTimelineRegenerationReceipt] = useState<string | null>(null)
-  const [impactStoryTimelineRegenerationError, setImpactStoryTimelineRegenerationError] = useState('')
+  const [impactStoryTimelineRegenerationError, setImpactStoryTimelineRegenerationError] = useState<EditorMessage | null>(null)
   const [pendingDiffs, setPendingDiffs] = useState<StateDiffItem[] | null>(null)
   // A2: 按需召回 — 手动额外勾选/取消的状态卡 ID
   const [extraStateIds, setExtraStateIds] = useState<number[]>([])
@@ -335,18 +384,18 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const [transparentMode, setTransparentMode] = useState(false)
   const [pendingGeneration, setPendingGeneration] = useState<PendingChapterGeneration | null>(null)
   const [proseCandidate, setProseCandidate] = useState<ProseGenerationCandidateV1 | null>(null)
-  const [proseGenerationError, setProseGenerationError] = useState('')
+  const [proseGenerationError, setProseGenerationError] = useState<EditorMessage | null>(null)
   const [planReconciliationCurrent, setPlanReconciliationCurrent] = useState(false)
   const [organizationRun, setOrganizationRun] = useState<ChapterOrganizationRun | null>(null)
   const [organizationCurrent, setOrganizationCurrent] = useState(false)
   const [organizingChapter, setOrganizingChapter] = useState(false)
-  const [organizationError, setOrganizationError] = useState('')
+  const [organizationError, setOrganizationError] = useState<EditorMessage | null>(null)
   const [showOrganization, setShowOrganization] = useState(false)
   const [transitionCandidate, setTransitionCandidate] = useState<ChapterTransitionCandidateV1 | null>(null)
   const [transitionRunId, setTransitionRunId] = useState<number | null>(null)
   const [postAdoptionRunId, setPostAdoptionRunId] = useState<number | null>(null)
   const [postAdoptionChainState, setPostAdoptionChainState] = useState<ChapterPostAdoptionChainStateV1 | null>(null)
-  const [transitionError, setTransitionError] = useState('')
+  const [transitionError, setTransitionError] = useState<EditorMessage | null>(null)
   const [consistencyRun, setConsistencyRun] = useState<ConsistencyAgentRun | null>(null)
   const [consistencyCurrent, setConsistencyCurrent] = useState(false)
   const aiConfig = useAIConfigStore(s => s.config)
@@ -376,29 +425,29 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     setImpactGraph(null)
     setImpactRemediationPlan(null)
     setImpactRemediationReceipt(null)
-    setImpactRemediationError('')
+    setImpactRemediationError(null)
     setImpactPostCorrectionReplan(null)
     setImpactDownstreamSchedule(null)
     setImpactReviewItemId(null)
     setImpactReviewDecision('acknowledged')
     setImpactReviewNote('')
     setImpactReviewReceipt(null)
-    setImpactReviewError('')
+    setImpactReviewError(null)
     setImpactReviewRecords([])
     setImpactInfo(null)
     setImpactPatchTargetId(null)
     setImpactPatchSummary('')
     setImpactPatchReason('')
     setImpactPatchCandidate(null)
-    setImpactPatchError('')
+    setImpactPatchError(null)
     setImpactOutlineRegenerationItemId(null)
     setImpactOutlineRegenerationCandidate(null)
     setImpactOutlineRegenerationReceipt(null)
-    setImpactOutlineRegenerationError('')
+    setImpactOutlineRegenerationError(null)
     setImpactStoryTimelineRegenerationItemId(null)
     setImpactStoryTimelineRegenerationCandidate(null)
     setImpactStoryTimelineRegenerationReceipt(null)
-    setImpactStoryTimelineRegenerationError('')
+    setImpactStoryTimelineRegenerationError(null)
     if (!currentChapter?.id) return () => { active = false }
     void (async () => {
       const scope = await resolveScopeLike(project.id!)
@@ -500,7 +549,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         setImpactPostCorrectionReplan(postCorrectionState)
         setImpactDownstreamSchedule(downstreamSchedule)
         if (!downstreamSchedule) {
-          setImpactRemediationError('H57 下游调度证据无法恢复；生成式入口已停止，请刷新计划后重试。')
+          setImpactRemediationError({ kind: 'descriptor', key: 'chapterEditor.impactScheduleRecoveryFailed' })
         }
         setImpactGraph(postCorrectionState.output.graph)
         setImpactRemediationPlan(postCorrectionState.output.plan)
@@ -526,12 +575,12 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         setImpactStoryTimelineRegenerationReceipt(completedTimelineRegenerations[0]?.receiptHash ?? null)
         setImpactInfo(
           pendingTimelineRegeneration
-            ? '已恢复一条 H57 故事年表重建候选；确认前不会修改正式事件。'
+            ? { kind: 'descriptor', key: 'chapterEditor.impactRecoveredTimelineCandidate' }
             : pendingRegeneration
-            ? '已恢复一条 H57 生成式后续章纲候选；确认前不会修改正式摘要。'
+            ? { kind: 'descriptor', key: 'chapterEditor.impactRecoveredOutlineCandidate' }
             : blockedRegenerationItem && firstReviewDependency
-              ? `H57 生成式目标仍等待直接依赖复核：${firstReviewDependency.reason}`
-            : `已恢复人工修正后的当前计划：已解决 ${postCorrectionState.output.resolvedItemIds.length} 项、仍需处理 ${postCorrectionState.output.remainingItemIds.length} 项、新增 ${postCorrectionState.output.newItemIds.length} 项。`,
+              ? { kind: 'descriptor', key: 'chapterEditor.impactRecoveredBlockedDependency', params: { reason: firstReviewDependency.reason } }
+            : { kind: 'descriptor', key: 'chapterEditor.impactRecoveredPostCorrectionPlan', params: { resolved: postCorrectionState.output.resolvedItemIds.length, remaining: postCorrectionState.output.remainingItemIds.length, new: postCorrectionState.output.newItemIds.length } },
         )
       } else if (reviewState) {
         const selectedReview = reviewState.reviews.find(record => record.output.decision === 'needs-manual-action')
@@ -543,14 +592,14 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         setImpactReviewDecision(selectedReview.output.decision)
         setImpactReviewNote(selectedReview.output.note)
         setImpactReviewReceipt(selectedReview.receiptHash)
-        setImpactInfo(`已从 Run 账本恢复 ${reviewState.reviews.length} 项当前作者复核；正式数据未改变。`)
+        setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactRecoveredAuthorReviews', params: { count: reviewState.reviews.length } })
       }
       if (candidate) {
         setImpactPatchCandidate(candidate)
         setImpactPatchTargetId(candidate.proposal.recordId)
         setImpactPatchSummary(candidate.proposal.fields.summary)
         setImpactPatchReason(candidate.proposal.reason)
-        setImpactInfo('发现一条待作者确认的影响修订候选；确认前不会改动正式大纲。')
+        setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactRecoveredPatchCandidate' })
       }
     })().catch(error => {
       if (active) console.warn('[ImpactRecovery] 影响状态恢复失败:', error)
@@ -609,7 +658,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     setOrganizationRun(null)
     setOrganizationCurrent(false)
     setShowOrganization(false)
-    setOrganizationError('')
+    setOrganizationError(null)
     setPostAdoptionRunId(null)
     setPostAdoptionChainState(null)
     if (!currentChapter?.id) return () => { active = false }
@@ -666,10 +715,12 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         setPostAdoptionChainState(chapterPostAdoptionChainStateV1(postAdoptionSnapshot))
       }
     })().catch(error => {
-      if (active) setOrganizationError(error instanceof Error ? error.message : t('chapterEditor.organizationReadFailed'))
+      if (active) setOrganizationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.organizationReadFailed' })
     })
     return () => { active = false }
-  }, [currentChapter?.id, project.id, t])
+    // `t` intentionally not a dependency: locale switches must not clear/re-run
+    // durable organization/post-adoption recovery (read via tRef.current).
+  }, [currentChapter?.id, project.id])
   useEffect(() => {
     let active = true
     transitionSnapshotRef.current = null
@@ -677,7 +728,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     transitionCandidateRef.current = null
     setPendingDiffs(null)
     setTransitionRunId(null)
-    setTransitionError('')
+    setTransitionError(null)
     if (!currentChapter?.id) return () => { active = false }
     void (async () => {
       const scope = await resolveScopeLike(project.id!)
@@ -693,9 +744,11 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setTransitionRunId(recovered.durable.runId)
       setPendingDiffs(recovered.stateDiffs)
     })().catch(error => {
-      if (active) setTransitionError(error instanceof Error ? error.message : '读取章节后处理记录失败')
+      if (active) setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.transitionReadFailed' })
     })
     return () => { active = false }
+    // `t` intentionally not a dependency: locale switches must not clear/re-run
+    // durable transition recovery (read via tRef.current).
   }, [currentChapter?.id, project.id])
   useEffect(() => {
     let active = true
@@ -910,10 +963,10 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       return [{
         itemId: scheduleItem.itemId,
         id: scheduleItem.recordId,
-        title: graphNode?.label ?? `年表事件 #${scheduleItem.recordId}`,
+        title: graphNode?.label ?? t('chapterEditor.timelineEventFallbackTitle', { id: scheduleItem.recordId }),
       }]
     })
-  }, [impactDownstreamSchedule, impactPostCorrectionReplan])
+  }, [impactDownstreamSchedule, impactPostCorrectionReplan, t])
 
   const refreshImpactDownstreamSchedule = useCallback(async (
     expectedReplan: ImpactPostCorrectionReplanResultV1 | null = impactPostCorrectionReplan,
@@ -956,7 +1009,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         const candidate = await runBackgroundConsistencyAgent({
           projectId: project.id!,
           chapterId,
-          chapterTitle: outlineNode?.title || currentChapter.title || t('chapterEditor.unknownChapter'),
+          chapterTitle: outlineNode?.title || currentChapter.title || CANONICAL_UNTITLED_CHAPTER_TITLE,
           worldGroupId: chapterWorldGroupId ?? null,
           chapterContent: savedContent,
           budget,
@@ -985,7 +1038,8 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     outlineNode?.title,
     project.id,
     savedContent,
-    t,
+    // `t` intentionally not a dependency: locale switches must not re-run the
+    // background consistency lifecycle; chapterTitle uses a canonical identifier.
   ])
   const entityReferences = useMemo(() => buildEditorEntityReferences({
     characters,
@@ -1255,13 +1309,13 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     informationBoundary: InformationBoundaryManifestV1
   }): Promise<void> => {
     if (!currentChapter?.id || !input.assembled) {
-      throw new Error('正文生成缺少章节或受控上下文快照。')
+      throw new Error(t('chapterEditor.proseGenerationMissingChapter'))
     }
     const chapterId = currentChapter.id
-    const chapterTitle = outlineNode?.title || currentChapter.title || '未知章节'
+    const chapterTitle = outlineNode?.title || currentChapter.title || CANONICAL_UNTITLED_CHAPTER_TITLE
     const scope = await resolveScopeLike(project.id!)
     const sourceChapter = await db.chapters.get(chapterId)
-    if (!sourceChapter) throw new Error('正文生成开始前找不到章节。')
+    if (!sourceChapter) throw new Error(t('chapterEditor.proseGenerationChapterNotFound'))
     const sourceTextHash = await hashChapterText(sourceChapter.content ?? '')
     const actualMessages = input.messages ?? input.prepared.messages
     const budget = new AgentTeamBudgetTracker(
@@ -1340,7 +1394,17 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         },
         candidateReady: async output => {
           const outputText = String(output ?? '')
-          if (!outputText.trim()) throw new Error('模型没有返回可采纳的正文候选。')
+          if (!outputText.trim()) {
+            // Coded failure: stable classification must not depend on the
+            // localized display message.
+            throw new AgentRunFailureError({
+              code: 'prose_generation_no_output',
+              category: 'protocol',
+              action: 'retry',
+              retryable: true,
+              displayMessage: t('chapterEditor.proseGenerationNoOutput'),
+            })
+          }
           const baseCandidate = {
             version: 1 as const,
             type: 'prose-generation-candidate' as const,
@@ -1389,11 +1453,14 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         },
         stepSucceeded: async () => {},
         stepFailed: async failure => {
+          // Classify to a stable, locale-independent code; never persist the
+          // localized Error.message as the durable failure code.
+          const classified = await classifyAgentRunFailureV1(failure.error)
           snapshot = await failProseGenerationStepV1({
             scope,
             snapshot,
-            code: failure.error instanceof Error ? failure.error.message : `${failure.phase}_failed`,
-            retryable: true,
+            code: classified.code,
+            retryable: classified.retryable,
           })
           proseSnapshotRef.current = snapshot
         },
@@ -1405,21 +1472,26 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       throw error
     }
     if (result.gate?.status === 'blocked') {
-      setProseGenerationError(result.gate.issues.map(issue => issue.message).join('；'))
+      setProseGenerationError({ kind: 'list', items: result.gate.issues.map(issue => ({ text: issue.message })) })
       return
     }
     if (traceError || !persistedCandidate) {
+      // Classify to a stable, locale-independent code for the durable record;
+      // the localized message below remains display-only.
+      const classified = traceError
+        ? await classifyAgentRunFailureV1(traceError)
+        : { code: 'prose_candidate_not_persisted', retryable: true }
       snapshot = await failProseGenerationStepV1({
         scope,
         snapshot,
-        code: traceError instanceof Error ? traceError.message : 'prose_candidate_not_persisted',
-        retryable: true,
+        code: classified.code,
+        retryable: classified.retryable,
       })
       proseSnapshotRef.current = snapshot
       setProseGenerationError(
-        traceError instanceof Error ? traceError.message : '正文候选没有进入 durable ledger。',
+        traceError instanceof Error ? { kind: 'raw', text: traceError.message } : { kind: 'descriptor', key: 'chapterEditor.proseCandidateNotPersisted' },
       )
-      throw traceError instanceof Error ? traceError : new Error('正文候选没有进入 durable ledger。')
+      throw traceError instanceof Error ? traceError : new Error(t('chapterEditor.proseCandidateNotPersisted'))
     }
   }
 
@@ -1433,7 +1505,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     informationBoundary?: InformationBoundaryManifestV1,
   ) => {
     if (!informationBoundary) {
-      setProseGenerationError('正文生成缺少信息边界快照，已阻止模型调用。')
+      setProseGenerationError({ kind: 'descriptor', key: 'chapterEditor.proseGenerationMissingBoundary' })
       return
     }
     ai.setOperation(operation)
@@ -1488,7 +1560,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
 
   const handleGenerate = async () => {
     if (!outlineNode) return
-    setProseGenerationError('')
+    setProseGenerationError(null)
     await persistCurrentEditorContent()
     const backgroundMemoryIds = await prepareContinuityBeforeGeneration()
     const {
@@ -1541,7 +1613,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
 
   const handleContinue = async () => {
     if (!plainText || !outlineNode) return
-    setProseGenerationError('')
+    setProseGenerationError(null)
     await persistCurrentEditorContent()
     const backgroundMemoryIds = await prepareContinuityBeforeGeneration()
     const {
@@ -1651,7 +1723,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const effectiveConfig = resolveRequestConfig(aiConfig, { category: 'chapter.organize' }).config
     if (!isAIConfigReady(effectiveConfig)) {
       const message = getAIConfigRequiredMessage(effectiveConfig)
-      setOrganizationError(message)
+      setOrganizationError({ kind: 'raw', text: message })
       await dialog.alert({ title: t('chapterEditor.organizeCannotTitle'), message })
       return
     }
@@ -1662,7 +1734,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     organizationAbortRef.current?.abort()
     organizationAbortRef.current = controller
     setOrganizingChapter(true)
-    setOrganizationError('')
+    setOrganizationError(null)
     let durableSnapshot: Awaited<ReturnType<typeof createChapterOrganizationDurableRunV1>> | null = null
     let candidateEventPersisted = false
     try {
@@ -1721,7 +1793,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         scopedCharacterIds.has(relation.fromCharacterId)
         && scopedCharacterIds.has(relation.toCharacterId)
       ))
-      const chapterTitle = outlineNode?.title || currentChapter.title || t('chapterEditor.unknownChapter')
+      const chapterTitle = outlineNode?.title || currentChapter.title || CANONICAL_UNTITLED_CHAPTER_TITLE
       const budget = new AgentTeamBudgetTracker(useAIConfigStore.getState().agentTeamBudgetProfile)
       const candidate = await runChapterOrganization({
         projectId: project.id!,
@@ -1767,11 +1839,14 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     } catch (error) {
       if (durableSnapshot && !candidateEventPersisted) {
         try {
+          // Classify to a stable, locale-independent code for the durable record;
+          // the localized message below remains display-only.
+          const classified = await classifyAgentRunFailureV1(error)
           await failChapterOrganizationDurableStepV1({
             scope: await resolveScopeLike(project.id!),
             snapshot: durableSnapshot,
-            code: error instanceof Error ? error.message : 'chapter_organization_failed',
-            retryable: true,
+            code: classified.code,
+            retryable: classified.retryable,
           })
         } catch (traceError) {
           console.warn('[ChapterOrganization] durable 失败证据写入失败:', traceError)
@@ -1779,7 +1854,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       }
       if (!controller.signal.aborted) {
         const message = error instanceof Error ? error.message : t('chapterEditor.organizeFailedDefault')
-        setOrganizationError(message)
+        setOrganizationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.organizeFailedDefault' })
         await dialog.alert({ title: t('chapterEditor.organizeFailedDefault'), message })
       }
     } finally {
@@ -1791,7 +1866,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleApplyChapterOrganization = async (selection: ChapterOrganizationSelection) => {
     if (!organizationRun || organizingChapter) return
     setOrganizingChapter(true)
-    setOrganizationError('')
+    setOrganizationError(null)
     let postAdoptionSnapshot: AgentRunSnapshotV1 | null = null
     const durableCandidate = organizationRun.candidate.durable
     try {
@@ -1809,7 +1884,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setOrganizationCurrent(true)
       const failed = Object.entries(result.run.candidate.domainErrors)
       if (failed.length) {
-        setOrganizationError(listFormat.format(failed.map(([domain, message]) => `${domain}: ${message}`)))
+        setOrganizationError({ kind: 'list', items: failed.map(([domain, message]) => ({ text: `${domain}: ${message}` })) })
         if (postAdoptionSnapshot && durableCandidate) {
           const rejected = await rejectChapterPostAdoptionOrganizationAdoptionV1({
             scope: await resolveScopeLike(project.id!),
@@ -1855,7 +1930,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         }
       }
     } catch (error) {
-      setOrganizationError(error instanceof Error ? error.message : t('chapterEditor.organizationWriteFailed'))
+      setOrganizationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.organizationWriteFailed' })
       if (postAdoptionSnapshot && durableCandidate && await isChapterOrganizationCurrent(organizationRun.candidate)) {
         try {
           const rejected = await rejectChapterPostAdoptionOrganizationAdoptionV1({
@@ -1917,48 +1992,47 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setImpactPostCorrectionReplan(null)
       setImpactDownstreamSchedule(null)
       setImpactRemediationReceipt(null)
-      setImpactRemediationError('')
+      setImpactRemediationError(null)
       const firstAuthorItem = remediationPlan.items.find(item => item.mode === 'author-confirmed')
       const firstReviewRecord = reviewRecords.find(record => record.output.itemId === firstAuthorItem?.id)
       setImpactReviewItemId(firstAuthorItem?.id ?? null)
       setImpactReviewDecision(firstReviewRecord?.output.decision ?? 'acknowledged')
       setImpactReviewNote(firstReviewRecord?.output.note ?? '')
       setImpactReviewReceipt(firstReviewRecord?.receiptHash ?? null)
-      setImpactReviewError('')
+      setImpactReviewError(null)
       setImpactReviewRecords(reviewRecords)
       setImpactPatchCandidate(null)
-      setImpactPatchError('')
+      setImpactPatchError(null)
       setImpactPatchSummary('')
       setImpactPatchReason('')
       setImpactOutlineRegenerationItemId(null)
       setImpactOutlineRegenerationCandidate(null)
       setImpactOutlineRegenerationReceipt(null)
-      setImpactOutlineRegenerationError('')
+      setImpactOutlineRegenerationError(null)
       setImpactStoryTimelineRegenerationItemId(null)
       setImpactStoryTimelineRegenerationCandidate(null)
       setImpactStoryTimelineRegenerationReceipt(null)
-      setImpactStoryTimelineRegenerationError('')
+      setImpactStoryTimelineRegenerationError(null)
       const firstTarget = graph.nodes.find(node => (
         node.kind === 'outline'
         && node.recordId != null
         && node.recordId !== currentChapter.outlineNodeId
       ))
       setImpactPatchTargetId(firstTarget?.recordId ?? null)
-      const parts = [
-        t('chapterEditor.impactFactsFromChapter', { count: graph.nodes.filter(node => node.kind === 'fact').length }),
-        demotedFacts > 0 ? t('chapterEditor.impactDemoted', { count: demotedFacts }) : t('chapterEditor.impactEvidenceValid'),
-        t('chapterEditor.impactDownstream', { count: graph.downstreamChapterIds.length }),
-        `影响图已生成：${graph.nodes.length} 个节点、${graph.edges.length} 条边`,
-        `源自本章事实 ${graph.nodes.filter(node => node.kind === 'fact').length} 条`,
-        demotedFacts > 0 ? `其中 ${demotedFacts} 条证据已失效→标记 stale 待复核` : '证据均仍成立',
-        `建议复核后续 ${graph.downstreamChapterIds.length} 章、${graph.nodes.filter(node => node.kind === 'summary').length} 个摘要节点`,
-        `治理计划 ${remediationPlan.counts.deterministic} 项可确定性重建、${remediationPlan.counts.authorConfirmed} 项须作者确认`,
-        `证据指纹 ${graph.graphHash.slice(0, 12)}`,
-      ]
-      setImpactInfo(listFormat.format(parts))
+      setImpactInfo({ kind: 'list', items: [
+        { key: 'chapterEditor.impactFactsFromChapter', params: { count: graph.nodes.filter(node => node.kind === 'fact').length } },
+        demotedFacts > 0 ? { key: 'chapterEditor.impactDemoted', params: { count: demotedFacts } } : { key: 'chapterEditor.impactEvidenceValid' },
+        { key: 'chapterEditor.impactDownstream', params: { count: graph.downstreamChapterIds.length } },
+        { key: 'chapterEditor.impactGraphGenerated', params: { nodes: graph.nodes.length, edges: graph.edges.length } },
+        { key: 'chapterEditor.impactFactsCount', params: { count: graph.nodes.filter(node => node.kind === 'fact').length } },
+        demotedFacts > 0 ? { key: 'chapterEditor.impactDemotedDetail', params: { count: demotedFacts } } : { key: 'chapterEditor.impactEvidenceAllValid' },
+        { key: 'chapterEditor.impactSuggestion', params: { chapters: graph.downstreamChapterIds.length, summaries: graph.nodes.filter(node => node.kind === 'summary').length } },
+        { key: 'chapterEditor.impactRemediationSummary', params: { deterministic: remediationPlan.counts.deterministic, authorConfirmed: remediationPlan.counts.authorConfirmed } },
+        { key: 'chapterEditor.impactEvidenceFingerprint', params: { hash: graph.graphHash.slice(0, 12) } },
+      ] })
     } catch (err) {
       console.error('[EditImpact] Failed:', err)
-      setImpactInfo(t('chapterEditor.impactAnalysisFailed'))
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactAnalysisFailed' })
     } finally {
       setAnalyzingImpact(false)
     }
@@ -1966,9 +2040,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
 
   const handleDismissImpact = () => {
     if (impactPatchCandidate || impactOutlineRegenerationCandidate || impactStoryTimelineRegenerationCandidate) {
-      if (impactPatchCandidate) setImpactPatchError('请先确认或放弃当前影响修订候选。')
-      if (impactOutlineRegenerationCandidate) setImpactOutlineRegenerationError('请先确认或放弃当前生成式重建候选。')
-      if (impactStoryTimelineRegenerationCandidate) setImpactStoryTimelineRegenerationError('请先确认或放弃当前年表重建候选。')
+      if (impactPatchCandidate) setImpactPatchError({ kind: 'descriptor', key: 'chapterEditor.impactDismissPatchPending' })
+      if (impactOutlineRegenerationCandidate) setImpactOutlineRegenerationError({ kind: 'descriptor', key: 'chapterEditor.impactDismissOutlineRegenPending' })
+      if (impactStoryTimelineRegenerationCandidate) setImpactStoryTimelineRegenerationError({ kind: 'descriptor', key: 'chapterEditor.impactDismissTimelineRegenPending' })
       return
     }
     setImpactInfo(null)
@@ -1977,31 +2051,31 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     setImpactPostCorrectionReplan(null)
     setImpactDownstreamSchedule(null)
     setImpactRemediationReceipt(null)
-    setImpactRemediationError('')
+    setImpactRemediationError(null)
     setImpactReviewItemId(null)
     setImpactReviewDecision('acknowledged')
     setImpactReviewNote('')
     setImpactReviewReceipt(null)
-    setImpactReviewError('')
+    setImpactReviewError(null)
     setImpactReviewRecords([])
     setImpactPatchTargetId(null)
     setImpactPatchSummary('')
     setImpactPatchReason('')
-    setImpactPatchError('')
+    setImpactPatchError(null)
     setImpactOutlineRegenerationItemId(null)
     setImpactOutlineRegenerationCandidate(null)
     setImpactOutlineRegenerationReceipt(null)
-    setImpactOutlineRegenerationError('')
+    setImpactOutlineRegenerationError(null)
     setImpactStoryTimelineRegenerationItemId(null)
     setImpactStoryTimelineRegenerationCandidate(null)
     setImpactStoryTimelineRegenerationReceipt(null)
-    setImpactStoryTimelineRegenerationError('')
+    setImpactStoryTimelineRegenerationError(null)
   }
 
   const handleCreateImpactPatch = async () => {
     if (!currentChapter?.id || !impactPatchTargetId || !impactPatchSummary.trim() || !impactPatchReason.trim()) return
     setImpactPatchBusy(true)
-    setImpactPatchError('')
+    setImpactPatchError(null)
     try {
       const scope = await resolveScopeLike(project.id!)
       const created = await createImpactPatchCandidateV1({
@@ -2017,9 +2091,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         },
       })
       setImpactPatchCandidate(created.candidate)
-      setImpactInfo('影响修订候选已保存；请确认后才会写入后续大纲摘要。')
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactPatchSaved' })
     } catch (error) {
-      setImpactPatchError(error instanceof Error ? error.message : '影响修订候选创建失败')
+      setImpactPatchError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactPatchCreateFailed' })
     } finally {
       setImpactPatchBusy(false)
     }
@@ -2031,7 +2105,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     if (!expectedReplan || !itemId || impactOutlineRegenerationCandidate
       || impactStoryTimelineRegenerationCandidate || impactPatchCandidate) return
     setImpactOutlineRegenerationBusy(true)
-    setImpactOutlineRegenerationError('')
+    setImpactOutlineRegenerationError(null)
     try {
       const result = await generateImpactOutlineRegenerationCandidateV1({
         scope: await resolveScopeLike(project.id!),
@@ -2042,9 +2116,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setImpactOutlineRegenerationCandidate(result.candidate)
       setImpactOutlineRegenerationReceipt(null)
       await refreshImpactDownstreamSchedule(expectedReplan)
-      setImpactInfo('H57 生成式后续章纲候选已持久化；作者确认前正式摘要保持不变。')
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactOutlineRegenPersisted' })
     } catch (error) {
-      setImpactOutlineRegenerationError(error instanceof Error ? error.message : '生成式后续章纲重建失败')
+      setImpactOutlineRegenerationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactOutlineRegenFailed' })
     } finally {
       setImpactOutlineRegenerationBusy(false)
     }
@@ -2054,7 +2128,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const candidate = impactOutlineRegenerationCandidate
     if (!candidate) return
     setImpactOutlineRegenerationBusy(true)
-    setImpactOutlineRegenerationError('')
+    setImpactOutlineRegenerationError(null)
     try {
       const result = await adoptImpactOutlineRegenerationCandidateV1({
         scope: await resolveScopeLike(project.id!),
@@ -2065,9 +2139,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setImpactOutlineRegenerationReceipt(result.receiptHash)
       setImpactOutlineRegenerationItemId(null)
       await refreshImpactDownstreamSchedule()
-      setImpactInfo(`后续章纲摘要已由作者确认写入；终态回执 ${result.receiptHash.slice(0, 12)}。`)
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactOutlineRegenAdopted', params: { hash: result.receiptHash.slice(0, 12) } })
     } catch (error) {
-      setImpactOutlineRegenerationError(error instanceof Error ? error.message : '生成式后续章纲采纳失败')
+      setImpactOutlineRegenerationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactOutlineRegenAdoptFailed' })
     } finally {
       setImpactOutlineRegenerationBusy(false)
     }
@@ -2077,7 +2151,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const candidate = impactOutlineRegenerationCandidate
     if (!candidate) return
     setImpactOutlineRegenerationBusy(true)
-    setImpactOutlineRegenerationError('')
+    setImpactOutlineRegenerationError(null)
     try {
       await rejectImpactOutlineRegenerationCandidateV1({
         scope: await resolveScopeLike(project.id!),
@@ -2085,9 +2159,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       })
       setImpactOutlineRegenerationCandidate(null)
       await refreshImpactDownstreamSchedule()
-      setImpactInfo('生成式后续章纲候选已放弃，正式摘要未改变。')
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactOutlineRegenRejected' })
     } catch (error) {
-      setImpactOutlineRegenerationError(error instanceof Error ? error.message : '生成式后续章纲候选拒绝失败')
+      setImpactOutlineRegenerationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactOutlineRegenRejectFailed' })
     } finally {
       setImpactOutlineRegenerationBusy(false)
     }
@@ -2099,7 +2173,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     if (!expectedReplan || !itemId || impactStoryTimelineRegenerationCandidate
       || impactOutlineRegenerationCandidate || impactPatchCandidate) return
     setImpactStoryTimelineRegenerationBusy(true)
-    setImpactStoryTimelineRegenerationError('')
+    setImpactStoryTimelineRegenerationError(null)
     try {
       const result = await generateImpactStoryTimelineRegenerationCandidateV1({
         scope: await resolveScopeLike(project.id!),
@@ -2110,9 +2184,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setImpactStoryTimelineRegenerationCandidate(result.candidate)
       setImpactStoryTimelineRegenerationReceipt(null)
       await refreshImpactDownstreamSchedule(expectedReplan)
-      setImpactInfo('H57 故事年表重建候选已持久化；作者确认前正式事件保持不变。')
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactTimelineRegenPersisted' })
     } catch (error) {
-      setImpactStoryTimelineRegenerationError(error instanceof Error ? error.message : '故事年表重建失败')
+      setImpactStoryTimelineRegenerationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactTimelineRegenFailed' })
     } finally {
       setImpactStoryTimelineRegenerationBusy(false)
     }
@@ -2122,7 +2196,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const candidate = impactStoryTimelineRegenerationCandidate
     if (!candidate) return
     setImpactStoryTimelineRegenerationBusy(true)
-    setImpactStoryTimelineRegenerationError('')
+    setImpactStoryTimelineRegenerationError(null)
     try {
       const result = await adoptImpactStoryTimelineRegenerationCandidateV1({
         scope: await resolveScopeLike(project.id!),
@@ -2132,9 +2206,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setImpactStoryTimelineRegenerationReceipt(result.receiptHash)
       setImpactStoryTimelineRegenerationItemId(null)
       await refreshImpactDownstreamSchedule()
-      setImpactInfo(`故事年表事件已由作者确认写入；终态回执 ${result.receiptHash.slice(0, 12)}。`)
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactTimelineRegenAdopted', params: { hash: result.receiptHash.slice(0, 12) } })
     } catch (error) {
-      setImpactStoryTimelineRegenerationError(error instanceof Error ? error.message : '故事年表重建采纳失败')
+      setImpactStoryTimelineRegenerationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactTimelineRegenAdoptFailed' })
     } finally {
       setImpactStoryTimelineRegenerationBusy(false)
     }
@@ -2144,7 +2218,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const candidate = impactStoryTimelineRegenerationCandidate
     if (!candidate) return
     setImpactStoryTimelineRegenerationBusy(true)
-    setImpactStoryTimelineRegenerationError('')
+    setImpactStoryTimelineRegenerationError(null)
     try {
       await rejectImpactStoryTimelineRegenerationCandidateV1({
         scope: await resolveScopeLike(project.id!),
@@ -2152,9 +2226,9 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       })
       setImpactStoryTimelineRegenerationCandidate(null)
       await refreshImpactDownstreamSchedule()
-      setImpactInfo('故事年表重建候选已放弃，正式事件未改变。')
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactTimelineRegenRejected' })
     } catch (error) {
-      setImpactStoryTimelineRegenerationError(error instanceof Error ? error.message : '故事年表重建候选拒绝失败')
+      setImpactStoryTimelineRegenerationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactTimelineRegenRejectFailed' })
     } finally {
       setImpactStoryTimelineRegenerationBusy(false)
     }
@@ -2164,7 +2238,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const plan = impactRemediationPlan
     if (!plan || !currentChapter?.id || !project.id || plan.counts.deterministic === 0) return
     setImpactRemediationBusy(true)
-    setImpactRemediationError('')
+    setImpactRemediationError(null)
     try {
       const scope = await resolveScopeLike(project.id)
       const currentPostCorrection = impactPostCorrectionReplan?.output.plan.planHash === plan.planHash
@@ -2185,10 +2259,10 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setImpactRemediationReceipt(result.receiptHash)
       if (currentPostCorrection) await refreshImpactDownstreamSchedule(currentPostCorrection)
       setImpactInfo(result.reused
-        ? `确定性影响重建已复用终态 Run；回执 ${result.receiptHash.slice(0, 12)}。`
-        : `确定性影响重建已完成；检索块 ${result.output.retrieval.count} 条，摘要层级已重建；回执 ${result.receiptHash.slice(0, 12)}。`)
+        ? { kind: 'descriptor', key: 'chapterEditor.impactRemediationReused', params: { hash: result.receiptHash.slice(0, 12) } }
+        : { kind: 'descriptor', key: 'chapterEditor.impactRemediationCompleted', params: { chunks: result.output.retrieval.count, hash: result.receiptHash.slice(0, 12) } })
     } catch (error) {
-      setImpactRemediationError(error instanceof Error ? error.message : '确定性影响重建失败')
+      setImpactRemediationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactRemediationFailed' })
     } finally {
       setImpactRemediationBusy(false)
     }
@@ -2198,7 +2272,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const previousPlan = impactRemediationPlan
     if (!previousPlan || impactRemediationBusy) return
     setImpactRemediationBusy(true)
-    setImpactRemediationError('')
+    setImpactRemediationError(null)
     try {
       const result = await replanImpactRemediationV1({
         scope: await resolveScopeLike(project.id!),
@@ -2220,21 +2294,21 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setImpactReviewDecision(firstReviewRecord?.output.decision ?? 'acknowledged')
       setImpactReviewNote(firstReviewRecord?.output.note ?? '')
       setImpactReviewReceipt(firstReviewRecord?.receiptHash ?? null)
-      setImpactReviewError('')
+      setImpactReviewError(null)
       setImpactReviewRecords(reviewRecords)
       setImpactOutlineRegenerationItemId(null)
       setImpactOutlineRegenerationCandidate(null)
       setImpactOutlineRegenerationReceipt(null)
-      setImpactOutlineRegenerationError('')
+      setImpactOutlineRegenerationError(null)
       setImpactStoryTimelineRegenerationItemId(null)
       setImpactStoryTimelineRegenerationCandidate(null)
       setImpactStoryTimelineRegenerationReceipt(null)
-      setImpactStoryTimelineRegenerationError('')
+      setImpactStoryTimelineRegenerationError(null)
       setImpactInfo(result.changed
-        ? `影响处理计划已刷新；旧计划 ${previousPlan.planHash.slice(0, 12)} 保留为历史证据，新计划 ${result.plan.planHash.slice(0, 12)} 已绑定当前正文。`
-        : `影响处理计划与当前正文一致，无需变更；计划 ${result.plan.planHash.slice(0, 12)}。`)
+        ? { kind: 'descriptor', key: 'chapterEditor.impactReplanChanged', params: { oldHash: previousPlan.planHash.slice(0, 12), newHash: result.plan.planHash.slice(0, 12) } }
+        : { kind: 'descriptor', key: 'chapterEditor.impactReplanUnchanged', params: { hash: result.plan.planHash.slice(0, 12) } })
     } catch (error) {
-      setImpactRemediationError(error instanceof Error ? error.message : '影响处理计划刷新失败')
+      setImpactRemediationError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactReplanFailed' })
     } finally {
       setImpactRemediationBusy(false)
     }
@@ -2245,7 +2319,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const itemId = impactReviewItemId
     if (!plan || !itemId || !currentChapter?.id || !project.id || impactReviewNote.trim().length < 2) return
     setImpactReviewBusy(true)
-    setImpactReviewError('')
+    setImpactReviewError(null)
     try {
       const result = await executeImpactAuthorReviewV1({
         scope: await resolveScopeLike(project.id),
@@ -2267,10 +2341,10 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         await refreshImpactDownstreamSchedule(impactPostCorrectionReplan)
       }
       setImpactInfo(result.reused
-        ? `作者复核记录已复用；正式数据未改变。回执 ${result.receiptHash.slice(0, 12)}。`
-        : `作者复核已记录；正式数据未改变。回执 ${result.receiptHash.slice(0, 12)}。`)
+        ? { kind: 'descriptor', key: 'chapterEditor.impactReviewReused', params: { hash: result.receiptHash.slice(0, 12) } }
+        : { kind: 'descriptor', key: 'chapterEditor.impactReviewRecorded', params: { hash: result.receiptHash.slice(0, 12) } })
     } catch (error) {
-      setImpactReviewError(error instanceof Error ? error.message : '作者复核记录失败')
+      setImpactReviewError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactReviewFailed' })
     } finally {
       setImpactReviewBusy(false)
     }
@@ -2282,7 +2356,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     setImpactReviewDecision(record?.output.decision ?? 'acknowledged')
     setImpactReviewNote(record?.output.note ?? '')
     setImpactReviewReceipt(record?.receiptHash ?? null)
-    setImpactReviewError('')
+    setImpactReviewError(null)
   }
 
   const handleOpenImpactManualEntry = () => {
@@ -2291,7 +2365,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     if (!plan || !itemId || !currentChapter?.id || !project.id) return
     const record = impactReviewRecords.find(candidate => candidate.output.itemId === itemId)
     if (record?.output.decision !== 'needs-manual-action') {
-      setImpactReviewError('只有已记录为“需人工处理”的影响项可以打开人工入口。')
+      setImpactReviewError({ kind: 'descriptor', key: 'chapterEditor.impactManualEntryBlocked' })
       return
     }
     try {
@@ -2305,7 +2379,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       })
       navigate(buildImpactHandoffUrlV2(project.id, handoff))
     } catch (error) {
-      setImpactReviewError(error instanceof Error ? error.message : '人工入口交接失败')
+      setImpactReviewError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactManualHandoffFailed' })
     }
   }
 
@@ -2313,7 +2387,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const candidate = impactPatchCandidate
     if (!candidate) return
     setImpactPatchBusy(true)
-    setImpactPatchError('')
+    setImpactPatchError(null)
     try {
       const scope = await resolveScopeLike(project.id!)
       const result = await adoptImpactPatchCandidateV1({ scope, candidate })
@@ -2324,13 +2398,13 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       setImpactPostCorrectionReplan(null)
       setImpactDownstreamSchedule(null)
       setImpactRemediationReceipt(null)
-      setImpactRemediationError('')
+      setImpactRemediationError(null)
       setImpactPatchTargetId(null)
       setImpactPatchSummary('')
       setImpactPatchReason('')
-      setImpactInfo(`影响修订已写入大纲摘要；终态回执 ${result.receiptHash.slice(0, 12)}。`)
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactPatchAdopted', params: { hash: result.receiptHash.slice(0, 12) } })
     } catch (error) {
-      setImpactPatchError(error instanceof Error ? error.message : '影响修订写回失败')
+      setImpactPatchError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactPatchAdoptFailed' })
     } finally {
       setImpactPatchBusy(false)
     }
@@ -2340,16 +2414,16 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const candidate = impactPatchCandidate
     if (!candidate) return
     setImpactPatchBusy(true)
-    setImpactPatchError('')
+    setImpactPatchError(null)
     try {
       const scope = await resolveScopeLike(project.id!)
       await rejectImpactPatchCandidateV1({ scope, candidate })
       setImpactPatchCandidate(null)
       setImpactPatchSummary('')
       setImpactPatchReason('')
-      setImpactInfo('影响修订候选已放弃，正式大纲未改变。')
+      setImpactInfo({ kind: 'descriptor', key: 'chapterEditor.impactPatchRejected' })
     } catch (error) {
-      setImpactPatchError(error instanceof Error ? error.message : '影响修订拒绝失败')
+      setImpactPatchError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.impactPatchRejectFailed' })
     } finally {
       setImpactPatchBusy(false)
     }
@@ -2360,7 +2434,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     try {
       const pendingCandidate = transitionCandidateRef.current
       if (pendingCandidate && !await isChapterTransitionCandidateCurrentV1(pendingCandidate)) {
-        throw new Error('章节正文已变化，这批状态候选已过期；请重新生成。')
+        throw new Error(t('chapterEditor.transitionStaleCandidate'))
       }
       await applyDiffs(project.id!, accepted, currentChapter?.id)
       console.log(`[StateExtract] ${accepted.length} 条变更已写入状态表`)
@@ -2386,7 +2460,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       succeeded = true
     } catch (err) {
       console.error('[StateExtract] 写入状态表失败:', err)
-      setTransitionError(err instanceof Error ? err.message : '状态候选写入失败')
+      setTransitionError(err instanceof Error ? { kind: 'raw', text: err.message } : { kind: 'descriptor', key: 'chapterEditor.transitionWriteFailed' })
     }
     if (succeeded) setPendingDiffs(null)
     stateAI.reset()
@@ -2431,7 +2505,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
   const handleManualMemory = async () => {
     if (!currentChapter?.id || !plainText.trim() || autoProcessing === 'memory') return
     const chapterId = currentChapter.id
-    const chapterTitle = outlineNode?.title || currentChapter.title || t('chapterEditor.unknownChapter')
+    const chapterTitle = outlineNode?.title || currentChapter.title || CANONICAL_UNTITLED_CHAPTER_TITLE
     const persisted = await persistCurrentEditorContent()
     if (!persisted) return
     await handleChapterMemory({ chapterId, chapterTitle, chapterContent: persisted.html })
@@ -2497,7 +2571,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       : null
     const transitionWorldGroupId = transitionOutline?.worldGroupId ?? chapterWorldGroupId ?? null
     const expectedSourceTextHash = await hashChapterText(task.chapterContent)
-    setTransitionError('')
+    setTransitionError(null)
     setTransitionCandidate(null)
     transitionCandidateRef.current = null
     setPendingDiffs(null)
@@ -2510,13 +2584,25 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
           parent: task.parent,
         })
     if (snapshot.contract.scope.chapterIds?.length !== 1 || snapshot.contract.scope.chapterIds[0] !== task.chapterId) {
-      throw new Error('章节后处理恢复运行与当前章节不匹配。')
+      throw new AgentRunFailureError({
+        code: 'post_adoption_scope_mismatch',
+        category: 'stale-input',
+        action: 'replan',
+        retryable: false,
+        displayMessage: t('chapterEditor.postAdoptionMismatch'),
+      })
     }
     if (task.resumeRunId != null) {
       const resumePlan = buildChapterPostAdoptionResumePlanV1(snapshot)
       if (resumePlan.terminal) return
       if (!resumePlan.canResume) {
-        throw new Error(`章节后处理当前不可自动恢复：${resumePlan.blockedReason ?? '需要检查运行证据'}`)
+        throw new AgentRunFailureError({
+          code: 'post_adoption_not_resumable',
+          category: 'deterministic',
+          action: 'pause-for-author',
+          retryable: false,
+          displayMessage: t('chapterEditor.postAdoptionNotResumable', { reason: resumePlan.blockedReason ?? t('chapterEditor.postAdoptionMismatch') }),
+        })
       }
     }
     setPostAdoptionRunId(snapshot.run.id)
@@ -2556,7 +2642,15 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
     const ensureFresh = async () => {
       const latest = await db.chapters.get(task.chapterId)
       if (!latest || await hashChapterText(latest.content ?? '') !== expectedSourceTextHash) {
-        throw new Error('正文已变化，章节后处理候选已过期。')
+        // Coded failure: durable classification/fingerprint must not depend on the
+        // localized display message.
+        throw new AgentRunFailureError({
+          code: 'post_adoption_stale_candidate',
+          category: 'stale-input',
+          action: 'replan',
+          retryable: false,
+          displayMessage: t('chapterEditor.postAdoptionStaleCandidate'),
+        })
       }
     }
     const updateSnapshot = (next: AgentRunSnapshotV1) => {
@@ -2673,7 +2767,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         ...failure,
       }))
       if (!controller.signal.aborted) {
-        setTransitionError(error instanceof Error ? error.message : '六域交接候选生成失败')
+        setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.postAdoptionOrgGenFailed' })
       }
       if (controller.signal.aborted) return
     } finally {
@@ -2702,7 +2796,20 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         chapterTitle: task.chapterTitle,
         chapterContent: task.chapterContent,
       })
-      if (result !== 'written') throw new Error(`章节记忆后处理未写入：${result}`)
+      if (result !== 'written') {
+        // Coded failure: durable classification must derive from the stable status,
+        // not the localized display message.
+        const memoryClassification = result === 'stale'
+          ? { category: 'stale-input', action: 'replan', retryable: false } as const
+          : result === 'parse-error'
+            ? { category: 'protocol', action: 'retry', retryable: true } as const
+            : { category: 'transient', action: 'retry', retryable: true } as const
+        throw new AgentRunFailureError({
+          code: 'post_adoption_memory_not_written',
+          ...memoryClassification,
+          displayMessage: t('chapterEditor.postAdoptionMemoryNotWritten', { status: result }),
+        })
+      }
       updateSnapshot(await recordChapterPostAdoptionOutputV1({
         scope,
         snapshot,
@@ -2723,7 +2830,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         stepId: CHAPTER_POST_ADOPTION_STEP_IDS_V1.memory,
         ...failure,
       }))
-      setTransitionError(error instanceof Error ? error.message : '章节记忆后处理失败')
+      setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.postAdoptionMemoryFailed' })
     }
 
     // 3. 记忆写回后再重建检索与层级摘要，避免把刚生成的可信摘要留在 pending 状态。
@@ -2743,7 +2850,15 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         model: false,
       }))
       const chapter = await db.chapters.get(task.chapterId)
-      if (!chapter) throw new Error('章节在后处理期间不可见。')
+      if (!chapter) {
+        throw new AgentRunFailureError({
+          code: 'post_adoption_chapter_not_visible',
+          category: 'deterministic',
+          action: 'pause-for-author',
+          retryable: false,
+          displayMessage: t('chapterEditor.postAdoptionChapterNotVisible'),
+        })
+      }
       const chunks = await rebuildChapterChunks({
         projectId: project.id!,
         chapter: { ...chapter, content: task.chapterContent },
@@ -2771,7 +2886,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         stepId: CHAPTER_POST_ADOPTION_STEP_IDS_V1.retrieval,
         ...failure,
       }))
-      setTransitionError(error instanceof Error ? error.message : '检索后处理失败')
+      setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.postAdoptionRetrievalFailed' })
     }
 
     // 4. 零 token 确定性一致性守卫。报告进入同一 durable Run；语义深审仍由作者显式触发。
@@ -2849,7 +2964,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         stepId: CHAPTER_POST_ADOPTION_STEP_IDS_V1.consistency,
         ...failure,
       }))
-      setTransitionError(error instanceof Error ? error.message : '正文一致性守卫失败')
+      setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.postAdoptionConsistencyFailed' })
     }
     } finally {
       if (organizationAbortRef.current === controller) organizationAbortRef.current = null
@@ -2859,7 +2974,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
 
   const handleResumePostAdoption = () => {
     if (!currentChapter?.id || postAdoptionRunId == null || organizingChapter) return
-    const chapterTitle = outlineNode?.title || currentChapter.title || '未知章节'
+    const chapterTitle = outlineNode?.title || currentChapter.title || CANONICAL_UNTITLED_CHAPTER_TITLE
     void handleAutoPostGenerate({
       chapterId: currentChapter.id,
       chapterTitle,
@@ -2867,14 +2982,14 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       chapterPlainText: htmlToPlainText(currentChapter.content ?? content),
       resumeRunId: postAdoptionRunId,
     }).catch(error => {
-      setTransitionError(error instanceof Error ? error.message : '章节后处理恢复失败')
+      setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.postAdoptionResumeFailed' })
     })
   }
 
   const handleAcceptAI = async (text: string) => {
     if (!editorRef.current || !currentChapter?.id) return
     const acceptedChapterId = currentChapter.id
-    const acceptedChapterTitle = outlineNode?.title || currentChapter.title || t('chapterEditor.unknownChapter')
+    const acceptedChapterTitle = outlineNode?.title || currentChapter.title || CANONICAL_UNTITLED_CHAPTER_TITLE
     const aiAction = ai.operation
     if (
       (aiAction === 'polish' || aiAction === 'expand' || aiAction === 'deai')
@@ -2936,7 +3051,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
             artifactHash: durableCandidate.expectedContentHash,
           },
         }).catch(error => {
-          setTransitionError(error instanceof Error ? error.message : '章节后处理启动失败')
+          setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.postAdoptionStartFailed' })
         })
       } catch (error) {
         if (aiAction === 'continue') {
@@ -2944,15 +3059,15 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
           setContent(beforeHtml)
           setPlainText(editorRef.current.getPlainText())
         }
-        setTransitionError(error instanceof Error ? error.message : '正文候选采纳失败')
+        setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.proseAdoptFailed' })
       }
       return
     }
     if (shouldAutoProcess) {
       await dialog.alert({
-        title: '正文候选不可采纳',
-        message: proseGenerationError
-          || '本次输出没有通过 durable 候选与信息边界校验。请关闭后重试，作者原稿未被修改。',
+        title: t('chapterEditor.proseCandidateNotAdoptable'),
+        message: renderEditorMessage(proseGenerationError)
+          || t('chapterEditor.proseCandidateNotAdoptableMessage'),
       })
       return
     }
@@ -2970,7 +3085,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
       // polish/expand/deai（选区）：替换选区（若无选区则插入在光标处）
       editorRef.current.replaceSelection(html)
     }
-    setProseGenerationError('')
+    setProseGenerationError(null)
     ai.reset()
 
     // 先把完整正文落库，再启动带 hash CAS 的异步后处理。
@@ -2990,7 +3105,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
         chapterContent: fullHtml,
         chapterPlainText: fullText,
       }).catch(error => {
-        setTransitionError(error instanceof Error ? error.message : '章节后处理启动失败')
+        setTransitionError(error instanceof Error ? { kind: 'raw', text: error.message } : { kind: 'descriptor', key: 'chapterEditor.postAdoptionStartFailed' })
       })
     }
   }
@@ -3106,18 +3221,18 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
             ),
           )}
           analyzingImpact={analyzingImpact}
-          impactInfo={impactInfo}
+          impactInfo={renderEditorMessage(impactInfo) || null}
           impactRemediationPlan={impactRemediationPlan}
           impactDownstreamSchedule={impactDownstreamSchedule}
           impactRemediationBusy={impactRemediationBusy}
           impactRemediationReceipt={impactRemediationReceipt}
-          impactRemediationError={impactRemediationError || null}
+          impactRemediationError={renderEditorMessage(impactRemediationError) || null}
           impactReviewItemId={impactReviewItemId}
           impactReviewDecision={impactReviewDecision}
           impactReviewNote={impactReviewNote}
           impactReviewBusy={impactReviewBusy}
           impactReviewReceipt={impactReviewReceipt}
-          impactReviewError={impactReviewError || null}
+          impactReviewError={renderEditorMessage(impactReviewError) || null}
           impactReviewRecords={impactReviewRecords}
           impactPatchTargets={impactPatchTargets}
           impactPatchTargetId={impactPatchTargetId}
@@ -3125,19 +3240,19 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
           impactPatchReason={impactPatchReason}
           impactPatchCandidate={impactPatchCandidate}
           impactPatchBusy={impactPatchBusy}
-          impactPatchError={impactPatchError || null}
+          impactPatchError={renderEditorMessage(impactPatchError) || null}
           impactOutlineRegenerationTargets={impactOutlineRegenerationTargets}
           impactOutlineRegenerationItemId={impactOutlineRegenerationItemId}
           impactOutlineRegenerationCandidate={impactOutlineRegenerationCandidate}
           impactOutlineRegenerationBusy={impactOutlineRegenerationBusy}
           impactOutlineRegenerationReceipt={impactOutlineRegenerationReceipt}
-          impactOutlineRegenerationError={impactOutlineRegenerationError || null}
+          impactOutlineRegenerationError={renderEditorMessage(impactOutlineRegenerationError) || null}
           impactStoryTimelineRegenerationTargets={impactStoryTimelineRegenerationTargets}
           impactStoryTimelineRegenerationItemId={impactStoryTimelineRegenerationItemId}
           impactStoryTimelineRegenerationCandidate={impactStoryTimelineRegenerationCandidate}
           impactStoryTimelineRegenerationBusy={impactStoryTimelineRegenerationBusy}
           impactStoryTimelineRegenerationReceipt={impactStoryTimelineRegenerationReceipt}
-          impactStoryTimelineRegenerationError={impactStoryTimelineRegenerationError || null}
+          impactStoryTimelineRegenerationError={renderEditorMessage(impactStoryTimelineRegenerationError) || null}
           hasOutline={!!outlineNodeId}
           showOutlinePreview={showOutlinePreview}
           showReviewPanel={showReviewPanel}
@@ -3327,14 +3442,13 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
 
       {proseGenerationError && (
         <div className="mb-3 rounded-lg border border-error/30 bg-error/5 px-3 py-2 text-xs text-error">
-          正文候选未通过质量门：{proseGenerationError}
+          {t('chapterEditor.proseQualityGateFailed', { message: renderEditorMessage(proseGenerationError) })}
         </div>
       )}
 
       {proseCandidate && (
         <div data-testid="prose-explicit-review-notice" className="mb-3 border-l-2 border-l-accent bg-accent/5 px-3 py-2 text-xs text-text-secondary">
-          本次正文只调用模型生成一次，没有自动追加语义评审或整章重写。你可以先采纳这个可编辑候选；
-          需要深度评审时，再由你从评审入口显式发起并确认费用。
+          {t('chapterEditor.proseExplicitReviewNotice')}
         </div>
       )}
 
@@ -3378,32 +3492,32 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
           ? 'bg-amber-500/10 border-amber-500/20 text-amber-300'
           : 'bg-sky-500/10 border-sky-500/20 text-sky-300'}`}>
           <div>
-            章节后处理 Run #{postAdoptionRunId ?? transitionRunId ?? '—'} · 六域交接、章节记忆、检索与一致性守卫统一记录，可恢复
+            {t('chapterEditor.postAdoptionRunLabel', { runId: postAdoptionRunId ?? transitionRunId ?? '—' })}
           </div>
           {postAdoptionChainState && (
             <div className="mt-1">
-              全链状态：{postAdoptionChainState === 'downstream-completed'
-                ? '正文与章后交接均已完成'
+              {t('chapterEditor.postAdoptionChainLabel')}{postAdoptionChainState === 'downstream-completed'
+                ? t('chapterEditor.postAdoptionChainDownstreamCompleted')
                 : postAdoptionChainState === 'downstream-awaiting-confirmation'
-                  ? '正文已完成，章后交接等待作者确认'
+                  ? t('chapterEditor.postAdoptionChainAwaitingConfirmation')
                   : postAdoptionChainState === 'downstream-failed'
-                    ? '正文已完成，章后交接失败但可恢复'
+                    ? t('chapterEditor.postAdoptionChainDownstreamFailed')
                     : postAdoptionChainState === 'upstream-invalid'
-                      ? '父正文回执或正文产物已失效，需要重新处理'
+                      ? t('chapterEditor.postAdoptionChainUpstreamInvalid')
                       : postAdoptionChainState === 'prose-completed'
-                        ? '正文已完成，章后处理尚未启动'
+                        ? t('chapterEditor.postAdoptionChainProseCompleted')
                         : postAdoptionChainState === 'legacy-unlinked'
-                          ? '兼容后处理记录未绑定正文 Run'
-                          : '正文已完成，章后处理正在执行'}
+                          ? t('chapterEditor.postAdoptionChainLegacyUnlinked')
+                          : t('chapterEditor.postAdoptionChainInProgress')}
             </div>
           )}
           {organizationRun?.candidate.durable?.stepId === CHAPTER_POST_ADOPTION_STEP_IDS_V1.organization && (
-            <div className="mt-1">六域交接候选待作者确认，确认后才会写入状态、事实、物品、年表、关系与伏笔。</div>
+            <div className="mt-1">{t('chapterEditor.postAdoptionOrgPendingNote')}</div>
           )}
           {transitionCandidate && transitionCandidate.stateDiffs.length > 0 && (
-            <div className="mt-1">状态候选待作者确认：{transitionCandidate.stateDiffs.length} 条</div>
+            <div className="mt-1">{t('chapterEditor.postAdoptionStatePendingNote', { count: transitionCandidate.stateDiffs.length })}</div>
           )}
-          {transitionError && <div className="mt-1">{transitionError}</div>}
+          {transitionError && <div className="mt-1">{renderEditorMessage(transitionError)}</div>}
           {postAdoptionChainState === 'downstream-failed' && (
             <button
               type="button"
@@ -3412,7 +3526,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
               disabled={organizingChapter}
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              继续章后处理
+              {t('chapterEditor.postAdoptionResumeBtn')}
             </button>
           )}
         </div>
@@ -3503,8 +3617,8 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
           setSavedContent(html)
           void refreshChapter(currentChapter.id!)
           setImpactInfo(demotedFacts > 0
-            ? `局部编辑已写入；${demotedFacts} 条失去逐字证据的确认事实已标为待复核。`
-            : '局部编辑已写入并通过正文终验。')
+            ? { kind: 'descriptor', key: 'chapterEditor.floatingToolbarImpactDemoted', params: { count: demotedFacts } }
+            : { kind: 'descriptor', key: 'chapterEditor.floatingToolbarImpactClean' })
         }}
         disabled={ai.isStreaming}
       />}
@@ -3544,7 +3658,7 @@ export default function ChapterEditor({ project, outlineNodeId }: Props) {
             run={organizationRun}
             current={organizationCurrent}
             busy={organizingChapter}
-            error={organizationError}
+            error={renderEditorMessage(organizationError)}
             onApply={selection => { void handleApplyChapterOrganization(selection) }}
             onRerun={() => { void handleRunChapterOrganization(true) }}
             onClose={() => setShowOrganization(false)}

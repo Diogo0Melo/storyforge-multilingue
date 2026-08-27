@@ -89,6 +89,10 @@ const TABLE_DISPLAY_PRIORITY: Record<WorldDomainSummary['key'], readonly string[
 
 function DomainCard({ summary, onOpenModule }: { summary: WorldDomainSummary; onOpenModule: Props['onOpenModule'] }) {
   const { t } = useDomainT('worldview')
+  // Display-only i18n 投影：DOMAIN_DEFINITIONS 登记的稳定 labelKey/descriptionKey 只在
+  // 渲染时解析；legacy canonical label/description 仅作缺 key 回退。翻译文案不进入投影数据。
+  const domainLabel = t(summary.labelKey, summary.label)
+  const domainDescription = t(summary.descriptionKey, summary.description)
   const meta = DOMAIN_META[summary.key]
   const Icon = meta.icon
   const priority = TABLE_DISPLAY_PRIORITY[summary.key]
@@ -106,14 +110,14 @@ function DomainCard({ summary, onOpenModule }: { summary: WorldDomainSummary; on
       </span>
       <div className="sf-feature-copy">
         <div className="sf-world-domain-heading">
-          <h3>{summary.label}</h3>
+          <h3>{domainLabel}</h3>
           <span className={`sf-world-domain-status sf-world-domain-status-${STATUS_TONES[summary.status]}`}>
             {t(`worldEngine.domainStatus.${summary.status}`)}
           </span>
         </div>
-        <p>{summary.description}</p>
+        <p>{domainDescription}</p>
       </div>
-      <div className="sf-world-domain-progress" aria-label={t('worldEngine.domain.coverageAria', { label: summary.label, coverage: summary.coverage })}>
+      <div className="sf-world-domain-progress" aria-label={t('worldEngine.domain.coverageAria', { label: domainLabel, coverage: summary.coverage })}>
         <span style={{ width: `${summary.coverage}%` }} />
       </div>
       <div className="sf-world-domain-meta">
@@ -129,7 +133,7 @@ function DomainCard({ summary, onOpenModule }: { summary: WorldDomainSummary; on
           ))
           : <span>{t('worldEngine.domain.emptyTablesHint')}</span>}
       </div>
-      <div className="sf-world-domain-modules" aria-label={t('worldEngine.domain.moduleLinksAria', { label: summary.label })}>
+      <div className="sf-world-domain-modules" aria-label={t('worldEngine.domain.moduleLinksAria', { label: domainLabel })}>
         {meta.modules.map(item => (
           <button key={item.module} onClick={() => onOpenModule(item.module)}>
             <span>{t(`worldEngine.moduleLinks.${item.labelKey}`)}</span>

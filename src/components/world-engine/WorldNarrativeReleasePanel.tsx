@@ -89,7 +89,9 @@ interface Props {
 
 export default function WorldNarrativeReleasePanel({ project, projectId, worldGroupId = null, activeWorkId, onChanged, onOpenRuntime, onOpenGame }: Props) {
   const dialog = useDialog()
-  const { t } = useDomainT('worldview')
+  const { t, lang } = useDomainT('worldview')
+  // 渲染期列表连接：跟随 UI locale（表名等 canonical 技术标识只被连接、不被翻译）。
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   // 共享 canonical kind 投影归 simulation 命名空间所有（见文件头注释）；
   // 面板自身 UI 文案继续走 worldview t。
   const { t: simulationT } = useDomainT('simulation')
@@ -520,7 +522,7 @@ export default function WorldNarrativeReleasePanel({ project, projectId, worldGr
           <fieldset className="sf-world-release-sections">
             <legend>{t('worldNarrative.sectionsLegend')}</legend>
             {WORLD_RELEASE_SECTIONS.map(section => (
-              <label key={section.key} title={section.description}>
+              <label key={section.key} title={t(section.descriptionKey, section.description)}>
                 <input
                   type="checkbox"
                   checked={selectedSections.has(section.key)}
@@ -530,7 +532,7 @@ export default function WorldNarrativeReleasePanel({ project, projectId, worldGr
                     return next
                   })}
                 />
-                <span>{section.label}</span>
+                <span>{t(section.labelKey, section.label)}</span>
               </label>
             ))}
           </fieldset>
@@ -546,7 +548,7 @@ export default function WorldNarrativeReleasePanel({ project, projectId, worldGr
               <span>{t('worldNarrative.diffAdded', { total: revisionDiff.added.length })}</span>
               <span>{t('worldNarrative.diffChanged', { total: revisionDiff.changed.length })}</span>
               <span>{t('worldNarrative.diffRemoved', { total: revisionDiff.removed.length })}</span>
-              {!!revisionDiff.changed.length && <small title={revisionDiff.changed.join(', ')}>{revisionDiff.changed.join('、')}</small>}
+              {!!revisionDiff.changed.length && <small title={revisionDiff.changed.join(', ')}>{listFormat.format(revisionDiff.changed)}</small>}
             </div>
           )}
         </div>

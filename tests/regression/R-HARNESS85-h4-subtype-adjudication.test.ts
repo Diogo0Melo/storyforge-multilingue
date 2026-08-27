@@ -3,6 +3,7 @@ import { hashCanonicalValue } from '../../src/lib/agent/run/hash'
 import {
   H4_LONG_CONSISTENCY_FIXTURES_V1,
   H4_SUBTYPE_ADJUDICATION_PROMPT_VERSION_V1,
+  LongConsistencyIdentityMismatchError,
   buildH4SubtypeAdjudicationMessagesV1,
   clearH4SubtypeAdjudicationBrowserCheckpointV1,
   deriveH4SubtypeAdjudicatedIssuesV1,
@@ -110,7 +111,28 @@ async function resignCheckpoint(
   return { ...checkpoint, checkpointHash: await hashCanonicalValue(body) }
 }
 
-describe('R-HARNESS85 · verified evidence pair subtype adjudication', () => {
+describe('R-HARNESS85 · verified evidence pair subtype adjudication', { timeout: 20_000 }, () => {
+  it('rethrows identity mismatch before recording an adjudicator failure, call, or checkpoint', async () => {
+    const base = await createBase([CONFLICT_FIXTURE.id])
+    const identityError = new LongConsistencyIdentityMismatchError('adjudicator')
+    const checkpoints: H4SubtypeAdjudicationCheckpointV1[] = []
+
+    await expect(runH4SubtypeAdjudicationV1({
+      runId: 'h85-identity-mismatch-test',
+      codeRevision: 'h85-test',
+      baseCheckpoint: base,
+      adjudicator: adjudicatorBinding(),
+      call: async () => { throw identityError },
+      now: () => 0,
+      onCheckpoint: checkpoint => { checkpoints.push(checkpoint) },
+    })).rejects.toBe(identityError)
+
+    expect(checkpoints).toHaveLength(1)
+    expect(checkpoints[0].failures).toEqual([])
+    expect(checkpoints[0].calls).toEqual([])
+    expect(checkpoints[0].attempts[0].count).toBe(0)
+  })
+
   it('shows only deterministic candidate ids and verified quote pairs, never stage-one labels or summaries', async () => {
     const base = await createBase([CONFLICT_FIXTURE.id])
     const sourceCase = base.completed[0]

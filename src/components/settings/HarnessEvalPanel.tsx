@@ -36,13 +36,25 @@ import {
   type H4SubtypeAdjudicationSealedScoreV1,
 } from '../../lib/evals/long-consistency'
 import { getFixtures } from '../../lib/evals/long-consistency/fixtures'
+import { LongConsistencyIdentityMismatchError } from '../../lib/evals/long-consistency/identity-mismatch'
 import type { EvalSplit } from '../../lib/evals/long-consistency/types'
 import type { AIConfig, ChatMessage } from '../../lib/types'
 import { APP_BUILD_ID } from '../../lib/version'
 import { useAIConfigStore } from '../../stores/ai-config'
+import { useDomainT } from '../../i18n'
 import { useDialog } from '../shared/Dialog'
 import H86StoryArcEvalPanel from './H86StoryArcEvalPanel'
 import CreativeReliabilityEvalPanel from './CreativeReliabilityEvalPanel'
+
+/**
+ * Typed panel message: either an i18n descriptor translated at render time
+ * (reactive to locale switches) or a raw provider/engine string kept verbatim.
+ * Internal application messages use descriptors; catches from engine/provider
+ * failures remain raw and unchanged.
+ */
+type PanelMessage =
+  | { kind: 'descriptor'; key: string; params?: Record<string, unknown> }
+  | { kind: 'raw'; text: string }
 
 interface SplitViewState {
   checkpoint: H4LongConsistencyRunCheckpointV1 | null
@@ -62,27 +74,6 @@ const EMPTY_SPLIT_STATE: Record<EvalSplit, SplitViewState> = {
 const EMPTY_ADJUDICATION_SPLIT_STATE: Record<EvalSplit, AdjudicationSplitViewState> = {
   development: { checkpoint: null, score: null },
   'held-out': { checkpoint: null, score: null },
-}
-
-const CONTEXT_VARIANT_LABELS: Record<ContextCompressionEvalRecordV1['variant'], string> = {
-  'full-source': '全文基线',
-  'deterministic-truncation': '旧截断',
-  'semantic-compression': '语义压缩',
-}
-
-const STATUS_LABELS: Record<H4LongConsistencyRunCheckpointV1['status'], string> = {
-  running: '可恢复',
-  completed: '已完成',
-  failed: '失败',
-  'budget-exhausted': '预算耗尽',
-}
-
-const H85_STATUS_LABELS: Record<H4SubtypeAdjudicationCheckpointV1['status'], string> = {
-  running: '可恢复',
-  completed: '已完成',
-  failed: '失败',
-  'budget-exhausted': '预算耗尽',
-  'provider-blocked': '服务暂阻，可继续',
 }
 
 function isAdjudicationResumable(
@@ -140,7 +131,7 @@ async function callH4Verifier(
   config: AIConfig,
 ) {
   if (input.verifier.provider !== config.provider || input.verifier.model !== config.model) {
-    throw new Error('当前模型与 H4 checkpoint 冻结的 verifier 身份不一致')
+    throw new LongConsistencyIdentityMismatchError('verifier')
   }
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 180_000)
@@ -179,7 +170,7 @@ async function callH4SubtypeAdjudicator(
   config: AIConfig,
 ) {
   if (input.adjudicator.provider !== config.provider || input.adjudicator.model !== config.model) {
-    throw new Error('当前模型与 H85 checkpoint 冻结的 adjudicator 身份不一致')
+    throw new LongConsistencyIdentityMismatchError('adjudicator')
   }
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), 180_000)
@@ -211,10 +202,6 @@ async function callH4SubtypeAdjudicator(
   }
 }
 
-function formatRate(value: number | null): string {
-  return value == null ? '无样本' : `${(value * 100).toFixed(1)}%`
-}
-
 function downloadJson(raw: string, filename: string): void {
   const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }))
   const anchor = document.createElement('a')
@@ -225,6 +212,8 @@ function downloadJson(raw: string, filename: string): void {
 }
 
 export default function HarnessEvalPanel() {
+  const { t, lang } = useDomainT('settings')
+  const listFormat = useMemo(() => new Intl.ListFormat(lang, { type: 'conjunction', style: 'short' }), [lang])
   const config = useAIConfigStore(state => state.config)
   const dialog = useDialog()
   const [splits, setSplits] = useState<Record<EvalSplit, SplitViewState>>(EMPTY_SPLIT_STATE)
@@ -243,12 +232,41 @@ export default function HarnessEvalPanel() {
     development: '',
     'held-out': '',
   })
-  const [progress, setProgress] = useState('')
-  const [error, setError] = useState('')
+  const [progress, setProgress] = useState<PanelMessage | null>(null)
+  const [error, setError] = useState<PanelMessage | null>(null)
   const importInputRefs = useRef<Record<EvalSplit, HTMLInputElement | null>>({
     development: null,
     'held-out': null,
   })
+
+  const formatRate = (value: number | null): string => (
+    value == null ? t('evalHarness.noSamples') : `${(value * 100).toFixed(1)}%`
+  )
+
+  /** Localized display label for an eval split (raw IDs stay in checkpoint/export/hash). */
+  const splitLabel = (split: EvalSplit): string => (
+    split === 'held-out' ? t('evalHarness.h4.heldOutLabel') : t('evalHarness.h4.developmentLabel')
+  )
+
+  /** Translate a PanelMessage descriptor at render time; raw text passes through.
+   *  Split ID params are resolved to localized labels here so a locale switch
+   *  re-renders the message while raw IDs remain untouched in state. */
+  const renderMessage = (message: PanelMessage | null): string => {
+    if (!message) return ''
+    if (message.kind === 'raw') return message.text
+    if (!message.params) return t(message.key)
+    const resolved: Record<string, unknown> = { ...message.params }
+    if (typeof resolved.found === 'string' && (resolved.found === 'development' || resolved.found === 'held-out')) {
+      resolved.found = splitLabel(resolved.found as EvalSplit)
+    }
+    if (typeof resolved.target === 'string' && (resolved.target === 'development' || resolved.target === 'held-out')) {
+      resolved.target = splitLabel(resolved.target as EvalSplit)
+    }
+    if (typeof resolved.split === 'string' && (resolved.split === 'development' || resolved.split === 'held-out')) {
+      resolved.split = splitLabel(resolved.split as EvalSplit)
+    }
+    return t(message.key, resolved)
+  }
 
   useEffect(() => {
     let active = true
@@ -261,7 +279,7 @@ export default function HarnessEvalPanel() {
         state ?? { checkpoint: null, score: null },
       ])) as Record<EvalSplit, SplitViewState>)
     }).catch(cause => {
-      if (active) setError(cause instanceof Error ? cause.message : String(cause))
+      if (active) setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     })
 
     void Promise.all((['development', 'held-out'] as const).map(async split => (
@@ -273,7 +291,7 @@ export default function HarnessEvalPanel() {
         state ?? { checkpoint: null, score: null },
       ])) as Record<EvalSplit, AdjudicationSplitViewState>)
     }).catch(cause => {
-      if (active) setError(cause instanceof Error ? cause.message : String(cause))
+      if (active) setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     })
 
     const stored = readContextCompressionRecords()
@@ -304,20 +322,22 @@ export default function HarnessEvalPanel() {
 
   const runH4 = async (split: EvalSplit) => {
     setRunningSplit(split)
-    setError('')
+    setError(null)
     const existing = splits[split].checkpoint
     const total = split === 'development' ? 40 : 20
-    setProgress(`${existing?.completed.length ?? 0}/${total}`)
+    setProgress({ kind: 'raw', text: `${existing?.completed.length ?? 0}/${total}` })
+    if (
+      existing?.status === 'running'
+      && (existing.execution.verifier.provider !== config.provider
+        || existing.execution.verifier.model !== config.model)
+    ) {
+      setError({ kind: 'descriptor', key: 'evalHarness.h4.switchBackToResume', params: {
+        identity: `${existing.execution.verifier.provider}/${existing.execution.verifier.model}`,
+      } })
+      setRunningSplit(null)
+      return
+    }
     try {
-      if (
-        existing?.status === 'running'
-        && (existing.execution.verifier.provider !== config.provider
-          || existing.execution.verifier.model !== config.model)
-      ) {
-        throw new Error(
-          `请先切回 ${existing.execution.verifier.provider}/${existing.execution.verifier.model} 再继续该 checkpoint`,
-        )
-      }
       const checkpoint = await runH4LongConsistencyVerifierV1({
         runId: existing?.runId ?? `h4-${split}-${crypto.randomUUID()}`,
         split,
@@ -340,13 +360,17 @@ export default function HarnessEvalPanel() {
         onCheckpoint: async next => {
           await persistH4LongConsistencyBrowserCheckpointV1(next)
           updateSplit(split, next)
-          setProgress(`${next.completed.length}/${next.fixtureIds.length}`)
+          setProgress({ kind: 'raw', text: `${next.completed.length}/${next.fixtureIds.length}` })
         },
       })
       const score = await scoreH4LongConsistencyCheckpointV1({ checkpoint })
       updateSplit(split, checkpoint, score)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError(
+        cause instanceof LongConsistencyIdentityMismatchError && cause.scope === 'verifier'
+          ? { kind: 'descriptor', key: 'evalHarness.h4.verifierIdentityMismatch' }
+          : { kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) },
+      )
     } finally {
       setRunningSplit(null)
     }
@@ -354,19 +378,19 @@ export default function HarnessEvalPanel() {
 
   const resetSplit = async (split: EvalSplit) => {
     const confirmed = await dialog.confirm({
-      title: '清除 H4 checkpoint？',
-      message: '未导出的评测证据将无法恢复。',
-      confirmText: '清除',
-      cancelText: '保留',
+      title: t('evalHarness.h4.clearConfirmTitle'),
+      message: t('evalHarness.h4.clearConfirmMessage'),
+      confirmText: t('evalHarness.actions.clear'),
+      cancelText: t('evalHarness.actions.keep'),
       tone: 'danger',
     })
     if (!confirmed) return
     try {
       clearH4LongConsistencyBrowserCheckpointV1(split)
       updateSplit(split, null)
-      setError('')
+      setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
@@ -377,7 +401,7 @@ export default function HarnessEvalPanel() {
       const raw = await exportH4LongConsistencyRunCheckpointV1(checkpoint)
       downloadJson(raw, `storyforge-h4-${split}-${checkpoint.runId}.json`)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
@@ -388,22 +412,25 @@ export default function HarnessEvalPanel() {
       const raw = await exportH4LongConsistencyRunCheckpointV1(checkpoint)
       await navigator.clipboard.writeText(raw)
       setCopiedSplit(split)
-      setError('')
+      setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
   const importSplitRaw = async (split: EvalSplit, raw: string) => {
     try {
       const checkpoint = await importH4LongConsistencyRunCheckpointV1(raw)
-      if (checkpoint.split !== split) throw new Error(`导入文件属于 ${checkpoint.split}，不能写入 ${split} 槽`)
+      if (checkpoint.split !== split) {
+        setError({ kind: 'descriptor', key: 'evalHarness.h4.importSplitMismatch', params: { found: checkpoint.split, target: split } })
+        return
+      }
       if (splits[split].checkpoint) {
         const confirmed = await dialog.confirm({
-          title: `替换 ${split} checkpoint？`,
-          message: '导入文件已通过完整性验证；继续会替换浏览器中的当前槽，原 checkpoint 不会自动导出。',
-          confirmText: '替换',
-          cancelText: '保留',
+          title: t('evalHarness.h4.replaceConfirmTitle', { split: splitLabel(split) }),
+          message: t('evalHarness.h4.replaceConfirmMessage'),
+          confirmText: t('evalHarness.actions.replace'),
+          cancelText: t('evalHarness.actions.keep'),
           tone: 'danger',
         })
         if (!confirmed) return
@@ -412,9 +439,9 @@ export default function HarnessEvalPanel() {
       updateSplit(split, checkpoint, await scoreH4LongConsistencyCheckpointV1({ checkpoint }))
       setImportDrafts(current => ({ ...current, [split]: '' }))
       setImportingSplit(null)
-      setError('')
+      setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
@@ -429,27 +456,31 @@ export default function HarnessEvalPanel() {
 
   const runAdjudication = async (split: EvalSplit) => {
     setRunningAdjudicationSplit(split)
-    setError('')
+    setError(null)
     const baseCheckpoint = splits[split].checkpoint
     const existing = adjudicationSplits[split].checkpoint
     const frozenBaseCheckpoint = existing?.baseCheckpoint ?? baseCheckpoint
     const resumable = isAdjudicationResumable(existing)
-    setProgress(`${existing?.completed.length ?? 0}/${frozenBaseCheckpoint?.fixtureIds.length ?? 0}`)
+    setProgress({ kind: 'raw', text: `${existing?.completed.length ?? 0}/${frozenBaseCheckpoint?.fixtureIds.length ?? 0}` })
+    if (!frozenBaseCheckpoint || frozenBaseCheckpoint.status !== 'completed') {
+      setError({ kind: 'descriptor', key: 'evalHarness.h85.requiresBase' })
+      setRunningAdjudicationSplit(null)
+      return
+    }
+    if (
+      resumable
+      && (
+        existing.execution.adjudicator.provider !== config.provider
+        || existing.execution.adjudicator.model !== config.model
+      )
+    ) {
+      setError({ kind: 'descriptor', key: 'evalHarness.h85.switchBackToResume', params: {
+        identity: `${existing.execution.adjudicator.provider}/${existing.execution.adjudicator.model}`,
+      } })
+      setRunningAdjudicationSplit(null)
+      return
+    }
     try {
-      if (!frozenBaseCheckpoint || frozenBaseCheckpoint.status !== 'completed') {
-        throw new Error('H85 需要同 split 已完成并验签的 H4 judge v7 checkpoint')
-      }
-      if (
-        resumable
-        && (
-          existing.execution.adjudicator.provider !== config.provider
-          || existing.execution.adjudicator.model !== config.model
-        )
-      ) {
-        throw new Error(
-          `请先切回 ${existing.execution.adjudicator.provider}/${existing.execution.adjudicator.model} 再继续该 H85 checkpoint`,
-        )
-      }
       const checkpoint = await runH4SubtypeAdjudicationV1({
         runId: existing?.runId ?? `h85-${split}-${crypto.randomUUID()}`,
         codeRevision: existing?.codeRevision ?? APP_BUILD_ID,
@@ -465,13 +496,17 @@ export default function HarnessEvalPanel() {
         onCheckpoint: async next => {
           await persistH4SubtypeAdjudicationBrowserCheckpointV1(next)
           updateAdjudicationSplit(split, next)
-          setProgress(`${next.completed.length}/${next.fixtureIds.length}`)
+          setProgress({ kind: 'raw', text: `${next.completed.length}/${next.fixtureIds.length}` })
         },
       })
       const score = await scoreH4SubtypeAdjudicationCheckpointV1({ checkpoint })
       updateAdjudicationSplit(split, checkpoint, score)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError(
+        cause instanceof LongConsistencyIdentityMismatchError && cause.scope === 'adjudicator'
+          ? { kind: 'descriptor', key: 'evalHarness.h85.adjudicatorIdentityMismatch' }
+          : { kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) },
+      )
     } finally {
       setRunningAdjudicationSplit(null)
     }
@@ -479,19 +514,19 @@ export default function HarnessEvalPanel() {
 
   const resetAdjudication = async (split: EvalSplit) => {
     const confirmed = await dialog.confirm({
-      title: '清除 H85 checkpoint？',
-      message: '未导出的两阶段判类证据将无法恢复；H4 父 checkpoint 不受影响。',
-      confirmText: '清除',
-      cancelText: '保留',
+      title: t('evalHarness.h85.clearConfirmTitle'),
+      message: t('evalHarness.h85.clearConfirmMessage'),
+      confirmText: t('evalHarness.actions.clear'),
+      cancelText: t('evalHarness.actions.keep'),
       tone: 'danger',
     })
     if (!confirmed) return
     try {
       clearH4SubtypeAdjudicationBrowserCheckpointV1(split)
       updateAdjudicationSplit(split, null)
-      setError('')
+      setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
@@ -502,7 +537,7 @@ export default function HarnessEvalPanel() {
       const raw = await exportH4SubtypeAdjudicationCheckpointV1(checkpoint)
       downloadJson(raw, `storyforge-h85-${split}-${checkpoint.runId}.json`)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
@@ -513,9 +548,9 @@ export default function HarnessEvalPanel() {
       const raw = await exportH4SubtypeAdjudicationCheckpointV1(checkpoint)
       await navigator.clipboard.writeText(raw)
       setCopiedAdjudicationSplit(split)
-      setError('')
+      setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
@@ -529,16 +564,16 @@ export default function HarnessEvalPanel() {
     try {
       const raw = await exportH4SubtypeAdjudicationCheckpointV1(checkpoint)
       setAdjudicationExportJson(current => ({ ...current, [split]: raw }))
-      setError('')
+      setError(null)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     }
   }
 
   const runCompressionMatrix = async () => {
     setCompressionRunning(true)
-    setError('')
-    setProgress('0/3 组')
+    setError(null)
+    setProgress({ kind: 'descriptor', key: 'evalHarness.h17.progressGroups', params: { completed: 0, total: 3 } })
     try {
       const records = await runContextCompressionEvalMatrixV1({
         fixtures: getFixtures('development').slice(0, 3),
@@ -551,14 +586,21 @@ export default function HarnessEvalPanel() {
           runConfig,
           phase === 'compression' ? 'eval.h17.compression' : 'eval.h17.generation',
         ),
-        onVariantComplete: (_record, completed, total) => setProgress(`${completed}/${total} 组`),
+        onVariantComplete: (_record, completed, total) => setProgress(
+          { kind: 'descriptor', key: 'evalHarness.h17.progressGroups', params: { completed, total } },
+        ),
         onCaseProgress: (variantIndex, variantTotal, completed, total) => {
-          setProgress(`${variantIndex + 1}/${variantTotal} 组 · ${completed}/${total} 例`)
+          setProgress({ kind: 'descriptor', key: 'evalHarness.h17.progressGroupCases', params: {
+            variant: variantIndex + 1,
+            variantTotal,
+            completed,
+            total,
+          } })
         },
       })
       setCompressionRecords(records)
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
+      setError({ kind: 'raw', text: cause instanceof Error ? cause.message : String(cause) })
     } finally {
       setCompressionRunning(false)
     }
@@ -587,15 +629,21 @@ export default function HarnessEvalPanel() {
     const isResumable = checkpoint?.status === 'running'
     const locked = checkpoint != null && checkpoint.status !== 'running'
     const heldOutBlocked = split === 'held-out' && !isResumable && !developmentPassed
+    const statusLine = checkpoint
+      ? t('evalHarness.h4.statusLine', {
+          generator: `${checkpoint.execution.generator.provider}/${checkpoint.execution.generator.model}`,
+          verifier: `${checkpoint.execution.verifier.provider}/${checkpoint.execution.verifier.model}`,
+          status: t(`evalHarness.status.${checkpoint.status}`),
+          progress: `${checkpoint.completed.length}/${checkpoint.fixtureIds.length}`,
+        })
+      : split === 'development' ? t('evalHarness.h4.developmentCases') : t('evalHarness.h4.heldOutLocked')
     return (
       <section className="border-t border-border/60 py-3 first:border-t-0" data-testid={`h4-${split}-section`}>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h4 className="text-xs font-medium text-text-primary">{label}</h4>
             <p className="mt-0.5 text-[11px] text-text-muted">
-              {checkpoint
-                ? `生成 ${checkpoint.execution.generator.provider}/${checkpoint.execution.generator.model} · 验证 ${checkpoint.execution.verifier.provider}/${checkpoint.execution.verifier.model} · ${STATUS_LABELS[checkpoint.status]} · ${checkpoint.completed.length}/${checkpoint.fixtureIds.length}`
-                : split === 'development' ? '40 例' : '20 例 · development 通过后解锁'}
+              {statusLine}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -608,14 +656,14 @@ export default function HarnessEvalPanel() {
               {isRunning
                 ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                 : <Play className="h-3.5 w-3.5" />}
-              {isRunning ? progress : isResumable ? '继续' : '运行'}
+              {isRunning ? renderMessage(progress) : isResumable ? t('evalHarness.actions.resume') : t('evalHarness.actions.run')}
             </button>
             <input
               ref={node => { importInputRefs.current[split] = node }}
               type="file"
               accept="application/json,.json"
               className="hidden"
-              aria-label={`选择 ${label} checkpoint 文件`}
+              aria-label={t('evalHarness.h4.fileInputAria', { label })}
               onChange={event => {
                 const file = event.currentTarget.files?.[0]
                 if (file) void importSplitFile(split, file)
@@ -625,8 +673,8 @@ export default function HarnessEvalPanel() {
               type="button"
               onClick={() => setImportingSplit(current => current === split ? null : split)}
               disabled={busy}
-              title="从文件或粘贴 JSON 导入并验证 checkpoint"
-              aria-label={`导入 ${label}`}
+              title={t('evalHarness.h4.importTitle')}
+              aria-label={t('evalHarness.h4.importAria', { label })}
               className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-40"
             >
               <Upload className="h-3.5 w-3.5" />
@@ -636,8 +684,8 @@ export default function HarnessEvalPanel() {
                 type="button"
                 onClick={() => { void copySplit(split) }}
                 disabled={busy}
-                title={copiedSplit === split ? '已复制 checkpoint JSON' : '复制 checkpoint JSON'}
-                aria-label={`复制 ${label}`}
+                title={copiedSplit === split ? t('evalHarness.h4.copyDoneTitle') : t('evalHarness.h4.copyTitle')}
+                aria-label={t('evalHarness.h4.copyAria', { label })}
                 className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-40"
               >
                 <ClipboardCopy className="h-3.5 w-3.5" />
@@ -648,8 +696,8 @@ export default function HarnessEvalPanel() {
                 type="button"
                 onClick={() => { void exportSplit(split) }}
                 disabled={busy}
-                title="导出 checkpoint artifact"
-                aria-label={`导出 ${label}`}
+                title={t('evalHarness.h4.exportTitle')}
+                aria-label={t('evalHarness.h4.exportAria', { label })}
                 className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-40"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -660,8 +708,8 @@ export default function HarnessEvalPanel() {
               <button
                 type="button"
                 onClick={() => { void resetSplit(split) }}
-                title={split === 'development' ? '开始新的 development 评测' : '清除未完成 checkpoint'}
-                aria-label={`清除 ${label}`}
+                title={split === 'development' ? t('evalHarness.h4.resetDevTitle') : t('evalHarness.h4.resetIncompleteTitle')}
+                aria-label={t('evalHarness.h4.clearAria', { label })}
                 className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg-hover hover:text-text-primary"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -674,8 +722,8 @@ export default function HarnessEvalPanel() {
             <textarea
               value={importDrafts[split]}
               onChange={event => setImportDrafts(current => ({ ...current, [split]: event.target.value }))}
-              placeholder="粘贴 H4 checkpoint JSON；导入前会验签并核对 split"
-              aria-label={`${label} checkpoint JSON`}
+              placeholder={t('evalHarness.h4.importPlaceholder')}
+              aria-label={t('evalHarness.checkpointJsonAria', { label })}
               className="h-24 w-full resize-y rounded-md border border-border bg-bg-primary px-2 py-1.5 font-mono text-[10px] text-text-secondary outline-none focus:border-accent"
             />
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -685,32 +733,34 @@ export default function HarnessEvalPanel() {
                 disabled={!importDrafts[split].trim()}
                 className="rounded-md bg-accent/10 px-2.5 py-1.5 text-xs text-accent hover:bg-accent/20 disabled:opacity-40"
               >
-                验证并导入
+                {t('evalHarness.actions.verifyAndImport')}
               </button>
               <button
                 type="button"
                 onClick={() => importInputRefs.current[split]?.click()}
                 className="rounded-md px-2.5 py-1.5 text-xs text-text-secondary hover:bg-bg-hover"
               >
-                选择 JSON 文件
+                {t('evalHarness.actions.chooseJsonFile')}
               </button>
-              <span className="text-[10px] text-text-muted">完整性、父 hash、fixture 与 split 均通过后才替换当前槽。</span>
+              <span className="text-[10px] text-text-muted">{t('evalHarness.h4.importHint')}</span>
             </div>
           </div>
         )}
         {score && (
           <div data-testid={`h4-${split}-score`} className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-text-secondary sm:grid-cols-4">
-            <span>高严重度精确率 {formatRate(score.highSeverityHard.precision.estimate)}</span>
-            <span>高严重度召回率 {formatRate(score.highSeverityHard.recall.estimate)}</span>
-            <span>证据回查 {formatRate(score.evidence.verificationRate.estimate)}</span>
+            <span>{t('evalHarness.scores.highSeverityPrecision', { value: formatRate(score.highSeverityHard.precision.estimate) })}</span>
+            <span>{t('evalHarness.scores.highSeverityRecall', { value: formatRate(score.highSeverityHard.recall.estimate) })}</span>
+            <span>{t('evalHarness.scores.evidenceVerification', { value: formatRate(score.evidence.verificationRate.estimate) })}</span>
             <span className={score.gate.passed ? 'text-success' : 'text-error'}>
-              {score.gate.passed ? '门禁 PASS' : `门禁 FAIL · ${score.gate.failures.join(', ')}`}
+              {score.gate.passed
+                ? t('evalHarness.scores.gatePassed')
+                : t('evalHarness.scores.gateFailed', { failures: listFormat.format(score.gate.failures) })}
             </span>
-            <span>验证调用 {score.usage.modelCalls}</span>
-            <span>验证输入 {score.usage.inputTokens} tokens</span>
-            <span>验证输出 {score.usage.outputTokens} tokens</span>
-            <span>验证估算成本 ${score.usage.costUsd.toFixed(4)}</span>
-            <span>累计延迟 {(score.usage.durationMs / 1_000).toFixed(1)}s</span>
+            <span>{t('evalHarness.h4.verifierCalls', { value: score.usage.modelCalls })}</span>
+            <span>{t('evalHarness.h4.verifierInputTokens', { value: score.usage.inputTokens })}</span>
+            <span>{t('evalHarness.h4.verifierOutputTokens', { value: score.usage.outputTokens })}</span>
+            <span>{t('evalHarness.h4.verifierCost', { value: score.usage.costUsd.toFixed(4) })}</span>
+            <span>{t('evalHarness.scores.totalLatency', { value: `${(score.usage.durationMs / 1_000).toFixed(1)}s` })}</span>
           </div>
         )}
         {checkpoint && (
@@ -726,8 +776,8 @@ export default function HarnessEvalPanel() {
             data-testid={`h4-${split}-failure`}
             className="mt-2 break-words text-[11px] text-error"
           >
-            最近失败：{latestFailure.code} · {latestFailure.message}
-            {latestFailure.usage == null ? ' · 未取得 provider 用量' : ''}
+            {t('evalHarness.latestFailure', { code: latestFailure.code, message: latestFailure.message })}
+            {latestFailure.usage == null ? t('evalHarness.noProviderUsage') : ''}
           </p>
         )}
       </section>
@@ -748,6 +798,18 @@ export default function HarnessEvalPanel() {
       && baseCheckpoint.execution.verifier.promptVersion === LONG_CONSISTENCY_CURRENT_JUDGE_PROMPT_VERSION_V1
     )
     const heldOutBlocked = split === 'held-out' && !isResumable && !adjudicationDevelopmentPassed
+    const statusLine = checkpoint
+      ? t('evalHarness.h85.statusLine', {
+          discovery: `${checkpoint.execution.discoveryVerifier.provider}/${checkpoint.execution.discoveryVerifier.model}`,
+          adjudicator: `${checkpoint.execution.adjudicator.provider}/${checkpoint.execution.adjudicator.model}`,
+          status: t(`evalHarness.status.${checkpoint.status}`),
+          progress: `${checkpoint.completed.length}/${checkpoint.fixtureIds.length}`,
+        })
+      : !baseReady
+        ? t('evalHarness.h85.needsParent')
+        : split === 'development'
+          ? t('evalHarness.h85.developmentDescription')
+          : t('evalHarness.h85.heldOutLocked')
     return (
       <section
         className="border-t border-border/60 py-3"
@@ -757,13 +819,7 @@ export default function HarnessEvalPanel() {
           <div>
             <h4 className="text-xs font-medium text-text-primary">{label}</h4>
             <p className="mt-0.5 text-[11px] text-text-muted">
-              {checkpoint
-                ? `发现 ${checkpoint.execution.discoveryVerifier.provider}/${checkpoint.execution.discoveryVerifier.model} · 判类 ${checkpoint.execution.adjudicator.provider}/${checkpoint.execution.adjudicator.model} · ${H85_STATUS_LABELS[checkpoint.status]} · ${checkpoint.completed.length}/${checkpoint.fixtureIds.length}`
-                : !baseReady
-                  ? '需要同 split 已完成的 H4 judge v7 父 checkpoint'
-                  : split === 'development'
-                    ? '复用已验签证据对；只新增逐调用记账的定向判类'
-                    : 'H85 development 通过后解锁'}
+              {statusLine}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -776,15 +832,17 @@ export default function HarnessEvalPanel() {
               {isRunning
                 ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
                 : <Play className="h-3.5 w-3.5" />}
-              {isRunning ? progress : isResumable ? '继续判类' : '运行判类'}
+              {isRunning
+                ? renderMessage(progress)
+                : isResumable ? t('evalHarness.actions.resumeAdjudication') : t('evalHarness.actions.runAdjudication')}
             </button>
             {checkpoint && (
               <button
                 type="button"
                 onClick={() => { void copyAdjudication(split) }}
                 disabled={busy}
-                title={copiedAdjudicationSplit === split ? '已复制 H85 checkpoint JSON' : '复制 H85 checkpoint JSON'}
-                aria-label={`复制 ${label}`}
+                title={copiedAdjudicationSplit === split ? t('evalHarness.h85.copyDoneTitle') : t('evalHarness.h85.copyTitle')}
+                aria-label={t('evalHarness.h85.copyAria', { label })}
                 className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-40"
               >
                 <ClipboardCopy className="h-3.5 w-3.5" />
@@ -795,8 +853,8 @@ export default function HarnessEvalPanel() {
                 type="button"
                 onClick={() => { void exportAdjudication(split) }}
                 disabled={busy}
-                title="导出 H85 checkpoint artifact"
-                aria-label={`导出 ${label}`}
+                title={t('evalHarness.h85.exportTitle')}
+                aria-label={t('evalHarness.h85.exportAria', { label })}
                 className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-40"
               >
                 <Download className="h-3.5 w-3.5" />
@@ -807,8 +865,10 @@ export default function HarnessEvalPanel() {
                 type="button"
                 onClick={() => { void toggleAdjudicationJson(split) }}
                 disabled={busy}
-                title={adjudicationExportJson[split] == null ? '显示 H85 checkpoint JSON' : '收起 H85 checkpoint JSON'}
-                aria-label={`${adjudicationExportJson[split] == null ? '显示' : '收起'} ${label} JSON`}
+                title={adjudicationExportJson[split] == null ? t('evalHarness.h85.showJsonTitle') : t('evalHarness.h85.hideJsonTitle')}
+                aria-label={adjudicationExportJson[split] == null
+                  ? t('evalHarness.h85.showJsonAria', { label })
+                  : t('evalHarness.h85.hideJsonAria', { label })}
                 className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg-hover hover:text-text-primary disabled:opacity-40"
               >
                 <FileJson className="h-3.5 w-3.5" />
@@ -819,8 +879,8 @@ export default function HarnessEvalPanel() {
               <button
                 type="button"
                 onClick={() => { void resetAdjudication(split) }}
-                title="开始新的 H85 判类评测"
-                aria-label={`清除 ${label}`}
+                title={t('evalHarness.h85.resetTitle')}
+                aria-label={t('evalHarness.h85.clearAria', { label })}
                 className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg-hover hover:text-text-primary"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
@@ -830,18 +890,20 @@ export default function HarnessEvalPanel() {
         </div>
         {score && (
           <div data-testid={`h85-${split}-score`} className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-[11px] text-text-secondary sm:grid-cols-4">
-            <span>高严重度精确率 {formatRate(score.highSeverityHard.precision.estimate)}</span>
-            <span>高严重度召回率 {formatRate(score.highSeverityHard.recall.estimate)}</span>
-            <span>证据回查 {formatRate(score.evidence.verificationRate.estimate)}</span>
+            <span>{t('evalHarness.scores.highSeverityPrecision', { value: formatRate(score.highSeverityHard.precision.estimate) })}</span>
+            <span>{t('evalHarness.scores.highSeverityRecall', { value: formatRate(score.highSeverityHard.recall.estimate) })}</span>
+            <span>{t('evalHarness.scores.evidenceVerification', { value: formatRate(score.evidence.verificationRate.estimate) })}</span>
             <span className={score.gate.passed ? 'text-success' : 'text-error'}>
-              {score.gate.passed ? '门禁 PASS' : `门禁 FAIL · ${score.gate.failures.join(', ')}`}
+              {score.gate.passed
+                ? t('evalHarness.scores.gatePassed')
+                : t('evalHarness.scores.gateFailed', { failures: listFormat.format(score.gate.failures) })}
             </span>
-            <span>发现调用 {score.usage.discovery.modelCalls}</span>
-            <span>判类调用 {score.usage.adjudication.modelCalls}</span>
-            <span>总输入 {score.usage.total.inputTokens} tokens</span>
-            <span>总输出 {score.usage.total.outputTokens} tokens</span>
-            <span>总估算成本 ${score.usage.total.costUsd.toFixed(4)}</span>
-            <span>累计延迟 {(score.usage.total.durationMs / 1_000).toFixed(1)}s</span>
+            <span>{t('evalHarness.h85.discoveryCalls', { value: score.usage.discovery.modelCalls })}</span>
+            <span>{t('evalHarness.h85.adjudicationCalls', { value: score.usage.adjudication.modelCalls })}</span>
+            <span>{t('evalHarness.h85.totalInputTokens', { value: score.usage.total.inputTokens })}</span>
+            <span>{t('evalHarness.h85.totalOutputTokens', { value: score.usage.total.outputTokens })}</span>
+            <span>{t('evalHarness.h85.totalCost', { value: score.usage.total.costUsd.toFixed(4) })}</span>
+            <span>{t('evalHarness.scores.totalLatency', { value: `${(score.usage.total.durationMs / 1_000).toFixed(1)}s` })}</span>
           </div>
         )}
         {checkpoint && (
@@ -856,15 +918,15 @@ export default function HarnessEvalPanel() {
           <textarea
             data-testid={`h85-${split}-export-json`}
             readOnly
-            aria-label={`${label} checkpoint JSON`}
+            aria-label={t('evalHarness.checkpointJsonAria', { label })}
             value={adjudicationExportJson[split]}
             className="mt-2 h-28 w-full resize-y rounded-md border border-border bg-bg-base p-2 font-mono text-[10px] text-text-secondary"
           />
         )}
         {latestFailure && (
           <p data-testid={`h85-${split}-failure`} className="mt-2 break-words text-[11px] text-error">
-            最近失败：{latestFailure.code} · {latestFailure.message}
-            {latestFailure.usage == null ? ' · 未取得 provider 用量' : ''}
+            {t('evalHarness.latestFailure', { code: latestFailure.code, message: latestFailure.message })}
+            {latestFailure.usage == null ? t('evalHarness.noProviderUsage') : ''}
           </p>
         )}
       </section>
@@ -875,19 +937,19 @@ export default function HarnessEvalPanel() {
     <div data-testid="harness-eval-panel" className="mt-6 max-w-2xl rounded-lg border border-border bg-bg-surface p-4">
       <div className="mb-2 flex items-center gap-2">
         <ShieldCheck className="h-4 w-4 text-accent" />
-        <h3 className="text-sm font-semibold text-text-primary">Harness 长篇一致性评测</h3>
-        <span className="text-[10px] text-text-muted">仅开发环境</span>
+        <h3 className="text-sm font-semibold text-text-primary">{t('evalHarness.panelTitle')}</h3>
+        <span className="text-[10px] text-text-muted">{t('evalHarness.devOnly')}</span>
       </div>
-      {renderSplit('development', 'H4 Development')}
-      {renderSplit('held-out', 'H4 Held-out')}
-      {renderAdjudicationSplit('development', 'H85 两阶段判类 Development')}
-      {renderAdjudicationSplit('held-out', 'H85 两阶段判类 Held-out')}
+      {renderSplit('development', t('evalHarness.h4.developmentLabel'))}
+      {renderSplit('held-out', t('evalHarness.h4.heldOutLabel'))}
+      {renderAdjudicationSplit('development', t('evalHarness.h85.developmentLabel'))}
+      {renderAdjudicationSplit('held-out', t('evalHarness.h85.heldOutLabel'))}
       <H86StoryArcEvalPanel />
       <CreativeReliabilityEvalPanel />
 
       <section className="border-t border-border pt-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-xs font-medium text-text-primary">H17 上下文质量对照</h4>
+          <h4 className="text-xs font-medium text-text-primary">{t('evalHarness.h17.title')}</h4>
           <button
             type="button"
             onClick={() => { void runCompressionMatrix() }}
@@ -897,7 +959,7 @@ export default function HarnessEvalPanel() {
             {compressionRunning
               ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
               : <Play className="h-3.5 w-3.5" />}
-            {compressionRunning ? progress : '运行'}
+            {compressionRunning ? renderMessage(progress) : t('evalHarness.actions.run')}
           </button>
         </div>
         {compressionRecords.length > 0 && (
@@ -905,13 +967,13 @@ export default function HarnessEvalPanel() {
             <table className="w-full text-[11px] text-text-secondary">
               <thead>
                 <tr className="text-left text-text-muted">
-                  <th>方案</th><th>事实</th><th>约束</th><th>泄漏</th><th>生成输入</th><th>总输入</th><th>调用</th>
+                  <th>{t('evalHarness.h17.colVariant')}</th><th>{t('evalHarness.h17.colFacts')}</th><th>{t('evalHarness.h17.colConstraints')}</th><th>{t('evalHarness.h17.colLeakage')}</th><th>{t('evalHarness.h17.colGenerationInput')}</th><th>{t('evalHarness.h17.colTotalInput')}</th><th>{t('evalHarness.h17.colCalls')}</th>
                 </tr>
               </thead>
               <tbody>
                 {compressionRecords.map(item => (
                   <tr key={item.variant} className="border-t border-border/50">
-                    <td>{CONTEXT_VARIANT_LABELS[item.variant]}</td>
+                    <td>{t(`evalHarness.h17.variant.${item.variant}`)}</td>
                     <td>{(item.aggregate.requiredFactRecall * 100).toFixed(1)}%</td>
                     <td>{(item.aggregate.constraintRecall * 100).toFixed(1)}%</td>
                     <td>{((item.aggregate.futureLeakageRate + item.aggregate.wrongWorldLeakageRate) * 100).toFixed(1)}%</td>
@@ -924,15 +986,21 @@ export default function HarnessEvalPanel() {
             </table>
             {compressionGate && (
               <p className={`mt-2 text-[11px] ${compressionGate.passed ? 'text-success' : 'text-error'}`}>
-                H17 非劣门：{compressionGate.passed ? 'PASS' : `FAIL · ${compressionGate.failures.join(', ')}`}
-                {' '}· 生成输入下降 {(compressionGate.generationInputReduction * 100).toFixed(1)}%
-                {' '}· 总输入倍率 {compressionGate.totalInputMultiplier.toFixed(2)}x
+                {t('evalHarness.h17.gate', {
+                  result: compressionGate.passed ? 'PASS' : `FAIL · ${listFormat.format(compressionGate.failures)}`,
+                })}
+                {' '}· {t('evalHarness.h17.generationInputReduction', {
+                  percent: `${(compressionGate.generationInputReduction * 100).toFixed(1)}%`,
+                })}
+                {' '}· {t('evalHarness.h17.totalInputMultiplier', {
+                  value: `${compressionGate.totalInputMultiplier.toFixed(2)}x`,
+                })}
               </p>
             )}
           </div>
         )}
       </section>
-      {error && <p className="mt-2 text-xs text-error">{error}</p>}
+      {error && <p className="mt-2 text-xs text-error">{renderMessage(error)}</p>}
     </div>
   )
 }

@@ -49,6 +49,7 @@ import {
   DETAILED_BATCH_STAGE_LABEL_KEYS,
   CHARACTER_DRIVEN_PLAN_STATUS_LABEL_KEYS,
   WORK_STATUS_LABEL_KEYS,
+  INTERACTION_MEMORY_KIND_LABEL_KEYS,
   SIMULATION_SESSION_KIND_LABEL_KEYS,
   NARRATIVE_MODULE_KIND_LABEL_KEYS,
   NARRATIVE_NODE_KIND_LABEL_KEYS,
@@ -621,6 +622,7 @@ describe('stage projection missing-key safety (ora-2)', () => {
 /** All Phase 3 shared maps, with the single ns each is bound to. */
 const PHASE_3_PROJECTIONS: Array<{ ns: string; map: Record<string, string>; name: string }> = [
   { ns: 'pages', map: WORK_STATUS_LABEL_KEYS, name: 'workStatus' },
+  { ns: 'simulation', map: INTERACTION_MEMORY_KIND_LABEL_KEYS, name: 'interactionMemoryKind' },
   { ns: 'simulation', map: SIMULATION_SESSION_KIND_LABEL_KEYS, name: 'sessionKind' },
   { ns: 'simulation', map: NARRATIVE_MODULE_KIND_LABEL_KEYS, name: 'moduleKind' },
   { ns: 'simulation', map: NARRATIVE_NODE_KIND_LABEL_KEYS, name: 'nodeKind' },
@@ -661,6 +663,12 @@ describe('phase 3 map completeness vs canonical sources', () => {
     expect(Object.keys(SIMULATION_SESSION_KIND_LABEL_KEYS).sort()).toEqual([...SIMULATION_SESSION_KINDS].sort())
   })
 
+  it('INTERACTION_MEMORY_KIND_LABEL_KEYS covers exactly the canonical memory kinds', () => {
+    expect(Object.keys(INTERACTION_MEMORY_KIND_LABEL_KEYS).sort()).toEqual([
+      'scene-summary', 'key-memory', 'commitment', 'secret', 'conflict', 'gift',
+    ].sort())
+  })
+
   it('NARRATIVE_MODULE_KIND_LABEL_KEYS covers exactly NARRATIVE_MODULE_KINDS', () => {
     expect(Object.keys(NARRATIVE_MODULE_KIND_LABEL_KEYS).sort()).toEqual([...NARRATIVE_MODULE_KINDS].sort())
   })
@@ -694,6 +702,7 @@ describe('phase 3 invalid-value fallback (ora-2)', () => {
   it('unknown/corrupted canonical values fall back to the raw persisted value', () => {
     expect(projectCanonicalLabel(keyEchoT, WORK_STATUS_LABEL_KEYS, 'corrupted-status')).toBe('corrupted-status')
     expect(projectCanonicalLabel(keyEchoT, SIMULATION_SESSION_KIND_LABEL_KEYS, 'no-such-kind')).toBe('no-such-kind')
+    expect(projectCanonicalLabel(keyEchoT, INTERACTION_MEMORY_KIND_LABEL_KEYS, 'unknown-memory-kind')).toBe('unknown-memory-kind')
     expect(projectCanonicalLabel(keyEchoT, NARRATIVE_MODULE_KIND_LABEL_KEYS, '')).toBe('')
     expect(projectCanonicalLabel(keyEchoT, NARRATIVE_NODE_KIND_LABEL_KEYS, 'legacy-node')).toBe('legacy-node')
     expect(projectCanonicalLabel(keyEchoT, NARRATIVE_BEAT_KIND_LABEL_KEYS, 'song')).toBe('song')
